@@ -6,6 +6,20 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 
 ## [Não lançado]
 
+## [0.10.0] — 2026-10-16
+### Adicionado
+- **Transcrição assistida** na página do documento: desenhe uma caixa em volta do valor
+  na imagem e o SIAPP sugere o que o OCR leu ali (ignorando o nome do poço, priorizando
+  números com decimal). Você confere na imagem, completa e salva.
+- Cada dado transcrito guarda **a fonte inteira**: documento (SHA-256 e caminho no
+  REATE), página e a caixa desenhada. A caixa fica marcada na imagem para quem conferir
+  depois — inclusive outras pessoas, quando o dado vem pela base comunitária.
+- Tipos de dado: topo de formação, intervalo-alvo, profundidade final, revestimento
+  (sapata), teste de formação, canhoneio, mesa rotativa, contato de fluido, observação.
+  Validação de profundidade (faixa, base abaixo do topo, campos obrigatórios por tipo).
+- Os dados transcritos aparecem na ficha do poço (Mapa), no gráfico de perfis e entram
+  no pacote de contribuição.
+
 ## [0.9.0] — 2026-10-16
 ### Adicionado
 - Aba **Perfis**: lê **DLIS, LIS e LAS** (dlisio e lasio). Cada quadro com seu passo, a
@@ -123,7 +137,8 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 - Catálogo em tempo real das 24 bacias terrestres do REATE.
 - `iniciar.bat` que encontra um Python válido e cria ambiente isolado.
 
-[Não lançado]: https://github.com/SIAPP-Pocos/siapp/compare/v0.9.0...HEAD
+[Não lançado]: https://github.com/SIAPP-Pocos/siapp/compare/v0.10.0...HEAD
+[0.10.0]: https://github.com/SIAPP-Pocos/siapp/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/SIAPP-Pocos/siapp/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/SIAPP-Pocos/siapp/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/SIAPP-Pocos/siapp/compare/v0.6.0...v0.7.0

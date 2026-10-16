@@ -97,6 +97,7 @@ async function iniciar() {
   ligar("ed-adicionar", "onclick", adicionarDoEditor);
   ligar("ed-fechar", "onclick", fecharEditor);
   ligar("form-palavra", "onsubmit", adicionarPalavra);
+  ligarTranscricao();
   ligar("tolerante", "onchange", () => termoAtual && $("busca").value.trim() && buscar());
   // mapa e comunidade
   ligarMapa();

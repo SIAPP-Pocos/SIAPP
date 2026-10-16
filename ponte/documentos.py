@@ -78,6 +78,8 @@ class DocumentosAPI:
                 "segmentos": segmentos,
                 "palavras": p["palavras"],
                 "n_corrigidas": sum(isinstance(x, dict) for x in segmentos),
+                "poco_id": self._id_poco(poco) if poco else "",
+                "fatos": self._banco.fatos(fonte_rel=rel, pagina=pagina),
                 "imagem": md.imagem_pagina(caminho, pagina, palavras, termo, variacoes=variacoes)}
 
     @resposta_segura

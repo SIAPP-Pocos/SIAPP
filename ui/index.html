@@ -212,7 +212,7 @@
     </aside>
     <section class="principal mapa-principal">
       <div id="mapa" class="mapa-div"></div>
-      <div class="legenda">
+      <div class="mapa-legenda">
         <span><i class="bola cad"></i>só no cadastro</span>
         <span><i class="bola reate"></i>pasta no REATE</span>
         <span><i class="bola baixado"></i>arquivos baixados</span>
@@ -302,7 +302,32 @@
       </div>
       <p class="pg-aviso" id="pg-aviso" hidden>Texto lido por OCR: serve para encontrar a página.
         <strong>Confira qualquer número na imagem</strong> — o reconhecimento erra dígitos com frequência.</p>
-      <img class="pg-img" id="pg-img" alt="Imagem da página">
+      <div class="pg-quadro" id="pg-quadro">
+        <img class="pg-img" id="pg-img" alt="Imagem da página">
+        <div class="pg-caixas" id="pg-caixas"></div>
+      </div>
+      <details class="transcrever" id="tr-box">
+        <summary>Transcrever um dado desta página <span class="contagem" id="tr-n">0</span></summary>
+        <p class="ajuda">Desenhe uma caixa na imagem em volta do valor: o SIAPP sugere o que o OCR leu ali.
+          <strong>Confira cada dígito na imagem</strong> antes de salvar — o dado entra no banco com a página
+          e a caixa como fonte.</p>
+        <form class="tr-form" id="tr-form">
+          <label>Tipo <select id="tr-tipo"></select></label>
+          <label>Poço <input id="tr-poco" type="text"></label>
+          <label class="largo">Nome <input id="tr-nome" type="text" placeholder="ex.: Formação Açu, sapata 9 5/8 pol."></label>
+          <label>Topo / profundidade (m) <input id="tr-topo" type="text" inputmode="decimal"></label>
+          <label>Base (m) <input id="tr-base" type="text" inputmode="decimal" placeholder="se for intervalo"></label>
+          <label>Valor <input id="tr-valor" type="text" placeholder="ex.: 12,5"></label>
+          <label>Unidade <input id="tr-unidade" type="text" placeholder="ex.: m, pol, kgf/cm²"></label>
+          <label class="largo">Observação <input id="tr-obs" type="text"></label>
+          <div class="linha largo">
+            <button class="btn" type="submit">Salvar dado</button>
+            <button class="btn secundario" type="button" id="tr-limpar">Limpar</button>
+            <span class="ajuda" id="tr-caixa-info">Sem caixa marcada.</span>
+          </div>
+        </form>
+        <div id="tr-lista"></div>
+      </details>
       <section class="pg-texto">
         <div class="pg-texto-cab">
           <strong>Texto reconhecido</strong>

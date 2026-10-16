@@ -377,11 +377,11 @@ input[type=text], input[type=number] {
 .mapa-vazio { position: absolute; inset: 0; margin: 0; padding-top: 16vh; background: var(--fundo); z-index: 500; max-width: none; }
 .mapa-vazio[hidden] { display: none; }
 .mapa-vazio p { max-width: 460px; margin-left: auto; margin-right: auto; }
-.legenda {
+.mapa-legenda {
   position: absolute; left: 12px; bottom: 26px; z-index: 450; display: flex; gap: 12px; flex-wrap: wrap;
   background: rgba(255, 255, 255, .92); border: 1px solid var(--linha); border-radius: 6px; padding: 6px 10px; font-size: 12px;
 }
-.legenda span { display: inline-flex; align-items: center; gap: 5px; }
+.mapa-legenda span { display: inline-flex; align-items: center; gap: 5px; }
 .bola { display: inline-block; width: 10px; height: 10px; border-radius: 50%; flex: none; }
 .bola.cad { background: #9aa3a8; }
 .bola.reate { background: #0e5a62; }
@@ -442,3 +442,26 @@ input[type=text], input[type=number] {
 .pf-lista-curvas .mono { font-weight: 600; min-width: 64px; }
 .pf-lista-curvas .ajuda { margin: 0; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pf-lista-curvas input { accent-color: var(--destaque); }
+
+/* ---------- transcrição assistida ---------- */
+.pg-quadro { position: relative; user-select: none; }
+.pg-quadro.marcando { cursor: crosshair; }
+.pg-caixas { position: absolute; inset: 0; pointer-events: none; }
+.pg-caixa { position: absolute; border: 2px solid #5b2f8f; background: rgba(91, 47, 143, .10); border-radius: 2px; }
+.pg-caixa.nova { border-color: #d17a22; background: rgba(209, 122, 34, .15); border-style: dashed; }
+.pg-caixa.direita span { left: auto; right: -2px; }
+.pg-caixa span {
+  position: absolute; left: -2px; bottom: 100%; white-space: nowrap; font: 600 10.5px var(--sans);
+  background: #5b2f8f; color: #fff; padding: 1px 5px; border-radius: 3px 3px 0 0;
+}
+.transcrever { margin-top: 12px; border: 1px solid var(--linha); border-radius: 8px; padding: 8px 12px; background: var(--painel); }
+.transcrever[open] { border-color: #5b2f8f; }
+.transcrever > summary { cursor: pointer; font: 600 13px var(--sans); padding: 2px 0; }
+.transcrever .ajuda { margin: 6px 0 10px; }
+.tr-form { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.tr-form label { display: grid; gap: 3px; font-size: 11.5px; font-weight: 600; color: var(--suave); }
+.tr-form .largo { grid-column: 1 / -1; }
+.tr-form .linha { align-items: center; flex-wrap: wrap; }
+.tr-form .linha .ajuda { margin: 0; font-weight: 400; }
+input.sugestao { background: #fff6d6; border-color: #e0b84a; }
+#tr-lista { margin-top: 10px; }

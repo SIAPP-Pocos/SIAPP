@@ -140,6 +140,7 @@ async function abrirPagina(rel, pagina, termo) {
   $("pg-prox").disabled = r.pagina >= r.n_paginas;
   $("pg-aviso").hidden = r.metodo !== "ocr";
   $("pg-img").src = r.imagem;
+  iniciarTranscricao(r);
   fecharEditor();
   desenharTexto(r.segmentos);
   $("pg-corr-resumo").textContent = r.n_corrigidas

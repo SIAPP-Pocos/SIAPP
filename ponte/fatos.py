@@ -63,6 +63,21 @@ class FatosAPI:
         return self._banco.fato(id_)
 
     @resposta_segura
+    def salvar_fato_pagina(self, rel: str, pagina: int, dados: dict):
+        """Dado transcrito de uma página de documento: guarda a página e a caixa
+        desenhada na imagem, para qualquer pessoa conferir de onde saiu."""
+        self._exigir_projeto()
+        rel = mp.rel_padrao(rel)
+        self._projeto.caminho_seguro(rel)
+        caixa = dados.get("caixa")
+        if caixa is not None:
+            if not (isinstance(caixa, (list, tuple)) and len(caixa) == 4
+                    and all(isinstance(x, (int, float)) and -0.01 <= x <= 1.01 for x in caixa)):
+                raise ErroUsuario("Caixa inválida na imagem.")
+        fato = self._salvar_fato({**dados, "pagina": int(pagina), "caixa": caixa}, fonte_rel=rel)
+        return {"fato": fato, "fatos": self._banco.fatos(fonte_rel=rel, pagina=int(pagina))}
+
+    @resposta_segura
     def remover_fato(self, id_fato: str):
         self._exigir_projeto()
         if not self._banco.remover_fato(id_fato):

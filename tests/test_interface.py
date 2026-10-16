@@ -117,3 +117,48 @@ def test_perfis_inventario_grafico_intervalo_exportar(janela, tmp_path):
     p.click("#pf-las")
     janela.esperar("document.getElementById('pf-exportado').textContent.includes('exportacoes/')")
     assert not janela.erros_js, janela.erros_js
+
+
+def test_transcricao_com_caixa_e_sugestao(janela, tmp_path):
+    import pymupdf
+    p = janela.page
+    abrir_projeto(janela)
+    pasta = tmp_path / "ambiente_teste" / "bruto" / "Potiguar" / "7-GMR-13-RN" / "Pasta de Poco"
+    pasta.mkdir(parents=True)
+    doc = pymupdf.open()
+    pg = doc.new_page()
+    pg.insert_text((72, 100), "RELATORIO DE REVESTIMENTO - POCO 7-GMR-13-RN", fontsize=12)
+    pg.insert_text((300, 200), "SAPATA: 1234,5 m", fontsize=14)
+    doc.save(str(pasta / "rev.pdf"))
+    api = janela.api
+    api._abrir_projeto(str(tmp_path / "ambiente_teste"))
+    rel = "bruto/Potiguar/7-GMR-13-RN/Pasta de Poco/rev.pdf"
+    from motor import documentos as md
+    r = md.processar_arquivo(str(pasta / "rev.pdf"), tessdata=str(tmp_path))
+    api._projeto.salvar_texto(rel, r)
+    api._indice.substituir_documento(rel, "Potiguar", "7-GMR-13-RN", "rev.pdf", r["paginas"], api._corretor)
+    p.click("#aba-docs")
+    janela.esperar("document.querySelectorAll('#lista-docs button').length === 1")
+    p.click("#lista-docs button")
+    janela.esperar("document.getElementById('pg-num').textContent.includes('1 de 1')")
+    p.click("#tr-box summary")
+    assert p.input_value("#tr-poco") == "7-GMR-13-RN"
+    p.select_option("#tr-tipo", "revestimento")
+    p.locator("#painel-pagina").evaluate("e => e.scrollTop = 0")
+    img = p.locator("#pg-img").bounding_box()
+    largura, altura = 595, 842                      # página A4 em pontos
+    x0, y0 = img["x"] + img["width"] * 290 / largura, img["y"] + img["height"] * 180 / altura
+    x1, y1 = img["x"] + img["width"] * 470 / largura, img["y"] + img["height"] * 210 / altura
+    p.mouse.move(x0, y0)
+    p.mouse.down()
+    p.mouse.move(x1, y1)
+    p.mouse.up()
+    assert p.input_value("#tr-topo") == "1234,5"
+    assert "SAPATA" in p.text_content("#tr-caixa-info")
+    p.fill("#tr-nome", "Sapata 9 5/8 pol")
+    p.click("#tr-form button[type=submit]")
+    janela.esperar("document.getElementById('tr-n').textContent === '1'")
+    f = api._banco.fatos("7-GMR-13-RN")[0]
+    assert f["prof_topo"] == 1234.5 and f["pagina"] == 1 and len(f["caixa"]) == 4 and f["fonte_sha256"]
+    assert p.locator("#pg-caixas .pg-caixa.salva").count() == 1
+    assert not janela.erros_js, janela.erros_js
