@@ -18,6 +18,7 @@
       <button class="aba" id="aba-catalogo" data-vista="catalogo" role="tab" aria-selected="false">Catálogo</button>
       <button class="aba" id="aba-mapa" data-vista="mapa" role="tab" aria-selected="false">Mapa</button>
       <button class="aba" id="aba-docs" data-vista="docs" role="tab" aria-selected="false">Documentos</button>
+      <button class="aba" id="aba-perfis" data-vista="perfis" role="tab" aria-selected="false">Perfis</button>
       <button class="aba" id="aba-comunidade" data-vista="comunidade" role="tab" aria-selected="false">Comunidade</button>
     </nav>
     <span class="versao" id="versao">—</span>
@@ -45,6 +46,7 @@
           <li><button data-ir="mapa"><strong>Mapa</strong><span>Importe o cadastro da ANP: poços no mapa, com campo, operador, profundidade e o que já existe no REATE.</span></button></li>
           <li><button data-ir="catalogo"><strong>Baixar</strong><span>Marque os arquivos. Nada vem marcado: cada tipo serve a uma finalidade (veja abaixo).</span></button></li>
           <li><button data-ir="docs"><strong>Documentos</strong><span>Extraia o texto dos PDFs e TIFs, busque termos e corrija o que o OCR leu errado.</span></button></li>
+          <li><button data-ir="perfis"><strong>Perfis</strong><span>Leia as curvas dos DLIS, LIS e LAS em metros, veja o gráfico, marque o intervalo-alvo e exporte em LAS ou CSV.</span></button></li>
           <li><button data-ir="comunidade"><strong>Comunidade</strong><span>Exporte suas correções, importe as de colegas e atualize a base comunitária.</span></button></li>
         </ol>
       </section>
@@ -331,6 +333,78 @@
     </aside>
   </main>
 
+  <main class="grade perfis" id="vista-perfis" hidden>
+    <aside class="lateral">
+      <section class="etapa">
+        <h2>Arquivos de perfil</h2>
+        <p class="ajuda" id="pf-resumo">DLIS, LIS e LAS baixados na aba Catálogo.</p>
+        <ul class="lista-docs" id="lista-perfis"></ul>
+      </section>
+      <section class="etapa" id="pf-curvas-box" hidden>
+        <h2>Curvas <span class="contagem" id="pf-n-sel">0</span></h2>
+        <p class="ajuda">Marque as curvas para o gráfico e a exportação. Com cor: famílias reconhecidas.</p>
+        <div class="linha">
+          <button class="btn secundario pequeno" id="pf-padrao" title="Uma curva de cada família">Visão padrão</button>
+          <button class="btn secundario pequeno" id="pf-limpar">Desmarcar</button>
+        </div>
+        <div id="pf-curvas"></div>
+      </section>
+    </aside>
+    <section class="principal perfis-principal">
+      <div class="vazio" id="pf-vazio">
+        <p class="vazio-titulo">Perfis de poço</p>
+        <p>Escolha um arquivo ao lado. Na primeira vez, o SIAPP lê todas as curvas, converte a
+          profundidade para metros e guarda uma cópia rápida em <code>ambiente_teste\pocos</code>.</p>
+      </div>
+      <div id="pf-painel" hidden>
+        <div class="pf-cab">
+          <div>
+            <h2 id="pf-titulo">—</h2>
+            <p class="ajuda" id="pf-sub"></p>
+          </div>
+          <div class="pf-faixa">
+            <label>de <input id="pf-topo" type="text" inputmode="decimal"> m</label>
+            <label>até <input id="pf-base" type="text" inputmode="decimal"> m</label>
+            <button class="btn secundario pequeno" id="pf-aplicar">Ir</button>
+            <button class="btn secundario pequeno" id="pf-tudo">Tudo</button>
+            <button class="btn secundario pequeno" id="pf-mais" title="Aproximar">+</button>
+            <button class="btn secundario pequeno" id="pf-menos" title="Afastar">−</button>
+          </div>
+        </div>
+        <p class="pg-aviso" id="pf-aviso" hidden></p>
+        <div class="pf-trilhas" id="pf-trilhas"></div>
+        <p class="ajuda pf-dica">Roda do mouse: rolar · Ctrl + roda: aproximar · arraste na vertical: marcar um intervalo.</p>
+        <div class="pf-ferramentas">
+          <section class="cartao">
+            <h3>Intervalo-alvo ou topo de formação</h3>
+            <form class="pf-form" id="pf-form-int">
+              <select id="pf-int-tipo">
+                <option value="intervalo_alvo">Intervalo-alvo</option>
+                <option value="topo_formacao">Topo de formação</option>
+                <option value="contato_fluido">Contato de fluido</option>
+              </select>
+              <input id="pf-int-nome" type="text" placeholder="Nome (ex.: Açu, reservatório A)">
+              <input id="pf-int-topo" type="text" inputmode="decimal" placeholder="Topo (m)">
+              <input id="pf-int-base" type="text" inputmode="decimal" placeholder="Base (m)">
+              <button class="btn" type="submit">Salvar</button>
+            </form>
+            <div id="pf-fatos"></div>
+          </section>
+          <section class="cartao">
+            <h3>Exportar as curvas marcadas</h3>
+            <p class="ajuda">Profundidade em metros, todas as curvas numa grade comum. Falhas do original continuam como nulo.</p>
+            <div class="linha">
+              <label class="pf-passo">passo <input id="pf-passo" type="text" inputmode="decimal"> m</label>
+              <button class="btn" id="pf-las">LAS</button>
+              <button class="btn secundario" id="pf-csv">CSV</button>
+            </div>
+            <p class="ajuda resultado" id="pf-exportado"></p>
+          </section>
+        </div>
+      </div>
+    </section>
+  </main>
+
   <main class="grade comunidade" id="vista-comunidade" hidden>
     <aside class="lateral">
       <section class="etapa">
@@ -411,6 +485,7 @@
   <script src="js/fatos.js"></script>
   <script src="js/comunidade.js"></script>
   <script src="js/mapa.js"></script>
+  <script src="js/perfis.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

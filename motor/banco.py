@@ -299,6 +299,33 @@ class Banco:
         with self.conexao() as c:
             c.execute("UPDATE arquivos SET sha256 = ? WHERE rel = ?", (sha, rel))
 
+    # ================================================================ perfis
+    def salvar_inventario(self, rel: str, poco_id: str, inv: dict) -> None:
+        """Perfil inventariado: uma linha em perfis e uma por curva em curvas."""
+        with self.conexao() as c:
+            c.execute("DELETE FROM curvas WHERE rel = ?", (rel,))
+            n = 0
+            for q in inv["quadros"]:
+                for cv in q["curvas"]:
+                    c.execute("INSERT OR REPLACE INTO curvas VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+                              (rel, q["nome"], cv["mnemonico"], cv["familia"], cv["unidade"],
+                               cv["descricao"], cv["topo_m"], cv["base_m"], q["passo_m"],
+                               q["n_amostras"], cv["n_validas"], cv["dimensao"]))
+                    n += 1
+            c.execute("INSERT OR REPLACE INTO perfis VALUES (?,?,?,?,?,?,?,?,?,?)",
+                      (rel, poco_id, inv["formato"], len(inv["quadros"]), n, inv["topo_m"],
+                       inv["base_m"], json.dumps(inv["cabecalho"], ensure_ascii=False, default=str),
+                       inv["inventariado_em"], None))
+
+    def perfil(self, rel: str) -> dict | None:
+        with self.conexao() as c:
+            r = c.execute("SELECT * FROM perfis WHERE rel = ?", (rel,)).fetchone()
+        if not r:
+            return None
+        d = dict(r)
+        d["cabecalho"] = json.loads(d["cabecalho"] or "{}")
+        return d
+
     # ================================================================= fatos
     CAMPOS_FATO = ("id", "poco_id", "tipo", "nome", "valor", "unidade", "prof_topo", "prof_base",
                    "fonte_sha256", "fonte_caminho", "fonte_bacia", "fonte_rel", "pagina", "caixa",

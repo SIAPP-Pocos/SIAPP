@@ -6,6 +6,28 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 
 ## [Não lançado]
 
+## [0.9.0] — 2026-10-16
+### Adicionado
+- Aba **Perfis**: lê **DLIS, LIS e LAS** (dlisio e lasio). Cada quadro com seu passo, a
+  profundidade convertida para metros (inclusive o índice em décimos de polegada dos
+  DLIS da Schlumberger), nulos `-999.25` tratados como falha.
+- **Famílias de curvas** (`recursos/mnemonicos.json`, editável): GR, SP, cáliper,
+  resistividades profunda/média/rasa, densidade, neutrão, fotoelétrico, sônicos.
+  A "visão padrão" escolhe uma curva por família.
+- **Gráfico em trilhas** com escalas convencionais (resistividade em log, neutrão
+  invertido), rolagem, aproximação, leitura dos valores sob o mouse e marcação de
+  intervalo arrastando o mouse.
+- **Intervalo-alvo, topo de formação e contato de fluido** salvos como dados do poço,
+  com o arquivo de origem; aparecem no gráfico, na ficha do poço e na exportação.
+- **Exportação em LAS 2.0 e CSV**: curvas escolhidas numa grade comum, em metros, sem
+  inventar dado em falhas do original. O cabeçalho leva poço, campo e cadastro ANP.
+- O inventário vai para o banco (perfis e curvas): a ficha do poço mostra que curvas
+  existem e em que intervalo. Se o nº de cadastro gravado no DLIS não bater com o poço
+  da pasta, o SIAPP avisa.
+### Conferido com dado real
+- `1-AURI-12-RN_AIT_P.DLIS` (192 MB): 9 quadros, 354 curvas, 23,5 a 2.155,2 m, cadastro
+  ANP 72100021414, ferramentas HAIT/HILTD/DSLT-H. `_P` é a passada principal.
+
 ## [0.8.0] — 2026-10-16
 ### Adicionado
 - **Identificador único de poço**: `7GMR_0013__RN`, `7GMR13RN` e `7-GMR-13-RN` passam a ser
@@ -101,7 +123,8 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 - Catálogo em tempo real das 24 bacias terrestres do REATE.
 - `iniciar.bat` que encontra um Python válido e cria ambiente isolado.
 
-[Não lançado]: https://github.com/SIAPP-Pocos/siapp/compare/v0.8.0...HEAD
+[Não lançado]: https://github.com/SIAPP-Pocos/siapp/compare/v0.9.0...HEAD
+[0.9.0]: https://github.com/SIAPP-Pocos/siapp/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/SIAPP-Pocos/siapp/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/SIAPP-Pocos/siapp/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/SIAPP-Pocos/siapp/releases/tag/v0.6.0

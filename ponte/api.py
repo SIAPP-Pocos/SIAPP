@@ -23,11 +23,14 @@ from .base import BaseAPI, ErroUsuario, mesma_pasta, resposta_segura
 from .catalogo import CatalogoAPI
 from .comunidade import ComunidadeAPI
 from .documentos import DocumentosAPI
+from .fatos import FatosAPI
+from .perfis import PerfisAPI
 from .pocos import PocosAPI
 from .vocabulario import VocabularioAPI
 
 
-class API(BaseAPI, PocosAPI, CatalogoAPI, DocumentosAPI, VocabularioAPI, ComunidadeAPI):
+class API(BaseAPI, PocosAPI, CatalogoAPI, DocumentosAPI, VocabularioAPI, ComunidadeAPI,
+          FatosAPI, PerfisAPI):
     def __init__(self):
         self._janela = None
         self._projeto = None

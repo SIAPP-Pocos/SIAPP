@@ -7,6 +7,7 @@ const AO_ABRIR_ABA = {
   inicio: () => carregarPanorama(),
   catalogo: () => {},
   mapa: () => carregarMapa(),
+  perfis: () => carregarPerfis(),
   docs: () => carregarDocumentos(),
   comunidade: () => carregarComunidade(),
 };
@@ -99,6 +100,7 @@ async function iniciar() {
   ligar("tolerante", "onchange", () => termoAtual && $("busca").value.trim() && buscar());
   // mapa e comunidade
   ligarMapa();
+  ligarPerfis();
   ligarComunidade();
   ligar("ocr-cancelar", "onclick", async () => {
     await chamar($("ocr-cancelar"), "cancelar_processamento");

@@ -99,6 +99,8 @@ usado para PDF e OCR.
 | [PyMuPDF](https://pymupdf.readthedocs.io/) | PDF, imagem e OCR (motor Tesseract embutido) | AGPL-3.0 |
 | [NumPy](https://numpy.org/) | limpeza de imagem antes do OCR | BSD-3-Clause |
 | [Leaflet](https://leafletjs.com/) (em `ui/vendor/`) | mapa dos poços | BSD-2-Clause |
+| [dlisio](https://github.com/equinor/dlisio) | leitura de DLIS e LIS | LGPL-3.0 |
+| [lasio](https://github.com/kinverarity1/lasio) | leitura e escrita de LAS | MIT |
 | [Tesseract `por.traineddata`](https://github.com/tesseract-ocr/tessdata_best) | modelo de português (baixado na 1ª vez) | Apache-2.0 |
 
 ## Como citar

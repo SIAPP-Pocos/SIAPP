@@ -406,3 +406,39 @@ input[type=text], input[type=number] {
 .tabela.fatos td, .tabela.fatos th { padding: 5px 7px; font-size: 12.5px; }
 .tabela.fatos td:first-child { white-space: normal; }
 .leaflet-container { font: 12px var(--sans); }
+
+/* ---------- perfis ---------- */
+.perfis-principal { padding: 20px 24px; }
+.pf-cab { display: flex; justify-content: space-between; align-items: end; gap: 16px; flex-wrap: wrap; margin-bottom: 10px; }
+.pf-cab h2 { font-family: var(--mono); font-size: 17px; }
+.pf-cab .ajuda { margin: 0; }
+.pf-faixa { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; font-size: 12.5px; }
+.pf-faixa input { width: 84px; font: 12.5px var(--mono); padding: 5px 7px; }
+.pf-trilhas { display: flex; gap: 0; border: 1px solid var(--linha); border-radius: 6px; overflow: hidden; background: #fff; }
+.pf-trilha { flex: 1 1 0; min-width: 120px; border-left: 1px solid var(--linha); display: flex; flex-direction: column; }
+.pf-trilha:first-child { border-left: 0; }
+.pf-eixo { flex: 0 0 64px; min-width: 64px; }
+.pf-cab-trilha { min-height: 64px; padding: 4px 6px; border-bottom: 1px solid var(--linha); display: flex; flex-direction: column; justify-content: flex-end; gap: 2px; font-size: 11px; color: var(--suave); background: var(--fundo); }
+.pf-legenda { display: flex; justify-content: space-between; gap: 4px; font: 10.5px var(--mono); padding-bottom: 1px; }
+.pf-legenda strong { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pf-trilha canvas { display: block; cursor: crosshair; }
+.pf-dica { margin: 6px 0 14px; font-size: 12px; }
+.pf-leitura { position: fixed; z-index: 1000; pointer-events: none; background: rgba(28, 34, 39, .9); color: #fff; font: 11.5px var(--mono); padding: 4px 8px; border-radius: 4px; max-width: 520px; }
+.pf-leitura[hidden] { display: none; }
+.pf-ferramentas { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 14px; align-items: start; }
+@media (max-width: 1250px) { .pf-ferramentas { grid-template-columns: minmax(0, 1fr); } }
+.pf-ferramentas h3 { font: 600 14px var(--serif); margin: 0; }
+.pf-form { display: flex; gap: 6px; flex-wrap: wrap; }
+.pf-form select, .pf-form input { flex: 1 1 110px; }
+.pf-form #pf-int-nome { flex: 2 1 180px; }
+.pf-passo { display: flex; gap: 4px; align-items: center; font-size: 12.5px; }
+.pf-passo input { width: 80px; font-family: var(--mono); }
+.pf-quadro { border-bottom: 1px solid var(--linha); padding: 4px 0; }
+.pf-quadro summary { cursor: pointer; font-size: 12.5px; padding: 3px 0; }
+.pf-quadro summary .ajuda { margin: 0; }
+.pf-lista-curvas { list-style: none; margin: 0; padding: 2px 0 6px 6px; display: grid; gap: 1px; max-height: 280px; overflow-y: auto; }
+.pf-lista-curvas label { display: flex; gap: 6px; align-items: baseline; font-size: 12px; cursor: pointer; padding: 1px 2px; border-radius: 3px; }
+.pf-lista-curvas label:hover { background: var(--fundo); }
+.pf-lista-curvas .mono { font-weight: 600; min-width: 64px; }
+.pf-lista-curvas .ajuda { margin: 0; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pf-lista-curvas input { accent-color: var(--destaque); }

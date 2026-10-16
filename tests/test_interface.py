@@ -88,3 +88,32 @@ def test_mapa_com_cadastro_e_ficha(janela):
     p.keyboard.press("Escape")
     assert p.is_hidden("#ficha")
     assert not janela.erros_js, janela.erros_js
+
+
+def test_perfis_inventario_grafico_intervalo_exportar(janela, tmp_path):
+    from test_perfis import las_exemplo
+    p = janela.page
+    abrir_projeto(janela)
+    pasta = tmp_path / "ambiente_teste" / "bruto" / "Potiguar" / "7-GMR-13-RN" / "Perfis"
+    pasta.mkdir(parents=True)
+    las_exemplo(pasta / "7gmr13.las")
+    janela.api._abrir_projeto(str(tmp_path / "ambiente_teste"))
+    p.click("#aba-perfis")
+    janela.esperar("document.querySelectorAll('#lista-perfis button').length === 1")
+    p.click("#lista-perfis button")
+    janela.esperar("document.querySelectorAll('#pf-trilhas canvas').length === 3", 30)
+    assert "7-GMR-13-RN" in p.text_content("#pf-titulo")
+    # arrastar na trilha marca um intervalo
+    cv = p.locator("#pf-trilhas canvas").nth(1)
+    caixa = cv.bounding_box()
+    p.mouse.move(caixa["x"] + 30, caixa["y"] + 100)
+    p.mouse.down()
+    p.mouse.move(caixa["x"] + 30, caixa["y"] + 200)
+    p.mouse.up()
+    assert p.input_value("#pf-int-topo") and p.input_value("#pf-int-base")
+    p.fill("#pf-int-nome", "Reservatório A")
+    p.click("#pf-form-int button")
+    janela.esperar("document.getElementById('pf-fatos').textContent.includes('Reservatório A')")
+    p.click("#pf-las")
+    janela.esperar("document.getElementById('pf-exportado').textContent.includes('exportacoes/')")
+    assert not janela.erros_js, janela.erros_js
