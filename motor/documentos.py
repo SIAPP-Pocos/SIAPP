@@ -238,7 +238,7 @@ class Indice:
     O índice é derivado (pode ser apagado e refeito a partir de texto/*.json).
     Se a estrutura mudar entre versões, ele é recriado automaticamente.
     """
-    VERSAO = 2
+    VERSAO = 3   # 3: ids de documento com "/" em qualquer sistema (SIAPP 0.7)
 
     def __init__(self, caminho: str):
         self.caminho = caminho

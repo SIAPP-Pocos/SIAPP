@@ -8,6 +8,8 @@ um script, um HTML aberto no navegador) pode ler sem depender das outras.
 Estrutura:
     <projeto>/
     ├── siapp.json                      configuração e histórico do projeto
+    ├── projeto.sqlite                  banco do projeto (ver motor/banco.py)
+    ├── siapp.log                       registro de erros (para relatar problemas)
     ├── catalogo/<bacia>/               o que existe no portal (só listagem)
     │   ├── categorias.json
     │   ├── <categoria>.json
@@ -26,6 +28,7 @@ Estrutura:
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import re
@@ -58,6 +61,33 @@ def salvar_json(caminho: str, dados) -> None:
     with open(tmp, "w", encoding="utf-8") as f:
         json.dump(dados, f, ensure_ascii=False, indent=2)
     os.replace(tmp, caminho)
+
+
+def rel_padrao(rel: str) -> str:
+    """Caminho relativo sempre com "/" (o Windows aceita), para a pasta de
+    projeto funcionar igual em qualquer sistema e os ids não mudarem."""
+    return rel.replace("\\", "/")
+
+
+def sha256_arquivo(caminho: str) -> str:
+    """Impressão digital do conteúdo: identifica o MESMO arquivo em qualquer
+    computador, mesmo com outro nome ou noutra pasta."""
+    h = hashlib.sha256()
+    with open(caminho, "rb") as f:
+        for bloco in iter(lambda: f.read(1024 * 1024), b""):
+            h.update(bloco)
+    return h.hexdigest()
+
+
+TIPOS_ARQUIVO = {
+    "documento": (".pdf", ".tif", ".tiff"),
+    "perfil": (".dlis", ".lis", ".las"),
+}
+
+
+def tipo_arquivo(nome: str) -> str:
+    ext = os.path.splitext(nome)[1].lower()
+    return next((t for t, exts in TIPOS_ARQUIVO.items() if ext in exts), "outro")
 
 
 def ler_json(caminho: str, padrao=None):
@@ -143,6 +173,18 @@ class Projeto:
         return os.path.join(self.pasta, "bruto", *limpas)
 
     @property
+    def caminho_banco(self) -> str:
+        return os.path.join(self.pasta, "projeto.sqlite")
+
+    def bacia_poco_de(self, rel: str) -> tuple[str, str]:
+        """bruto/<bacia>/<poço>/... → (bacia, nome da pasta do poço)."""
+        partes = os.path.relpath(self.caminho_seguro(rel), self.pasta_bruto).split(os.sep)
+        return (partes[0], partes[1]) if len(partes) > 2 else ("", "")
+
+    def registro_downloads(self) -> dict:
+        return ler_json(self.caminho_registro, {})
+
+    @property
     def caminho_registro(self) -> str:
         return os.path.join(self.pasta, "bruto", "registro_downloads.json")
 
@@ -153,7 +195,7 @@ class Projeto:
             reg = ler_json(self.caminho_registro, {})
             reg[f"{bacia}:{caminho_remoto}"] = {
                 "bacia": bacia, "poco": poco, "caminho_remoto": caminho_remoto,
-                "arquivo_local": os.path.relpath(destino, self.pasta),
+                "arquivo_local": self.rel(destino),
                 "bytes": bytes_, "baixado_em": agora(),
             }
             salvar_json(self.caminho_registro, reg)
@@ -166,7 +208,7 @@ class Projeto:
     def caminho_seguro(self, rel: str) -> str:
         """Caminho absoluto de um arquivo dentro de bruto/, recusando qualquer
         coisa que aponte para fora da pasta do projeto."""
-        alvo = os.path.normpath(os.path.join(self.pasta, rel))
+        alvo = os.path.normpath(os.path.join(self.pasta, rel_padrao(rel)))
         if os.path.commonpath([alvo, self.pasta_bruto]) != self.pasta_bruto:
             raise ValueError(f"Caminho fora de bruto/: {rel}")
         return alvo
@@ -179,11 +221,20 @@ class Projeto:
     def caminho_resumo_texto(self) -> str:
         return os.path.join(self.pasta, "texto", "resumo.json")
 
+    def rel(self, caminho: str) -> str:
+        """Caminho absoluto → relativo à pasta de projeto, com "/"."""
+        return rel_padrao(os.path.relpath(caminho, self.pasta))
+
+    def resumo_texto(self) -> dict:
+        """Situação de cada documento processado (chaves sempre com "/")."""
+        return {rel_padrao(k): v for k, v in ler_json(self.caminho_resumo_texto, {}).items()}
+
     def salvar_texto(self, rel: str, resultado: dict) -> None:
+        rel = rel_padrao(rel)
         salvar_json(self.caminho_texto(rel), {"arquivo": rel, **resultado})
         metodos = [p["metodo"] for p in resultado["paginas"]]
         with _TRAVA_ESCRITA:
-            resumo = ler_json(self.caminho_resumo_texto, {})
+            resumo = self.resumo_texto()
             resumo[rel] = {"n_paginas": resultado["n_paginas"],
                            "embutido": metodos.count("embutido"), "ocr": metodos.count("ocr"),
                            "processado_em": resultado["processado_em"],
@@ -195,7 +246,7 @@ class Projeto:
 
     def documentos_processados(self):
         """(rel, bacia, poço, nome, páginas) de cada documento com texto extraído."""
-        for rel in ler_json(self.caminho_resumo_texto, {}):
+        for rel in self.resumo_texto():
             t = self.ler_texto(rel)
             if not t:
                 continue
@@ -217,14 +268,14 @@ class Projeto:
         """Todos os arquivos baixados que são documentos (PDF, TIF), com a
         situação do texto: pendente, processado ou desatualizado (o arquivo
         mudou de tamanho depois de processado)."""
-        resumo = ler_json(self.caminho_resumo_texto, {})
+        resumo = self.resumo_texto()
         docs = []
         for raiz, _, arquivos in os.walk(self.pasta_bruto):
             for nome in sorted(arquivos):
                 if not nome.lower().endswith(extensoes):
                     continue
                 caminho = os.path.join(raiz, nome)
-                rel = os.path.relpath(caminho, self.pasta)
+                rel = self.rel(caminho)
                 partes = os.path.relpath(caminho, self.pasta_bruto).split(os.sep)
                 info = resumo.get(rel)
                 tamanho = os.path.getsize(caminho)

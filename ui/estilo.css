@@ -295,6 +295,7 @@ mark { background: #ffe58a; color: inherit; border-radius: 2px; padding: 0 1px; 
 .corr { cursor: pointer; border-radius: 2px; padding: 0 1px; }
 .corr.auto { background: #dcf1e3; color: #1d6a3d; border-bottom: 1px solid #63b07f; }
 .corr.usuario { background: #dde8fb; color: #234e9a; border-bottom: 1px solid #6c93d6; }
+.corr.comunidade { background: #ece3f7; color: #5b2f8f; border-bottom: 1px solid #9c7cc8; }
 .pal.sel, .corr.sel { outline: 2px solid var(--destaque); }
 .editor {
   border: 1px solid var(--destaque); background: var(--painel); border-radius: 8px;

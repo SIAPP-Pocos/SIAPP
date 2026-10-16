@@ -8,7 +8,7 @@ pede explicitamente que não se baixem vários grupos ao mesmo tempo.
 Não conhece interface: comunica tudo por eventos, chamando emitir(dict):
     {"tipo": "inicio",    "caminho", "nome", "poco", "indice", "total"}
     {"tipo": "progresso", "caminho", "feito", "total", "velocidade"}  (bytes/s)
-    {"tipo": "fim",       "caminho", "status", "bytes", "arquivo_local"}
+    {"tipo": "fim",       "caminho", "status", "bytes", "bacia", "poco", "arquivo_local"}
     {"tipo": "erro",      "caminho", "nome", "erro"}
     {"tipo": "cancelado", "caminho"}
     {"tipo": "ocioso",    "baixados", "ja_existiam", "erros", "cancelados", "bytes"}
@@ -155,5 +155,5 @@ class FilaDownloads:
         t["projeto"].registrar_download(t["bacia"], t["poco"], t["caminho"],
                                         t["destino"], r["bytes"])
         self._emitir({"tipo": "fim", "caminho": t["caminho"], "status": r["status"],
-                      "bytes": r["bytes"],
+                      "bytes": r["bytes"], "bacia": t["bacia"], "poco": t["poco"],
                       "arquivo_local": t["destino"]})

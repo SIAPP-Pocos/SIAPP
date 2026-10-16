@@ -7,6 +7,7 @@ import subprocess
 import sys
 
 from motor import documentos as md
+from motor import projeto as mp
 
 from .base import PASTA_TESSDATA, ErroUsuario, resposta_segura
 
@@ -15,9 +16,7 @@ class DocumentosAPI:
     _indice = None
 
     def _bacia_poco_de(self, rel: str) -> tuple[str, str]:
-        caminho = self._projeto.caminho_seguro(rel)
-        partes = os.path.relpath(caminho, self._projeto.pasta_bruto).split(os.sep)
-        return (partes[0], partes[1]) if len(partes) > 2 else ("", "")
+        return self._projeto.bacia_poco_de(rel)
 
     @resposta_segura
     def documentos(self):
@@ -30,7 +29,7 @@ class DocumentosAPI:
     def processar_documentos(self, rels: list):
         self._exigir_projeto()
         tarefas = []
-        for rel in rels:
+        for rel in map(mp.rel_padrao, rels):
             caminho = self._projeto.caminho_seguro(rel)
             bacia, poco = self._bacia_poco_de(rel)
             nome = os.path.basename(caminho)
@@ -60,6 +59,7 @@ class DocumentosAPI:
     @resposta_segura
     def ver_pagina(self, rel: str, pagina: int, termo: str = ""):
         self._exigir_projeto()
+        rel = mp.rel_padrao(rel)
         caminho = self._projeto.caminho_seguro(rel)
         texto = self._projeto.ler_texto(rel)
         if texto is None:

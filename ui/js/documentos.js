@@ -166,7 +166,7 @@ function desenharTexto(segmentos) {
   for (const sg of segmentos) {
     if (typeof sg !== "string") {
       const c = el("span", "corr " + sg.tipo, sg.t);
-      c.title = `O OCR leu: ${sg.orig}` + (sg.tipo === "auto" ? " (corrigida pelo dicionário)" : " (corrigida por você)");
+      c.title = `O OCR leu: ${sg.orig}` + ORIGEM_CORRECAO[sg.tipo];
       c.onclick = () => abrirEditor(c, sg.orig, sg.tipo, sg.t);
       frag.appendChild(c);
       continue;
@@ -184,6 +184,12 @@ function desenharTexto(segmentos) {
   corpo.appendChild(frag);
 }
 
+const ORIGEM_CORRECAO = {
+  auto: " (corrigida pelo dicionário)",
+  usuario: " (corrigida por você)",
+  comunidade: " (corrigida pela comunidade)",
+};
+
 let edicao = null;   // {orig, tipo}
 
 function abrirEditor(span, orig, tipo, atual) {
@@ -192,9 +198,10 @@ function abrirEditor(span, orig, tipo, atual) {
   edicao = { orig, tipo };
   $("ed-orig").textContent = orig;
   $("ed-estado").textContent = tipo === "auto" ? `→ corrigida pelo dicionário para “${atual}”`
-                             : tipo === "usuario" ? `→ você corrigiu para “${atual}”` : "";
+                             : tipo === "usuario" ? `→ você corrigiu para “${atual}”`
+                             : tipo === "comunidade" ? `→ corrigida pela comunidade para “${atual}”` : "";
   $("ed-para").value = atual;
-  $("ed-manter").hidden = tipo !== "auto";
+  $("ed-manter").hidden = !(tipo === "auto" || tipo === "comunidade");
   $("ed-desfazer").hidden = tipo !== "usuario";
   $("editor").hidden = false;
   $("ed-para").focus();
@@ -321,6 +328,17 @@ function desenharDicionario(d) {
       "Voltar a corrigir automaticamente"));
   }
   if (!d.ignorar.length) ign.appendChild(el("li", "vazio-lista", "Nenhuma."));
+  const com = $("dic-comunidade");
+  com.innerHTML = "";
+  const lista = d.correcoes_comunidade || [];
+  $("n-com").textContent = lista.length;
+  for (const c of lista.slice(0, 400)) {
+    com.appendChild(itemDic(`${c.de} → ${c.para}`, async () =>
+      aposVocabulario(await chamar(null, "manter_original", c.de),
+                      `“${c.de}” fica como o OCR leu neste computador.`),
+      "O OCR estava certo: não aplicar esta correção aqui"));
+  }
+  if (!lista.length) com.appendChild(el("li", "vazio-lista", "Nenhuma. Importe pacotes ou a base na aba Comunidade."));
 }
 
 async function adicionarPalavra(ev) {

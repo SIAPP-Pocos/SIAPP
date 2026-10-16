@@ -1,12 +1,15 @@
 """
 Vocabulário e correção de texto de OCR.
 
-Duas fontes de palavras:
+Fontes de palavras:
   - recursos/vocabulario_base.json     dicionário de domínio que vem com o SIAPP
-  - <projeto>/texto/vocabulario_projeto.json   o que o usuário adiciona pela janela:
+  - banco do projeto (tabela vocab, ver motor/banco.py), juntando o que o usuário
+    fez, os pacotes importados e a base comunitária:
         "palavras":  termos próprios (viram atalho de busca e alvo de correção)
         "correcoes": {"BARIGIRAS": "BARREIRAS", ...}  correções explícitas
         "ignorar":   tokens que a correção automática NÃO deve mexer
+        "origens":   {chave: "local"|"pacote"|"base"} de cada correção explícita
+    (até o SIAPP 0.6, isso ficava em texto/vocabulario_projeto.json)
 
 Regras de segurança da correção:
   1. O OCR original nunca é alterado. A correção é uma camada por cima,
@@ -124,6 +127,7 @@ class Corretor:
                     self.vocab.setdefault(normalizar(p), p)
         self.ignorar = {normalizar(t) for t in projeto.get("ignorar", [])}
         self.correcoes = {normalizar(k): v for k, v in projeto.get("correcoes", {}).items() if k.strip()}
+        self.origens = projeto.get("origens", {})
         # explícitas podem ter número/hífen ("T-GRMAA3-RN") → casamento por token inteiro
         self._re_explicitas = None
         if self.correcoes:
@@ -157,11 +161,14 @@ class Corretor:
 
     def segmentos(self, texto: str) -> list:
         """Texto dividido em pedaços: str (inalterado) ou
-        {"t": corrigido, "orig": lido pelo OCR, "tipo": "usuario"|"auto"}."""
+        {"t": corrigido, "orig": lido pelo OCR, "tipo": "usuario"|"comunidade"|"auto"}.
+        "usuario" = correção feita neste computador; "comunidade" = veio de um
+        pacote importado ou da base comunitária; "auto" = dicionário."""
         pedacos: list = []
         pos = 0
         explicitas = list(self._re_explicitas.finditer(texto)) if self._re_explicitas else []
-        cortes = [(m.start(), m.end(), "usuario", m.group(0)) for m in explicitas]
+        cortes = [(m.start(), m.end(), self._tipo_explicita(m.group(0)), m.group(0))
+                  for m in explicitas]
         ocupado = [(a, b) for a, b, _, _ in cortes]
         for m in _RE_PALAVRA.finditer(texto):
             if any(a <= m.start() < b for a, b in ocupado):
@@ -172,13 +179,16 @@ class Corretor:
         for ini, fim, tipo, orig in sorted(cortes):
             if ini > pos:
                 pedacos.append(texto[pos:ini])
-            novo = (self.correcoes[normalizar(orig)] if tipo == "usuario"
-                    else _no_estilo(orig, self._candidato(orig)))
+            novo = (_no_estilo(orig, self._candidato(orig)) if tipo == "auto"
+                    else self.correcoes[normalizar(orig)])
             pedacos.append({"t": novo, "orig": orig, "tipo": tipo})
             pos = fim
         if pos < len(texto):
             pedacos.append(texto[pos:])
         return pedacos
+
+    def _tipo_explicita(self, orig: str) -> str:
+        return "usuario" if self.origens.get(normalizar(orig), "local") == "local" else "comunidade"
 
     def corrigir(self, texto: str) -> str:
         return "".join(p if isinstance(p, str) else p["t"] for p in self.segmentos(texto))

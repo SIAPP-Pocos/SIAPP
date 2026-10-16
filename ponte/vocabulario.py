@@ -1,4 +1,4 @@
-"""Ponte: dicionário do projeto e correções de OCR."""
+"""Ponte: dicionário do projeto e correções de OCR (guardados no banco do projeto)."""
 
 from __future__ import annotations
 
@@ -11,26 +11,27 @@ from .base import CAMINHO_VOCAB_BASE, ErroUsuario, resposta_segura
 
 class VocabularioAPI:
     _corretor = None
-    _vocab_projeto = None
 
     def _carregar_corretor(self):
-        self._vocab_projeto = mvoc.ler_projeto(self._projeto.caminho_vocabulario)
-        self._corretor = mvoc.Corretor(mvoc.ler_base(CAMINHO_VOCAB_BASE), self._vocab_projeto)
+        self._corretor = mvoc.Corretor(mvoc.ler_base(CAMINHO_VOCAB_BASE), self._banco.vocab_efetivo())
 
     def _aplicar_vocabulario(self, evento: str, **detalhe) -> dict:
-        """Salva o vocabulário do projeto e reaplica as correções em TODOS os
-        documentos já processados (o OCR original não é refeito nem alterado)."""
-        self._projeto.salvar_vocabulario(self._vocab_projeto)
+        """Reaplica as correções em TODOS os documentos já processados (o OCR
+        original não é refeito nem alterado) e anota o evento no histórico."""
         self._carregar_corretor()
         n = self._indice.reconstruir(self._projeto.documentos_processados(), self._corretor)
         self._projeto.registrar(evento, **detalhe)
         return {"paginas_atualizadas": n, **self._dicionario()}
 
     def _dicionario(self) -> dict:
-        v = self._vocab_projeto
+        v = self._banco.vocab_local()
+        comunidade = [{"de": r["de"], "para": r["para"], "origem": r["origem"]}
+                      for r in self._banco.vocab_linhas()
+                      if r["origem"] != "local" and r["tipo"] == "correcao"]
         return {"palavras": sorted(v["palavras"], key=str.lower),
                 "correcoes": dict(sorted(v["correcoes"].items(), key=lambda kv: kv[0].lower())),
-                "ignorar": sorted(v["ignorar"], key=str.lower)}
+                "ignorar": sorted(v["ignorar"], key=str.lower),
+                "correcoes_comunidade": sorted(comunidade, key=lambda x: x["de"].lower())}
 
     @resposta_segura
     def dicionario(self):
@@ -53,16 +54,13 @@ class VocabularioAPI:
         palavra = " ".join(str(palavra).split())
         if len(palavra) < 2:
             raise ErroUsuario("Palavra muito curta.")
-        lista = self._vocab_projeto["palavras"]
-        if mvoc.normalizar(palavra) not in {mvoc.normalizar(x) for x in lista}:
-            lista.append(palavra)
+        self._banco.vocab_definir("palavra", palavra, autor=self._autor())
         return self._aplicar_vocabulario("adicionou_palavra", palavra=palavra)
 
     @resposta_segura
     def remover_palavra(self, palavra: str):
         self._exigir_projeto()
-        self._vocab_projeto["palavras"] = [x for x in self._vocab_projeto["palavras"]
-                                           if mvoc.normalizar(x) != mvoc.normalizar(palavra)]
+        self._banco.vocab_remover("palavra", palavra)
         return self._aplicar_vocabulario("removeu_palavra", palavra=palavra)
 
     @resposta_segura
@@ -79,36 +77,28 @@ class VocabularioAPI:
             # página a página, na transcrição assistida — nunca por regra global.
             raise ErroUsuario("Números e palavras de 1–2 letras não podem ser corrigidos em todos "
                               "os documentos de uma vez: a troca atingiria valores certos em outras "
-                              "páginas. Esses ficam para a transcrição assistida, página a página.")
-        corr = self._vocab_projeto["correcoes"]
-        for k in [k for k in corr if mvoc.normalizar(k) == mvoc.normalizar(de)]:
-            del corr[k]
-        corr[de] = para
+                              "páginas. Use a transcrição assistida, página a página.")
+        self._banco.vocab_definir("correcao", de, para, autor=self._autor())
         # quem corrige explicitamente também está dizendo que a regra automática não vale
-        self._vocab_projeto["ignorar"] = [x for x in self._vocab_projeto["ignorar"]
-                                          if mvoc.normalizar(x) != mvoc.normalizar(de)]
+        self._banco.vocab_remover("ignorar", de)
         return self._aplicar_vocabulario("corrigiu_palavra", de=de, para=para)
 
     @resposta_segura
     def remover_correcao(self, de: str):
         self._exigir_projeto()
-        corr = self._vocab_projeto["correcoes"]
-        for k in [k for k in corr if mvoc.normalizar(k) == mvoc.normalizar(de)]:
-            del corr[k]
+        self._banco.vocab_remover("correcao", de)
         return self._aplicar_vocabulario("removeu_correcao", de=de)
 
     @resposta_segura
     def manter_original(self, palavra: str):
-        """Desfaz uma correção AUTOMÁTICA: o OCR estava certo."""
+        """O OCR estava certo: desfaz, NESTE computador, uma correção automática
+        (do dicionário) ou vinda da comunidade."""
         self._exigir_projeto()
-        lista = self._vocab_projeto["ignorar"]
-        if mvoc.normalizar(palavra) not in {mvoc.normalizar(x) for x in lista}:
-            lista.append(palavra)
+        self._banco.vocab_definir("ignorar", palavra, autor=self._autor())
         return self._aplicar_vocabulario("manteve_original", palavra=palavra)
 
     @resposta_segura
     def remover_ignorar(self, palavra: str):
         self._exigir_projeto()
-        self._vocab_projeto["ignorar"] = [x for x in self._vocab_projeto["ignorar"]
-                                          if mvoc.normalizar(x) != mvoc.normalizar(palavra)]
+        self._banco.vocab_remover("ignorar", palavra)
         return self._aplicar_vocabulario("voltou_a_corrigir", palavra=palavra)

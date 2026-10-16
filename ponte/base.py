@@ -90,6 +90,13 @@ class BaseAPI:
         except Exception:
             pass
 
+    def _autor(self) -> str:
+        """Nome de quem usa este computador (aba Comunidade), para a autoria
+        de correções e fatos. Vazio se não preenchido."""
+        if self._projeto is None:
+            return ""
+        return (self._projeto.config.get("autor") or {}).get("nome", "")
+
     def _exigir_projeto(self):
         if self._projeto is None:
             raise ErroUsuario("Escolha primeiro a pasta do projeto (aba Catálogo, passo 1).")

@@ -29,7 +29,7 @@ class CatalogoAPI:
         arquivo = self._projeto.salvar_categorias(bacia, base, cats)
         self._projeto.registrar("conectou", bacia=bacia, categorias=len(cats))
         return {"bacia": bacia, "base": base, "categorias": cats,
-                "salvo_em": os.path.relpath(arquivo, self._projeto.pasta)}
+                "salvo_em": self._projeto.rel(arquivo)}
 
     def _exigir_conexao(self):
         if self._cliente is None:
@@ -46,7 +46,7 @@ class CatalogoAPI:
         self._projeto.registrar("listou_categoria", bacia=self._bacia, categoria=categoria,
                                 pocos=len(r["pocos"]), partes=len(r["partes"]))
         return {"categoria": categoria, **r,
-                "salvo_em": os.path.relpath(arquivo, self._projeto.pasta)}
+                "salvo_em": self._projeto.rel(arquivo)}
 
     def _ao_listar_pocos(self, bacia, categoria, pocos):
         """Gancho: outras partes da ponte registram os poços vistos no portal."""
@@ -68,7 +68,7 @@ class CatalogoAPI:
                             (not a["tamanho"] or os.path.getsize(destino) == a["tamanho"]))
             a["parcial"] = not a["baixado"] and os.path.isfile(destino + ".part")
         return {**mapa, "categoria": categoria, "parte": parte,
-                "salvo_em": os.path.relpath(arquivo, self._projeto.pasta)}
+                "salvo_em": self._projeto.rel(arquivo)}
 
     @resposta_segura
     def baixar(self, poco: str, arquivos: list):
@@ -102,7 +102,7 @@ class CatalogoAPI:
     def _emitir_download(self, evento: dict):
         if evento.get("arquivo_local") and self._projeto:
             self._ao_terminar_download(evento)
-            evento["arquivo_local"] = os.path.relpath(evento["arquivo_local"], self._projeto.pasta)
+            evento["arquivo_local"] = self._projeto.rel(evento["arquivo_local"])
         self._js("eventoDownload", evento)
 
     def _ao_terminar_download(self, evento: dict):
