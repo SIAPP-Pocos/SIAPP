@@ -148,22 +148,17 @@ class ClienteREATE:
             time.sleep(espera)
         self._ultima_req = time.monotonic()
 
-    def listar(self, caminho: str = "/") -> list[dict]:
-        """
-        Lista o conteúdo imediato de uma pasta remota (PROPFIND, Depth 1).
-        Devolve [{"nome", "pasta", "tamanho", "modificado", "caminho"}, ...].
-        """
+    def _propfind(self, caminho: str, profundidade: str, timeout_s: float | None = None) -> list[dict]:
         caminho = "/" + caminho.strip("/") + "/" if caminho.strip("/") else "/"
         url = URL_WEBDAV + quote(caminho, safe="/")
-
         try:
             with self._trava:
                 self._aguardar_vez()
                 resp = self.sessao.request(
                     "PROPFIND", url,
-                    headers={"Depth": "1", "Content-Type": "application/xml; charset=utf-8"},
+                    headers={"Depth": profundidade, "Content-Type": "application/xml; charset=utf-8"},
                     data=_CORPO_PROPFIND.encode("utf-8"),
-                    timeout=self.timeout_s,
+                    timeout=timeout_s or self.timeout_s,
                 )
         except requests.exceptions.RequestException as e:
             raise ErroREATE(f"Sem conexão com o REATE ({type(e).__name__}). "
@@ -183,24 +178,43 @@ class ClienteREATE:
             raise ErroREATE("O portal respondeu algo que não é uma listagem WebDAV.") from e
 
         itens = []
-        for r in raiz.findall("d:response", _NS)[1:]:   # o 1º é a própria pasta
-            href = r.findtext("d:href", default="", namespaces=_NS)
-            nome = unquote(href.rstrip("/").rsplit("/", 1)[-1])
-            if not nome:
+        for r in raiz.findall("d:response", _NS):
+            href = unquote(r.findtext("d:href", default="", namespaces=_NS))
+            if "/webdav" not in href:
                 continue
+            rel = href.split("/webdav", 1)[1] or "/"
+            if rel.rstrip("/") == caminho.rstrip("/"):
+                continue                                  # a própria pasta
             prop = r.find("d:propstat/d:prop", _NS)
             if prop is None:
                 continue
             eh_pasta = prop.find("d:resourcetype/d:collection", _NS) is not None
+            nome = rel.rstrip("/").rsplit("/", 1)[-1]
+            if not nome:
+                continue
             tamanho = prop.findtext("d:getcontentlength", default="", namespaces=_NS)
             itens.append({
                 "nome": nome,
                 "pasta": eh_pasta,
                 "tamanho": int(tamanho) if tamanho.isdigit() else 0,
                 "modificado": prop.findtext("d:getlastmodified", default="", namespaces=_NS),
-                "caminho": caminho + nome + ("/" if eh_pasta else ""),
+                "caminho": rel.rstrip("/") + ("/" if eh_pasta else ""),
             })
         return itens
+
+    def listar(self, caminho: str = "/") -> list[dict]:
+        """
+        Lista o conteúdo imediato de uma pasta remota (PROPFIND, Depth 1).
+        Devolve [{"nome", "pasta", "tamanho", "modificado", "caminho"}, ...].
+        """
+        return self._propfind(caminho, "1")
+
+    def listar_arvore(self, caminho: str) -> list[dict]:
+        """Tudo o que há abaixo de `caminho`, em UMA requisição (PROPFIND Depth
+        infinity). O portal aceita: uma pasta "parte" com 100 poços (1.739
+        itens, 560 KB) volta em ~3 s (conferido em 16/10/2026) — contra ~400
+        requisições pasta a pasta."""
+        return self._propfind(caminho, "infinity", timeout_s=max(self.timeout_s, 180))
 
     def descobrir_categorias(self) -> tuple[str, list[dict]]:
         """
@@ -316,6 +330,37 @@ class ClienteREATE:
                        "por_extensao": dict(por_ext.most_common())},
         }
 
+
+    def ler_inicio(self, caminho_remoto: str, n: int = 1024) -> bytes:
+        """Os primeiros `n` bytes de um arquivo do portal, sem baixá-lo inteiro.
+
+        Pede com Range (o portal responde 206: conferido em 16/10/2026, 4 KB de
+        um DLIS de 192 MB em 0,2 s). Se algum dia ignorar o Range e mandar o
+        arquivo todo (200), a leitura para nos `n` bytes e a conexão é fechada —
+        o custo continua pequeno."""
+        url = URL_WEBDAV + quote(caminho_remoto, safe="/")
+        try:
+            with self._trava:
+                self._aguardar_vez()
+                with self.sessao.get(url, headers={"Range": f"bytes=0-{n - 1}"}, stream=True,
+                                     timeout=(30, self.timeout_s)) as resp:
+                    if resp.status_code == 401:
+                        raise ErroREATE("O portal recusou o token da bacia (401).")
+                    if resp.status_code == 404:
+                        raise ErroREATE(f"Arquivo não encontrado no portal: {caminho_remoto}")
+                    if resp.status_code == 416:          # arquivo vazio
+                        return b""
+                    if resp.status_code not in (200, 206):
+                        raise ErroREATE(f"Resposta inesperada do portal: HTTP {resp.status_code}")
+                    pedacos, total = [], 0
+                    for bloco in resp.iter_content(min(n, 64 * 1024)):
+                        pedacos.append(bloco)
+                        total += len(bloco)
+                        if total >= n:
+                            break
+                    return b"".join(pedacos)[:n]
+        except requests.exceptions.RequestException as e:
+            raise ErroREATE(f"Sem conexão com o REATE ({type(e).__name__}).") from e
 
     def baixar(self, caminho_remoto: str, destino: str, tamanho_esperado: int = 0,
                 progresso=None, cancelar: threading.Event | None = None,

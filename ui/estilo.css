@@ -391,6 +391,10 @@ input[type=text], input[type=number] {
 .bola.cad { background: #9aa3a8; }
 .bola.reate { background: #0e5a62; }
 .bola.baixado { background: #c26a1b; }
+.bola.ac-digital { background: #2f7d4f; }
+.bola.ac-imagem { background: #d08a1e; }
+.bola.ac-sem_perfil { background: #a3342b; }
+.bola.ac-pendente { background: #8e7cc3; }
 .bola.fatos { background: #fff; border: 2.5px solid #5b2f8f; width: 9px; height: 9px; }
 .filtros { display: grid; gap: 8px; }
 .filtros label { display: grid; gap: 3px; font-size: 12px; font-weight: 600; color: var(--tinta); }
@@ -495,3 +499,23 @@ input.sugestao { background: #fff6d6; border-color: #e0b84a; }
 .v-folha { margin: 16px auto; background: #fff; box-shadow: 0 2px 14px rgba(0, 0, 0, .4); }
 .v-faixa { display: block; width: 100%; background: #f1f0ec; }
 .v-faixa img { display: block; width: 100%; height: 100%; -webkit-user-drag: none; user-select: none; }
+
+/* ---------- levantamento do acervo ---------- */
+.lv-cats { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; margin: 8px 0 6px; }
+.lv-cats label.opcao { margin: 0; }
+.lv-progresso[hidden], .mapa-legenda[hidden], #lv-acoes[hidden] { display: none; }
+.lv-progresso { display: flex; gap: 8px; align-items: center; margin: 8px 0; }
+.lv-progresso .ajuda { flex: 1; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lv-resumo { margin: 10px 0 6px; font-size: 12.5px; }
+.lv-resumo table { width: 100%; border-collapse: collapse; margin: 4px 0 8px; }
+.lv-resumo th, .lv-resumo td { text-align: left; padding: 3px 6px; border-bottom: 1px solid var(--linha); font-weight: 400; }
+.lv-resumo td.n { text-align: right; font-family: var(--mono); white-space: nowrap; }
+.lv-resumo .barra-sit { display: flex; height: 8px; border-radius: 4px; overflow: hidden; margin: 6px 0; background: var(--linha); }
+.lv-resumo .barra-sit i { display: block; height: 100%; }
+.lv-resumo h3 { font: 600 11px var(--sans); text-transform: uppercase; letter-spacing: .04em; color: var(--suave); margin: 10px 0 2px; }
+.acervo-lista li { display: flex; gap: 6px; align-items: baseline; }
+.acervo-lista li span.fmt { flex: none; }
+.acervo-lista .fmt { font: 600 10px var(--sans); text-transform: uppercase; padding: 1px 6px; border-radius: 4px; white-space: nowrap; }
+.acervo-lista .fmt.perfil { background: #e2f0e6; color: #2f7d4f; }
+.acervo-lista .fmt.documento { background: #fbefdc; color: #9a5f10; }
+.acervo-lista .fmt.outro { background: var(--fundo); color: var(--suave); }

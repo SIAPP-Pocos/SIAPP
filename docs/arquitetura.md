@@ -7,9 +7,10 @@
 │  ui/index.html + ui/js/<aba>.js        HTML, CSS e JavaScript puros           │
 │        │  window.pywebview.api.<função>()        ▲ eventoDownload(…)          │
 │        ▼                                         │ eventoDocumento(…)         │
+│                                                  │ eventoLevantamento(…)      │
 │  ponte/  API da janela, uma parte por aba (catalogo, pocos, documentos,       │
-│          vocabulario, fatos, perfis, comunidade) — valida, chama o motor,     │
-│          devolve dicionários; nunca deixa exceção chegar ao JavaScript        │
+│          vocabulario, fatos, perfis, comunidade, levantamento) — valida,      │
+│          chama o motor, devolve dicionários; nunca deixa exceção chegar ao JS │
 └──────────────┬───────────────────────────────────────────────────────────────┘
                ▼
   motor/  (não conhece a interface; pode ser usado por script ou notebook)
@@ -18,6 +19,7 @@
     documentos.py   texto/OCR, índice FTS5           perfis.py      DLIS/LIS/LAS → metros
     vocabulario.py  correção de OCR em camadas       comunidade.py  pacotes e base
     projeto.py      pasta de projeto, procedência    registro.py    siapp.log
+    formatos.py     formato pelo conteúdo (1 KB)     levantamento.py  acervo da bacia, sem baixar
                ▼
   ambiente_teste/  — pasta de projeto (contrato entre as partes)
 ```

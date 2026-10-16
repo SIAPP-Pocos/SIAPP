@@ -59,30 +59,42 @@ O nome **não é padronizado** — muda entre poços, até na mesma bacia.
 
 ---
 
-## Duas "gerações" de arquivo
+## Duas "gerações" de arquivo — e o que `.tif` quer dizer
 
 | | Geração antiga | Geração nova |
 |---|---|---|
 | Padrão de nome | `7CS__0016__AL_7CS__0016__AL.tif` (maiúsculas, zeros à esquerda, nome duplicado) | `7-anb-9-al_brsa_raw.dlis` · `1-AURI-12-RN_AIT_P.DLIS` |
-| Conteúdo da pasta de perfis | **`.tif`** — que pode ser imagem escaneada **ou DLIS com extensão trocada** (ver abaixo) | **`.dlis`** — curvas digitais |
-| Serve para petrofísica? | Depende do conteúdo: imagem, não sem digitalização; DLIS, sim | Sim |
+| Conteúdo da pasta de perfis | `.tif` e `.lis` — **LIS** (curvas digitais) dentro de um envelope de fita | `.dlis` — curvas digitais |
+| Serve para petrofísica? | **Sim** | Sim |
 
 > [!IMPORTANT]
-> **O `.tif` da geração antiga pode ser um DLIS.** Conferido em 16/10/2026:
-> `5-PX-11-RN/Perfil Convencional/5PX__0011__RN_5PX__0011__RN.tif` (20 MB) começa com
-> `V1.00RECORD … RECALL TO DLIS DATA TRANSFER` — rótulo de DLIS, não de TIFF. É uma
-> recuperação digital da Petrobras (2020, conjunto `SPEP-RN-01V1`, ferramentas
-> HRI/FWS/MSFL/SDL/DSN/GR) com 156–1.795 m e GR, SP, cáliper, resistividades, RHOB, NPHI, DT.
-> O dlisio lê normalmente. O SIAPP decide o formato pelos primeiros bytes
-> (`motor/formatos.py`), não pela extensão.
+> **`.tif` no REATE não é imagem.** Na perfilagem, TIF é o **Tape Image Format**: a cópia
+> de uma fita magnética, com um cabeçalho de 12 bytes antes de cada bloco (tipo, posição do
+> bloco anterior, posição do próximo). Dentro vem um **LIS** — o formato de curvas digitais
+> anterior ao DLIS. Conferido em 16/10/2026 lendo o começo dos arquivos no portal:
+>
+> | Arquivo | Começo | Conteúdo |
+> |---|---|---|
+> | `7CS__0016__AL_7CS__0016__AL.tif` (pasta `Perfis_digitais`) | `00 00 00 00 00 00 00 00 90 00 00 00 00 84 00 00 84 00 RECALL…` | LIS em envelope TIF |
+> | `1FL__0001__RN_1FL__0001__RN.tif` | idem | LIS em envelope TIF |
+> | `1FJ__0001__RN_1FJ__0001__RN.lis` | idem | o `.lis` também vem no envelope |
+> | `5PX__0011__RN_5PX__0011__RN.tif` (20 MB) | `   1V1.00RECORD… RECALL TO DLIS DATA TRANSFER` | **DLIS** sem envelope (recuperação Petrobras, 2020) |
+>
+> `RECALL` é o serviço de recuperação de dados da Petrobras que gerou esses arquivos a partir
+> das fitas originais. O `dlisio` lê o LIS com ou sem o envelope (a própria documentação
+> cita `.TIF` como extensão comum de LIS). O SIAPP decide o formato pelos primeiros bytes
+> (`motor/formatos.py`), nunca pela extensão.
 
 > [!WARNING]
-> **Impacto direto no tamanho do acervo utilizável**
-> Em 10 poços abertos, **5 tinham só `.tif`** na pasta de perfis, e 2 não tinham perfil nenhum. O número de poços listados numa categoria **não é** o número de poços com dado digital. Quantificar isso por bacia é um resultado relevante para o artigo.
+> **Correção de uma conclusão anterior.** Em 10 poços abertos à mão, 5 tinham "só `.tif`" na
+> pasta de perfis, e isso foi lido como "só imagem escaneada, não serve para petrofísica sem
+> digitalização". **Estava errado**: o exemplo citado (`7CS__0016__AL`) é LIS. Numa amostra de
+> 27 poços (Potiguar e Alagoas, 16/10/2026), **nenhum** arquivo de perfil era imagem — todos
+> DLIS ou LIS; só 1 poço não tinha pasta de perfis.
 >
-> **Revisão (16/10/2026):** "só `.tif`" não quer dizer "só imagem" — pelo menos um desses `.tif` é DLIS. O levantamento precisa baixar (ou ler o começo de) cada `.tif` e classificar pelo conteúdo antes de contar.
->
-> O padrão de nome antigo é o mesmo dos arquivos `.lis` de Carmópolis (`7CP__0010__SE_7CP__0010__SE.lis`) — a geração antiga pode ter LIS em alguns casos, não só TIF. A verificar.
+> A contagem por bacia (quantos poços têm perfil digital, quantos só imagem, quantos nada)
+> passa a ser feita pelo **levantamento do acervo** do SIAPP (aba Mapa), que classifica cada
+> arquivo pelo conteúdo — ver [levantamento.md](levantamento.md).
 
 ---
 
@@ -118,7 +130,7 @@ O nome **não é padronizado** — muda entre poços, até na mesma bacia.
 ## Rascunho — o que a tela inicial deve explicar
 
 - [ ] O que é cada pasta (perfis, teste de formação, perfil composto, esquema de ferramenta, pasta do poço)
-- [ ] Diferença entre **DLIS / LIS** (dado digital) e **TIF / PDF** (imagem)
+- [ ] Diferença entre **DLIS / LIS** (dado digital, inclusive `.tif` de fita) e **PDF / TIFF** (imagem)
 - [ ] Passada principal × repetida — quando usar cada uma
 - [ ] Teste de formação a cabo — o que contém e para que serve
 - [ ] Recomendações por finalidade:

@@ -205,3 +205,37 @@ def test_tif_sem_processar_abre_amplia_e_arquivo_qualquer_abre_fora(janela, tmp_
     janela.esperar("document.getElementById('status').textContent.includes('programa do computador')")
     assert abertos and abertos[0][1].endswith("notas.txt")
     assert not janela.erros_js, janela.erros_js
+
+
+def test_levantamento_do_acervo_no_mapa(janela, monkeypatch):
+    from test_levantamento import TIF_LIS, PDF, ClienteFalso
+    from test_pocos import csv_exemplo
+    from motor import reate
+    falso = ClienteFalso({
+        "/POCO/Categoria-1/1-AURI-12-RN/Perfil Convencional/1AURI.tif": TIF_LIS,
+        "/POCO/Categoria-7/Categoria-7_parte1/7-GMR-13-RN/Pasta de Poco/pasta.pdf": PDF,
+    })
+    monkeypatch.setattr(reate.ClienteREATE, "da_bacia", classmethod(lambda cls, bacia, **kw: falso))
+    p = janela.page
+    abrir_projeto(janela)
+    janela.api._importar_cadastro(csv_exemplo(), "anp:teste")
+    p.click("#aba-mapa")
+    janela.esperar("document.getElementById('mapa-resumo').textContent.includes('2 poço')")
+    p.select_option("#lv-bacia", "Potiguar")
+    janela.esperar("document.getElementById('lv-resumo').textContent.includes('Ainda não levantada')")
+    p.click("#lv-carregar")
+    janela.esperar("document.querySelectorAll('.lv-cat').length === 2")
+    p.click("#lv-iniciar")
+    janela.esperar("document.getElementById('lv-resumo').textContent.includes('2 pasta(s) de poço')", 30)
+    assert "Levantamento concluído" in janela.status()
+    texto = p.text_content("#lv-resumo")
+    assert ".tif → LIS" in texto and "perfil digital" in texto
+    assert p.is_visible("#legenda-acervo") and p.input_value("#f-cor") == "acervo"
+    p.select_option("#f-acervo", "digital")
+    janela.esperar("document.querySelectorAll('#lista-mapa button').length === 1")
+    p.click("#lista-mapa button")
+    janela.esperar("document.getElementById('fi-corpo').textContent.includes('No acervo do REATE')")
+    assert "LIS em fita" in p.text_content("#fi-corpo")
+    p.click("#lv-exportar")
+    janela.esperar("document.getElementById('status').textContent.includes('_pocos.csv')")
+    assert not janela.erros_js, janela.erros_js

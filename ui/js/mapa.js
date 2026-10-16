@@ -34,6 +34,8 @@ async function carregarMapa() {
   if (!r.ok) return;
   desenharCadastroInfo(r);
   preencherBacias(r.bacias);
+  preencherBaciasLevantamento([...$("sel-bacia").options].map((o) => o.value));
+  carregarLevantamento();
   if (r.cadastro) await consultarMapa(true);
 }
 
@@ -67,6 +69,7 @@ function filtrosMapa() {
     bacia: $("f-bacia").value, texto: $("f-texto").value.trim(), terra_mar: $("f-terra").value,
     tipo: $("f-tipo").value ? Number($("f-tipo").value) : null,
     so_reate: $("f-reate").checked, so_baixados: $("f-baixados").checked,
+    acervo: $("f-acervo").value, familia: $("f-familia").value,
   };
 }
 
@@ -79,20 +82,35 @@ async function consultarMapa(enquadrar = false) {
   desenharMarcadores(enquadrar);
   const nReate = pocosMapa.filter((p) => p.reate).length;
   const nBaix = pocosMapa.filter((p) => p.baixados).length;
+  const nDig = pocosMapa.filter((p) => p.acervo === "digital").length;
   $("mapa-resumo").textContent = `${numero(pocosMapa.length, 0)} poço(s) com coordenadas` +
     (nReate ? ` · ${numero(nReate, 0)} com pasta no REATE` : "") +
     (nBaix ? ` · ${numero(nBaix, 0)} com arquivos baixados` : "") +
+    (nDig ? ` · ${numero(nDig, 0)} com perfil digital` : "") +
     (r.truncado ? " · lista cortada: refine os filtros" : "");
   desenharListaMapa();
 }
 
-function corPoco(p) { return p.baixados ? CORES.baixado : p.reate ? CORES.reate : CORES.cad; }
+function corPorAcervo() { return $("f-cor").value === "acervo"; }
+
+function corPoco(p) {
+  if (corPorAcervo()) return CORES_ACERVO[p.acervo] || CORES.cad;
+  return p.baixados ? CORES.baixado : p.reate ? CORES.reate : CORES.cad;
+}
+
+function destaquePoco(p) { return corPorAcervo() ? Boolean(p.acervo) : Boolean(p.reate || p.baixados); }
+
+function trocarCorMapa() {
+  $("legenda-pasta").hidden = corPorAcervo();
+  $("legenda-acervo").hidden = !corPorAcervo();
+  if (pocosMapa.length) { desenharMarcadores(false); desenharListaMapa(); }
+}
 
 function desenharMarcadores(enquadrar) {
   camadaPocos.clearLayers();
   const pontos = [];
   for (const p of pocosMapa) {
-    const destaque = p.reate || p.baixados;
+    const destaque = destaquePoco(p);
     const m = L.circleMarker([p.lat, p.lon], {
       radius: destaque ? 5 : 3, weight: p.fatos ? 2.5 : 0.6, color: p.fatos ? "#5b2f8f" : "#ffffff",
       fillColor: corPoco(p), fillOpacity: destaque ? 0.95 : 0.6,
@@ -112,7 +130,8 @@ function desenharListaMapa() {
   for (const p of ordem.slice(0, 300)) {
     const b = el("button");
     b.append(el("i", "bola", ""), el("span", "mono", p.id),
-             el("span", "ajuda", [p.campo, p.situacao].filter(Boolean).join(" · ")));
+             el("span", "ajuda", [p.campo, corPorAcervo() ? NOMES_SITUACAO[p.acervo] : p.situacao]
+                                   .filter(Boolean).join(" · ")));
     b.firstChild.style.background = corPoco(p);
     b.onclick = () => { abrirFicha(p.id); mapa.setView([p.lat, p.lon], Math.max(mapa.getZoom(), 12)); };
     const li = el("li");
@@ -189,6 +208,8 @@ async function abrirFicha(id) {
   }
   corpo.appendChild(ul);
 
+  secaoAcervoFicha(corpo, r.acervo);
+
   if (r.curvas.length) {
     corpo.appendChild(el("h3", "", "Curvas disponíveis"));
     const t = el("table", "tabela");
@@ -246,7 +267,11 @@ function ligarMapa() {
   $("btn-cadastro-arq").onclick = () => baixarCadastro($("btn-cadastro-arq"), "importar_cadastro_arquivo");
   $("btn-catalogar").onclick = catalogarBacia;
   $("fi-fechar").onclick = fecharFicha;
-  for (const id of ["f-bacia", "f-terra", "f-tipo", "f-reate", "f-baixados"]) $(id).onchange = () => consultarMapa(id === "f-bacia");
+  for (const id of ["f-bacia", "f-terra", "f-tipo", "f-reate", "f-baixados", "f-acervo", "f-familia"]) {
+    $(id).onchange = () => consultarMapa(id === "f-bacia");
+  }
+  $("f-cor").onchange = trocarCorMapa;
+  ligarLevantamento();
   let espera = null;
   $("f-texto").oninput = () => { clearTimeout(espera); espera = setTimeout(() => consultarMapa(), 350); };
 }

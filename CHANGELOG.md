@@ -6,6 +6,29 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 
 ## [Não lançado]
 
+## [0.12.0] — 2026-10-16
+### Adicionado
+- **Levantamento do acervo** (aba Mapa): para uma bacia — inteira ou algumas categorias —
+  classifica cada poço em *perfil digital*, *só imagem*, *sem perfil* ou *falta conferir*,
+  **pelo conteúdo** dos arquivos e sem baixá-los: lista cada pasta "parte" numa requisição
+  (WebDAV `Depth: infinity`) e lê só o primeiro 1 KB de cada arquivo ambíguo (HTTP `Range`).
+  Roda em segundo plano, com progresso; cancelar guarda o que já foi lido e a próxima vez
+  continua de onde parou. Ver `docs/levantamento.md`.
+- Opção **Listar as curvas**: lê até 256 KB de cada DLIS/LIS e lista os canais com o `dlisio`
+  (famílias GR, RHOB, NPHI, DT…), sem baixar o arquivo.
+- Mapa: cor dos poços pelo levantamento, filtros **No acervo** e **Com a curva**; ficha do
+  poço com os arquivos de perfil do portal e o formato real de cada um.
+- **Exportar CSV** do levantamento (um por poço, um por arquivo), para tabelas do artigo.
+- `ClienteREATE.listar_arvore` (listagem recursiva) e `ClienteREATE.ler_inicio` (começo do
+  arquivo com `Range`; se o servidor ignorar, para nos N bytes e fecha a conexão).
+### Corrigido
+- **`.tif` do REATE é LIS, não imagem**: o reconhecimento de formato da 0.11.1 tratava o
+  envelope de fita (*Tape Image Format*) como TIFF. Agora reconhece o envelope (e o LIS ou
+  DLIS dentro dele) e o LIS sem envelope. Esses arquivos saem da aba Documentos e vão para
+  Perfis — conferido com o leitor de LIS num arquivo de exemplo no mesmo formato (38 curvas).
+### Documentação
+- `docs/acervo-reate.md`: corrigida a conclusão de que a geração antiga seria "só imagem".
+
 ## [0.11.1] — 2026-10-16
 ### Corrigido
 - **"Não está abrindo o TIF"**: o `5PX__0011__RN_5PX__0011__RN.tif` do 5-PX-11-RN não é

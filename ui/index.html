@@ -197,10 +197,51 @@
               <option value="7">7 · desenvolvimento</option><option value="8">8 · injeção</option>
               <option value="9">9 · especial</option><option value="10">10 · outros</option></select></label>
           </div>
+          <div class="linha">
+            <label>No acervo <select id="f-acervo"><option value="">todos</option>
+              <option value="digital">perfil digital</option><option value="imagem">só imagem</option>
+              <option value="sem_perfil">sem perfil</option><option value="pendente">falta conferir</option>
+              <option value="nao_levantado">não levantado</option></select></label>
+            <label>Com a curva <select id="f-familia"><option value="">qualquer</option>
+              <option value="GR">GR</option><option value="SP">SP</option><option value="CALI">cáliper</option>
+              <option value="RES_PROF">resist. profunda</option><option value="RHOB">RHOB</option>
+              <option value="NPHI">NPHI</option><option value="DT">DT</option><option value="PE">PE</option></select></label>
+          </div>
+          <label>Cor dos poços <select id="f-cor"><option value="pasta">pasta no REATE e downloads</option>
+            <option value="acervo">levantamento do acervo</option></select></label>
           <label class="opcao"><input type="checkbox" id="f-reate"> Só com pasta no REATE</label>
           <label class="opcao"><input type="checkbox" id="f-baixados"> Só com arquivos baixados</label>
         </div>
         <p class="ajuda" id="mapa-resumo"></p>
+      </section>
+      <section class="etapa" id="etapa-levantamento">
+        <h2>Levantamento do acervo</h2>
+        <p class="ajuda">O que cada poço tem no portal, <strong>pelo conteúdo</strong> dos arquivos — não pelo
+          nome: no REATE, <code>.tif</code> quase sempre é LIS em envelope de fita, não imagem. O SIAPP lista as
+          pastas e lê só o começo (1 KB) de cada arquivo de perfil. Nada é baixado inteiro; dá para cancelar e
+          continuar depois.</p>
+        <div class="filtros">
+          <label>Bacia do REATE <select id="lv-bacia"></select></label>
+        </div>
+        <div class="lv-cats" id="lv-cats">
+          <button class="btn secundario pequeno" id="lv-carregar">Escolher categorias…</button>
+          <span class="ajuda">sem escolher, levanta a bacia inteira</span>
+        </div>
+        <label class="opcao"><input type="checkbox" id="lv-curvas"> Listar as curvas (lê até 256 KB de cada perfil)</label>
+        <label class="opcao"><input type="checkbox" id="lv-todos"> <span>Conferir também <code>.dlis</code> e <code>.las</code> pelo conteúdo</span></label>
+        <div class="linha">
+          <button class="btn" id="lv-iniciar">Levantar</button>
+          <button class="btn secundario" id="lv-cancelar" hidden>Cancelar</button>
+        </div>
+        <div class="lv-progresso" id="lv-progresso" hidden>
+          <span class="ajuda" id="lv-texto"></span>
+          <span class="dl-trilho"><span class="dl-barra" id="lv-barra"></span></span>
+        </div>
+        <div class="lv-resumo" id="lv-resumo"></div>
+        <div class="linha" id="lv-acoes" hidden>
+          <button class="btn secundario pequeno" id="lv-exportar" title="Um CSV por poço e um por arquivo, para o Excel">Exportar CSV</button>
+          <button class="btn secundario pequeno" id="lv-pasta">Abrir a pasta</button>
+        </div>
       </section>
       <section class="etapa">
         <h2>Pastas do REATE</h2>
@@ -212,11 +253,18 @@
     </aside>
     <section class="principal mapa-principal">
       <div id="mapa" class="mapa-div"></div>
-      <div class="mapa-legenda">
+      <div class="mapa-legenda" id="legenda-pasta">
         <span><i class="bola cad"></i>só no cadastro</span>
         <span><i class="bola reate"></i>pasta no REATE</span>
         <span><i class="bola baixado"></i>arquivos baixados</span>
         <span><i class="bola fatos"></i>com dados transcritos</span>
+      </div>
+      <div class="mapa-legenda" id="legenda-acervo" hidden>
+        <span><i class="bola ac-digital"></i>perfil digital</span>
+        <span><i class="bola ac-imagem"></i>só imagem</span>
+        <span><i class="bola ac-sem_perfil"></i>sem perfil</span>
+        <span><i class="bola ac-pendente"></i>falta conferir</span>
+        <span><i class="bola cad"></i>não levantado</span>
       </div>
       <div class="vazio mapa-vazio" id="mapa-vazio">
         <p class="vazio-titulo">Mapa dos poços</p>
@@ -535,6 +583,7 @@
   <script src="js/visor.js"></script>
   <script src="js/comunidade.js"></script>
   <script src="js/mapa.js"></script>
+  <script src="js/levantamento.js"></script>
   <script src="js/perfis.js"></script>
   <script src="js/app.js"></script>
 </body>

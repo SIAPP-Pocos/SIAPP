@@ -137,3 +137,51 @@ def test_uma_requisicao_por_vez_mesmo_com_varias_threads():
     [t.start() for t in ts]
     [t.join() for t in ts]
     assert pico[0] == 1
+
+
+def test_listar_arvore_usa_depth_infinity_e_caminhos_aninhados():
+    c = reate.ClienteREATE("T", pausa_s=0)
+    pedidos = []
+
+    def falso(metodo, url, **kw):
+        pedidos.append(kw["headers"]["Depth"])
+        return Resp(207, xml_propfind("/POCO/Cat/", [("1-A-1-RN", True, 0), ("1-A-1-RN/Perfil Convencional", True, 0),
+                                                       ("1-A-1-RN/Perfil Convencional/a b.tif", False, 10)]))
+    c.sessao.request = falso
+    itens = c.listar_arvore("/POCO/Cat/")
+    assert pedidos == ["infinity"]
+    assert [i["caminho"] for i in itens] == ["/POCO/Cat/1-A-1-RN/", "/POCO/Cat/1-A-1-RN/Perfil Convencional/",
+                                             "/POCO/Cat/1-A-1-RN/Perfil Convencional/a b.tif"]
+    assert itens[-1]["nome"] == "a b.tif" and itens[-1]["tamanho"] == 10
+
+
+class RespFluxo:
+    def __init__(self, codigo, dados):
+        self.status_code, self.dados, self.lidos = codigo, dados, 0
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *a):
+        return False
+
+    def iter_content(self, n):
+        for i in range(0, len(self.dados), n):
+            self.lidos += 1
+            yield self.dados[i:i + n]
+
+
+def test_ler_inicio_pede_range_e_para_nos_n_bytes():
+    c = reate.ClienteREATE("T", pausa_s=0)
+    vistos = {}
+
+    def get(url, headers=None, **kw):
+        vistos["range"] = headers["Range"]
+        vistos["url"] = url
+        vistos["resp"] = RespFluxo(200, b"x" * 1_000_000)   # servidor que ignora o Range
+        return vistos["resp"]
+    c.sessao.get = get
+    dados = c.ler_inicio("/POCO/Cat/1-A-1-RN/Perfil Convencional/a b.tif", 1024)
+    assert len(dados) == 1024 and vistos["range"] == "bytes=0-1023"
+    assert vistos["url"].endswith("/webdav/POCO/Cat/1-A-1-RN/Perfil%20Convencional/a%20b.tif")
+    assert vistos["resp"].lidos == 1                         # não leu o resto do arquivo

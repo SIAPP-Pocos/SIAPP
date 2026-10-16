@@ -121,6 +121,25 @@ MIGRACOES: list[str] = [
         autor TEXT, arquivo TEXT, criado_em TEXT, aplicado_em TEXT, resumo TEXT
     );
     """,
+    # 2 — levantamento do acervo (SIAPP 0.12): o que existe no portal, pelo conteúdo
+    """
+    CREATE TABLE acervo_pocos(
+        bacia TEXT NOT NULL, caminho TEXT NOT NULL, nome_pasta TEXT, poco_id TEXT,
+        categoria TEXT, parte TEXT, n_arquivos INTEGER, bytes INTEGER,
+        n_perfil INTEGER, situacao TEXT, formatos TEXT, familias TEXT,
+        listado_em TEXT, classificado_em TEXT,
+        PRIMARY KEY (bacia, caminho)
+    );
+    CREATE INDEX acervo_pocos_id ON acervo_pocos(poco_id);
+    CREATE TABLE acervo_arquivos(
+        bacia TEXT NOT NULL, caminho TEXT NOT NULL, poco_caminho TEXT NOT NULL,
+        nome TEXT, pasta TEXT, ext TEXT, tamanho INTEGER, candidato INTEGER,
+        formato TEXT, envelope TEXT, verificado TEXT, curvas TEXT,
+        curvas_completas INTEGER, familias TEXT, erro TEXT, lido_em TEXT,
+        PRIMARY KEY (bacia, caminho)
+    );
+    CREATE INDEX acervo_arquivos_poco ON acervo_arquivos(bacia, poco_caminho);
+    """,
 ]
 
 

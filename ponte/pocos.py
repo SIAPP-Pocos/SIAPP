@@ -6,6 +6,7 @@ import os
 
 import webview
 
+from motor import levantamento as mlv
 from motor import pocos as mpo
 
 from .base import ErroUsuario, resposta_segura
@@ -79,14 +80,17 @@ class PocosAPI:
         f = filtros or {}
         return mpo.pocos_mapa(self._banco, bacia=f.get("bacia", ""), texto=f.get("texto", ""),
                               terra_mar=f.get("terra_mar", ""), tipo=f.get("tipo") or None,
-                              so_reate=bool(f.get("so_reate")), so_baixados=bool(f.get("so_baixados")))
+                              so_reate=bool(f.get("so_reate")), so_baixados=bool(f.get("so_baixados")),
+                              acervo=f.get("acervo", ""), familia=f.get("familia", ""))
 
     @resposta_segura
     def ficha_poco(self, poco: str):
         self._exigir_projeto()
-        d = mpo.ficha(self._banco, mpo.resolver(self._banco, poco))
+        pid = mpo.resolver(self._banco, poco)
+        d = mpo.ficha(self._banco, pid)
         if d is None:
             raise ErroUsuario(f"Poço {poco} não está no cadastro nem no catálogo deste projeto.")
+        d["acervo"] = mlv.arquivos_do_poco(self._banco, pid)
         return d
 
     @resposta_segura

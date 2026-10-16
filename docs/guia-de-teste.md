@@ -93,6 +93,27 @@ você já tinha baixado (com SHA-256) e refaz o índice de busca uma vez.
 - [ ] Transcrever num documento ainda não processado: desenhar a caixa avisa que não há
       texto; digitar os valores e salvar funciona.
 
+## 0.12 — levantamento do acervo
+
+Precisa de internet. Comece por uma categoria pequena para ver o tempo.
+
+- [ ] **Mapa → Levantamento do acervo**: bacia **Potiguar**, **Escolher categorias…**, marcar só
+      **Cat. 1**, **Levantar**. A barra mostra "1/2 · Listando…" e depois "2/2 · Conferindo
+      arquivos pelo conteúdo".
+- [ ] No fim: painel com a fração de poços com perfil digital, só imagem e sem perfil, e a
+      tabela **O nome engana** (deve aparecer `.tif → LIS`).
+- [ ] O mapa troca para **Cor dos poços: levantamento do acervo**; o filtro **No acervo: perfil
+      digital** deixa só os verdes.
+- [ ] Ficha de um poço levantado: seção **No acervo do REATE** com o formato real de cada arquivo
+      (ex.: "LIS em fita" num `.tif`).
+- [ ] **Cancelar** no meio e **Levantar** de novo: continua sem reler o que já foi lido.
+- [ ] Com **Listar as curvas** marcado (mais lento): a ficha mostra "N curva(s)"; passando o
+      mouse, a lista. O filtro **Com a curva: RHOB** funciona.
+- [ ] **Exportar CSV** → **Abrir a pasta**: dois CSV que abrem no Excel (`;`).
+- [ ] O `5PX__0011__RN_5PX__0011__RN.tif` continua na aba Perfis; um `.tif` LIS baixado também
+      vai para Perfis (não para Documentos) e abre o gráfico.
+- [ ] Para o artigo: levantar a bacia inteira (sem marcar categorias) e anotar o tempo.
+
 ## O que continua valendo das versões anteriores
 
 - Catálogo em tempo real das 24 bacias, junção das subpastas "parte", árvore do poço com tamanhos.

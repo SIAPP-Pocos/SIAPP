@@ -267,7 +267,7 @@ def bacias(banco: Banco) -> list[dict]:
 
 def pocos_mapa(banco: Banco, *, bacia: str = "", texto: str = "", terra_mar: str = "",
                tipo: int | None = None, so_reate: bool = False, so_baixados: bool = False,
-               limite: int = 40000) -> dict:
+               acervo: str = "", familia: str = "", limite: int = 40000) -> dict:
     """Poços para o mapa, em colunas (menos texto trafegando para a janela)."""
     cond, args = ["p.lat IS NOT NULL", "p.lon IS NOT NULL"], []
     if bacia:
@@ -287,14 +287,34 @@ def pocos_mapa(banco: Banco, *, bacia: str = "", texto: str = "", terra_mar: str
         cond.append("EXISTS (SELECT 1 FROM reate r WHERE r.poco_id = p.id)")
     if so_baixados:
         cond.append("EXISTS (SELECT 1 FROM arquivos a WHERE a.poco_id = p.id)")
-    sql = f"""SELECT {', '.join('p.' + c for c in _CAMPOS_MAPA)},
+    if acervo == "nao_levantado":
+        cond.append("ac.situacao IS NULL")
+    elif acervo:
+        cond.append("ac.situacao = ?")
+        args.append(acervo)
+    if familia:
+        cond.append("(',' || ac.familias || ',') LIKE ?")
+        args.append(f"%,{familia},%")
+    # um poço pode aparecer em mais de uma bacia/categoria do portal: vale a
+    # melhor situação (digital > imagem > pendente > sem perfil)
+    sql = f"""WITH ac AS (
+                SELECT poco_id,
+                       CASE max(CASE situacao WHEN 'digital' THEN 4 WHEN 'imagem' THEN 3
+                                              WHEN 'pendente' THEN 2 WHEN 'sem_perfil' THEN 1 ELSE 0 END)
+                            WHEN 4 THEN 'digital' WHEN 3 THEN 'imagem' WHEN 2 THEN 'pendente'
+                            WHEN 1 THEN 'sem_perfil' END AS situacao,
+                       group_concat(familias) AS familias
+                FROM acervo_pocos GROUP BY poco_id)
+              SELECT {', '.join('p.' + c for c in _CAMPOS_MAPA)},
                      EXISTS (SELECT 1 FROM reate r WHERE r.poco_id = p.id) AS reate,
                      (SELECT count(*) FROM arquivos a WHERE a.poco_id = p.id) AS baixados,
-                     (SELECT count(*) FROM fatos f WHERE f.poco_id = p.id) AS fatos
-              FROM pocos p WHERE {' AND '.join(cond)} LIMIT ?"""
+                     (SELECT count(*) FROM fatos f WHERE f.poco_id = p.id) AS fatos,
+                     ac.situacao AS acervo, ac.familias AS familias
+              FROM pocos p LEFT JOIN ac ON ac.poco_id = p.id
+              WHERE {' AND '.join(cond)} LIMIT ?"""
     with banco.conexao() as c:
         linhas = c.execute(sql, [*args, limite + 1]).fetchall()
-    colunas = (*_CAMPOS_MAPA, "reate", "baixados", "fatos")
+    colunas = (*_CAMPOS_MAPA, "reate", "baixados", "fatos", "acervo", "familias")
     return {"colunas": colunas, "linhas": [list(r) for r in linhas[:limite]],
             "truncado": len(linhas) > limite}
 

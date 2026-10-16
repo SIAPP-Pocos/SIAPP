@@ -22,7 +22,14 @@ def test_reconhece_pelo_conteudo(tmp_path):
     pdf.new_page()
     assert formatos.formato(escrever(t, "a.tif", SUL_DLIS + b"\x00" * 200)) == "dlis"
     assert formatos.formato(escrever(t, "b.pdf", pdf.tobytes())) == "pdf"
-    assert formatos.formato(escrever(t, "c.dat", b"II*\x00" + b"\x00" * 20)) == "tif"
+    assert formatos.formato(escrever(t, "c.dat", b"II*\x00" + b"\x00" * 20)) == "tiff"
+    # Tape Image Format com LIS dentro: começo real de 7CS__0016__AL_7CS__0016__AL.tif
+    tif_lis = bytes.fromhex("000000000000000090000000008400008400") + b"RECALL      27/ 2/20" + b" " * 40
+    assert formatos.pelos_bytes(tif_lis) == {"formato": "lis", "envelope": "tif"}
+    assert formatos.tipo(escrever(t, "7CS.tif", tif_lis)) == "perfil"
+    assert formatos.pelos_bytes(b"\x00" * 8 + b"\x90\x00\x00\x00" + SUL_DLIS)["formato"] == "dlis"
+    # LIS sem envelope: registro físico de 132 bytes, registro lógico tipo 132 (rolo)
+    assert formatos.pelos_bytes(bytes.fromhex("0084000084002020"))["formato"] == "lis"
     assert formatos.formato(escrever(t, "d.txt", b"# comentario\r\n~VERSION INFORMATION\r\n")) == "las"
     assert formatos.formato(escrever(t, "e.lis", b"\x00\x84\x00\x00")) == "lis"   # sem assinatura: extensão
     assert formatos.formato(escrever(t, "f.xyz", b"qualquer coisa")) == ""
