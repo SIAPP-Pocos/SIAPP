@@ -21,11 +21,12 @@ from motor.downloads import FilaDownloads
 from . import base
 from .base import BaseAPI, ErroUsuario, mesma_pasta, resposta_segura
 from .catalogo import CatalogoAPI
+from .comunidade import ComunidadeAPI
 from .documentos import DocumentosAPI
 from .vocabulario import VocabularioAPI
 
 
-class API(BaseAPI, CatalogoAPI, DocumentosAPI, VocabularioAPI):
+class API(BaseAPI, CatalogoAPI, DocumentosAPI, VocabularioAPI, ComunidadeAPI):
     def __init__(self):
         self._janela = None
         self._projeto = None
@@ -71,6 +72,25 @@ class API(BaseAPI, CatalogoAPI, DocumentosAPI, VocabularioAPI):
         cfg = self._projeto.config
         return {"pasta": self._projeto.pasta, "bacia_anterior": cfg.get("bacia"),
                 "criado": cfg.get("criado"), "autor": cfg.get("autor") or {}}
+
+    @resposta_segura
+    def panorama(self):
+        """Números do projeto para a tela inicial."""
+        self._exigir_projeto()
+        b = self._banco
+        arqs = b.arquivos()
+        resumo = self._projeto.resumo_texto()
+        return {
+            "arquivos": {"total": len(arqs), "bytes": sum(a["bytes"] or 0 for a in arqs),
+                         "por_tipo": {t: sum(1 for a in arqs if a["tipo"] == t)
+                                      for t in ("documento", "perfil", "outro")}},
+            "documentos": {"processados": len(resumo),
+                           "paginas": sum(v.get("n_paginas", 0) for v in resumo.values())},
+            "vocabulario": b.contar("vocab"),
+            "fatos": b.contar("fatos"),
+            "pocos": b.contar("pocos"),
+            "curvas": b.contar("curvas"),
+        }
 
     # ------------------------------------------------------ arquivos baixados
     def _id_poco(self, nome_pasta: str) -> str:

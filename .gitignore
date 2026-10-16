@@ -22,3 +22,7 @@ Thumbs.db
 desktop.ini
 .vscode/
 .idea/
+
+# Pastas locais de publicação (pacotes git para enviar ao GitHub)
+_publicar/
+_backup_git/

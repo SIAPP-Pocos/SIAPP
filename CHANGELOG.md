@@ -7,12 +7,29 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 ## [Não lançado]
 
 ## [0.7.0] — 2026-10-16
+### Adicionado
+- **Banco do projeto** (`projeto.sqlite`), com o mesmo modelo da base comunitária. Cada
+  dado guarda sua origem: feito aqui (local), de um pacote importado ou da base.
+- **Exportar contribuição**: pacote JSON (formato v2) com autoria, correções, palavras e
+  dados transcritos. Nenhum arquivo do REATE vai junto: documentos são citados pelo
+  SHA-256 e pelo caminho no portal.
+- **Importar contribuição** com prévia: o que entra, o que já existe e as correções que
+  discordam das suas (as suas continuam valendo). Cada pacote pode ser desfeito inteiro.
+- **Base comunitária**: atualizar pelas Releases do SIAPP-dados ou a partir de um arquivo.
+- Correções da comunidade aparecem em roxo; "o OCR estava certo" também as desfaz localmente.
+- Aba **Início**: o que é cada pasta e sufixo do REATE, qual arquivo baixar para cada
+  finalidade, limites do OCR e números do projeto.
+- Aba **Comunidade**: autoria (nome, instituição, ORCID), exportar, importar, base.
+- Registro de erros em `ambiente_teste/siapp.log` (com rotação), para relatar problemas.
+- Arquivos baixados entram no banco com SHA-256 (inclusive os baixados no 0.6).
+- Testes da interface num navegador sem tela, ligados à API Python de verdade.
 ### Mudado
 - Código reorganizado: `ponte/` (uma parte da API da janela por área), `ui/js/`
   (um script por aba), `pyproject.toml` com versão e dependências num lugar só.
-### Adicionado
-- Registro de erros em `ambiente_teste/siapp.log` (com rotação), para relatar problemas.
-- Testes da interface num navegador sem tela, ligados à API Python de verdade.
+- Caminhos relativos sempre com "/": a pasta de projeto funciona em qualquer sistema.
+  O índice de busca é refeito uma vez, automaticamente.
+- O vocabulário do projeto sai de `texto/vocabulario_projeto.json` para o banco
+  (migrado na primeira abertura; o JSON fica como cópia).
 
 ## [0.6.0] — 2026-10-15
 ### Adicionado

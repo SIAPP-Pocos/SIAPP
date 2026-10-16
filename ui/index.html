@@ -13,13 +13,99 @@
       <span class="nome">Sistema Integrado de Aquisição e Processamento de Perfis</span>
     </div>
     <nav class="abas" role="tablist">
-      <button class="aba ativa" id="aba-catalogo" data-vista="catalogo" role="tab" aria-selected="true">Catálogo</button>
+      <button class="aba ativa" id="aba-inicio" data-vista="inicio" role="tab" aria-selected="true">Início</button>
+      <button class="aba" id="aba-catalogo" data-vista="catalogo" role="tab" aria-selected="false">Catálogo</button>
       <button class="aba" id="aba-docs" data-vista="docs" role="tab" aria-selected="false">Documentos</button>
+      <button class="aba" id="aba-comunidade" data-vista="comunidade" role="tab" aria-selected="false">Comunidade</button>
     </nav>
     <span class="versao" id="versao">—</span>
   </header>
 
-  <main class="grade" id="vista-catalogo">
+  <main class="inicio" id="vista-inicio">
+    <div class="inicio-col">
+      <section class="abertura">
+        <h1>Dados públicos de poços, organizados</h1>
+        <p>O SIAPP lista o acervo do portal <strong>REATE</strong> (ANP/CPRM), baixa os arquivos que
+          você escolher e transforma em dado pesquisável: texto dos documentos escaneados, curvas
+          dos perfis, poços no mapa. O que você corrige pode ir para a <strong>base comunitária</strong>,
+          e todo mundo recebe já tratado.</p>
+        <div class="linha">
+          <button class="btn" id="ini-pasta">Abrir o projeto</button>
+          <span class="ajuda" id="ini-pasta-ajuda">Tudo fica na pasta <strong>ambiente_teste</strong>, ao lado do aplicativo.</span>
+        </div>
+        <div class="panorama" id="panorama" hidden></div>
+      </section>
+
+      <section>
+        <h2>Como usar</h2>
+        <ol class="fluxo">
+          <li><button data-ir="catalogo"><strong>Catálogo</strong><span>Escolha a bacia e a categoria; clique num poço para ver as pastas e os arquivos no portal.</span></button></li>
+          <li><button data-ir="catalogo"><strong>Baixar</strong><span>Marque os arquivos. Nada vem marcado: cada tipo serve a uma finalidade (veja abaixo).</span></button></li>
+          <li><button data-ir="docs"><strong>Documentos</strong><span>Extraia o texto dos PDFs e TIFs, busque termos e corrija o que o OCR leu errado.</span></button></li>
+          <li><button data-ir="comunidade"><strong>Comunidade</strong><span>Exporte suas correções, importe as de colegas e atualize a base comunitária.</span></button></li>
+        </ol>
+      </section>
+
+      <section>
+        <h2>O que tem em cada pasta do REATE</h2>
+        <p class="ajuda">O nome das pastas não é padronizado; o SIAPP reconhece as variantes mais comuns.</p>
+        <table class="tabela">
+          <thead><tr><th>Pasta</th><th>Arquivos</th><th>O que é</th></tr></thead>
+          <tbody>
+            <tr><td>Perfis digitais · Perfil Convencional</td><td><code>.dlis</code> <code>.lis</code></td>
+                <td><strong>Curvas digitais</strong> medidas no poço (raios gama, resistividade, densidade, neutrão, sônico…). É o dado para petrofísica.</td></tr>
+            <tr><td>Perfis digitais · Perfil Convencional</td><td><code>.tif</code></td>
+                <td><strong>Imagem</strong> do perfil impresso em papel (poços antigos). Serve para consulta; para petrofísica, precisa ser digitalizado.</td></tr>
+            <tr><td>Teste de Formação a Cabo</td><td><code>_RFT1…N.dlis</code></td>
+                <td>Testador de formação: pressões em pontos isolados do poço, não um perfil contínuo.</td></tr>
+            <tr><td>Perfil Composto</td><td><code>.pdf</code> <code>.tif</code></td>
+                <td>Folha-resumo do poço: litologia, curvas principais e eventos, numa escala só.</td></tr>
+            <tr><td>Esquema de Ferramentas</td><td><code>.pdf</code></td>
+                <td>Desenho da coluna de ferramentas de cada corrida de perfilagem.</td></tr>
+            <tr><td>Pasta de Poço · Pasta_poco</td><td><code>.pdf</code></td>
+                <td>Documentos do poço (relatórios, boletins, descrição de amostras). Os antigos são escaneados: o SIAPP extrai o texto por OCR.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>Sufixos dos arquivos de perfil</h2>
+        <table class="tabela">
+          <thead><tr><th>Sufixo</th><th>Significado</th><th>Situação</th></tr></thead>
+          <tbody>
+            <tr><td><code>_AIT_P</code></td><td>Passada <strong>principal</strong> da corrida: no 1-AURI-12-RN traz 128 curvas (GR, resistividade, densidade, neutrão, sônico) de 23 a 2.155 m.</td><td><span class="selo ok">conferido</span></td></tr>
+            <tr><td><code>_AIT_R</code></td><td>Passada <strong>repetida</strong>, trecho curto para controle de qualidade.</td><td><span class="selo">hipótese</span></td></tr>
+            <tr><td><code>_raw</code></td><td>Corrida principal de perfilagem.</td><td><span class="selo">hipótese</span></td></tr>
+            <tr><td><code>_sft</code> · <code>_rft</code> · <code>_RFTn</code></td><td>Testador de formação (pressões pontuais).</td><td><span class="selo">hipótese</span></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>Qual arquivo baixar</h2>
+        <table class="tabela">
+          <thead><tr><th>Para</th><th>Baixe</th></tr></thead>
+          <tbody>
+            <tr><td>Petrofísica, avaliação de formação</td><td>A passada principal (<code>_P</code>, <code>_raw</code>) em DLIS/LIS</td></tr>
+            <tr><td>Controle de qualidade das curvas</td><td>Principal + repetida (<code>_R</code>)</td></tr>
+            <tr><td>Pressão de formação, gradiente de fluido</td><td>Os testes de formação (<code>RFT</code>, <code>sft</code>)</td></tr>
+            <tr><td>Contexto geológico, descrição de amostras</td><td>Perfil composto e pasta do poço</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="limites">
+        <h2>Limites que o SIAPP sempre deixa à vista</h2>
+        <ul>
+          <li><strong>Texto lido por OCR serve para achar a página, não para fornecer números.</strong> Num teste com documento real, 6 de 18 profundidades foram lidas erradas. Números entram no banco só por transcrição conferida na imagem.</li>
+          <li>Nenhum arquivo do REATE é redistribuído: o SIAPP baixa direto do portal público e registra de onde veio cada arquivo.</li>
+          <li>Correções da comunidade nunca apagam o original e podem ser desfeitas a qualquer momento.</li>
+        </ul>
+      </section>
+    </div>
+  </main>
+
+  <main class="grade" id="vista-catalogo" hidden>
     <aside class="lateral">
       <section class="etapa" id="etapa-pasta">
         <h2><span class="num">1</span> Pasta do projeto</h2>
@@ -178,6 +264,62 @@
     </aside>
   </main>
 
+  <main class="grade comunidade" id="vista-comunidade" hidden>
+    <aside class="lateral">
+      <section class="etapa">
+        <h2>Quem é você</h2>
+        <p class="ajuda">Seu nome assina as contribuições que você exportar (licença CC-BY 4.0: quem usar os dados cita os autores).</p>
+        <form class="form-autor" id="form-autor">
+          <label>Nome completo <input id="autor-nome" type="text" autocomplete="name" required></label>
+          <label>Instituição <input id="autor-inst" type="text" placeholder="ex.: UFAL"></label>
+          <label>ORCID (opcional) <input id="autor-orcid" type="text" placeholder="0000-0000-0000-0000"></label>
+          <button class="btn" type="submit" id="btn-autor">Salvar</button>
+        </form>
+      </section>
+      <section class="etapa">
+        <h2>Como a base comunitária funciona</h2>
+        <ol class="ajuda passos">
+          <li>Você corrige o OCR e transcreve dados neste computador.</li>
+          <li><strong>Exporta</strong> um pacote (arquivo JSON, sem nenhum arquivo do REATE).</li>
+          <li>Envia o pacote ao repositório <strong>SIAPP-dados</strong>, onde ele é conferido e revisado.</li>
+          <li>Cada versão da base reúne todos os pacotes aceitos. <strong>Atualizar a base</strong> traz tudo para o seu SIAPP.</li>
+        </ol>
+      </section>
+    </aside>
+    <section class="principal">
+      <div class="cartoes">
+        <section class="cartao">
+          <h2>Suas contribuições</h2>
+          <p class="ajuda" id="com-local">—</p>
+          <label class="opcao"><input type="checkbox" id="com-novos" checked> Só o que é novo desde a última exportação</label>
+          <div class="linha">
+            <button class="btn" id="btn-exportar">Exportar pacote</button>
+            <button class="btn secundario" id="btn-pasta-contrib">Abrir a pasta</button>
+          </div>
+          <p class="ajuda resultado" id="com-exportado"></p>
+        </section>
+
+        <section class="cartao">
+          <h2>Base comunitária</h2>
+          <p class="ajuda" id="com-base">Nenhuma base aplicada ainda.</p>
+          <div class="linha">
+            <button class="btn" id="btn-base">Atualizar pela internet</button>
+            <button class="btn secundario" id="btn-base-arquivo">Importar de arquivo…</button>
+          </div>
+        </section>
+
+        <section class="cartao largo">
+          <h2>Importar o pacote de outra pessoa</h2>
+          <p class="ajuda">Você vê o que entra antes de confirmar. Se uma correção dela discordar de uma sua, <strong>a sua continua valendo</strong>.</p>
+          <button class="btn secundario" id="btn-importar">Escolher pacote…</button>
+          <div class="previa" id="previa" hidden></div>
+          <h3>Pacotes importados</h3>
+          <ul class="lista-pacotes" id="lista-pacotes"></ul>
+        </section>
+      </div>
+    </section>
+  </main>
+
   <footer class="rodape">
     <span class="ponto" id="ponto"></span>
     <span id="status">Iniciando…</span>
@@ -198,6 +340,7 @@
   <script src="js/comum.js"></script>
   <script src="js/catalogo.js"></script>
   <script src="js/documentos.js"></script>
+  <script src="js/comunidade.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

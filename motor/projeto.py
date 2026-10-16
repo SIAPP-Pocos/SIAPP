@@ -41,6 +41,7 @@ _TRAVA_ESCRITA = threading.RLock()
 
 from . import __version__ as VERSAO_SIAPP  # noqa: E402  (uma fonte só para a versão)
 ARQUIVO_CONFIG = "siapp.json"
+NOME_PASTA_PADRAO = "ambiente_teste"
 SUBPASTAS = ("catalogo", "bruto", "texto", "pocos", "execucoes")
 
 
@@ -136,6 +137,21 @@ class Projeto:
             cfg.setdefault("historico", []).append({"quando": agora(), "evento": evento, **dados})
             salvar_json(self.caminho_config, cfg)
             return cfg
+
+    def definir_config(self, **valores) -> dict:
+        """Grava chaves de configuração (ex.: autor) sem passar pelo histórico."""
+        with _TRAVA_ESCRITA:
+            cfg = self.config
+            cfg.update(valores)
+            cfg["atualizado"] = agora()
+            salvar_json(self.caminho_config, cfg)
+            return cfg
+
+    def pasta_de(self, nome: str) -> str:
+        """Subpasta do projeto, criada se não existir (contribuicoes, comunidade…)."""
+        caminho = os.path.join(self.pasta, nome)
+        os.makedirs(caminho, exist_ok=True)
+        return caminho
 
     # ---------------------------------------------------------------- catálogo
     def pasta_catalogo(self, bacia: str) -> str:

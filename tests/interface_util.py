@@ -33,11 +33,15 @@ PONTE_JS = """
 """
 
 
+class _Silencioso(http.server.SimpleHTTPRequestHandler):
+    def log_message(self, *a, **k):
+        pass
+
+
 class _Servidor(threading.Thread):
     def __init__(self):
         super().__init__(daemon=True)
-        manip = functools.partial(http.server.SimpleHTTPRequestHandler, directory=UI)
-        manip.log_message = lambda *a, **k: None
+        manip = functools.partial(_Silencioso, directory=UI)
         self.httpd = http.server.ThreadingHTTPServer(("127.0.0.1", 0), manip)
         self.url = f"http://127.0.0.1:{self.httpd.server_port}/index.html"
 

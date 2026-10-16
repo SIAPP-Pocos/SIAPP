@@ -306,3 +306,67 @@ mark { background: #ffe58a; color: inherit; border-radius: 2px; padding: 0 1px; 
 .ed-linha code { font: 600 12.5px var(--mono); background: var(--fundo); padding: 1px 6px; border-radius: 4px; }
 .ed-linha .fechar { margin-left: auto; }
 #ed-para { flex: 1; min-width: 140px; font: 13px var(--mono); padding: 7px 10px; border: 1px solid var(--linha); border-radius: 6px; }
+
+/* ---------- utilitários ---------- */
+.mono { font-family: var(--mono); }
+.btn.pequeno { padding: 4px 10px; font-size: 12px; }
+.aviso { font-size: 12.5px; padding: 8px 10px; border-radius: 6px; background: #fbf6e6; border: 1px solid #e8d9a8; margin: 8px 0; }
+.vazio-lista { color: var(--suave); font-size: 12.5px; list-style: none; }
+input[type=text], input[type=number] {
+  font: 13px var(--sans); padding: 7px 10px; border: 1px solid var(--linha);
+  border-radius: 6px; background: #fff; color: var(--tinta); min-width: 0;
+}
+.tabela { width: 100%; border-collapse: collapse; font-size: 13px; margin: 6px 0 4px; background: var(--painel); }
+.tabela th, .tabela td { text-align: left; vertical-align: top; padding: 7px 10px; border-bottom: 1px solid var(--linha); }
+.tabela th { font: 600 11.5px var(--sans); color: var(--suave); text-transform: uppercase; letter-spacing: .03em; background: var(--fundo); }
+.tabela td:first-child { white-space: nowrap; }
+.tabela code { font: 12px var(--mono); background: var(--fundo); padding: 0 4px; border-radius: 3px; }
+
+/* ---------- início ---------- */
+.inicio { overflow-y: auto; min-height: 0; }
+.inicio-col { max-width: 940px; margin: 0 auto; padding: 28px 28px 48px; display: grid; gap: 30px; }
+.inicio h1 { font: 600 28px/1.2 var(--serif); margin: 0 0 10px; color: var(--tinta); }
+.inicio h2 { font-size: 18px; margin-bottom: 10px; }
+.abertura p { font-size: 15px; max-width: 70ch; margin: 0 0 16px; }
+.abertura .linha { align-items: center; gap: 14px; flex-wrap: wrap; }
+.abertura .ajuda { margin: 0; }
+.panorama { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; margin-top: 18px; }
+.panorama[hidden] { display: none; }
+.numero { background: var(--painel); border: 1px solid var(--linha); border-radius: 8px; padding: 12px 14px; display: grid; gap: 2px; }
+.numero strong { font: 600 24px var(--serif); color: var(--destaque); }
+.numero span { font-size: 13px; }
+.numero small { color: var(--suave); font-size: 12px; }
+.fluxo { list-style: none; counter-reset: passo; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
+.fluxo li { counter-increment: passo; }
+.fluxo button {
+  width: 100%; height: 100%; text-align: left; cursor: pointer; display: grid; gap: 4px; align-content: start;
+  background: var(--painel); border: 1px solid var(--linha); border-radius: 8px; padding: 12px 14px; color: var(--tinta); font: 13px var(--sans);
+}
+.fluxo button:hover { border-color: var(--destaque); }
+.fluxo strong::before { content: counter(passo) "  "; color: var(--destaque); font-family: var(--serif); }
+.fluxo span { color: var(--suave); font-size: 12.5px; }
+.limites ul { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
+.limites { background: #fbf6e6; border: 1px solid #e8d9a8; border-radius: 8px; padding: 16px 20px; }
+
+/* ---------- comunidade ---------- */
+.form-autor { display: grid; gap: 10px; }
+.form-autor label { display: grid; gap: 4px; font-size: 12.5px; font-weight: 600; }
+.form-autor label .ajuda { font-weight: 400; margin: 0; display: inline; }
+.form-autor .btn { justify-self: start; }
+.passos { padding-left: 18px; display: grid; gap: 6px; }
+.cartoes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: stretch; }
+@media (max-width: 1100px) { .cartoes { grid-template-columns: minmax(0, 1fr); } }
+.cartao > .btn { justify-self: start; }
+.cartao { background: var(--painel); border: 1px solid var(--linha); border-radius: 10px; padding: 16px 18px; display: grid; gap: 10px; }
+.cartao.largo { grid-column: 1 / -1; }
+.cartao h2 { margin: 0; }
+.cartao h3 { font: 600 13px var(--sans); margin: 8px 0 0; }
+.cartao .ajuda { margin: 0; }
+.cartao .linha { flex-wrap: wrap; }
+.resultado:empty { display: none; }
+.previa { border: 1px solid var(--destaque); border-radius: 8px; padding: 12px 14px; display: grid; gap: 6px; background: var(--destaque-claro); }
+.previa[hidden] { display: none; }
+.previa p { margin: 0; }
+.lista-pacotes { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.lista-pacotes li { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid var(--linha); border-radius: 6px; }
+.lista-pacotes li.vazio-lista { border: 0; padding: 0; }

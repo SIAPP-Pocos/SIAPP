@@ -3,11 +3,12 @@
 
 let pocosAtuais = [];
 
-async function escolherPasta() {
-  const r = await chamar($("btn-pasta"), "escolher_pasta");
+async function escolherPasta(ev) {
+  const r = await chamar((ev && ev.currentTarget) || $("btn-pasta"), "escolher_pasta");
   if (!r.ok || r.cancelado) return;
 
   projetoAberto = true;
+  aoAbrirProjeto(r);
   $("caminho-pasta").textContent = r.pasta;
   $("caminho-pasta").hidden = false;
   liberar("etapa-bacia");

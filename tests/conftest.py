@@ -55,10 +55,13 @@ def api(tmp_path, monkeypatch):
     monkeypatch.setattr(base, "PASTA_PROJETO", str(pasta))
 
     class Janela:
-        escolha = None
+        escolha = None          # resposta do diálogo de pasta (None = a pasta do projeto)
+        arquivo = None          # resposta do diálogo de abrir arquivo
         eventos: list = []
 
-        def create_file_dialog(self, tipo, directory=""):
+        def create_file_dialog(self, tipo, directory="", **kw):
+            if tipo != siapp.webview.FileDialog.FOLDER:
+                return self.arquivo
             return self.escolha if self.escolha is not None else (str(pasta),)
 
         def evaluate_js(self, codigo):
