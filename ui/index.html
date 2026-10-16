@@ -19,6 +19,7 @@
       <button class="aba" id="aba-mapa" data-vista="mapa" role="tab" aria-selected="false">Mapa</button>
       <button class="aba" id="aba-docs" data-vista="docs" role="tab" aria-selected="false">Documentos</button>
       <button class="aba" id="aba-perfis" data-vista="perfis" role="tab" aria-selected="false">Perfis</button>
+      <button class="aba" id="aba-secao" data-vista="secao" role="tab" aria-selected="false">Seção</button>
       <button class="aba" id="aba-comunidade" data-vista="comunidade" role="tab" aria-selected="false">Comunidade</button>
     </nav>
     <span class="versao" id="versao">—</span>
@@ -545,6 +546,108 @@
     </section>
   </main>
 
+  <main class="grade secao" id="vista-secao" hidden>
+    <aside class="lateral">
+      <section class="etapa">
+        <h2>Poços da seção <span class="contagem" id="sec-n">0</span></h2>
+        <p class="ajuda" id="sec-disponiveis">Poços com topos de formação no AGP (leia os AGPs no Levantamento do acervo, aba Mapa).</p>
+        <form class="linha" id="sec-form-poco">
+          <input type="text" id="sec-poco" list="sec-lista-pocos" placeholder="ex.: 1-BRSA-276-RN" autocomplete="off">
+          <button class="btn secundario pequeno" type="submit">Adicionar</button>
+        </form>
+        <datalist id="sec-lista-pocos"></datalist>
+        <ol class="sec-lista" id="sec-lista"></ol>
+        <div class="linha">
+          <button class="btn secundario pequeno" id="sec-limpar">Limpar</button>
+        </div>
+      </section>
+      <section class="etapa">
+        <h2>Poços ao longo de uma linha</h2>
+        <p class="ajuda">Escolha os poços das pontas: o SIAPP traz os que têm topos no AGP até uma distância da linha
+          (no máximo 20, espaçados por igual).</p>
+        <div class="filtros">
+          <div class="linha">
+            <label>De (A) <input type="text" id="sec-a" list="sec-lista-pocos" autocomplete="off"></label>
+            <label>Até (B) <input type="text" id="sec-b" list="sec-lista-pocos" autocomplete="off"></label>
+          </div>
+          <label>Distância máxima da linha (km) <input type="text" id="sec-largura" value="2" inputmode="decimal"></label>
+        </div>
+        <button class="btn secundario" id="sec-corredor">Buscar poços na linha</button>
+        <p class="ajuda resultado" id="sec-corredor-res"></p>
+      </section>
+      <section class="etapa">
+        <h2>Desenho</h2>
+        <div class="filtros">
+          <label>Ordem dos poços
+            <select id="sec-ordem">
+              <option value="linha">ao longo da linha do 1º ao último poço</option>
+              <option value="pca">na direção de maior espalhamento</option>
+              <option value="lista">na ordem da lista</option>
+            </select></label>
+          <label>Unidades
+            <select id="sec-nivel">
+              <option value="formacoes">formações</option>
+              <option value="membros">membros e camadas</option>
+              <option value="grupos">grupos</option>
+            </select></label>
+          <label>Eixo vertical
+            <select id="sec-eixo">
+              <option value="cota">cota (m, nível do mar = 0)</option>
+              <option value="nivelado">nivelado no topo de uma unidade</option>
+            </select></label>
+          <label id="sec-datum-box" hidden>Datum (topo de)
+            <select id="sec-datum"></select></label>
+          <label>Espaçamento
+            <select id="sec-espacamento">
+              <option value="proporcional">proporcional à distância</option>
+              <option value="igual">igual entre os poços</option>
+            </select></label>
+          <div class="linha">
+            <label>De (topo) <input type="text" id="sec-ytopo" inputmode="decimal" placeholder="auto"></label>
+            <label>Até (base) <input type="text" id="sec-ybase" inputmode="decimal" placeholder="auto"></label>
+          </div>
+          <label class="opcao"><input type="checkbox" id="sec-gr" checked> <span>Curva GR dos perfis já abertos na aba Perfis</span></label>
+          <label class="opcao"><input type="checkbox" id="sec-litologia" checked> <span>Litologia das amostras de calha (AGP)</span></label>
+          <label>Avisar quando um topo muda mais que (m) <input type="text" id="sec-limiar" value="100" inputmode="decimal"></label>
+          <label>Título da figura <input type="text" id="sec-titulo" placeholder="opcional"></label>
+        </div>
+        <button class="btn" id="sec-montar">Montar a seção</button>
+      </section>
+      <section class="etapa">
+        <h2>Seções anteriores</h2>
+        <ul class="dic-lista" id="sec-historico"></ul>
+      </section>
+    </aside>
+    <section class="principal">
+      <div class="vazio" id="sec-vazio">
+        <p class="vazio-titulo">Seção estratigráfica</p>
+        <p>Poços lado a lado, correlacionados pelos topos de formação que a operadora registrou no AGP da ANP.
+          Escolha dois ou mais poços ao lado — ou as pontas de uma linha — e monte a seção. Cada seção fica
+          registrada em <code>ambiente_teste\execucoes</code> com os poços, os topos usados e de qual AGP vieram.</p>
+      </div>
+      <div id="sec-painel" hidden>
+        <div class="sec-barra">
+          <div class="linha">
+            <button class="btn secundario pequeno" id="sec-ajustar" title="Caber na largura da janela">Ajustar</button>
+            <button class="btn secundario pequeno" id="sec-real" title="Tamanho real">100%</button>
+          </div>
+          <div class="linha">
+            <button class="btn secundario pequeno" data-formato="svg" title="Vetorial, editável no Inkscape ou no Word">SVG</button>
+            <button class="btn secundario pequeno" data-formato="png" title="Imagem a 300 ppp">PNG</button>
+            <button class="btn secundario pequeno" data-formato="pdf" title="Vetorial">PDF</button>
+            <button class="btn secundario pequeno" data-formato="csv" title="Topos usados, para o Excel">CSV</button>
+            <button class="btn secundario pequeno" id="sec-pasta">Abrir a pasta</button>
+          </div>
+        </div>
+        <p class="ajuda resultado" id="sec-exportado"></p>
+        <div class="sec-figura ajustada" id="sec-figura"></div>
+        <ul class="sec-avisos" id="sec-avisos"></ul>
+        <h3>Topos usados</h3>
+        <div class="sec-tabela-box"><table class="tabela sec-tabela" id="sec-tabela"></table></div>
+      </div>
+    </section>
+  </main>
+
   <main class="grade comunidade" id="vista-comunidade" hidden>
     <aside class="lateral">
       <section class="etapa">
@@ -638,6 +741,7 @@
 
   <script src="vendor/leaflet/leaflet.js"></script>
   <script src="js/comum.js"></script>
+  <script src="js/secao.js"></script>
   <script src="js/catalogo.js"></script>
   <script src="js/documentos.js"></script>
   <script src="js/fatos.js"></script>

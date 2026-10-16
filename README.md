@@ -2,13 +2,13 @@
 
 [![testes](https://github.com/SIAPP-Pocos/siapp/actions/workflows/testes.yml/badge.svg)](https://github.com/SIAPP-Pocos/siapp/actions/workflows/testes.yml)
 [![licença: AGPL-3.0](https://img.shields.io/badge/licen%C3%A7a-AGPL--3.0-blue)](LICENSE)
-![versão](https://img.shields.io/badge/vers%C3%A3o-0.14.1-informational)
+![versão](https://img.shields.io/badge/vers%C3%A3o-0.15.0-informational)
 
 Ferramenta aberta para transformar o acervo **público** de dados de poços da ANP
 (portal [REATE](https://reate.cprm.gov.br/anp/TERRESTRE), ANP/CPRM) em dados
 organizados, pesquisáveis e prontos para análise — sem software comercial.
 
-> **Estado:** em desenvolvimento ativo (v0.14). A interface e os formatos ainda
+> **Estado:** em desenvolvimento ativo (v0.15). A interface e os formatos ainda
 > podem mudar entre versões; a 1.0 sai no lançamento público.
 
 ---
@@ -31,6 +31,7 @@ que cada usuário receba os dados já tratados.
 | **Mapa** | Cadastro oficial de poços da ANP (dados abertos) no mapa, com filtros, e a **ficha do poço**: cadastro, pastas no REATE, arquivos baixados, curvas e dados transcritos. **Levantamento do acervo**: para uma bacia inteira, quais poços têm perfil digital, só imagem ou nada — pelo conteúdo dos arquivos, lendo 1 KB de cada (o `.tif` do REATE costuma ser LIS de fita), com lista de curvas opcional e exportação CSV. Lê o **AGP** da ANP (topos de formação, lama, testes, litologia de calha) de cada poço que o tiver |
 | **Documentos** | Qualquer PDF, TIF (de várias páginas) ou imagem baixada abre na hora, com **visor ampliado** (zoom e arraste; perfil escaneado longo carrega em faixas). Texto embutido ou OCR local, busca sem acento e tolerante a erro de OCR, correção de palavras com um clique e **transcrição assistida**: caixa na imagem, sugestão do OCR, dado salvo com página e caixa como fonte |
 | **Perfis** | DLIS, LIS e LAS em metros, curvas classificadas por família, gráfico em trilhas, intervalo-alvo e topos marcados no perfil, exportação LAS 2.0 e CSV. **Avaliação de formação** no intervalo-alvo: Vsh (linear/Larionov), φ (densidade, densidade-nêutron, sônico), Sw (Archie/Simandoux), cortes, net pay, N/G, HPV e controle de qualidade, com cada cálculo registrado com seus parâmetros. Topos e litologia do AGP no gráfico; formações do AGP como intervalos candidatos |
+| **Seção** | **Seção estratigráfica** pelos topos de formação do AGP: até 20 poços, escolhidos um a um ou ao longo de uma linha; em cota ou nivelada num datum; litologia de calha e curva GR; avisos de saltos entre vizinhos; figura no estilo de artigo exportada em SVG, PNG 300 ppp, PDF e CSV |
 | **Comunidade** | Exportar as próprias correções e transcrições como pacote assinado, importar pacotes de colegas com prévia de conflitos e atualizar a base comunitária ([SIAPP-dados](https://github.com/SIAPP-Pocos/SIAPP-dados)) |
 
 Tudo fica num **banco do projeto** (`ambiente_teste/projeto.sqlite`) com o mesmo modelo
@@ -68,6 +69,7 @@ motor/            toda a lógica, sem nenhuma dependência de interface
   levantamento.py acervo de uma bacia sem baixar os arquivos
   avaliacao.py    Vsh, φ, Sw, net pay no intervalo-alvo
   agp.py          AGP da ANP: topos, lama, testes, litologia de calha
+  secao.py        seção estratigráfica pelos topos do AGP
   comunidade.py   pacotes de contribuição e base comunitária
   projeto.py      pasta de projeto: configuração, procedência, escrita atômica
   registro.py     siapp.log
@@ -79,8 +81,8 @@ A **pasta de projeto** (`ambiente_teste/`) é o contrato entre as partes: tudo o
 SIAPP baixa e produz fica nela, em formatos abertos (JSON, SQLite, LAS, CSV), com o
 histórico de cada ação em `siapp.json`. Detalhes em [`docs/arquitetura.md`](docs/arquitetura.md),
 [`docs/comunidade.md`](docs/comunidade.md), [`docs/perfis.md`](docs/perfis.md),
-[`docs/levantamento.md`](docs/levantamento.md), [`docs/avaliacao.md`](docs/avaliacao.md) e
-[`docs/agp.md`](docs/agp.md).
+[`docs/levantamento.md`](docs/levantamento.md), [`docs/avaliacao.md`](docs/avaliacao.md),
+[`docs/agp.md`](docs/agp.md) e [`docs/secao.md`](docs/secao.md).
 
 ## Dados e procedência
 

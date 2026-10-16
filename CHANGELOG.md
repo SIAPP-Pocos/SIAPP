@@ -6,6 +6,25 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 
 ## [Não lançado]
 
+## [0.15.0] — 2026-10-16
+### Adicionado
+- **Aba Seção — seção estratigráfica** a partir dos topos do AGP: poços lado a lado (até 20),
+  correlacionados pela unidade registrada pela operadora; faixa de cada unidade entre
+  vizinhos e linha do topo.
+- Escolha dos poços um a um, pela ficha (**Adicionar à seção**) ou **ao longo de uma linha**
+  A–B com distância máxima.
+- Ordem ao longo da linha, pela direção de maior espalhamento (componente principal) ou
+  na ordem da lista; espaçamento proporcional à distância ou igual.
+- Eixo em **cota** (do AGP) ou **nivelado** no topo de uma unidade (datum); janela vertical.
+- Formações, membros e camadas ou grupos; litologia de calha; **curva GR** dos perfis já
+  lidos, convertida para cota (mesa − prof; poço desviado pelos pontos do AGP).
+- Aviso de **saltos** do mesmo topo entre vizinhos acima de um limiar.
+- Desenho no estilo de artigo (serifa, moldura, marcas para dentro, legenda com moldura,
+  exagero vertical); cor fixa por unidade (`slot` em `recursos/estratigrafia.json`, paleta
+  conferida para daltonismo).
+- Registro em `execucoes/secao_<data-hora>.json` + `.svg`; reabrir seções anteriores;
+  exportar **SVG, PNG 300 ppp, PDF e CSV** dos topos usados. `docs/secao.md`.
+
 ## [0.14.1] — 2026-10-16
 ### Corrigido
 - **AGP no leiaute novo do BDEP** (`<poço>_dados.txt`, poços mais novos) era recusado como

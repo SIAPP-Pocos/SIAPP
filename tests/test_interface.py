@@ -323,3 +323,65 @@ def test_agp_na_ficha_e_na_avaliacao(janela, monkeypatch, tmp_path):
     janela.esperar("document.querySelectorAll('.pf-trilha-lito canvas').length == 1")
     assert "Litol. (AGP)" in p.text_content(".pf-trilha-lito")
     assert not janela.erros_js, janela.erros_js
+
+
+def test_aba_secao(janela):
+    from test_secao import poco
+    p = janela.page
+    abrir_projeto(janela)
+    b = janela.api._banco
+    poco(b, "1-OES-1-RN", -5.30, -36.80, 50.0, [("F", "JANDAI", 10, 300), ("F", "ACU", 300, 700)], prof_final=750)
+    poco(b, "1-MEI-1-RN", -5.30, -36.75, 40.0, [("F", "JANDAI", 8, 320), ("F", "ACU", 320, 760)], prof_final=800)
+    poco(b, "1-LES-1-RN", -5.30, -36.70, 30.0, [("F", "JANDAI", 5, 330), ("F", "ACU", 330, 900)], prof_final=950)
+    p.click("#aba-secao")
+    janela.esperar("document.getElementById('sec-disponiveis').textContent.includes('3 poço')")
+    # pelas pontas da linha
+    p.fill("#sec-a", "1-OES-1-RN")
+    p.fill("#sec-b", "1-LES-1-RN")
+    p.click("#sec-corredor")
+    janela.esperar("document.querySelectorAll('#sec-lista li').length === 3")
+    assert "3 poço(s)" in p.text_content("#sec-corredor-res")
+    # nivelado no topo do Açu
+    p.select_option("#sec-eixo", "nivelado")
+    janela.esperar("document.querySelectorAll('#sec-datum option').length >= 2")
+    p.select_option("#sec-datum", "ACU")
+    p.click("#sec-montar")
+    janela.esperar("document.querySelector('#sec-figura svg') !== null", 30)
+    assert "Formação Açu" in p.inner_html("#sec-figura")
+    assert "Distância ao topo — Formação Açu" in p.inner_html("#sec-figura")
+    assert p.locator("#sec-tabela tr").count() == 7
+    p.click("#sec-painel [data-formato=csv]")
+    janela.esperar("document.getElementById('sec-exportado').textContent.includes('.csv')")
+    janela.esperar("document.querySelectorAll('#sec-historico button').length === 1")
+    # tirar um poço e reabrir a anterior pelo histórico
+    p.click("#sec-lista li:nth-child(2) .sec-mini >> nth=2")
+    assert p.locator("#sec-lista li").count() == 2
+    p.click("#sec-historico button")
+    janela.esperar("document.querySelectorAll('#sec-lista li').length === 3")
+    assert not janela.erros_js, janela.erros_js
+
+
+def test_secao_com_gr_do_perfil_lido(janela, tmp_path):
+    """A seção pega o GR de um perfil já lido do poço e o põe em cota (mesa − prof)."""
+    from test_avaliacao import las_reservatorio
+    from test_secao import poco
+    abrir_projeto(janela)
+    api = janela.api
+    poco(api._banco, "1-OES-1-RN", -5.30, -36.80, 50.0, [("F", "ACU", 900, 1015), ("F", "ALAGAM", 1015, 1040)],
+         prof_final=1040)
+    poco(api._banco, "1-LES-1-RN", -5.30, -36.70, 30.0, [("F", "ACU", 880, 1000), ("F", "ALAGAM", 1000, 1050)],
+         prof_final=1050)
+    pasta = tmp_path / "ambiente_teste" / "bruto" / "Potiguar" / "1-OES-1-RN" / "Perfil Convencional"
+    pasta.mkdir(parents=True)
+    las_reservatorio(pasta / "oes.las")
+    api._abrir_projeto(str(tmp_path / "ambiente_teste"))
+    rel = "bruto/Potiguar/1-OES-1-RN/Perfil Convencional/oes.las"
+    assert api.inventariar_perfil(rel)["ok"]
+    r = api.secao_montar(["1-OES-1-RN", "1-LES-1-RN"], {"ordem": "lista"})
+    assert r["ok"], r
+    oes, les = r["pocos"]
+    assert oes["gr"] == "GR" and les["gr"] is None
+    assert "<polyline" in r["svg"] and "GR 0–150" in r["svg"]
+    e = api.secao_exportar(r["id"], "pdf")
+    assert e["ok"] and os.path.isfile(tmp_path / "ambiente_teste" / e["arquivo"])
+    assert not api.secao_exportar("../x", "svg")["ok"]

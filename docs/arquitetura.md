@@ -9,7 +9,7 @@
 │        ▼                                         │ eventoDocumento(…)         │
 │                                                  │ eventoLevantamento(…)      │
 │  ponte/  API da janela, uma parte por aba (catalogo, pocos, documentos,       │
-│          vocabulario, fatos, perfis, comunidade, levantamento) — valida,      │
+│          vocabulario, fatos, perfis, comunidade, levantamento, secao) — valida│
 │          chama o motor, devolve dicionários; nunca deixa exceção chegar ao JS │
 └──────────────┬───────────────────────────────────────────────────────────────┘
                ▼
@@ -22,6 +22,7 @@
     formatos.py     formato pelo conteúdo (1 KB)     levantamento.py  acervo da bacia, sem baixar
     avaliacao.py    Vsh, φ, Sw, net pay no intervalo-alvo (registro em execucoes/)
     agp.py          AGP da ANP: topos, lama, testes, litologia (tabelas agp, agp_unidades)
+    secao.py        seção estratigráfica pelos topos do AGP → SVG (PNG/PDF pelo PyMuPDF)
                ▼
   ambiente_teste/  — pasta de projeto (contrato entre as partes)
 ```

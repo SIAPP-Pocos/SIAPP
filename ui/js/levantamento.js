@@ -269,6 +269,14 @@ function secaoAgpFicha(corpo, agps) {
     p.title = ts.observacoes || "";
     corpo.appendChild(p);
   }
+  const ids = (g.unidades || []).some((u) => u.tip === "L") ? (c.poco_id || g.poco_pasta) : "";
+  if (ids) {
+    const bs = el("button", "btn-abrir", "Adicionar à seção");
+    bs.type = "button";
+    bs.title = "Põe o poço na lista da aba Seção (seção estratigráfica)";
+    bs.onclick = () => adicionarPocoSecao(ids);
+    corpo.appendChild(bs);
+  }
   if (g.arquivo_local) {
     const b = el("button", "btn-abrir", "Abrir o AGP");
     b.type = "button";

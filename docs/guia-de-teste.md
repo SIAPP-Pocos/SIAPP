@@ -131,6 +131,27 @@ Precisa de internet. Comece por uma categoria pequena para ver o tempo.
 - [ ] Sem intervalo marcado, **Calcular** explica que precisa de um intervalo-alvo.
 - [ ] Repetir no `5PX__0011__RN_5PX__0011__RN.tif` (DLIS de 2020).
 
+## 0.15 — seção estratigráfica
+
+Antes: levantar a Potiguar (pelo menos a Cat. 1) com **Ler os AGPs** na 0.14.1.
+
+- [ ] **Seção**: o texto do topo diz quantos poços têm topos no AGP. Digite `1-SP-2-RN` e
+      **Adicionar**; depois, pela ficha de outro poço (aba Mapa), **Adicionar à seção**.
+- [ ] **Poços ao longo de uma linha**: A = `1-SP-2-RN`, B = `1-FL-1-RN`, 3 km → **Buscar**: ~16
+      poços do campo de Estreito, em ordem.
+- [ ] **Montar a seção** (cota, formações): colunas Jandaíra (azul), Açu (laranja),
+      Alagamar, Embasamento; faixas e linhas entre vizinhos; tooltip com topo, cota e fonte.
+- [ ] Eixo **nivelado** no topo da **Formação Açu**: o topo do Açu fica reto em 0.
+- [ ] **Unidades: membros e camadas**: aparecem Açu 1–4, Galinhos, Upanema, Ponta do Tubarão
+      (nos poços que têm).
+- [ ] Um perfil (DLIS/LIS) de um desses poços aberto na aba Perfis → montar de novo: a
+      curva GR aparece ao lado da coluna, em cota.
+- [ ] Avisos abaixo da figura (saltos de topo entre vizinhos) e tabela **Topos usados**.
+- [ ] **SVG / PNG / PDF / CSV** → **Abrir a pasta**: os quatro em `exportacoes\secoes\`; o PNG
+      serve para o artigo (300 ppp); o CSV abre no Excel.
+- [ ] **Seções anteriores**: clicar reabre a seção sem recalcular.
+- [ ] `execucoes\secao_….json` tem os poços, os parâmetros e cada topo com a fonte.
+
 ## 0.14.1 — AGP no leiaute novo
 
 - [ ] **Mapa → Levantamento do acervo**: Potiguar, **Cat. 1**, **Ler os AGPs**, **Levantar** de
