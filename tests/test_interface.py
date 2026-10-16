@@ -347,17 +347,21 @@ def test_aba_secao(janela):
     p.select_option("#sec-datum", "ACU")
     p.click("#sec-montar")
     janela.esperar("document.querySelector('#sec-figura svg') !== null", 30)
-    assert "Formação Açu" in p.inner_html("#sec-figura")
-    assert "Distância ao topo — Formação Açu" in p.inner_html("#sec-figura")
+    assert "DATUM: topo da Formação Açu" in p.inner_html("#sec-figura")     # estilo clássico (padrão)
+    assert "SEÇÃO ESTRATIGRÁFICA A–A′" in p.inner_html("#sec-figura")
+    p.select_option("#sec-estilo", "moderno")
+    p.click("#sec-montar")
+    janela.esperar("document.getElementById('sec-figura').innerHTML.includes('Distância ao topo — Formação Açu')", 30)
     assert p.locator("#sec-tabela tr").count() == 7
     p.click("#sec-painel [data-formato=csv]")
     janela.esperar("document.getElementById('sec-exportado').textContent.includes('.csv')")
-    janela.esperar("document.querySelectorAll('#sec-historico button').length === 1")
+    janela.esperar("document.querySelectorAll('#sec-historico button').length === 2")
     # tirar um poço e reabrir a anterior pelo histórico
     p.click("#sec-lista li:nth-child(2) .sec-mini >> nth=2")
     assert p.locator("#sec-lista li").count() == 2
-    p.click("#sec-historico button")
+    p.click("#sec-historico button >> nth=1")       # a mais antiga: estilo clássico
     janela.esperar("document.querySelectorAll('#sec-lista li').length === 3")
+    assert p.input_value("#sec-estilo") == "classico"
     assert not janela.erros_js, janela.erros_js
 
 

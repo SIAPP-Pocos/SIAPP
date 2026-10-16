@@ -131,6 +131,20 @@ Precisa de internet. Comece por uma categoria pequena para ver o tempo.
 - [ ] Sem intervalo marcado, **Calcular** explica que precisa de um intervalo-alvo.
 - [ ] Repetir no `5PX__0011__RN_5PX__0011__RN.tif` (DLIS de 2020).
 
+## 0.16 — seção no estilo clássico
+
+- [ ] **Seção** → Estilo **clássico (indústria)** (já vem marcado) → montar a seção de Estreito
+      (A = `1-SP-2-RN`, B = `1-FL-1-RN`, 3 km), nivelada no topo do Açu.
+- [ ] Cada poço com a coluna litológica em padrões (calcário em tijolo no Jandaíra, arenito
+      pontilhado no Açu, embasamento em cruzes), escala de profundidade medida e faixa da formação.
+- [ ] Entre poços: corpos em pastel com "Fm. Jandaíra", "Fm. Açu"…; linha vermelha do DATUM.
+- [ ] No topo: símbolo de cada poço (óleo / seco), MR e PF, distâncias, A (W) e A′ (E).
+- [ ] Embaixo: legenda só com o que aparece, mapa de localização com A–A′ e o carimbo
+      (seu nome sai em "Elaboração" se estiver preenchido na aba Comunidade).
+- [ ] Estilo **moderno** → montar: a versão anterior, colorida. Em **Seções anteriores**, cada
+      uma reabre no seu estilo.
+- [ ] **PNG** e **PDF**: os padrões de rocha aparecem iguais à tela.
+
 ## 0.15 — seção estratigráfica
 
 Antes: levantar a Potiguar (pelo menos a Cat. 1) com **Ler os AGPs** na 0.14.1.

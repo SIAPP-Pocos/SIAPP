@@ -4,6 +4,7 @@ Poços e topos inventados, gravados direto nas tabelas que o leitor do AGP preen
 """
 import json
 import os
+import re
 
 import pytest
 
@@ -139,7 +140,7 @@ def test_gr_em_cota_vertical_e_desviado(banco):
 
 def test_desenhar_registrar_exportar(banco, tmp_path):
     m = ms.montar(banco, ["1-OES-1-RN", "1-MEI-1-RN", "1-LES-1-RN"], slots=SLOTS, nomes=NOMES, gr_de=lambda p: None)
-    svg = ms.desenhar(m, "Seção <teste> & cia")
+    svg = ms.desenhar(m, "Seção <teste> & cia", estilo="moderno")
     assert svg.startswith("<svg") and "Seção &lt;teste&gt; &amp; cia" in svg
     for txt in ("1-OES-1-RN", "Formação Açu", "Cota (m)", "Calha:", "AGP da ANP"):
         assert txt in svg
@@ -167,3 +168,36 @@ def test_unidade_lida_por_leitor_antigo():
     assert ms._rotulo_unidade(n) == "Camadas Ponta do Tubarão"
     n = ms._normalizar({"tip": "L", "nivel": "", "sigla": "XPTO", "codigo": "", "nome": "XPTO"}, NOMES)
     assert n["nome"] == "XPTO"
+
+
+def test_estilo_classico(banco):
+    from motor import secao_classica as cl
+    m = ms.montar(banco, ["1-OES-1-RN", "1-MEI-1-RN", "1-LES-1-RN"], slots=SLOTS, nomes=NOMES, eixo="nivelado",
+                  datum="ACU")
+    assert m["parametros"]["estilo"] == "classico"
+    svg = ms.desenhar(m, "Teste", autor="Fulana de Tal", data="16/10/2026")
+    for txt in ("SEÇÃO ESTRATIGRÁFICA A–A′", "A′", "Fm. Açu", "DATUM: topo da Formação Açu", "Localização",
+                "Litologia (calha)", "Calcário", "Arenito", "Elaboração: Fulana de Tal · 16/10/2026",
+                "Sem descrição de calha", "Topo de unidade (AGP)"):
+        assert txt in svg, txt
+    assert "<pattern" not in svg and "clip-path" not in svg        # o PyMuPDF não entende
+    # a mesma seção no outro estilo
+    assert "Calha:" in ms.desenhar(m, estilo="moderno")
+
+
+def test_padroes_litologicos():
+    from motor import secao_classica as cl
+    assert cl.litologia("CALCARENITO")[0] == "calcario"         # não é arenito
+    assert cl.litologia("ARENITO")[0] == "arenito" and cl.litologia("FOLHELHO")[0] == "folhelho"
+    assert cl.litologia("GNAISSE")[0] == "embasamento" and cl.litologia("XYZ")[0] == "outra"
+    tr, pt = cl.marcas("pontos", 10, 10, 26, 40)
+    assert pt and not tr
+    for pat in ("tracos", "tijolo", "grade", "cruzes", "vees", "seixos", "marga", "silte", "tijolo_obliquo", "sem"):
+        tr, _ = cl.marcas(pat, 10, 10, 26, 40)
+        assert tr, pat
+        # nada começa fora do retângulo
+        for x, y in re.findall(r"M(-?[\d.]+) (-?[\d.]+)", tr):
+            assert 10 <= float(x) <= 36 and 10 <= float(y) <= 50, (pat, x, y)
+    assert cl.marcas("pontos", 0, 0, 26, 1.0) == ("", "")       # camada fina: só a cor
+    assert cl.simbolo_poco(0, 0, "seco").count("<line") == 4 and cl.simbolo_poco(0, 0, "gas").count("<line") == 8
+    assert ms._classe_poco("PRODUTOR DE OLEO E GAS") == "oleo_gas" and ms._classe_poco("SECO") == "seco"

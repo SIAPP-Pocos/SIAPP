@@ -23,6 +23,7 @@
     avaliacao.py    Vsh, φ, Sw, net pay no intervalo-alvo (registro em execucoes/)
     agp.py          AGP da ANP: topos, lama, testes, litologia (tabelas agp, agp_unidades)
     secao.py        seção estratigráfica pelos topos do AGP → SVG (PNG/PDF pelo PyMuPDF)
+    secao_classica.py  estilo clássico: padrões de rocha, carimbo, mapa de localização
                ▼
   ambiente_teste/  — pasta de projeto (contrato entre as partes)
 ```

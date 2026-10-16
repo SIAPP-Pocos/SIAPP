@@ -6,6 +6,18 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 
 ## [Não lançado]
 
+## [0.16.0] — 2026-10-16
+### Adicionado
+- Seção estratigráfica no **estilo clássico (indústria)**, agora o padrão: coluna
+  litológica com **padrões de rocha** a partir da calha do AGP, trilha GR e escala de
+  profundidade medida em cada poço, corpos das formações em pastel com o nome, linhas de
+  topo, **discordâncias** onduladas, indícios de óleo/gás, símbolo do poço pela
+  classificação, pontas A–A′, escala gráfica, **mapa de localização** e **carimbo**.
+- Opção **Estilo** na aba Seção (clássico / moderno); o estilo fica no registro e volta ao
+  reabrir uma seção.
+### Corrigido
+- Duas seções montadas no mesmo segundo gravavam o mesmo registro.
+
 ## [0.15.0] — 2026-10-16
 ### Adicionado
 - **Aba Seção — seção estratigráfica** a partir dos topos do AGP: poços lado a lado (até 20),

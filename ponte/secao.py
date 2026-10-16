@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+from datetime import datetime
 
 from motor import agp as magp
 from motor import perfis as mpf
@@ -98,6 +99,7 @@ class SecaoAPI:
             modelo = msc.montar(
                 self._banco, ids, ordem=op.get("ordem", "linha"), nivel=op.get("nivel", "formacoes"),
                 eixo=op.get("eixo", "cota"), datum=op.get("datum") or None,
+                estilo="moderno" if op.get("estilo") == "moderno" else "classico",
                 espacamento=op.get("espacamento", "proporcional"), litologia=bool(op.get("litologia", True)),
                 gr=bool(op.get("gr", True)), gr_de=self._gr_de, slots=msc.ler_slots(CAMINHO_ESTRATIGRAFIA),
                 nomes=magp.ler_estratigrafia(CAMINHO_ESTRATIGRAFIA),
@@ -105,7 +107,8 @@ class SecaoAPI:
                 janela=janela if any(v is not None for v in janela) else None)
         except msc.ErroSecao as e:
             raise ErroUsuario(str(e)) from e
-        svg = msc.desenhar(modelo, (op.get("titulo") or "").strip())
+        svg = msc.desenhar(modelo, (op.get("titulo") or "").strip(), autor=self._autor(),
+                           data=datetime.now().strftime("%d/%m/%Y"))
         ident, _ = msc.registrar(self._projeto.pasta_de("execucoes"), modelo, svg, autor=self._autor())
         self._projeto.registrar("montou_secao", execucao=ident, pocos=[p["id"] for p in modelo["pocos"]],
                                 parametros=modelo["parametros"])

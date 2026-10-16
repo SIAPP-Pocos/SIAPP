@@ -100,6 +100,7 @@ async function buscarCorredorSecao() {
 
 function opcoesSecao() {
   return {
+    estilo: $("sec-estilo").value,
     ordem: $("sec-ordem").value, nivel: $("sec-nivel").value, eixo: $("sec-eixo").value,
     datum: $("sec-eixo").value === "nivelado" ? $("sec-datum").value : "",
     espacamento: $("sec-espacamento").value, gr: $("sec-gr").checked, litologia: $("sec-litologia").checked,
@@ -177,7 +178,8 @@ async function abrirSecaoAnterior(ident) {
   if (!r.ok) return;
   sec.pocos = r.pocos.slice();
   const p = r.parametros || {};
-  for (const [id, k] of [["sec-ordem", "ordem"], ["sec-nivel", "nivel"], ["sec-eixo", "eixo"], ["sec-espacamento", "espacamento"]]) {
+  for (const [id, k] of [["sec-estilo", "estilo"], ["sec-ordem", "ordem"], ["sec-nivel", "nivel"], ["sec-eixo", "eixo"],
+                         ["sec-espacamento", "espacamento"]]) {
     if (p[k]) $(id).value = p[k];
   }
   $("sec-datum-box").hidden = $("sec-eixo").value !== "nivelado";

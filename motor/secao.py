@@ -240,6 +240,17 @@ def _cadastro(banco: Banco, pid: str) -> dict | None:
     return dict(r) if r else None
 
 
+def _classe_poco(txt: str) -> str:
+    """Símbolo do poço pela (re)classificação do AGP ou do cadastro."""
+    t = txt.upper()
+    oleo, gas = "OLEO" in t or "ÓLEO" in t, "GAS" in t or "GÁS" in t
+    if "SECO" in t and not (oleo or gas):
+        return "seco"
+    if oleo and gas:
+        return "oleo_gas"
+    return "oleo" if oleo else "gas" if gas else "outro"
+
+
 def _rotulo_unidade(u: dict) -> str:
     nivel = magp.NIVEIS.get(u["nivel"], "")
     return f"{nivel} {u['nome']}".strip()
@@ -263,7 +274,7 @@ def _normalizar(u: dict, nomes: dict) -> dict:
 def montar(banco: Banco, pocos: list[str], *, ordem: str = "linha", nivel: str = "formacoes",
            eixo: str = "cota", datum: str | None = None, espacamento: str = "proporcional",
            litologia: bool = True, gr: bool = True, gr_de=None, slots: dict | None = None,
-           nomes: dict | None = None,
+           nomes: dict | None = None, estilo: str = "classico",
            limiar_salto_m: float = LIMIAR_SALTO_M, janela: tuple | None = None) -> dict:
     """Modelo da seção (dados, sem desenho). `gr_de(poco_id)` devolve
     {arquivo, mnemonico, prof, valores} ou None."""
@@ -370,8 +381,32 @@ def montar(banco: Banco, pocos: list[str], *, ordem: str = "linha", nivel: str =
                              "cota": [round(float(v), 2) for v in cotas],
                              "valores": [None if v is None or not math.isfinite(v) else float(v)
                                          for v in bruto["valores"]]}
+        # para o estilo clássico: indícios, discordâncias, classe do poço, escala de prof. medida
+        indic = []
+        if d["agp"]:
+            for c in d["agp"]["dados"].get("indicios", []):
+                if c.get("topo") is None:
+                    continue
+                cc = _md_para_cota(np.array([c["topo"], c.get("base") or c["topo"]], float), mesa, ctrl)
+                if cc is not None:
+                    indic.append({"fluido": c.get("fluido", ""), "topo": c["topo"], "base": c.get("base"),
+                                  "cota_topo": float(cc[0]), "cota_base": float(cc[1]), "amostra": c.get("amostra", "")})
+        disc = [{"sigla": u["sigla"], "nome": u["nome"], "topo": u["topo"],
+                 "cota_topo": float(u["cota_topo"] if u["cota_topo"] is not None else mesa - u["topo"])}
+                for u in d["todas"] if u["tip"] == "D" and u["topo"] is not None
+                and (u["cota_topo"] is not None or mesa is not None)]
+        md_cota = []
+        if prof_final:
+            grade_md = np.arange(0.0, float(prof_final) + 0.01, 50.0)
+            cg = _md_para_cota(grade_md, mesa, ctrl)
+            if cg is not None:
+                md_cota = [[float(a), float(b)] for a, b in zip(grade_md, cg)]
+        classe_txt = " ".join(filter(None, [d["cab"].get("reclassificacao"), d["cab"].get("classificacao"),
+                                            (d["cad"] or {}).get("reclassificacao")])).upper()
         saida_pocos.append({
             "id": pid, "lat": d["lat"], "lon": d["lon"], "x_km": round(geo["x_km"][pid], 3),
+            "classe": _classe_poco(classe_txt), "classe_texto": classe_txt.strip(),
+            "bacia": d["cab"].get("bacia") or "", "indicios": indic, "discordancias": disc, "md_cota": md_cota,
             "dist_linha_km": round(geo["perp_km"][pid], 3), "mesa": mesa, "desviado": ctrl[2],
             "prof_final": prof_final, "cota_fundo": cota_fundo, "campo": (d["cad"] or {}).get("campo") or "",
             "agp": (d["agp"] or {}).get("arquivo_local") or (d["agp"] or {}).get("caminho") or "",
@@ -406,8 +441,11 @@ def montar(banco: Banco, pocos: list[str], *, ordem: str = "linha", nivel: str =
             r = p["datum_cota"]
             for u in p["unidades"]:
                 u["y_topo"], u["y_base"] = u["cota_topo"] - r, u["cota_base"] - r
-            for c in p["litologia"]:
+            for c in p["litologia"] + p["indicios"]:
                 c["y_topo"], c["y_base"] = c["cota_topo"] - r, c["cota_base"] - r
+            for c in p["discordancias"]:
+                c["y_topo"] = c["cota_topo"] - r
+            p["md_y"] = [[a, b - r] for a, b in p["md_cota"]]
             if p["gr"]:
                 p["gr"]["y"] = [v - r for v in p["gr"]["cota"]]
             p["y_mesa"] = None if p["mesa"] is None else p["mesa"] - r
@@ -417,8 +455,11 @@ def montar(banco: Banco, pocos: list[str], *, ordem: str = "linha", nivel: str =
             p["datum_cota"] = None
             for u in p["unidades"]:
                 u["y_topo"], u["y_base"] = u["cota_topo"], u["cota_base"]
-            for c in p["litologia"]:
+            for c in p["litologia"] + p["indicios"]:
                 c["y_topo"], c["y_base"] = c["cota_topo"], c["cota_base"]
+            for c in p["discordancias"]:
+                c["y_topo"] = c["cota_topo"]
+            p["md_y"] = [list(x) for x in p["md_cota"]]
             if p["gr"]:
                 p["gr"]["y"] = p["gr"]["cota"]
             p["y_mesa"], p["y_fundo"] = p["mesa"], p["cota_fundo"]
@@ -483,7 +524,8 @@ def montar(banco: Banco, pocos: list[str], *, ordem: str = "linha", nivel: str =
         "pontas": list(geo["pontas"]), "comprimento_km": round(max(p["x_km"] for p in saida_pocos), 3),
         "y_max": y_max, "y_min": y_min,
         "datum_nome": nome_datum if eixo == "nivelado" else None,
-        "parametros": {"ordem": ordem, "nivel": nivel, "eixo": eixo, "datum": datum, "espacamento": espacamento,
+        "parametros": {"estilo": estilo, "ordem": ordem, "nivel": nivel, "eixo": eixo, "datum": datum,
+                       "espacamento": espacamento,
                        "litologia": litologia, "gr": gr, "limiar_salto_m": limiar_salto_m,
                        "janela": list(janela) if janela else None},
     }
@@ -517,7 +559,17 @@ def _t(x, y, texto, tam=11, cor=TINTA, ancora="middle", peso="normal", rot=None,
             f'font-weight="{peso}"{tr}{extra}>{escape(texto)}</text>')
 
 
-def desenhar(modelo: dict, titulo: str = "") -> str:
+def desenhar(modelo: dict, titulo: str = "", estilo: str | None = None, autor: str = "", data: str = "") -> str:
+    """SVG da seção: estilo "classico" (convenções de seção de correlação da indústria)
+    ou "moderno" (estilo de artigo, cores sólidas)."""
+    estilo = estilo or modelo["parametros"].get("estilo", "classico")
+    if estilo == "moderno":
+        return _desenhar_moderno(modelo, titulo)
+    from .secao_classica import desenhar_classico
+    return desenhar_classico(modelo, titulo, autor=autor, data=data)
+
+
+def _desenhar_moderno(modelo: dict, titulo: str = "") -> str:
     """SVG da seção no estilo de artigo: fundo branco, moldura fechada, marcas para
     dentro, grade fina, fonte serifada, legenda com moldura."""
     pocos = modelo["pocos"]
@@ -765,7 +817,10 @@ def desenhar(modelo: dict, titulo: str = "") -> str:
 # ============================================================ registro e saída
 def registrar(pasta_execucoes: str, modelo: dict, svg: str, autor: str = "") -> tuple[str, str]:
     os.makedirs(pasta_execucoes, exist_ok=True)
-    ident = f"secao_{datetime.now():%Y%m%d-%H%M%S}"
+    ident = base = f"secao_{datetime.now():%Y%m%d-%H%M%S}"
+    k = 2
+    while os.path.exists(os.path.join(pasta_execucoes, ident + ".json")):   # duas no mesmo segundo
+        ident, k = f"{base}-{k}", k + 1
     leve = json.loads(json.dumps(modelo))
     for p in leve["pocos"]:          # a curva fica no SVG; o registro guarda de onde veio
         if p.get("gr"):
@@ -793,7 +848,11 @@ def execucoes(pasta_execucoes: str) -> list[dict]:
                 continue
             saida.append({"id": r["id"], "criado_em": r.get("criado_em"), "pocos": [p["id"] for p in r["pocos"]],
                           "parametros": r.get("parametros", {})})
-    return saida
+
+    def ordem(r):       # mais recente primeiro; no mesmo segundo, o sufixo -2, -3…
+        partes = r["id"].split("-")
+        return r["criado_em"] or "", int(partes[2]) if len(partes) > 2 and partes[2].isdigit() else 1
+    return sorted(saida, key=ordem, reverse=True)
 
 
 def exportar(pasta_execucoes: str, ident: str, saida: str, formato: str) -> dict:
