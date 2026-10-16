@@ -6,6 +6,23 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 
 ## [Não lançado]
 
+## [0.8.0] — 2026-10-16
+### Adicionado
+- **Identificador único de poço**: `7GMR_0013__RN`, `7GMR13RN` e `7-GMR-13-RN` passam a ser
+  o mesmo poço (nome ANP, Resolução 699/2017), inclusive poços no mar (`-RJS`) e com sufixo
+  (`26D`, `59H`). Arquivos já baixados ganham o id canônico.
+- **Cadastro da ANP**: a Tabela de Poços dos dados abertos (~30 mil poços) é baixada e
+  importada para o banco — coordenadas, campo, operador, categoria, situação, datas,
+  profundidades, mesa rotativa e o número de cadastro. Importação de arquivo se o
+  download falhar. O nome do poço no operador vira apelido.
+- **Catálogo do REATE no banco**: toda lista de poços vista no portal fica registrada
+  (inclusive as listadas no 0.6); "Catalogar a bacia conectada" lista todas as categorias.
+- Aba **Mapa** (Leaflet, mapa ou satélite): poços coloridos pelo que existe — só no
+  cadastro, com pasta no REATE, com arquivos baixados, com dados transcritos. Filtros
+  por bacia, nome/campo/operador, terra/mar e categoria.
+- **Ficha do poço**: cadastro, pastas no REATE (com atalho para os arquivos no Catálogo),
+  arquivos baixados, curvas disponíveis e dados transcritos, num lugar só.
+
 ## [0.7.0] — 2026-10-16
 ### Adicionado
 - **Banco do projeto** (`projeto.sqlite`), com o mesmo modelo da base comunitária. Cada
@@ -84,6 +101,7 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 - Catálogo em tempo real das 24 bacias terrestres do REATE.
 - `iniciar.bat` que encontra um Python válido e cria ambiente isolado.
 
-[Não lançado]: https://github.com/SIAPP-Pocos/siapp/compare/v0.7.0...HEAD
+[Não lançado]: https://github.com/SIAPP-Pocos/siapp/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/SIAPP-Pocos/siapp/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/SIAPP-Pocos/siapp/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/SIAPP-Pocos/siapp/releases/tag/v0.6.0

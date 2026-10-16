@@ -65,3 +65,26 @@ def test_comunidade_autor_exportar_importar(janela):
     p.click("#aba-docs")
     janela.esperar("document.getElementById('n-com').textContent === '1'")
     assert not janela.erros_js, janela.erros_js
+
+
+def test_mapa_com_cadastro_e_ficha(janela):
+    from test_pocos import csv_exemplo
+    p = janela.page
+    abrir_projeto(janela)
+    p.click("#aba-mapa")
+    janela.esperar("!document.getElementById('mapa-vazio').hidden")
+    janela.api._importar_cadastro(csv_exemplo(), "anp:teste")
+    p.click("#aba-inicio")
+    p.click("#aba-mapa")
+    janela.esperar("document.getElementById('mapa-resumo').textContent.includes('2 poço')")
+    assert p.is_hidden("#mapa-vazio")
+    p.select_option("#f-bacia", "")
+    janela.esperar("document.getElementById('mapa-resumo').textContent.includes('3 poço')")
+    p.fill("#f-texto", "AURI")
+    janela.esperar("document.querySelectorAll('#lista-mapa button').length === 1")
+    p.click("#lista-mapa button")
+    janela.esperar("document.getElementById('fi-corpo').textContent.includes('72100021414')")
+    assert "Pioneiro" in p.text_content("#fi-corpo")
+    p.keyboard.press("Escape")
+    assert p.is_hidden("#ficha")
+    assert not janela.erros_js, janela.erros_js

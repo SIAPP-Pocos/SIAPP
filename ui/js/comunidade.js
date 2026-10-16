@@ -1,12 +1,6 @@
 // SIAPP — aba Comunidade: autoria, exportar/importar pacotes e base comunitária.
 "use strict";
 
-function dataCurta(iso) {
-  if (!iso) return "—";
-  const [d, h] = iso.split("T");
-  return d.split("-").reverse().join("/") + (h ? " " + h.slice(0, 5) : "");
-}
-
 function descreverItens(it) {
   const p = [];
   if (it.correcoes) p.push(`${it.correcoes} correção(ões)`);

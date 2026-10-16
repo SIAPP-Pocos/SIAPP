@@ -23,10 +23,11 @@ from .base import BaseAPI, ErroUsuario, mesma_pasta, resposta_segura
 from .catalogo import CatalogoAPI
 from .comunidade import ComunidadeAPI
 from .documentos import DocumentosAPI
+from .pocos import PocosAPI
 from .vocabulario import VocabularioAPI
 
 
-class API(BaseAPI, CatalogoAPI, DocumentosAPI, VocabularioAPI, ComunidadeAPI):
+class API(BaseAPI, PocosAPI, CatalogoAPI, DocumentosAPI, VocabularioAPI, ComunidadeAPI):
     def __init__(self):
         self._janela = None
         self._projeto = None
@@ -65,6 +66,7 @@ class API(BaseAPI, CatalogoAPI, DocumentosAPI, VocabularioAPI, ComunidadeAPI):
         if n:
             registro.log.info("vocabulário do SIAPP 0.6 migrado para o banco: %d itens", n)
         self._migrar_downloads()
+        self._migrar_pocos()
         self._indice = md.Indice(os.path.join(self._projeto.pasta, "texto", "indice.sqlite"))
         self._carregar_corretor()
         if self._indice.recriado:   # estrutura do índice mudou de versão: refaz a partir dos textos
@@ -93,10 +95,6 @@ class API(BaseAPI, CatalogoAPI, DocumentosAPI, VocabularioAPI, ComunidadeAPI):
         }
 
     # ------------------------------------------------------ arquivos baixados
-    def _id_poco(self, nome_pasta: str) -> str:
-        """Id do poço no banco a partir do nome da pasta no REATE."""
-        return nome_pasta
-
     def _registrar_arquivo_local(self, caminho: str, *, bacia: str, poco: str,
                                  caminho_remoto: str = "", baixado_em: str | None = None):
         rel = self._projeto.rel(caminho)

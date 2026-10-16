@@ -5,6 +5,8 @@
 const $ = (id) => document.getElementById(id);
 let api = null;
 let projetoAberto = false;
+let baciaAnterior = "";     // última bacia usada neste projeto (siapp.json)
+let baciaConectada = "";    // bacia conectada agora na aba Catálogo
 
 // ------------------------------------------------------------------ status
 function status(texto, tipo = "") {
@@ -51,3 +53,10 @@ function numero(v, casas = 1) {
 }
 
 function limpar(no) { while (no.firstChild) no.removeChild(no.firstChild); return no; }
+
+// "2026-10-16T10:05:00" → "16/10/2026 10:05"; "2026-10-16" → "16/10/2026".
+function dataCurta(iso) {
+  if (!iso) return "—";
+  const [d, h] = String(iso).split("T");
+  return d.split("-").reverse().join("/") + (h ? " " + h.slice(0, 5) : "");
+}

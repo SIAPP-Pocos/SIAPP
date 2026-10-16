@@ -6,6 +6,7 @@
 const AO_ABRIR_ABA = {
   inicio: () => carregarPanorama(),
   catalogo: () => {},
+  mapa: () => carregarMapa(),
   docs: () => carregarDocumentos(),
   comunidade: () => carregarComunidade(),
 };
@@ -96,7 +97,8 @@ async function iniciar() {
   ligar("ed-fechar", "onclick", fecharEditor);
   ligar("form-palavra", "onsubmit", adicionarPalavra);
   ligar("tolerante", "onchange", () => termoAtual && $("busca").value.trim() && buscar());
-  // comunidade
+  // mapa e comunidade
+  ligarMapa();
   ligarComunidade();
   ligar("ocr-cancelar", "onclick", async () => {
     await chamar($("ocr-cancelar"), "cancelar_processamento");
@@ -109,6 +111,7 @@ async function iniciar() {
       if (!$("editor").hidden) fecharEditor();
       else if (!$("painel-pagina").hidden) fecharPagina();
     } else if (!$("vista-catalogo").hidden && !$("gaveta").hidden) fecharGaveta();
+    else if (!$("vista-mapa").hidden && !$("ficha").hidden) fecharFicha();
   });
   status("Pronto. Comece abrindo o projeto.");
 }

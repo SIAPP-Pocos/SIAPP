@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>SIAPP</title>
+  <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
   <link rel="stylesheet" href="estilo.css">
 </head>
 <body>
@@ -15,6 +16,7 @@
     <nav class="abas" role="tablist">
       <button class="aba ativa" id="aba-inicio" data-vista="inicio" role="tab" aria-selected="true">Início</button>
       <button class="aba" id="aba-catalogo" data-vista="catalogo" role="tab" aria-selected="false">Catálogo</button>
+      <button class="aba" id="aba-mapa" data-vista="mapa" role="tab" aria-selected="false">Mapa</button>
       <button class="aba" id="aba-docs" data-vista="docs" role="tab" aria-selected="false">Documentos</button>
       <button class="aba" id="aba-comunidade" data-vista="comunidade" role="tab" aria-selected="false">Comunidade</button>
     </nav>
@@ -40,6 +42,7 @@
         <h2>Como usar</h2>
         <ol class="fluxo">
           <li><button data-ir="catalogo"><strong>Catálogo</strong><span>Escolha a bacia e a categoria; clique num poço para ver as pastas e os arquivos no portal.</span></button></li>
+          <li><button data-ir="mapa"><strong>Mapa</strong><span>Importe o cadastro da ANP: poços no mapa, com campo, operador, profundidade e o que já existe no REATE.</span></button></li>
           <li><button data-ir="catalogo"><strong>Baixar</strong><span>Marque os arquivos. Nada vem marcado: cada tipo serve a uma finalidade (veja abaixo).</span></button></li>
           <li><button data-ir="docs"><strong>Documentos</strong><span>Extraia o texto dos PDFs e TIFs, busque termos e corrija o que o OCR leu errado.</span></button></li>
           <li><button data-ir="comunidade"><strong>Comunidade</strong><span>Exporte suas correções, importe as de colegas e atualize a base comunitária.</span></button></li>
@@ -164,6 +167,70 @@
       </div>
       <ul class="arvore" id="g-arvore"></ul>
       <p class="ajuda g-rodape" id="g-rodape"></p>
+    </aside>
+  </main>
+
+  <main class="grade mapa" id="vista-mapa" hidden>
+    <aside class="lateral">
+      <section class="etapa">
+        <h2>Cadastro da ANP</h2>
+        <p class="ajuda" id="cad-info">Tabela de Poços dos dados abertos da ANP: coordenadas, campo,
+          operador, profundidade e situação de cada poço.</p>
+        <div class="linha">
+          <button class="btn" id="btn-cadastro">Baixar da ANP</button>
+          <button class="btn secundario" id="btn-cadastro-arq" title="Use se o download falhar">Importar CSV…</button>
+        </div>
+      </section>
+      <section class="etapa" id="etapa-filtros">
+        <h2>Filtros</h2>
+        <div class="filtros">
+          <label>Bacia <select id="f-bacia"></select></label>
+          <label>Nome, campo ou operador <input id="f-texto" type="search" placeholder="ex.: GMR, Guamaré"></label>
+          <div class="linha">
+            <label>Ambiente <select id="f-terra"><option value="">todos</option><option value="T">terra</option><option value="M">mar</option></select></label>
+            <label>Categoria <select id="f-tipo"><option value="">todas</option>
+              <option value="1">1 · pioneiro</option><option value="2">2 · estratigráfico</option>
+              <option value="3">3 · extensão</option><option value="4">4 · pioneiro adjacente</option>
+              <option value="5">5 · jazida mais rasa</option><option value="6">6 · jazida mais profunda</option>
+              <option value="7">7 · desenvolvimento</option><option value="8">8 · injeção</option>
+              <option value="9">9 · especial</option><option value="10">10 · outros</option></select></label>
+          </div>
+          <label class="opcao"><input type="checkbox" id="f-reate"> Só com pasta no REATE</label>
+          <label class="opcao"><input type="checkbox" id="f-baixados"> Só com arquivos baixados</label>
+        </div>
+        <p class="ajuda" id="mapa-resumo"></p>
+      </section>
+      <section class="etapa">
+        <h2>Pastas do REATE</h2>
+        <p class="ajuda">Para marcar no mapa os poços que têm pasta no portal, o SIAPP lista todas as
+          categorias da bacia conectada na aba Catálogo (só a lista; nada é baixado).</p>
+        <button class="btn secundario" id="btn-catalogar">Catalogar a bacia conectada</button>
+      </section>
+      <ul class="lista-mapa" id="lista-mapa"></ul>
+    </aside>
+    <section class="principal mapa-principal">
+      <div id="mapa" class="mapa-div"></div>
+      <div class="legenda">
+        <span><i class="bola cad"></i>só no cadastro</span>
+        <span><i class="bola reate"></i>pasta no REATE</span>
+        <span><i class="bola baixado"></i>arquivos baixados</span>
+        <span><i class="bola fatos"></i>com dados transcritos</span>
+      </div>
+      <div class="vazio mapa-vazio" id="mapa-vazio">
+        <p class="vazio-titulo">Mapa dos poços</p>
+        <p>Baixe o cadastro da ANP (ao lado) para ver os poços com coordenadas, campo, operador e
+          profundidade. É um arquivo público de ~12 MB, atualizado todo mês.</p>
+      </div>
+    </section>
+    <aside class="gaveta" id="ficha" hidden aria-label="Ficha do poço">
+      <div class="g-cab">
+        <div>
+          <h2 id="fi-titulo">—</h2>
+          <p class="ajuda" id="fi-sub"></p>
+        </div>
+        <button class="fechar" id="fi-fechar" title="Fechar (Esc)" aria-label="Fechar">×</button>
+      </div>
+      <div id="fi-corpo"></div>
     </aside>
   </main>
 
@@ -337,10 +404,13 @@
     </div>
   </footer>
 
+  <script src="vendor/leaflet/leaflet.js"></script>
   <script src="js/comum.js"></script>
   <script src="js/catalogo.js"></script>
   <script src="js/documentos.js"></script>
+  <script src="js/fatos.js"></script>
   <script src="js/comunidade.js"></script>
+  <script src="js/mapa.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

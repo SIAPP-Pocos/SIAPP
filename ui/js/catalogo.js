@@ -8,6 +8,7 @@ async function escolherPasta(ev) {
   if (!r.ok || r.cancelado) return;
 
   projetoAberto = true;
+  baciaAnterior = r.bacia_anterior || "";
   aoAbrirProjeto(r);
   $("caminho-pasta").textContent = r.pasta;
   $("caminho-pasta").hidden = false;
@@ -26,6 +27,7 @@ async function conectar() {
   status(`Conectando ao REATE — Bacia ${bacia}…`, "trab");
   const r = await chamar($("btn-conectar"), "conectar", bacia);
   if (!r.ok) return;
+  baciaConectada = bacia;
 
   const lista = $("lista-cat");
   lista.innerHTML = "";

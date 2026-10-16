@@ -98,6 +98,7 @@ usado para PDF e OCR.
 | [requests](https://requests.readthedocs.io/) | portal REATE | Apache-2.0 |
 | [PyMuPDF](https://pymupdf.readthedocs.io/) | PDF, imagem e OCR (motor Tesseract embutido) | AGPL-3.0 |
 | [NumPy](https://numpy.org/) | limpeza de imagem antes do OCR | BSD-3-Clause |
+| [Leaflet](https://leafletjs.com/) (em `ui/vendor/`) | mapa dos poços | BSD-2-Clause |
 | [Tesseract `por.traineddata`](https://github.com/tesseract-ocr/tessdata_best) | modelo de português (baixado na 1ª vez) | Apache-2.0 |
 
 ## Como citar

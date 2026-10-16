@@ -107,6 +107,9 @@ def abrir(api, browser):
         return json.dumps(r)
 
     page.expose_function("__siapp_chamar", chamar)
+    # mapas de fundo e qualquer outro endereço externo: resposta vazia (sem internet nos testes)
+    page.route(lambda url: not url.startswith("http://127.0.0.1"),
+               lambda rota: rota.fulfill(status=204, body=""))
     page.goto(srv.url)
     nomes = [n for n in dir(api) if not n.startswith("_") and callable(getattr(api, n))]
     page.evaluate(PONTE_JS, nomes)
