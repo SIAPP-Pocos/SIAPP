@@ -1,0 +1,59 @@
+name: Relatar erro
+description: Algo não funcionou como deveria no SIAPP.
+title: "[erro] "
+labels: ["tipo: erro", "triagem"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Obrigado por relatar. Quanto mais exato, mais rápido conseguimos corrigir.
+        **Não anexe arquivos baixados do REATE** — informe o caminho do arquivo no portal.
+  - type: input
+    id: versao
+    attributes:
+      label: Versão do SIAPP
+      description: Aparece no título da janela ou em `ambiente_teste/siapp.json` (campo siapp_versao).
+      placeholder: "0.6"
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Onde aconteceu
+      options:
+        - Instalação / iniciar.bat
+        - Catálogo (bacias, categorias, poços)
+        - Download
+        - Documentos / OCR
+        - Busca
+        - Correção de texto / dicionário
+        - Outro
+    validations:
+      required: true
+  - type: textarea
+    id: passos
+    attributes:
+      label: Passo a passo para reproduzir
+      placeholder: |
+        1. Conectar na bacia Potiguar
+        2. Abrir o poço 7-GMR-13-RN
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: esperado
+    attributes:
+      label: O que você esperava e o que aconteceu
+    validations:
+      required: true
+  - type: textarea
+    id: mensagens
+    attributes:
+      label: Mensagem da barra inferior e texto do terminal
+      description: Copie e cole. Vira bloco de código automaticamente.
+      render: text
+  - type: input
+    id: sistema
+    attributes:
+      label: Sistema operacional e versão do Python
+      placeholder: "Windows 11, Python 3.12"
