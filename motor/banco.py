@@ -140,6 +140,24 @@ MIGRACOES: list[str] = [
     );
     CREATE INDEX acervo_arquivos_poco ON acervo_arquivos(bacia, poco_caminho);
     """,
+    # 3 — AGP da ANP (Dados Gerais de Poços): topos, cabeçalho de perfilagem… (SIAPP 0.14)
+    """
+    CREATE TABLE agp(
+        bacia TEXT NOT NULL, caminho TEXT NOT NULL, poco_caminho TEXT, poco_pasta TEXT,
+        poco_id TEXT, poco_agp TEXT, confere INTEGER, tamanho INTEGER, arquivo_local TEXT,
+        lido_em TEXT, dados TEXT, erro TEXT,
+        PRIMARY KEY (bacia, caminho)
+    );
+    CREATE INDEX agp_poco ON agp(poco_id);
+    CREATE TABLE agp_unidades(
+        bacia TEXT NOT NULL, caminho TEXT NOT NULL, poco_id TEXT, ordem INTEGER,
+        tip TEXT, ql TEXT, nivel TEXT, sigla TEXT, codigo TEXT, nome TEXT,
+        topo REAL, cota_topo REAL, desc_topo TEXT, base REAL, cota_base REAL, desc_base TEXT,
+        metodo TEXT, fonte TEXT, data TEXT
+    );
+    CREATE INDEX agp_unidades_poco ON agp_unidades(poco_id);
+    CREATE INDEX agp_unidades_codigo ON agp_unidades(codigo);
+    """,
 ]
 
 

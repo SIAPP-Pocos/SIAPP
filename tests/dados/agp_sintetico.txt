@@ -1,0 +1,102 @@
+                                ===================================================
+                               |                    ANP/SDT/BDEP                   |
+                               |             AGP: Dados Gerais de Poços            |
+                                ===================================================
+
+ POÇO           :   7TST 0001  RN 
+===================================
+ IDENTIFICADOR  :   XX00X00XX00X00X                         BACIA          :   POTIGUAR (T)                                          
+ CAMPO          :   CAMPO DE TESTE                          DATUM          :   SIRGAS                                                
+ LATITUDE       :    -5.20000 (   -5  12  0.0)              LONGITUDE      :   -36.50000 (  -36  30  0.0)                            
+ QUADRICULA     :                                           B.A.P          :      45.0                                                
+ MESA ROTATIVA  :     50.0                                  P.F.SONDADOR   :   1200.0                                                
+ MAIOR PROF.    :   1200.0                                  INICIO         :   01/02/90                                              
+ FORMACAO P.F.  :     F PENDEN                              CLASSIFICACAO  :   DESENVOLVIMENTO                                       
+ RECLASSIFICACAO:   PRODUTOR DE OLEO                                                                                                 
+ DIRECIONAL?    :   VERTICAL                                TERRA / MAR    :   TERRA                                                 
+
+ REVESTIMENTOS -         TIPO           PROFUNDIDADE        DIAMETRO       IND. DE RECUPERACAO                7TST 0001  RN          
+ -------------
+                    REV. SUPERFICIE     100.0  (  -50.0)    13 3/8           DADO NAO REVISTO                                        
+                    REV. PRODUCAO      1195.0  (-1145.0)     5 1/2           NAO                                                     
+
+
+ UNID.VERTICALIZADAS -                                                                                               (7TST 0001  RN )
+ -------------------
+ TIP QL N O M E  CODIGO  TOPO / COTA     DESC. TOPO   BASE / COTA      DESC. BASE   MET TEMPO FONTE DE INTERPRETACAO       DATA      
+ L   B  F JANDAI 296038     5.0(   45.0) DISCORDANCIA  300.0 ( -250.)                E        A.G.P.  ANTIGO               01/01/1900
+ L   B  F ACU    312010   300.0( -250.0)               700.0 ( -650.)                B        A.G.P.  ANTIGO               01/01/1900
+ L   B  M MORCHA 445048   650.0( -600.0)               700.0 ( -650.)                A        A.G.P.  ANTIGO               01/01/1900
+ L   B  F ALAGAM 318742   700.0( -650.0) DISCORDANCIA 1000.0 ( -950.)  FALH.INTERNA  B        A.G.P.  ANTIGO               01/01/1900
+ L   B  F PENDEN 416548  1000.0( -950.0) DISCORDANCIA                                B        A.G.P.  ANTIGO               01/01/1900
+ M   B  MARCO L  501700   720.0( -670.0)                                             A        A.G.P.  ANTIGO               01/01/1900
+ C   B  A.JIQUIA 490000     5.5(   44.5) DISCORDANCIA  327.0 ( -277.)                E        A.G.P.  ANTIGO               01/01/1900
+ M   R  BFL  PEN 476148  1117.0(-1067.0)                                             L  0608  E&P RNCE GEXP/GEINT          27/07/1993
+
+
+ INDICIOS DE HIDROCARBONETOS -                                                                                7TST 0001  RN          
+ -------------------------------
+ TIPO ORIGEM AMOSTRA   T O P O           B A S E      MODO      R O C H A        %       TIPO/COR/TONALIDADE        V/M  UGT   UGP   
+  O     L      X     529.0 ( -479.0)  546.0 ( -496.0)                                                                /               
+  G     D      X     565.0 ( -515.0)  568.0 ( -518.0)                                                                /               
+  PERFIS: REGISTRO DE CABECALHO DE PERFIS                                                                                            
+  ---------------------------------------                                                                                            
+            (DESCRICAO GERAL)                                                                                                        
+ NUMERO CORRIDA:                    1           PROF. ALCANCADA:                           DENSIDADE LAMA:                           
+ RESISTIVIDADE LAMA:                            TEMPERATURA LAMA:                          HORA TERMINO CIRCULACAO:         99:99    
+ ------------------------------------------------------------------------------------------------------------------------------------
+ NUMERO CORRIDA:                   01           PROF. ALCANCADA:   1200.0 ( -1150.0)       DENSIDADE LAMA:                    9.4    
+ GRUPO PERFIS COMBINADOS:          01           PROF. DA SAPATA:    100.0 (   -50.0)       VISCOSIDADE LAMA:                  48     
+ COMPANHIA PERF.:    SCHLUMBERGER               TIPO LAMA        NACL C/ ACRILAMIDA        PH LAMA:                           9.0    
+ DATA DE INICIO            04/04/1990           TIPO TRACADOR:                             PERDA FILTRADO:                    2.4    
+ RESISTIVIDADE LAMA:            0.156           TEMPERATURA LAMA:             102.9        HORA TERMINO CIRCULACAO:         14:45    
+ RESISTIVIDADE FILTRADO:        0.162           TEMPERATURA FILTRADO:          74.8        DATA TERMINO CIRCULACAO:         04/04    
+ RESISTIVIDADE REBOCO:  0.216                   TEMPERATURA REBOCO:            74.8        TEMPO CIRCULACAO:                00:30    
+ HORA CHEGADA FUNDO POCO:       17:45           DATA CHEGADA FUNDO POCO:      04/04        TEMPERATURA FUNDO POCO:            136    
+ TEMP. FUNDO MAR/BAP:              80           SALINIDADE LAMA:                 43        CONCENTRACAO TRACADOR:                    
+ ------------------------------------------------------------------------------------------------------------------------------------
+ NUMERO CORRIDA:                   01           PROF. ALCANCADA:   1200.0 ( -1150.0)       DENSIDADE LAMA:                    9.4    
+ GRUPO PERFIS COMBINADOS:          02           PROF. DA SAPATA:    100.0 (   -50.0)       VISCOSIDADE LAMA:                  48     
+ RESISTIVIDADE LAMA:            0.156           TEMPERATURA LAMA:             102.9        HORA TERMINO CIRCULACAO:         14:45    
+ RESISTIVIDADE FILTRADO:        0.162           TEMPERATURA FILTRADO:          74.8        DATA TERMINO CIRCULACAO:         04/04    
+ HORA CHEGADA FUNDO POCO:       17:45           DATA CHEGADA FUNDO POCO:      04/04        TEMPERATURA FUNDO POCO:            136    
+----------------------------------
+  PERFIS: AQUISICAO/PROCESSAMENTO
+----------------------------------
+   COD  GR  TIPO           CIA   COR DESC    DATA           TOPO            BASE
+   ---  --  ----           ---   --- ----    ----           ----            ----
+   005  99  IEL/           GO I   1    Z               100.0(   -50.0) 1199.0( -1149.0)
+   140  99  CDL/                       Z               100.0(   -50.0) 1199.0( -1149.0)
+------------------------------------------------------
+ PERFIS: REGISTRO DE DADOS DE TEMPERATURA EXTRAPOLADA
+------------------------------------------------------
+  CORRIDA               METODO                               TEMPERATURA               PROF. DEFINIDA             GRADIENTE
+                        EXTRAPOLACAO                         EXTRAPOLADA                POR GRAFICO               GEOTERMICO
+                                                                                                                  (GRAU F/M)
+    01                  DADO NAO REVISTO                        144.0                  1200.0( -1150.0)              .053
+--------------------------------------
+ ZONAS RESERVATORIO (DESENVOLVIMENTO)
+--------------------------------------
+ COD. ZONA     FONTE DE INTERPRETACAO       TOPO / COTA     QL BASE / COTA     QL MET QL  TOPO / COTA      BASE / COTA      MOT.AUS.
+ 751/ACU0210   A.G.P.  ANTIGO               520.0 ( -470.0)   548.0 ( -498.0)    A  B                                     N/REVISTO
+ 757/ACU0230   E&P RNCE GEXP/GEINT          560.0 ( -510.0) F 570.0 ( -520.0)    A  B                                     N/REVISTO
+ LITOLOGIA - *** VALORES VERTICALIZADOS ***
+  TOPO              BASE                ROCHA                 COR         TONALIDADE    GRANULOMETRIA   ARREDONDAMENTO
+    5.0 (   45.0)     8.0 (   42.0)   8 CALCARENITO           CREME       CLARO         FINO
+                     13.5 (   36.5)  49 ARENITO               BRANCO                    FINO            SUBARREDONDADO
+                     20.0 (   30.0)  56 ARGILITO              CINZA       ESVERDEADO
+ TESTES DE FORMACAO -
+ -------------------
+ NUMERO - TFS 03
+ -----------------------
+ * INFORMACOES GERAIS *
+ DATA : 05/07/1990         TIPO : SELETIVO-ANCORA PAREDE            CIA : PETROBRAS
+ TOPO :  668.5 M           BASE :  684.0M                           PROF. POCO TESTE :  1200.0 M
+ TEMP. MAX. TESTE : 124 F  FONTE DA TEMP. MAX. : REGISTRADOR MECANICO
+ OBJETIVO : VERIFICACAO DE FLUIDO E PRESSAO
+ RESULTADO : CONCLUSIVO (QUALITATIVO OU QUANTITATIVO)
+ **** OBSERVACOES ****
+  A RECUPERADOS 3 m3 DE AGUA DE FORMACAO. SAL= 20.000 PPM DE NaCl, pH=7.8.
+  B TESTE CONCLUSIVO.
+ **** DADOS DO FLUIDO DE PERFURACAO ****
+ FONTE DADOS FLUIDO : CAMPO

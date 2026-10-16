@@ -60,7 +60,7 @@ async function iniciarLevantamento() {
   const bacia = $("lv-bacia").value;
   const cats = [...document.querySelectorAll(".lv-cat:checked")].map((c) => c.value);
   const r = await chamar($("lv-iniciar"), "levantar_acervo", bacia, cats,
-                         $("lv-curvas").checked, $("lv-todos").checked);
+                         $("lv-curvas").checked, $("lv-todos").checked, $("lv-agp").checked);
   if (!r.ok) return;
   lvAtivo = true;
   mostrarAtivo(true);
@@ -133,6 +133,17 @@ function desenharResumoLevantamento(r) {
     }
     box.appendChild(tc);
   }
+  if (r.agp_disponiveis) {
+    box.appendChild(el("h3", "", "AGP (topos de formação)"));
+    const ta = el("table");
+    for (const [rot, n] of [["AGPs no portal", r.agp_disponiveis], ["lidos", r.agp_lidos],
+                            ["com topos de formação", r.agp_com_topos], ["de outro poço (pasta trocada)", r.agp_de_outro_poco]]) {
+      const tr = el("tr");
+      tr.append(el("th", "", rot), el("td", "n", numero(n, 0)));
+      ta.appendChild(tr);
+    }
+    box.appendChild(ta);
+  }
   if (r.atualizado_em) box.appendChild(el("p", "ajuda", `Atualizado em ${dataCurta(r.atualizado_em)}.`));
 }
 
@@ -145,8 +156,8 @@ async function exportarLevantamento() {
 window.eventoLevantamento = function (ev) {
   if (ev.tipo === "etapa") {
     $("lv-texto").textContent = ev.texto;
-  } else if (ev.tipo === "listagem" || ev.tipo === "arquivo") {
-    const fase = ev.tipo === "listagem" ? "1/2 · " : "2/2 · ";
+  } else if (ev.tipo === "listagem" || ev.tipo === "arquivo" || ev.tipo === "agp") {
+    const fase = { listagem: "1/3 · ", arquivo: "2/3 · ", agp: "3/3 · " }[ev.tipo];
     $("lv-texto").textContent = `${fase}${ev.texto} (${numero(ev.feito, 0)} de ${numero(ev.total, 0)})`;
     $("lv-texto").title = ev.texto;
     $("lv-barra").style.width = ev.total ? (100 * ev.feito / ev.total).toFixed(1) + "%" : "0%";
@@ -155,7 +166,8 @@ window.eventoLevantamento = function (ev) {
     lvAtivo = false;
     mostrarAtivo(false);
     if (ev.tipo === "fim") {
-      status(`Levantamento concluído: ${numero(ev.pocos, 0)} poço(s), ${numero(ev.arquivos_lidos, 0)} arquivo(s) conferidos pelo conteúdo.`, "ok");
+      status(`Levantamento concluído: ${numero(ev.pocos, 0)} poço(s), ${numero(ev.arquivos_lidos, 0)} arquivo(s) conferidos pelo conteúdo` +
+             (ev.agps_lidos ? `, ${numero(ev.agps_lidos, 0)} AGP(s) lidos.` : "."), "ok");
     } else if (ev.tipo === "cancelado") {
       status("Levantamento cancelado. O que já foi lido fica salvo; levante de novo para continuar.", "ok");
     } else {
@@ -195,6 +207,68 @@ function secaoAcervoFicha(corpo, acervo) {
     ul.appendChild(li);
   }
   corpo.appendChild(ul);
+}
+
+// ------------------------------------------------ ficha do poço: AGP da ANP
+const NIVEL_AGP = { F: "Formação", M: "Membro", G: "Grupo", S: "Supergrupo" };
+const TIP_AGP = { L: "litoestratigráfica", C: "cronoestratigráfica", M: "marco", D: "discordância", O: "ostracodes" };
+
+function secaoAgpFicha(corpo, agps) {
+  if (!agps || !agps.length) return;
+  const g = agps[0];
+  corpo.appendChild(el("h3", "", "AGP — dados gerais do poço (ANP)"));
+  if (g.confere === 0) {
+    corpo.appendChild(el("p", "agp-aviso", `Este AGP (${g.cabecalho.poco_agp}) estava na pasta de ${g.poco_pasta} no portal.`));
+  }
+  const c = g.cabecalho || {};
+  const t = el("table", "tabela ficha");
+  linhaFicha(t, "Classificação", [c.classificacao, c.reclassificacao].filter(Boolean).join(" · "));
+  linhaFicha(t, "Prof. final (sondador)", c.prof_final != null ? `${numero(c.prof_final, 1)} m` : "");
+  linhaFicha(t, "Formação na prof. final", c.formacao_pf);
+  linhaFicha(t, "Mesa rotativa", c.mesa_rotativa != null ? `${numero(c.mesa_rotativa, 1)} m` : "");
+  linhaFicha(t, "Datum", c.datum);
+  corpo.appendChild(t);
+  const us = (g.unidades || []).filter((u) => u.tip === "L");
+  if (us.length) {
+    const tu = el("table", "tabela agp-tabela");
+    const cab = el("tr");
+    for (const h of ["Unidade", "Topo (m)", "Base (m)", "Fonte"]) cab.appendChild(el("th", "", h));
+    tu.appendChild(cab);
+    for (const u of us) {
+      const tr = el("tr");
+      const nome = el("td", "", `${NIVEL_AGP[u.nivel] || ""} ${u.nome}`.trim());
+      nome.title = `${u.sigla} · código ${u.codigo} · ${u.tipo_desc || TIP_AGP[u.tip] || u.tip}` +
+        (u.qualidade ? ` · qualidade: ${u.qualidade}` : "") + (u.metodo_desc ? ` · método: ${u.metodo_desc}` : "") +
+        (u.desc_topo ? ` · topo: ${u.desc_topo}` : "");
+      tr.append(nome, el("td", "", numero(u.topo, 1)), el("td", "", u.base == null ? "—" : numero(u.base, 1)),
+                el("td", "", [u.fonte, u.data && u.data !== "01/01/1900" ? u.data : ""].filter(Boolean).join(" · ")));
+      tu.appendChild(tr);
+    }
+    corpo.appendChild(tu);
+  }
+  const extras = [];
+  if ((g.zonas || []).length) extras.push(`${g.zonas.length} zona(s)-reservatório`);
+  if ((g.indicios || []).length) extras.push(`${g.indicios.length} indício(s) de hidrocarboneto`);
+  if ((g.testes || []).length) extras.push(`${g.testes.length} teste(s) de formação`);
+  if ((g.revestimentos || []).length) extras.push(`${g.revestimentos.length} revestimento(s)`);
+  if ((g.litologia || []).length) extras.push(`litologia descrita em ${g.litologia.length} camada(s) (trilha na aba Perfis)`);
+  for (const cr of g.corridas || []) {
+    extras.push(`corrida ${cr.corrida}: Rm ${numero(cr.rm, 3)} a ${numero(cr.t_rm, 1)} °F, Rmf ${numero(cr.rmf, 3)} a ${numero(cr.t_rmf, 1)} °F, BHT ${numero(cr.bht, 0)} °F`);
+  }
+  if (extras.length) corpo.appendChild(el("p", "ajuda", extras.join(" · ")));
+  for (const ts of (g.testes || []).slice(0, 5)) {
+    const p = el("p", "ajuda", `Teste ${ts.numero} (${ts.data}) ${numero(ts.topo, 1)}–${numero(ts.base, 1)} m: ${ts.resultado || "—"}` +
+      (ts.salinidade_ppm ? ` · salinidade ${numero(ts.salinidade_ppm, 0)} ppm` : ""));
+    p.title = ts.observacoes || "";
+    corpo.appendChild(p);
+  }
+  if (g.arquivo_local) {
+    const b = el("button", "btn-abrir", "Abrir o AGP");
+    b.type = "button";
+    b.title = "Abrir o texto completo no programa do computador";
+    b.onclick = () => chamar(b, "abrir_agp", g.arquivo_local);
+    corpo.appendChild(b);
+  }
 }
 
 function ligarLevantamento() {

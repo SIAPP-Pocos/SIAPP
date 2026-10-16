@@ -208,6 +208,7 @@ async function abrirFicha(id) {
   }
   corpo.appendChild(ul);
 
+  secaoAgpFicha(corpo, r.agp);
   secaoAcervoFicha(corpo, r.acervo);
 
   if (r.curvas.length) {

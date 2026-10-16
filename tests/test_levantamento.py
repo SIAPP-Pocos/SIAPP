@@ -194,3 +194,32 @@ def test_curvas_do_inicio_de_dlis_real():
         dados = f.read(256 * 1024)
     curvas = lv.curvas_do_inicio(dados, "dlis", completo=False)
     assert len(curvas) > 20 and "GR" in {c.upper() for c in curvas}
+
+
+def test_levantamento_le_os_agps(banco, tmp_path):
+    with open(os.path.join(os.path.dirname(__file__), "dados", "agp_sintetico.txt"), "rb") as f:
+        texto_agp = f.read()
+    arqs = portal()
+    base = "/POCO/Categoria-7/Categoria-7_parte1/"
+    arqs[base + "7-TST-1-RN/AGP/7TST0001RN_agp.txt"] = texto_agp
+    arqs[base + "7-TST-1-RN/Perfil Convencional/7tst.dlis"] = SUL_DLIS
+    c = ClienteFalso(arqs)
+    r, eventos = rodar(banco, c, ["Categoria-7"], agp=True, pasta_agp=str(tmp_path / "agp"))
+    assert r["agps_lidos"] == 1
+    assert any(e["tipo"] == "agp" for e in eventos)
+    from motor import agp as magp
+    assert [u["sigla"] for u in magp.unidades_do_poco(banco, "7-TST-1-RN")][:3] == ["JANDAI", "A.JIQUIA", "ACU"]
+    assert os.path.isfile(tmp_path / "agp" / "Alagoas" / "7TST0001RN_agp.txt")
+    assert magp.do_poco(banco, "7-TST-1-RN")[0]["arquivo_local"] == "agp/Alagoas/7TST0001RN_agp.txt"
+    assert r["resumo"]["agp_lidos"] == 1 and r["resumo"]["agp_com_topos"] == 1
+    # o AGP foi lido inteiro (não só 1 KB)
+    assert (base + "7-TST-1-RN/AGP/7TST0001RN_agp.txt", len(texto_agp)) in c.lidos
+    # de novo: nada a ler
+    c.lidos.clear()
+    r, _ = rodar(banco, c, ["Categoria-7"], agp=True)
+    assert r["agps_lidos"] == 0
+    pocos_csv, arqs_csv, topos_csv = lv.exportar_csv(banco, "Alagoas", str(tmp_path / "exp"))
+    with open(topos_csv, encoding="utf-8-sig") as f:
+        linhas = list(csv.DictReader(f, delimiter=";"))
+    acu = next(x for x in linhas if x["sigla"] == "ACU")
+    assert acu["poco"] == "7-TST-1-RN" and acu["topo_m"] == "300,00" and acu["agp_do_proprio_poco"] == "sim"

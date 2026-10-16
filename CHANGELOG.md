@@ -6,6 +6,21 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 
 ## [Não lançado]
 
+## [0.14.0] — 2026-10-16
+### Adicionado
+- **Leitura do AGP (Dados Gerais de Poço, ANP)** como 3ª etapa do Levantamento do acervo
+  (opção *Ler os AGPs*): cabeçalho, revestimentos, topos das unidades estratigráficas,
+  indícios de hidrocarboneto, dados de lama por corrida (Rm, Rmf, Rmc, BHT), temperatura
+  extrapolada, zonas-reservatório, testes de formação (com salinidade) e litologia de calha.
+  Cópia local em `agp/<bacia>/`; tabelas `agp` e `agp_unidades` (migração 3 do banco).
+- AGP guardado na pasta de **outro poço** é associado ao poço do próprio AGP e sinalizado.
+- Ficha do poço: seção *AGP — dados gerais do poço* e botão **Abrir o AGP**.
+- Avaliação de formação: unidades e zonas do AGP como intervalos candidatos; Rm/Rmf/BHT do
+  AGP como referência para o Rw.
+- Gráfico de perfis: topos do AGP (linhas tracejadas) e trilha **Litol. (AGP)**.
+- Exportação `<bacia>_topos.csv`; `recursos/estratigrafia.json` (siglas → nomes);
+  `docs/agp.md`.
+
 ## [0.13.0] — 2026-10-16
 ### Adicionado
 - **Avaliação de formação no intervalo-alvo** (aba Perfis): Vsh pelo GR (linear ou Larionov

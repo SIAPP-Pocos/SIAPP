@@ -40,23 +40,50 @@ async function carregarAvaliacao() {
                                      registro: `execucoes/${r.ultima.id}.json` }, true);
 }
 
+function caixaIntervalo(f, marcado) {
+  const l = el("label", "opcao");
+  const cb = el("input");
+  cb.type = "checkbox";
+  cb.checked = marcado;
+  cb.value = f.id;
+  cb.className = "av-int";
+  l.append(cb, document.createTextNode(` ${f.nome || "sem nome"} · ${numero(f.prof_topo, 1)}–${numero(f.prof_base, 1)} m`));
+  return l;
+}
+
 function desenharIntervalosAv() {
   const box = limpar($("av-intervalos"));
   const ints = av.info ? av.info.intervalos : [];
+  const doAgp = av.info ? (av.info.intervalos_agp || []) : [];
   if (!ints.length) {
-    box.appendChild(el("p", "ajuda", "Nenhum intervalo-alvo neste poço. Arraste na vertical sobre o gráfico e salve como “Intervalo-alvo”."));
-    return;
+    box.appendChild(el("p", "ajuda", doAgp.length
+      ? "Nenhum intervalo marcado por você. Use uma unidade do AGP abaixo ou arraste sobre o gráfico."
+      : "Nenhum intervalo-alvo neste poço. Arraste na vertical sobre o gráfico e salve como “Intervalo-alvo”."));
   }
-  for (const f of ints) {
-    const l = el("label", "opcao");
-    const cb = el("input");
-    cb.type = "checkbox";
-    cb.checked = true;
-    cb.value = f.id;
-    cb.className = "av-int";
-    l.append(cb, document.createTextNode(` ${f.nome || "sem nome"} · ${numero(f.prof_topo, 1)}–${numero(f.prof_base, 1)} m`));
-    box.appendChild(l);
+  for (const f of ints) box.appendChild(caixaIntervalo(f, true));
+  if (doAgp.length) {
+    const t = el("p", "ajuda av-sub", "Do AGP (topos interpretados pela operadora):");
+    box.appendChild(t);
+    for (const f of doAgp) box.appendChild(caixaIntervalo(f, false));
   }
+  desenharLamaAv();
+}
+
+// Referência para o Rw: o que o AGP registra da lama de cada corrida (°F).
+function desenharLamaAv() {
+  const p = $("av-lama");
+  if (!p) return;
+  const cs = (av.info && av.info.lama_agp) || [];
+  const ts = (av.info && av.info.temperaturas_agp) || [];
+  if (!cs.length && !ts.length) { p.hidden = true; return; }
+  const partes = cs.map((c) => [`corrida ${c.corrida || "?"}`,
+    c.rm != null ? `Rm ${numero(c.rm, 3)} a ${numero(c.t_rm, 1)} °F` : "",
+    c.rmf != null ? `Rmf ${numero(c.rmf, 3)} a ${numero(c.t_rmf, 1)} °F` : "",
+    c.bht != null ? `BHT ${numero(c.bht, 0)} °F` : "",
+    c.prof_alcancada != null ? `até ${numero(c.prof_alcancada, 0)} m` : ""].filter(Boolean).join(", "));
+  for (const t of ts) partes.push(`gradiente ${numero(t.gradiente_f_m, 3)} °F/m (corrida ${t.corrida})`);
+  p.textContent = "No AGP: " + partes.join(" · ") + ". Referência para escolher o Rw — o SIAPP não converte.";
+  p.hidden = false;
 }
 
 async function atualizarIntervalosAv() {

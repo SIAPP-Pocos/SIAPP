@@ -227,6 +227,7 @@
           <button class="btn secundario pequeno" id="lv-carregar">Escolher categorias…</button>
           <span class="ajuda">sem escolher, levanta a bacia inteira</span>
         </div>
+        <label class="opcao"><input type="checkbox" id="lv-agp" checked> <span>Ler o <strong>AGP</strong> de cada poço (topos de formação, lama, testes; ~40 KB por poço)</span></label>
         <label class="opcao"><input type="checkbox" id="lv-curvas"> Listar as curvas (lê até 256 KB de cada perfil)</label>
         <label class="opcao"><input type="checkbox" id="lv-todos"> <span>Conferir também <code>.dlis</code> e <code>.las</code> pelo conteúdo</span></label>
         <div class="linha">
@@ -515,6 +516,7 @@
                   <option value="simandoux">Simandoux (arenito argiloso)</option></select></label>
                 <div class="av-par"><label>Rw (ohm·m) <input id="av-rw" type="text" inputmode="decimal"></label><label>Rsh <input id="av-rsh" type="text" inputmode="decimal" placeholder="auto"></label>
                   <label>a <input id="av-a" type="text" inputmode="decimal"></label><label>m <input id="av-m" type="text" inputmode="decimal"></label><label>n <input id="av-n" type="text" inputmode="decimal"></label></div>
+                <p class="ajuda av-lama" id="av-lama" hidden></p>
                 <h4>Cortes</h4>
                 <div class="av-par"><label>Vsh ≤ <input id="av-corte_vsh" type="text" inputmode="decimal"></label><label>φ ≥ <input id="av-corte_phi" type="text" inputmode="decimal"></label><label>Sw ≤ <input id="av-corte_sw" type="text" inputmode="decimal"></label></div>
                 <h4>Controle de qualidade</h4>

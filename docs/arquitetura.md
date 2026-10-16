@@ -21,6 +21,7 @@
     projeto.py      pasta de projeto, procedência    registro.py    siapp.log
     formatos.py     formato pelo conteúdo (1 KB)     levantamento.py  acervo da bacia, sem baixar
     avaliacao.py    Vsh, φ, Sw, net pay no intervalo-alvo (registro em execucoes/)
+    agp.py          AGP da ANP: topos, lama, testes, litologia (tabelas agp, agp_unidades)
                ▼
   ambiente_teste/  — pasta de projeto (contrato entre as partes)
 ```

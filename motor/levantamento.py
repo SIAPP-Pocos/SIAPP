@@ -26,6 +26,7 @@ import tempfile
 import threading
 from collections import Counter
 
+from . import agp as magp
 from . import formatos
 from .banco import Banco, agora
 from .pocos import chave
@@ -261,9 +262,11 @@ class Levantamento:
 
     def __init__(self, banco: Banco, bacia: str, categorias: list[str], *, emitir,
                  curvas: bool = False, conferir_todos: bool = False, familia=None,
-                 cliente: ClienteREATE | None = None):
+                 cliente: ClienteREATE | None = None, agp: bool = False,
+                 pasta_agp: str | None = None, estratigrafia: dict | None = None):
         self.banco, self.bacia, self.categorias = banco, bacia, list(categorias)
         self.emitir, self.curvas, self.conferir_todos, self.familia = emitir, curvas, conferir_todos, familia
+        self.agp, self.pasta_agp, self.estratigrafia = agp, pasta_agp, estratigrafia or {}
         self.cliente = cliente or ClienteREATE.da_bacia(bacia)
         self.cancelar = threading.Event()
         self.thread: threading.Thread | None = None
@@ -354,7 +357,45 @@ class Levantamento:
                 tocados.clear()
                 self.emitir({"tipo": "arquivo", "feito": k, "total": len(fila),
                              "texto": f"Conferindo arquivos pelo conteúdo: {a['nome']}"})
-        return {"pocos": n_pocos, "arquivos_lidos": len(fila), "resumo": resumo(self.banco, self.bacia)}
+        n_agp = self._ler_agps(alvo) if self.agp else 0
+        return {"pocos": n_pocos, "arquivos_lidos": len(fila), "agps_lidos": n_agp,
+                "resumo": resumo(self.banco, self.bacia)}
+
+    def _ler_agps(self, alvo: list[str]) -> int:
+        """3. AGP de cada poço (~20–160 KB): só os novos ou que mudaram de tamanho."""
+        with self.banco.conexao() as c:
+            marcadas = ",".join("?" * len(alvo))
+            cands = [dict(r) for r in c.execute(
+                f"""SELECT a.caminho, a.nome, a.pasta, a.tamanho, a.poco_caminho, p.poco_id
+                    FROM acervo_arquivos a JOIN acervo_pocos p
+                      ON p.bacia = a.bacia AND p.caminho = a.poco_caminho
+                    LEFT JOIN agp g ON g.bacia = a.bacia AND g.caminho = a.caminho
+                    WHERE a.bacia = ? AND p.categoria IN ({marcadas}) AND lower(a.nome) LIKE '%.txt'
+                      AND (g.caminho IS NULL OR g.tamanho IS NOT a.tamanho)
+                    ORDER BY a.caminho""", (self.bacia, *alvo))]
+        fila = [a for a in cands if magp.eh_agp(a["nome"], a["pasta"])]
+        for k, a in enumerate(fila, 1):
+            self._checar()
+            texto, erro, local = None, "", ""
+            try:
+                dados = self.cliente.ler_inicio(a["caminho"], max(1, min(a["tamanho"] or 1, 4 * 1024 * 1024)))
+                texto = magp.decodificar(dados)
+                if self.pasta_agp:
+                    local = os.path.join(self.pasta_agp, re.sub(r"[^\w .-]+", "_", self.bacia), a["nome"])
+                    os.makedirs(os.path.dirname(local), exist_ok=True)
+                    with open(local, "wb") as f:
+                        f.write(dados)
+                    # guardado relativo à pasta do projeto: o projeto pode mudar de lugar
+                    local = os.path.relpath(local, os.path.dirname(os.path.abspath(self.pasta_agp))).replace(os.sep, "/")
+            except ErroREATE as e:
+                erro = str(e)
+            magp.gravar(self.banco, bacia=self.bacia, caminho=a["caminho"], poco_caminho=a["poco_caminho"],
+                        poco_pasta=a["poco_id"], tamanho=a["tamanho"], texto=texto,
+                        estratigrafia=self.estratigrafia, arquivo_local=local, erro=erro)
+            if k % 5 == 0 or k == len(fila):
+                self.emitir({"tipo": "agp", "feito": k, "total": len(fila),
+                             "texto": f"Lendo os AGPs (topos de formação): {a['nome']}"})
+        return len(fila)
 
     def _listar_tudo(self, cam: str) -> list[dict]:
         """Listagem recursiva numa requisição; se o portal recusar, poço a poço."""
@@ -403,7 +444,20 @@ def resumo(banco: Banco, bacia: str) -> dict:
         "arquivos_conferidos": sum(r["n"] for r in arqs if r["verificado"] == "conteudo"),
         "arquivos_candidatos": sum(r["n"] for r in arqs),
         "atualizado_em": max((p["classificado_em"] or p["listado_em"] or "") for p in pocos),
+        **_resumo_agp(banco, bacia),
     }
+
+
+def _resumo_agp(banco: Banco, bacia: str) -> dict:
+    with banco.conexao() as c:
+        lidos, outro, com_topos = c.execute(
+            """SELECT count(*), sum(confere = 0),
+                      sum(EXISTS (SELECT 1 FROM agp_unidades u WHERE u.bacia = g.bacia AND u.caminho = g.caminho))
+               FROM agp g WHERE bacia = ? AND dados IS NOT NULL""", (bacia,)).fetchone()
+        disp = c.execute("""SELECT count(*) FROM acervo_arquivos WHERE bacia = ? AND lower(nome) LIKE '%_agp%.txt'""",
+                         (bacia,)).fetchone()[0]
+    return {"agp_disponiveis": disp, "agp_lidos": lidos or 0, "agp_com_topos": com_topos or 0,
+            "agp_de_outro_poco": outro or 0}
 
 
 def arquivos_do_poco(banco: Banco, poco_id: str) -> list[dict]:
@@ -464,4 +518,22 @@ def exportar_csv(banco: Banco, bacia: str, pasta: str, coordenadas: bool = True)
                         "" if a["curvas"] is None else ("sim" if a["curvas_completas"] else "não (só o começo)"),
                         a["erro"] or ""])
     saidas.append(cam)
+    with banco.conexao() as c:
+        topos = [dict(r) for r in c.execute(
+            """SELECT u.*, g.poco_agp, g.confere FROM agp_unidades u JOIN agp g
+                 ON g.bacia = u.bacia AND g.caminho = u.caminho
+               WHERE u.bacia = ? ORDER BY u.poco_id, u.topo, u.ordem""", (bacia,))]
+    if topos:
+        cam = os.path.join(pasta, nome_base + "_topos.csv")
+        with open(cam, "w", encoding="utf-8-sig", newline="") as f:
+            w = csv.writer(f, delimiter=";")
+            w.writerow(["poco", "tipo", "nivel", "sigla", "codigo", "nome", "topo_m", "cota_topo_m",
+                        "desc_topo", "base_m", "cota_base_m", "desc_base", "fonte_interpretacao", "data",
+                        "agp_do_proprio_poco", "arquivo_agp"])
+            for u in topos:
+                w.writerow([u["poco_id"], u["tip"], u["nivel"], u["sigla"], u["codigo"], u["nome"],
+                            num(u["topo"], 2), num(u["cota_topo"], 2), u["desc_topo"], num(u["base"], 2),
+                            num(u["cota_base"], 2), u["desc_base"], u["fonte"], u["data"],
+                            "sim" if u["confere"] else "não", u["caminho"]])
+        saidas.append(cam)
     return saidas

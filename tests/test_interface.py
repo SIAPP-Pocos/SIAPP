@@ -280,3 +280,46 @@ def test_avaliacao_de_formacao_no_intervalo(janela, tmp_path):
     janela.esperar("document.getElementById('status').textContent.includes('Avaliação exportada')")
     assert not p.is_hidden("#av-historico")
     assert not janela.erros_js, janela.erros_js
+
+
+def test_agp_na_ficha_e_na_avaliacao(janela, monkeypatch, tmp_path):
+    from test_avaliacao import las_reservatorio
+    from test_levantamento import SUL_DLIS, ClienteFalso
+    from test_pocos import csv_exemplo
+    from motor import reate
+    with open(os.path.join(os.path.dirname(__file__), "dados", "agp_sintetico.txt"), "rb") as f:
+        agp = f.read().replace(b"7TST 0001  RN", b"1AURI0012  RN")
+    falso = ClienteFalso({
+        "/POCO/Categoria-1/1-AURI-12-RN/Perfil Convencional/1AURI.dlis": SUL_DLIS,
+        "/POCO/Categoria-1/1-AURI-12-RN/AGP/1AURI0012RN_agp.txt": agp,
+    })
+    monkeypatch.setattr(reate.ClienteREATE, "da_bacia", classmethod(lambda cls, bacia, **kw: falso))
+    p = janela.page
+    abrir_projeto(janela)
+    janela.api._importar_cadastro(csv_exemplo(), "anp:teste")
+    p.click("#aba-mapa")
+    janela.esperar("document.getElementById('mapa-resumo').textContent.includes('poço')")
+    p.select_option("#lv-bacia", "Potiguar")
+    assert p.is_checked("#lv-agp")
+    p.click("#lv-iniciar")
+    janela.esperar("document.getElementById('lv-resumo').textContent.includes('com topos de formação')", 30)
+    assert "AGP(s) lidos" in janela.status()
+    p.evaluate("abrirFicha('1-AURI-12-RN')")
+    janela.esperar("document.getElementById('fi-corpo').textContent.includes('AGP — dados gerais')")
+    corpo = p.text_content("#fi-corpo")
+    assert "Formação Açu" in corpo and "Rmf 0,162 a 74,8 °F" in corpo and "salinidade 20.000 ppm" in corpo
+    # perfil do mesmo poço: as unidades do AGP viram intervalos candidatos na avaliação
+    pasta = tmp_path / "ambiente_teste" / "bruto" / "Potiguar" / "1-AURI-12-RN" / "Perfil Convencional"
+    pasta.mkdir(parents=True)
+    las_reservatorio(pasta / "auri.las")
+    janela.api._abrir_projeto(str(tmp_path / "ambiente_teste"))
+    p.click("#aba-perfis")
+    janela.esperar("document.querySelectorAll('#lista-perfis button').length >= 1")
+    p.click("#lista-perfis button")
+    janela.esperar("document.querySelectorAll('.av-int').length >= 3", 30)
+    assert "Formação Açu · 300–700 m" in p.text_content("#av-intervalos")
+    assert "Rmf 0,162" in p.text_content("#av-lama")
+    # litologia das amostras de calha vira uma trilha estreita no gráfico
+    janela.esperar("document.querySelectorAll('.pf-trilha-lito canvas').length == 1")
+    assert "Litol. (AGP)" in p.text_content(".pf-trilha-lito")
+    assert not janela.erros_js, janela.erros_js

@@ -139,6 +139,14 @@ O nome **não é padronizado** — muda entre poços, até na mesma bacia.
   - pressão de formação / gradiente de fluido → RFT
   - contexto geológico / descrição → perfil composto, pasta do poço
 
+## AGP (dados gerais do poço)
+
+Pasta `AGP` ou `Arquivo_geral_de_poco`, um `<poço>_agp.txt` de largura fixa. Na Potiguar
+(levantamento parcial de 16/10/2026): **1.310 poços com AGP** (54 MB) — 63% dos pioneiros
+(Cat. 1), 8% dos de desenvolvimento (Cat. 7); 897 deles também têm perfil digital. Às vezes
+a pasta de um poço guarda o AGP de outro (3-AP-10-RN → `3SG0010BA`). Formato, dicionário de
+códigos e o que o SIAPP extrai: [`agp.md`](agp.md).
+
 ## Próximos levantamentos
 
 - [ ] Confirmar as hipóteses de sufixo abrindo os DLIS

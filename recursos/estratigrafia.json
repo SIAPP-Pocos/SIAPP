@@ -1,0 +1,21 @@
+{
+  "descricao": "Nomes por extenso das unidades estratigráficas que o AGP da ANP traz abreviadas (sigla de até 6 letras e código de 6 dígitos). Só entram aqui siglas vistas em AGPs reais e cuja unidade é inequívoca; as demais aparecem como a sigla. Editável: acrescente {sigla, codigos, nome, bacias}.",
+  "versao": 1,
+  "unidades": [
+    {"sigla": "JANDAI", "codigos": ["296038"], "nome": "Jandaíra", "nivel": "Formação", "bacias": ["Potiguar"]},
+    {"sigla": "ACU", "codigos": ["312010"], "nome": "Açu", "nivel": "Formação", "bacias": ["Potiguar"]},
+    {"sigla": "ALAGAM", "codigos": ["318742"], "nome": "Alagamar", "nivel": "Formação", "bacias": ["Potiguar"]},
+    {"sigla": "PENDEN", "codigos": ["416548"], "nome": "Pendência", "nivel": "Formação", "bacias": ["Potiguar"]},
+    {"sigla": "EMBASA", "codigos": ["927099"], "nome": "Embasamento", "nivel": "", "bacias": []},
+    {"sigla": "BARRRS", "codigos": ["044009"], "nome": "Barreiras", "nivel": "Formação", "bacias": []},
+    {"sigla": "COQSEC", "codigos": ["427548"], "nome": "Coqueiro Seco", "nivel": "Formação", "bacias": ["Sergipe-Alagoas"]},
+    {"sigla": "MORCHA", "codigos": ["445048"], "nome": "Morro do Chaves", "nivel": "Membro", "bacias": ["Sergipe-Alagoas"]},
+    {"sigla": "PENEDO", "codigos": ["451050"], "nome": "Penedo", "nivel": "Formação", "bacias": ["Sergipe-Alagoas"]},
+    {"sigla": "BARITI", "codigos": ["478051"], "nome": "Barra de Itiúba", "nivel": "Formação", "bacias": ["Sergipe-Alagoas"]},
+    {"sigla": "SERRAR", "codigos": ["622054"], "nome": "Serraria", "nivel": "Formação", "bacias": ["Sergipe-Alagoas"]},
+    {"sigla": "BANANE", "codigos": ["656054"], "nome": "Bananeiras", "nivel": "Formação", "bacias": ["Sergipe-Alagoas"]},
+    {"sigla": "MASSAC", "codigos": ["432049"], "nome": "Massacará", "nivel": "Grupo", "bacias": ["Recôncavo"]},
+    {"sigla": "SAOSEB", "codigos": ["442049"], "nome": "São Sebastião", "nivel": "Formação", "bacias": ["Recôncavo"]},
+    {"sigla": "POJUCA", "codigos": ["468050"], "nome": "Pojuca", "nivel": "Formação", "bacias": ["Recôncavo"]}
+  ]
+}

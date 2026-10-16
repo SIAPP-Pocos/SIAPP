@@ -131,6 +131,24 @@ Precisa de internet. Comece por uma categoria pequena para ver o tempo.
 - [ ] Sem intervalo marcado, **Calcular** explica que precisa de um intervalo-alvo.
 - [ ] Repetir no `5PX__0011__RN_5PX__0011__RN.tif` (DLIS de 2020).
 
+## 0.14 — AGP (dados gerais do poço)
+
+- [ ] **Mapa → Levantamento do acervo**: Potiguar, **Escolher categorias…** → só **Cat. 1**,
+      **Ler os AGPs** marcado, **Levantar**. A barra passa por 1/3, 2/3 e **3/3 · Lendo os AGPs**.
+- [ ] No fim, o resumo mostra quantos AGPs existem, quantos foram lidos, quantos têm topos e
+      quantos estavam na pasta de outro poço.
+- [ ] Ficha do **1-FL-1-RN** (ou outro pioneiro): seção **AGP — dados gerais do poço** com
+      mesa rotativa, tabela de unidades (Jandaíra, Açu, Embasamento…), corrida com Rm/Rmf em °F
+      e **Abrir o AGP** abrindo o texto.
+- [ ] Ficha do **3-AP-10-RN**: aviso de que o AGP da pasta é de outro poço.
+- [ ] **Perfis** → um perfil de poço com AGP: linhas tracejadas verdes nos topos, nome da
+      unidade no eixo, trilha **Litol. (AGP)** colorida; o mouse mostra a rocha.
+- [ ] **Avaliação de formação**: "Do AGP" lista as formações e zonas (desmarcadas); marcar
+      uma e **Calcular** funciona como um intervalo seu. A caixa cinza mostra Rm/Rmf/BHT.
+- [ ] **Exportar CSV** do levantamento: aparece também `Potiguar_topos.csv`.
+- [ ] Repetir o levantamento: os AGPs já lidos não são baixados de novo.
+- [ ] Opcional (para o artigo): levantar a Potiguar inteira com AGP e anotar tempo e totais.
+
 ## O que continua valendo das versões anteriores
 
 - Catálogo em tempo real das 24 bacias, junção das subpastas "parte", árvore do poço com tamanhos.

@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 from datetime import datetime
 
+from motor import agp as magp
 from motor import avaliacao as mav
 from motor import formatos
 from motor import perfis as mpf
@@ -74,6 +75,11 @@ class PerfisAPI:
 
     def _curvas(self, rel, poco, inv):
         return {"rel": rel, "poco": poco, "inventario": inv,
+                "topos_agp": [{"sigla": u["sigla"], "nome": u["nome"], "nivel": u["nivel"], "tip": u["tip"],
+                               "topo": u["topo"], "base": u["base"]}
+                              for u in magp.unidades_do_poco(self._banco, poco) if u["topo"] is not None],
+                "litologia_agp": [c for g in magp.do_poco(self._banco, poco)[:1]
+                                  for c in g["dados"].get("litologia", [])],
                 "padrao": mpf.curvas_padrao(inv, self._cl()),
                 "familias": self._cl().familias,
                 "fatos": [f for f in self._banco.fatos(poco)
@@ -134,6 +140,29 @@ class PerfisAPI:
     def _pasta_execucoes(self) -> str:
         return self._projeto.pasta_de("execucoes")
 
+    def _intervalos_agp(self, poco: str) -> list[dict]:
+        """Unidades (com topo e base) e zonas-reservatório do AGP, como intervalos
+        candidatos. id estável: agp:u:<código> / agp:z:<código da zona>."""
+        saida, vistos = [], set()
+        for u in magp.unidades_do_poco(self._banco, poco):
+            if u["topo"] is None or u["base"] is None or u["base"] <= u["topo"] or u["tip"] not in ("L", "C"):
+                continue
+            ident = f"agp:u:{u['codigo']}"
+            if ident in vistos:
+                continue
+            vistos.add(ident)
+            rotulo = "Crono ·" if u["tip"] == "C" else magp.NIVEIS.get(u["nivel"], "")
+            saida.append({"id": ident, "nome": f"{rotulo} {u['nome']}".strip(), "prof_topo": u["topo"],
+                          "prof_base": u["base"], "origem": "AGP"})
+        for g in magp.do_poco(self._banco, poco)[:1]:
+            for z in g["dados"].get("zonas", []):
+                ident = f"agp:z:{z['codigo']}"
+                if ident not in vistos and z["topo"] is not None and z["base"] and z["base"] > z["topo"]:
+                    vistos.add(ident)
+                    saida.append({"id": ident, "nome": f"Zona {z['codigo']}", "prof_topo": z["topo"],
+                                  "prof_base": z["base"], "origem": "AGP"})
+        return saida
+
     @resposta_segura
     def avaliacao_info(self, rel: str):
         """Curvas candidatas a cada papel, intervalos-alvo do poço, parâmetros
@@ -157,6 +186,10 @@ class PerfisAPI:
         return {"papeis": papeis, "padrao": mav.PADRAO, "nomes": mav.NOMES_METODO,
                 "intervalos": [f for f in self._banco.fatos(poco, tipo="intervalo_alvo")
                                if f["prof_topo"] is not None and f["prof_base"] is not None],
+                "intervalos_agp": self._intervalos_agp(poco),
+                "lama_agp": [c for g in magp.do_poco(self._banco, poco)[:1] for c in g["dados"].get("corridas", [])],
+                "temperaturas_agp": [t for g in magp.do_poco(self._banco, poco)[:1]
+                                     for t in g["dados"].get("temperaturas", [])],
                 "ultima": historico[0] if historico else None,
                 "historico": [{"id": h["id"], "criado_em": h["criado_em"], "metodos": h["metodos"],
                                "intervalos": h["intervalos"], "parametros": h["parametros"],
@@ -170,8 +203,10 @@ class PerfisAPI:
         rel = mp.rel_padrao(rel)
         poco = arq.get("poco_id", "")
         fatos = {f["id"]: f for f in self._banco.fatos(poco, tipo="intervalo_alvo")}
+        fatos.update({i["id"]: i for i in self._intervalos_agp(poco)})
         escolhidos = [{"id": fid, "nome": fatos[fid]["nome"], "topo": fatos[fid]["prof_topo"],
-                       "base": fatos[fid]["prof_base"]} for fid in intervalos if fid in fatos]
+                       "base": fatos[fid]["prof_base"], "origem": fatos[fid].get("origem", "SIAPP")}
+                      for fid in intervalos if fid in fatos]
         if not escolhidos:
             raise ErroUsuario("Escolha ao menos um intervalo-alvo. Marque-o arrastando sobre o gráfico.")
         self._status("Calculando a avaliação de formação…")

@@ -61,6 +61,8 @@ function mostrarPerfil(r) {
   pf.inv = r.inventario;
   pf.familias = { ...(r.familias || pf.familias), ...FAMILIAS_AV };
   pf.fatos = r.fatos || [];
+  pf.toposAgp = r.topos_agp || [];
+  pf.litoAgp = r.litologia_agp || [];
   pf.selecao = r.padrao.slice();
   pf.limites = [r.inventario.topo_m, r.inventario.base_m];
   pf.topo = pf.limites[0];
@@ -206,6 +208,18 @@ function desenharTrilhas() {
   eixo.appendChild(ce);
   box.appendChild(eixo);
   const telas = [[ce, null]];
+  // litologia descrita no AGP (amostras de calha): o gabarito para o GR
+  let cvLito = null;
+  if ((pf.litoAgp || []).length) {
+    const dl = el("div", "pf-trilha pf-trilha-lito");
+    const cabL = el("div", "pf-cab-trilha");
+    cabL.appendChild(el("div", "pf-legenda", "Litol. (AGP)"));
+    cabL.title = "Litologia descrita nas amostras de calha (AGP da ANP). Passe o mouse para ver a rocha.";
+    dl.appendChild(cabL);
+    cvLito = document.createElement("canvas");
+    dl.appendChild(cvLito);
+    box.appendChild(dl);
+  }
   for (const t of trilhas) {
     const div = el("div", "pf-trilha");
     if (t.curvas.every((c) => (pf.familias[c.familia] || {}).faixa !== undefined)) div.classList.add("pf-trilha-flags");
@@ -235,6 +249,7 @@ function desenharTrilhas() {
     telas.push([cv, t]);
   }
   const dpr = window.devicePixelRatio || 1;
+  if (cvLito) desenharLitologia(cvLito, yDe, dpr);
   for (const [cv, t] of telas) {
     const w = cv.parentElement.clientWidth;
     cv.width = w * dpr; cv.height = ALTURA_TRILHAS * dpr;
@@ -249,7 +264,14 @@ function desenharTrilhas() {
       g.beginPath(); g.moveTo(0, y); g.lineTo(w, y); g.stroke();
       if (!t) g.fillText(numero(p, grade < 1 ? 1 : 0), 4, y - 2);
     }
-    if (!t) continue;
+    if (!t) {          // eixo: nome das unidades do AGP no topo de cada uma
+      g.fillStyle = "#2f7d4f"; g.font = "600 10px Segoe UI, system-ui, sans-serif";
+      for (const u of pf.toposAgp || []) {
+        if (u.tip !== "L" || u.topo < pf.topo || u.topo > pf.base) continue;
+        g.fillText(String(u.nome).slice(0, 10), 2, Math.round(yDe(u.topo)) + 10);
+      }
+      continue;
+    }
     // linhas verticais (décadas nas escalas logarítmicas)
     const e0 = t.curvas[0]._e;
     g.strokeStyle = "#efede7";
@@ -291,7 +313,48 @@ function desenharTrilhas() {
   ligarInteracao(box, yDe);
 }
 
+const CORES_ROCHA = [
+  [/ARENITO|AREIA|CONGLOMERADO/, "#f2d16b"], [/FOLHELHO|ARGILITO|SILTITO|MARGA/, "#8fa58a"],
+  [/CALC|DOLOMIT|COQUINA/, "#8fb8d9"], [/EVAPORIT|HALITA|ANIDRITA|SAL/, "#d9a3c9"],
+  [/GRANITO|GNAISSE|EMBASAMENTO|BASALTO|DIABASIO/, "#c98f7a"], [/CARVAO|LINHITO/, "#3d3d3d"],
+];
+
+function corRocha(rocha) {
+  const r = (rocha || "").toUpperCase();
+  for (const [re, cor] of CORES_ROCHA) if (re.test(r)) return cor;
+  return "#d5d3cc";
+}
+
+function desenharLitologia(cv, yDe, dpr) {
+  const w = cv.parentElement.clientWidth;
+  cv.width = w * dpr; cv.height = ALTURA_TRILHAS * dpr;
+  cv.style.width = w + "px"; cv.style.height = ALTURA_TRILHAS + "px";
+  const g = cv.getContext("2d");
+  g.scale(dpr, dpr);
+  g.fillStyle = "#fff"; g.fillRect(0, 0, w, ALTURA_TRILHAS);
+  for (const c of pf.litoAgp) {
+    if (c.topo == null || c.base == null || c.base < pf.topo || c.topo > pf.base) continue;
+    const y0 = Math.max(0, yDe(c.topo)), y1 = Math.min(ALTURA_TRILHAS, yDe(c.base));
+    g.fillStyle = corRocha(c.rocha);
+    g.fillRect(0, y0, w, Math.max(1, y1 - y0));
+  }
+  cv.onmousemove = (ev) => {
+    const prof = pf.topo + (ev.offsetY / ALTURA_TRILHAS) * (pf.base - pf.topo);
+    const c = pf.litoAgp.find((x) => x.topo <= prof && prof <= x.base);
+    cv.title = c ? `${numero(c.topo, 1)}–${numero(c.base, 1)} m: ${c.rocha} ${c.descricao || ""}` : "";
+  };
+}
+
 function desenharFatosNaTrilha(g, w, yDe) {
+  // topos do AGP (ANP): verde tracejado; marcos mais claros
+  for (const u of pf.toposAgp || []) {
+    if (u.topo < pf.topo || u.topo > pf.base) continue;
+    g.strokeStyle = u.tip === "L" ? "#2f7d4f" : "#9bbfa7";
+    g.setLineDash([2, 3]); g.lineWidth = 1;
+    const y = Math.round(yDe(u.topo)) + 0.5;
+    g.beginPath(); g.moveTo(0, y); g.lineTo(w, y); g.stroke();
+    g.setLineDash([]);
+  }
   for (const f of pf.fatos) {
     if (f.prof_topo === null) continue;
     if (f.tipo === "intervalo_alvo" && f.prof_base !== null) {

@@ -4,13 +4,15 @@ from __future__ import annotations
 
 import os
 
+from motor import agp as magp
 from motor import levantamento as mlv
 from motor import reate
 
-from .base import ErroUsuario, resposta_segura
+from .base import PASTA_RECURSOS, ErroUsuario, resposta_segura
 from .comunidade import _abrir_no_sistema
 
 PASTA_EXPORTACAO = os.path.join("exportacoes", "levantamento")
+CAMINHO_ESTRATIGRAFIA = os.path.join(PASTA_RECURSOS, "estratigrafia.json")
 
 
 class LevantamentoAPI:
@@ -34,7 +36,7 @@ class LevantamentoAPI:
 
     @resposta_segura
     def levantar_acervo(self, bacia: str, categorias: list, curvas: bool = False,
-                        conferir_todos: bool = False):
+                        conferir_todos: bool = False, agp: bool = True):
         self._exigir_projeto()
         if self._levantamento and self._levantamento.ativo:
             raise ErroUsuario(f"Já há um levantamento em andamento ({self._levantamento.bacia}).")
@@ -43,10 +45,12 @@ class LevantamentoAPI:
         cl = self._cl()
         self._levantamento = mlv.Levantamento(
             self._banco, bacia, list(categorias or []), emitir=self._emitir_levantamento,
-            curvas=bool(curvas), conferir_todos=bool(conferir_todos), familia=cl.familia)
+            curvas=bool(curvas), conferir_todos=bool(conferir_todos), familia=cl.familia,
+            agp=bool(agp), pasta_agp=os.path.join(self._projeto.pasta, "agp"),
+            estratigrafia=magp.ler_estratigrafia(CAMINHO_ESTRATIGRAFIA))
         self._levantamento.iniciar()
         self._projeto.registrar("iniciou_levantamento", bacia=bacia, categorias=list(categorias or []),
-                                curvas=bool(curvas), conferir_todos=bool(conferir_todos))
+                                curvas=bool(curvas), conferir_todos=bool(conferir_todos), agp=bool(agp))
         return {"iniciado": True}
 
     @resposta_segura
@@ -72,10 +76,22 @@ class LevantamentoAPI:
         _abrir_no_sistema(pasta)
         return {}
 
+    @resposta_segura
+    def abrir_agp(self, caminho: str):
+        """Abre o texto do AGP guardado em ambiente_teste/agp/."""
+        self._exigir_projeto()
+        pasta = os.path.realpath(os.path.join(self._projeto.pasta, "agp"))
+        alvo = os.path.realpath(os.path.join(self._projeto.pasta, caminho))
+        if os.path.commonpath([alvo, pasta]) != pasta or not os.path.isfile(alvo):
+            raise ErroUsuario("AGP não encontrado na pasta do projeto.")
+        _abrir_no_sistema(alvo)
+        return {}
+
     def _emitir_levantamento(self, ev: dict):
         if ev.get("tipo") in ("fim", "cancelado", "erro") and self._projeto:
             self._projeto.registrar("levantamento_" + ev["tipo"],
                                     bacia=self._levantamento.bacia if self._levantamento else "",
                                     pocos=ev.get("pocos"), arquivos_lidos=ev.get("arquivos_lidos"),
+                                    agps_lidos=ev.get("agps_lidos"),
                                     erro=ev.get("erro"))
         self._js("eventoLevantamento", ev)

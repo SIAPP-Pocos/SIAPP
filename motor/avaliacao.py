@@ -328,7 +328,8 @@ def _resumir(intervalo, grade, passo, m, valido, res, pay, vsh, phi, sw, qc_cali
     bruto = round(float(intervalo["base"]) - float(intervalo["topo"]), 2)
     mv = m & valido
     return {
-        "nome": intervalo.get("nome") or "", "topo": float(intervalo["topo"]), "base": float(intervalo["base"]),
+        "nome": intervalo.get("nome") or "", "origem": intervalo.get("origem", ""),
+        "topo": float(intervalo["topo"]), "base": float(intervalo["base"]),
         "bruto_m": bruto, "com_dados_m": h(mv),
         "reservatorio_m": h(m & res), "net_pay_m": h(m & pay),
         "ntg": round(float((m & res).sum() / mv.sum()), 4) if mv.any() else None,

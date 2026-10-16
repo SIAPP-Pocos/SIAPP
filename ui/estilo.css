@@ -544,3 +544,9 @@ input.sugestao { background: #fff6d6; border-color: #e0b84a; }
 .av-historico summary { cursor: pointer; font-size: 12.5px; color: var(--suave); }
 .av-historico li { cursor: pointer; }
 .av-historico li:hover span { color: var(--destaque); }
+.av-sub { margin: 8px 0 2px !important; }
+.av-lama { font-size: 11.5px; background: var(--fundo); border-radius: 6px; padding: 6px 8px; }
+.agp-tabela td, .agp-tabela th { font-size: 12px; }
+.agp-aviso { color: var(--erro); font-size: 12px; }
+.pf-trilha.pf-trilha-lito { flex: 0 0 56px; min-width: 56px; }
+.pf-trilha-lito .pf-legenda { font-size: 9.5px; white-space: normal; text-align: center; line-height: 1.2; }
