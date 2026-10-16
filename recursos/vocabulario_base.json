@@ -1,0 +1,41 @@
+{
+  "_sobre": "Vocabulário de domínio do SIAPP. Cada termo vira um atalho de busca na aba Documentos e as palavras com 6 letras ou mais servem de referência para corrigir erros de OCR. Pode ser editado à vontade; as palavras que o usuário adiciona pela janela ficam em ambiente_teste/texto/vocabulario_projeto.json.",
+  "categorias": {
+    "Operações de poço": [
+      "perfuração", "completação", "cimentação", "canhoneio", "revestimento",
+      "tampão de cimento", "abandono", "estimulação", "acidificação", "fraturamento",
+      "pistoneio", "teste de formação", "perfilagem", "testemunhagem",
+      "perda de circulação", "prisão de coluna", "pescaria", "desvio",
+      "amortecimento", "intervenção", "sonda"
+    ],
+    "Fluidos e produção": [
+      "óleo", "gás", "água", "salmoura", "fluido de perfuração", "filtrado",
+      "vazão", "salinidade", "viscosidade", "produção", "injeção", "surgência",
+      "produtividade"
+    ],
+    "Rochas e amostras": [
+      "arenito", "folhelho", "calcário", "dolomito", "conglomerado", "siltito",
+      "argilito", "marga", "anidrita", "halita", "evaporito", "carbonato",
+      "calha", "testemunho", "amostra lateral", "porosidade", "permeabilidade",
+      "fraturas", "indícios", "fluorescência"
+    ],
+    "Medições e testes": [
+      "pressão", "gradiente", "temperatura", "pressão estática", "registrador",
+      "profundidade final", "mesa rotativa", "cota", "Horner", "Arps"
+    ],
+    "Formações — Bacia Potiguar": [
+      "Pendência", "Pescada", "Alagamar", "Açu", "Ponta do Mel", "Quebradas",
+      "Jandaíra", "Ubarana", "Guamaré", "Tibau", "Macau", "Barreiras"
+    ],
+    "Formações — Sergipe-Alagoas": [
+      "Batinga", "Aracaré", "Candeeiro", "Bananeiras", "Serraria", "Barra de Itiúba",
+      "Penedo", "Morro do Chaves", "Coqueiro Seco", "Ponta Verde", "Maceió",
+      "Poção", "Muribeca", "Carmópolis", "Riachuelo", "Cotinguiba", "Calumbi",
+      "Piaçabuçu", "Marituba", "Mosqueiro"
+    ],
+    "Documentos": [
+      "relatório", "descrição", "histórico", "programa", "boletim",
+      "notificação", "comunicação", "laudo", "análise"
+    ]
+  }
+}
