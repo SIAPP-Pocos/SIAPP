@@ -6,6 +6,14 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 
 ## [Não lançado]
 
+## [0.7.0] — 2026-10-16
+### Mudado
+- Código reorganizado: `ponte/` (uma parte da API da janela por área), `ui/js/`
+  (um script por aba), `pyproject.toml` com versão e dependências num lugar só.
+### Adicionado
+- Registro de erros em `ambiente_teste/siapp.log` (com rotação), para relatar problemas.
+- Testes da interface num navegador sem tela, ligados à API Python de verdade.
+
 ## [0.6.0] — 2026-10-15
 ### Adicionado
 - Repositório organizado: licença AGPL-3.0, testes automáticos (Windows e Linux),
@@ -59,5 +67,6 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 - Catálogo em tempo real das 24 bacias terrestres do REATE.
 - `iniciar.bat` que encontra um Python válido e cria ambiente isolado.
 
-[Não lançado]: https://github.com/SIAPP-Pocos/siapp/compare/v0.6.0...HEAD
+[Não lançado]: https://github.com/SIAPP-Pocos/siapp/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/SIAPP-Pocos/siapp/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/SIAPP-Pocos/siapp/releases/tag/v0.6.0

@@ -13,8 +13,8 @@
       <span class="nome">Sistema Integrado de Aquisição e Processamento de Perfis</span>
     </div>
     <nav class="abas" role="tablist">
-      <button class="aba ativa" id="aba-catalogo" role="tab" aria-selected="true">Catálogo</button>
-      <button class="aba" id="aba-docs" role="tab" aria-selected="false">Documentos</button>
+      <button class="aba ativa" id="aba-catalogo" data-vista="catalogo" role="tab" aria-selected="true">Catálogo</button>
+      <button class="aba" id="aba-docs" data-vista="docs" role="tab" aria-selected="false">Documentos</button>
     </nav>
     <span class="versao" id="versao">—</span>
   </header>
@@ -192,6 +192,9 @@
     </div>
   </footer>
 
-  <script src="app.js"></script>
+  <script src="js/comum.js"></script>
+  <script src="js/catalogo.js"></script>
+  <script src="js/documentos.js"></script>
+  <script src="js/app.js"></script>
 </body>
 </html>

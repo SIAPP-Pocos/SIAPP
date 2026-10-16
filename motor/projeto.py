@@ -36,7 +36,7 @@ from datetime import datetime
 # siapp.json e no registro de downloads passa por esta trava.
 _TRAVA_ESCRITA = threading.RLock()
 
-VERSAO_SIAPP = "0.6"
+from . import __version__ as VERSAO_SIAPP  # noqa: E402  (uma fonte só para a versão)
 ARQUIVO_CONFIG = "siapp.json"
 SUBPASTAS = ("catalogo", "bruto", "texto", "pocos", "execucoes")
 

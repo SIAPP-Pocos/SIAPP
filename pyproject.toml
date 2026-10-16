@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "siapp"
+description = "Catálogo, download e tratamento do acervo público de poços da ANP (portal REATE)"
+readme = "README.md"
+license = "AGPL-3.0-only"
+license-files = ["LICENSE"]
+requires-python = ">=3.10"
+authors = [{ name = "Ruan da Silva Nobre" }]
+keywords = ["REATE", "ANP", "DLIS", "perfis de poço", "OCR", "dados abertos"]
+dynamic = ["version"]
+# Mantenha igual a requirements.txt (o teste test_empacotamento confere).
+dependencies = [
+    "pywebview>=6.0",
+    "requests>=2.28",
+    "pymupdf>=1.24",
+    "numpy>=1.24",
+    "dlisio>=1.0",
+    "lasio>=0.31",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "jsonschema>=4"]
+
+[project.urls]
+"Código" = "https://github.com/SIAPP-Pocos/siapp"
+"Dados comunitários" = "https://github.com/SIAPP-Pocos/SIAPP-dados"
+
+[tool.setuptools]
+packages = ["motor", "ponte"]
+py-modules = ["siapp"]
+
+[tool.setuptools.dynamic]
+version = { attr = "motor.__version__" }
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+markers = [
+    "interface: testes da janela num navegador sem tela (precisam do Playwright)",
+]

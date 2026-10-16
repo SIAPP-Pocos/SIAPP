@@ -8,6 +8,7 @@ import pytest
 
 RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, RAIZ)
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 
 def _webview_falso():
@@ -48,9 +49,10 @@ class ArvoreFalsa:
 def api(tmp_path, monkeypatch):
     """API da janela com a pasta de projeto apontando para um diretório temporário."""
     import siapp
+    from ponte import base
 
     pasta = tmp_path / "ambiente_teste"
-    monkeypatch.setattr(siapp, "PASTA_PROJETO", str(pasta))
+    monkeypatch.setattr(base, "PASTA_PROJETO", str(pasta))
 
     class Janela:
         escolha = None
@@ -65,3 +67,43 @@ def api(tmp_path, monkeypatch):
     a = siapp.API()
     a._janela = Janela()
     return a
+
+
+# ------------------------------------------------------------ interface
+def _playwright_disponivel():
+    try:
+        from playwright.sync_api import sync_playwright  # noqa: F401
+        return True
+    except Exception:
+        return False
+
+
+@pytest.fixture(scope="session")
+def navegador():
+    if not _playwright_disponivel():
+        pytest.skip("Playwright não instalado")
+    from playwright.sync_api import sync_playwright
+    with sync_playwright() as p:
+        try:
+            b = p.chromium.launch()
+        except Exception as e:  # Chromium não baixado
+            pytest.skip(f"Chromium indisponível: {e}")
+        yield b
+        b.close()
+
+
+@pytest.fixture
+def janela(tmp_path, monkeypatch, navegador):
+    """Interface real (ui/) num Chromium sem tela, ligada à API Python."""
+    import siapp
+    from ponte import base
+    from interface_util import JanelaFalsa, abrir
+
+    pasta = tmp_path / "ambiente_teste"
+    monkeypatch.setattr(base, "PASTA_PROJETO", str(pasta))
+    a = siapp.API()
+    a._janela = JanelaFalsa(str(pasta))
+    jt, srv = abrir(a, navegador)
+    yield jt
+    jt.page.close()
+    srv.httpd.shutdown()

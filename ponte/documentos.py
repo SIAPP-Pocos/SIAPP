@@ -1,0 +1,97 @@
+"""Ponte: documentos (texto/OCR), busca e visualização de página."""
+
+from __future__ import annotations
+
+import os
+import subprocess
+import sys
+
+from motor import documentos as md
+
+from .base import PASTA_TESSDATA, ErroUsuario, resposta_segura
+
+
+class DocumentosAPI:
+    _indice = None
+
+    def _bacia_poco_de(self, rel: str) -> tuple[str, str]:
+        caminho = self._projeto.caminho_seguro(rel)
+        partes = os.path.relpath(caminho, self._projeto.pasta_bruto).split(os.sep)
+        return (partes[0], partes[1]) if len(partes) > 2 else ("", "")
+
+    @resposta_segura
+    def documentos(self):
+        self._exigir_projeto()
+        return {"documentos": self._projeto.listar_documentos(md.EXTENSOES),
+                "idioma_ok": md.idioma_disponivel(PASTA_TESSDATA),
+                "busca_fts": self._indice.fts}
+
+    @resposta_segura
+    def processar_documentos(self, rels: list):
+        self._exigir_projeto()
+        tarefas = []
+        for rel in rels:
+            caminho = self._projeto.caminho_seguro(rel)
+            bacia, poco = self._bacia_poco_de(rel)
+            nome = os.path.basename(caminho)
+
+            def salvar(resultado, rel=rel, bacia=bacia, poco=poco, nome=nome):
+                self._projeto.salvar_texto(rel, resultado)
+                self._indice.substituir_documento(rel, bacia, poco, nome, resultado["paginas"],
+                                                  corretor=self._corretor)
+
+            tarefas.append({"doc": rel, "caminho": caminho, "nome": nome,
+                            "bacia": bacia, "poco": poco, "salvar": salvar})
+        n = self._fila_docs.adicionar(tarefas)
+        self._projeto.registrar("pediu_processamento", documentos=len(tarefas))
+        return {"enfileirados": n}
+
+    @resposta_segura
+    def cancelar_processamento(self):
+        self._fila_docs.cancelar()
+        return {}
+
+    @resposta_segura
+    def buscar_documentos(self, termo: str, tolerante: bool = True):
+        self._exigir_projeto()
+        r = self._indice.buscar(termo, tolerante=tolerante)
+        return {"termo": termo, **r, "documentos": len({x["doc"] for x in r["resultados"]})}
+
+    @resposta_segura
+    def ver_pagina(self, rel: str, pagina: int, termo: str = ""):
+        self._exigir_projeto()
+        caminho = self._projeto.caminho_seguro(rel)
+        texto = self._projeto.ler_texto(rel)
+        if texto is None:
+            raise ErroUsuario("Documento ainda não processado.")
+        pagina = max(1, min(int(pagina), texto["n_paginas"]))
+        p = texto["paginas"][pagina - 1]
+        variacoes = [v for e in self._indice.expandir(termo) for v in e["variacoes"]] if termo else []
+        # destaque: casa com o que o OCR leu OU com a forma corrigida
+        palavras = [[*w[:4], f"{w[4]} {self._corretor.corrigir(w[4])}"] for w in p["palavras"]]
+        segmentos = self._corretor.segmentos(p["texto"])
+        bacia, poco = self._bacia_poco_de(rel)
+        return {"rel": rel, "nome": os.path.basename(caminho), "pagina": pagina,
+                "n_paginas": texto["n_paginas"], "metodo": p["metodo"],
+                "bacia": bacia, "poco": poco,
+                "titulo": self._indice.titulos(rel).get(pagina, ""),
+                "segmentos": segmentos,
+                "palavras": p["palavras"],
+                "n_corrigidas": sum(isinstance(x, dict) for x in segmentos),
+                "imagem": md.imagem_pagina(caminho, pagina, palavras, termo, variacoes=variacoes)}
+
+    @resposta_segura
+    def abrir_arquivo(self, rel: str):
+        """Abre o arquivo no programa padrão do sistema (leitor de PDF etc.)."""
+        self._exigir_projeto()
+        caminho = self._projeto.caminho_seguro(rel)
+        if sys.platform.startswith("win"):
+            os.startfile(caminho)   # noqa: S606 — caminho validado dentro de bruto/
+        elif sys.platform == "darwin":
+            subprocess.Popen(["open", caminho])
+        else:
+            subprocess.Popen(["xdg-open", caminho])
+        return {}
+
+    def _emitir_documento(self, evento: dict):
+        self._js("eventoDocumento", evento)
