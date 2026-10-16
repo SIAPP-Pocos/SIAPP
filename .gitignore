@@ -1,0 +1,24 @@
+# Ambiente Python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Dados do usuário: ficam no computador de cada um, nunca no repositório.
+# (os arquivos originais vêm do portal REATE; as correções vão para o siapp-dados)
+ambiente_teste/*
+!ambiente_teste/LEIA-ME.txt
+
+# Modelo de idioma do OCR: baixado na primeira execução (~8 MB)
+recursos/tessdata/
+
+# Downloads interrompidos e temporários
+*.part
+*.tmp
+
+# Sistema / editores
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
