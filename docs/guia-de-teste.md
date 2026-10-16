@@ -114,6 +114,23 @@ Precisa de internet. Comece por uma categoria pequena para ver o tempo.
       vai para Perfis (não para Documentos) e abre o gráfico.
 - [ ] Para o artigo: levantar a bacia inteira (sem marcar categorias) e anotar o tempo.
 
+## 0.13 — avaliação de formação
+
+- [ ] **Perfis** → `1-AURI-12-RN_AIT_P.DLIS`. Marque um intervalo-alvo arrastando sobre o gráfico
+      (ou digitando topo e base) e **Salvar**: ele aparece em **Avaliação de formação → Intervalos-alvo**.
+- [ ] As curvas sugeridas: GR, RHOZ, NPHI, DT, AHT90 (Rt), HCAL, BS, HDRA. Troque uma e volte.
+- [ ] Informe um **Rw** (o padrão 0,05 é só ponto de partida) e **Calcular**: tabela com bruto,
+      reservatório, net pay, N/G, φ e Sw médios no pay, Vsh, HPV e QC.
+- [ ] GR limpo e argila ficam como "auto: …" (estimados); "Estimado automaticamente" explica como.
+- [ ] O gráfico ganha as trilhas VSH, PHI, SW e as faixas Reservatório / Net pay / Qualidade.
+- [ ] Trocar para **Simandoux**: o Rsh é estimado e o Sw cai em trechos argilosos.
+- [ ] Mudar um corte (ex.: φ ≥ 0,12) e calcular de novo: o net pay muda; as duas execuções
+      aparecem em **Avaliações anteriores**, e clicar numa volta os parâmetros dela.
+- [ ] `ambiente_teste\execucoes\avaliacao_1-AURI-12-RN_….json` tem os parâmetros e o resumo.
+- [ ] **Exportar CSV** e **LAS**: arquivos em `exportacoes\1-AURI-12-RN\`.
+- [ ] Sem intervalo marcado, **Calcular** explica que precisa de um intervalo-alvo.
+- [ ] Repetir no `5PX__0011__RN_5PX__0011__RN.tif` (DLIS de 2020).
+
 ## O que continua valendo das versões anteriores
 
 - Catálogo em tempo real das 24 bacias, junção das subpastas "parte", árvore do poço com tamanhos.

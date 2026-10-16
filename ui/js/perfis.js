@@ -59,7 +59,7 @@ async function abrirPerfil(p) {
 function mostrarPerfil(r) {
   pf.poco = r.poco;
   pf.inv = r.inventario;
-  pf.familias = r.familias || pf.familias;
+  pf.familias = { ...(r.familias || pf.familias), ...FAMILIAS_AV };
   pf.fatos = r.fatos || [];
   pf.selecao = r.padrao.slice();
   pf.limites = [r.inventario.topo_m, r.inventario.base_m];
@@ -81,6 +81,7 @@ function mostrarPerfil(r) {
   $("pf-passo").value = principal && principal.passo_m ? String(principal.passo_m).replace(".", ",") : "";
   desenharListaCurvas();
   desenharFatosPerfil();
+  carregarAvaliacao();
   atualizarGrafico();
   status(`${r.inventario.arquivo}: ${pf.selecao.length} curva(s) na visão padrão.`, "ok");
 }
@@ -140,7 +141,9 @@ async function buscarGrafico() {
   const meu = ++pedidoGrafico;
   const r = await chamar(null, "grafico_perfil", pf.rel, pf.selecao, pf.topo, pf.base);
   if (!r.ok || meu !== pedidoGrafico) return;
-  pf.dados = r.curvas;
+  const calculadas = await curvasAvaliacaoGrafico();
+  if (meu !== pedidoGrafico) return;
+  pf.dados = r.curvas.concat(calculadas);
   desenharTrilhas();
 }
 
@@ -205,10 +208,20 @@ function desenharTrilhas() {
   const telas = [[ce, null]];
   for (const t of trilhas) {
     const div = el("div", "pf-trilha");
+    if (t.curvas.every((c) => (pf.familias[c.familia] || {}).faixa !== undefined)) div.classList.add("pf-trilha-flags");
     const cab = el("div", "pf-cab-trilha");
     for (const c of t.curvas) {
       const e = escalaDe(c);
       c._e = e;
+      const fam = pf.familias[c.familia] || {};
+      if (fam.faixa !== undefined) {          // trilha de indicadores (reservatório, pay, QC)
+        const linha = el("div", "pf-legenda");
+        linha.style.color = e.cor;
+        linha.style.borderBottom = `6px solid ${e.cor}`;
+        linha.append(el("strong", "", fam.nome));
+        cab.appendChild(linha);
+        continue;
+      }
       const linha = el("div", "pf-legenda");
       linha.style.color = e.cor;
       linha.style.borderBottom = `2px ${e.tracejado ? "dashed" : "solid"} ${e.cor}`;
@@ -250,6 +263,17 @@ function desenharTrilhas() {
     }
     desenharFatosNaTrilha(g, w, yDe);
     for (const c of t.curvas) {
+      const fam = pf.familias[c.familia] || {};
+      if (fam.faixa !== undefined) {          // 1 = pinta a faixa da coluna
+        const col = w / 3, x0 = fam.faixa * col;
+        g.fillStyle = c._e.cor;
+        for (let i = 0; i < c.prof.length - 1; i++) {
+          if (c.valores[i] !== 1) continue;
+          const y0 = yDe(c.prof[i]), y1 = yDe(c.prof[i + 1]);
+          g.fillRect(x0 + 1, y0, col - 2, Math.max(1, y1 - y0));
+        }
+        continue;
+      }
       g.strokeStyle = c._e.cor; g.lineWidth = 1.2;
       g.setLineDash(c._e.tracejado ? [5, 3] : []);
       g.beginPath();
@@ -351,7 +375,7 @@ function desenharFatosPerfil() {
   if (!pf.fatos.length) { box.appendChild(el("p", "ajuda", "Nenhum intervalo ou topo marcado neste poço.")); return; }
   box.appendChild(tabelaFatos(pf.fatos, async (f) => {
     const r = await chamar(null, "remover_fato", f.id);
-    if (r.ok) { pf.fatos = pf.fatos.filter((x) => x.id !== f.id); desenharFatosPerfil(); desenharTrilhas(); }
+    if (r.ok) { pf.fatos = pf.fatos.filter((x) => x.id !== f.id); desenharFatosPerfil(); desenharTrilhas(); atualizarIntervalosAv(); }
   }));
 }
 
@@ -367,6 +391,7 @@ async function salvarIntervalo(ev) {
   $("pf-int-nome").value = $("pf-int-topo").value = $("pf-int-base").value = "";
   desenharFatosPerfil();
   desenharTrilhas();
+  atualizarIntervalosAv();
   status(`${TIPOS_FATO[r.fato.tipo]} “${r.fato.nome}” salvo no poço ${r.fato.poco_id}.`, "ok");
 }
 
@@ -378,6 +403,7 @@ async function exportarCurvas(formato, botao) {
 }
 
 function ligarPerfis() {
+  ligarAvaliacao();
   $("pf-padrao").onclick = async () => {
     const r = await chamar(null, "curvas_perfil", pf.rel);
     if (r.ok && r.inventario) { pf.selecao = r.padrao.slice(); desenharListaCurvas(); atualizarGrafico(); }

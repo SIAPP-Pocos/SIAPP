@@ -479,6 +479,65 @@
             </div>
             <p class="ajuda resultado" id="pf-exportado"></p>
           </section>
+          <section class="cartao largo pf-avaliacao" id="pf-av">
+            <h3>Avaliação de formação no intervalo-alvo</h3>
+            <p class="ajuda">Argilosidade pelo GR, porosidade, saturação de água e net pay, calculados <strong>só dentro
+              dos intervalos-alvo</strong> escolhidos. Cada cálculo fica registrado em <code>execucoes/</code> com as curvas,
+              os métodos e todos os parâmetros — inclusive os estimados automaticamente.</p>
+            <div class="av-grade">
+              <div class="av-col">
+                <h4>Intervalos-alvo</h4>
+                <div id="av-intervalos"></div>
+                <h4>Curvas</h4>
+                <div class="av-curvas" id="av-curvas"></div>
+              </div>
+              <div class="av-col">
+                <h4>Argilosidade (Vsh)</h4>
+                <label>Método <select id="av-vsh_metodo">
+                  <option value="linear">linear (IGR)</option>
+                  <option value="larionov_antigo">Larionov — rochas mais antigas</option>
+                  <option value="larionov_terciario">Larionov — rochas terciárias</option></select></label>
+                <div class="av-par"><label>GR limpo <input id="av-gr_limpo" type="text" inputmode="decimal" placeholder="auto: P5"></label><label>GR argila <input id="av-gr_argila" type="text" inputmode="decimal" placeholder="auto: P95"></label></div>
+                <h4>Porosidade (φ)</h4>
+                <label>Método <select id="av-phi_metodo">
+                  <option value="auto">automático (pelas curvas)</option>
+                  <option value="densidade_neutrao">densidade-nêutron</option>
+                  <option value="densidade">densidade</option>
+                  <option value="sonico">sônico (Wyllie)</option></select></label>
+                <div class="av-par"><label>ρ matriz (g/cm³) <input id="av-rho_matriz" type="text" inputmode="decimal"></label><label>ρ fluido <input id="av-rho_fluido" type="text" inputmode="decimal"></label>
+                  <label>Δt matriz (µs/pé) <input id="av-dt_matriz" type="text" inputmode="decimal"></label><label>Δt fluido <input id="av-dt_fluido" type="text" inputmode="decimal"></label>
+                  <label>φ da argila <input id="av-phi_argila" type="text" inputmode="decimal" placeholder="0 = sem correção"></label></div>
+              </div>
+              <div class="av-col">
+                <h4>Saturação de água (Sw)</h4>
+                <label>Método <select id="av-sw_metodo">
+                  <option value="archie">Archie</option>
+                  <option value="simandoux">Simandoux (arenito argiloso)</option></select></label>
+                <div class="av-par"><label>Rw (ohm·m) <input id="av-rw" type="text" inputmode="decimal"></label><label>Rsh <input id="av-rsh" type="text" inputmode="decimal" placeholder="auto"></label>
+                  <label>a <input id="av-a" type="text" inputmode="decimal"></label><label>m <input id="av-m" type="text" inputmode="decimal"></label><label>n <input id="av-n" type="text" inputmode="decimal"></label></div>
+                <h4>Cortes</h4>
+                <div class="av-par"><label>Vsh ≤ <input id="av-corte_vsh" type="text" inputmode="decimal"></label><label>φ ≥ <input id="av-corte_phi" type="text" inputmode="decimal"></label><label>Sw ≤ <input id="av-corte_sw" type="text" inputmode="decimal"></label></div>
+                <h4>Controle de qualidade</h4>
+                <div class="av-par"><label>cáliper − broca > (pol) <input id="av-qc_cali_pol" type="text" inputmode="decimal"></label><label>|DRHO| > (g/cm³) <input id="av-qc_drho" type="text" inputmode="decimal"></label>
+                  <label>broca (pol) <input id="av-bs_pol" type="text" inputmode="decimal" placeholder="da curva BS"></label><label>passo (m) <input id="av-passo" type="text" inputmode="decimal" placeholder="do GR"></label></div>
+              </div>
+            </div>
+            <div class="linha">
+              <button class="btn" id="av-calcular">Calcular</button>
+              <button class="btn secundario pequeno" id="av-padrao" title="Volta aos valores padrão">Valores padrão</button>
+              <label class="opcao"><input type="checkbox" id="av-mostrar" checked> Mostrar no gráfico</label>
+            </div>
+            <div class="av-resultado" id="av-resultado"></div>
+            <div class="linha" id="av-acoes" hidden>
+              <button class="btn secundario pequeno" id="av-csv">Exportar CSV</button>
+              <button class="btn secundario pequeno" id="av-las">Exportar LAS</button>
+              <span class="ajuda" id="av-registro"></span>
+            </div>
+            <details class="av-historico" id="av-historico" hidden>
+              <summary>Avaliações anteriores deste arquivo</summary>
+              <ul class="dic-lista" id="av-hist-lista"></ul>
+            </details>
+          </section>
         </div>
       </div>
     </section>
@@ -585,6 +644,7 @@
   <script src="js/mapa.js"></script>
   <script src="js/levantamento.js"></script>
   <script src="js/perfis.js"></script>
+  <script src="js/avaliacao.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

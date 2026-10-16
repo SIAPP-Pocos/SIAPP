@@ -6,6 +6,22 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 
 ## [Não lançado]
 
+## [0.13.0] — 2026-10-16
+### Adicionado
+- **Avaliação de formação no intervalo-alvo** (aba Perfis): Vsh pelo GR (linear ou Larionov
+  para rochas terciárias ou mais antigas), porosidade (densidade, densidade-nêutron com
+  correção de gás, sônico de Wyllie; correção de argila opcional), Sw (Archie ou Simandoux),
+  cortes de Vsh, φ e Sw, **reservatório, net pay, N/G e HPV** por intervalo.
+- Controle de qualidade: arrombamento (cáliper − broca) e densidade suspeita (|DRHO|); o
+  resumo mostra quanto do net pay cai em trechos suspeitos.
+- Parâmetros automáticos quando deixados em branco (GR limpo e argila pelos percentis 5/95,
+  Rsh, método de φ, passo), sempre registrados como automáticos.
+- Cada cálculo grava `execucoes/avaliacao_<poço>_<data-hora>.json` (arquivo de origem com
+  SHA-256, curvas, métodos, parâmetros, resumo, fórmulas) e as curvas calculadas; histórico no
+  painel; exportação CSV e LAS 2.0.
+- Trilhas calculadas no gráfico (Vsh, φ, Sw e faixas de reservatório, net pay e QC).
+- `docs/avaliacao.md`: fórmulas, estimativas automáticas e limites.
+
 ## [0.12.0] — 2026-10-16
 ### Adicionado
 - **Levantamento do acervo** (aba Mapa): para uma bacia — inteira ou algumas categorias —

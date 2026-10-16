@@ -239,3 +239,44 @@ def test_levantamento_do_acervo_no_mapa(janela, monkeypatch):
     p.click("#lv-exportar")
     janela.esperar("document.getElementById('status').textContent.includes('_pocos.csv')")
     assert not janela.erros_js, janela.erros_js
+
+
+def test_avaliacao_de_formacao_no_intervalo(janela, tmp_path):
+    from test_avaliacao import las_reservatorio
+    p = janela.page
+    abrir_projeto(janela)
+    pasta = tmp_path / "ambiente_teste" / "bruto" / "Potiguar" / "7-TST-1-RN" / "Perfil Convencional"
+    pasta.mkdir(parents=True)
+    las_reservatorio(pasta / "tst.las")
+    janela.api._abrir_projeto(str(tmp_path / "ambiente_teste"))
+    p.click("#aba-perfis")
+    janela.esperar("document.querySelectorAll('#lista-perfis button').length === 1")
+    p.click("#lista-perfis button")
+    janela.esperar("document.querySelectorAll('#pf-trilhas canvas').length >= 3", 30)
+    janela.esperar("document.querySelectorAll('.av-curva').length === 8")
+    assert "Nenhum intervalo-alvo" in p.text_content("#av-intervalos")
+    # sem intervalo, o cálculo é recusado com explicação
+    p.click("#av-calcular")
+    janela.esperar("document.getElementById('status').textContent.includes('intervalo-alvo')")
+    # marca o intervalo pelo formulário (o arraste já é testado em outro teste)
+    p.fill("#pf-int-nome", "Açu")
+    p.fill("#pf-int-topo", "1005")
+    p.fill("#pf-int-base", "1035")
+    p.click("#pf-form-int button")
+    janela.esperar("document.querySelectorAll('.av-int').length === 1")
+    p.fill("#av-gr_limpo", "30")
+    p.fill("#av-gr_argila", "120")
+    p.fill("#av-rw", "0,05")
+    p.click("#av-calcular")
+    janela.esperar("document.querySelector('#av-resultado table') !== null", 30)
+    linha = p.text_content("#av-resultado tbody tr")
+    assert "Açu" in linha and "10" in p.text_content("#av-resultado td.destaque")
+    # trilhas calculadas aparecem no gráfico
+    janela.esperar("document.getElementById('pf-trilhas').textContent.includes('Net pay')")
+    assert "SW" in p.text_content("#pf-trilhas")
+    registros = list((tmp_path / "ambiente_teste" / "execucoes").glob("avaliacao_*.json"))
+    assert len(registros) == 1
+    p.click("#av-csv")
+    janela.esperar("document.getElementById('status').textContent.includes('Avaliação exportada')")
+    assert not p.is_hidden("#av-historico")
+    assert not janela.erros_js, janela.erros_js

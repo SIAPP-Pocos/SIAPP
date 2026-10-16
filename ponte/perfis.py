@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 from datetime import datetime
 
+from motor import avaliacao as mav
 from motor import formatos
 from motor import perfis as mpf
 from motor import pocos as mpo
@@ -128,3 +129,86 @@ class PerfisAPI:
         _, arq = self._arquivo_perfil(rel)
         dados = {**dados, "poco": arq.get("poco_id") or dados.get("poco")}
         return {"fato": self._salvar_fato(dados, fonte_rel=rel)}
+
+    # ------------------------------------------------- avaliação de formação
+    def _pasta_execucoes(self) -> str:
+        return self._projeto.pasta_de("execucoes")
+
+    @resposta_segura
+    def avaliacao_info(self, rel: str):
+        """Curvas candidatas a cada papel, intervalos-alvo do poço, parâmetros
+        padrão (ou os da última avaliação deste arquivo) e o histórico."""
+        _, arq = self._arquivo_perfil(rel)
+        rel = mp.rel_padrao(rel)
+        poco = arq.get("poco_id", "")
+        inv = mpf.ler_inventario(self._cache(poco), os.path.basename(rel))
+        if inv is None:
+            raise ErroUsuario("Leia o arquivo primeiro (clique nele na lista).")
+        padrao = {c["familia"]: c for c in mpf.curvas_padrao(inv, self._cl())}
+        papeis = {}
+        for papel, (fams, obrig) in mav.PAPEIS.items():
+            opcoes = [{"quadro": q["nome"], "mnemonico": c["mnemonico"], "unidade": c["unidade"],
+                       "familia": c["familia"], "n_validas": c["n_validas"]}
+                      for q in inv["quadros"] for c in q["curvas"]
+                      if c["familia"] in fams and c["dimensao"] == 1 and c["n_validas"]]
+            escolhida = next((padrao[f] for f in fams if f in padrao), None)
+            papeis[papel] = {"obrigatorio": obrig, "opcoes": opcoes, "padrao": escolhida}
+        historico = mav.execucoes(self._pasta_execucoes(), rel)
+        return {"papeis": papeis, "padrao": mav.PADRAO, "nomes": mav.NOMES_METODO,
+                "intervalos": [f for f in self._banco.fatos(poco, tipo="intervalo_alvo")
+                               if f["prof_topo"] is not None and f["prof_base"] is not None],
+                "ultima": historico[0] if historico else None,
+                "historico": [{"id": h["id"], "criado_em": h["criado_em"], "metodos": h["metodos"],
+                               "intervalos": h["intervalos"], "parametros": h["parametros"],
+                               "parametros_automaticos": h.get("parametros_automaticos", {})}
+                              for h in historico[:10]]}
+
+    @resposta_segura
+    def avaliar_formacao(self, rel: str, curvas: dict, intervalos: list, parametros: dict):
+        """`intervalos`: ids dos fatos intervalo_alvo do poço."""
+        _, arq = self._arquivo_perfil(rel)
+        rel = mp.rel_padrao(rel)
+        poco = arq.get("poco_id", "")
+        fatos = {f["id"]: f for f in self._banco.fatos(poco, tipo="intervalo_alvo")}
+        escolhidos = [{"id": fid, "nome": fatos[fid]["nome"], "topo": fatos[fid]["prof_topo"],
+                       "base": fatos[fid]["prof_base"]} for fid in intervalos if fid in fatos]
+        if not escolhidos:
+            raise ErroUsuario("Escolha ao menos um intervalo-alvo. Marque-o arrastando sobre o gráfico.")
+        self._status("Calculando a avaliação de formação…")
+        try:
+            r = mav.avaliar(self._cache(poco), os.path.basename(rel), curvas or {}, escolhidos, parametros)
+        except mav.ErroAvaliacao as e:
+            raise ErroUsuario(str(e)) from e
+        ident, caminho = mav.registrar(self._pasta_execucoes(), poco=poco, rel=rel,
+                                       sha256=arq.get("sha256"), resultado=r, autor=self._autor())
+        self._projeto.registrar("avaliou_formacao", execucao=ident, arquivo=rel, poco=poco,
+                                intervalos=[i["nome"] for i in escolhidos],
+                                net_pay_m=sum(i["net_pay_m"] for i in r["intervalos"]))
+        return {"id": ident, "registro": self._projeto.rel(caminho).replace(os.sep, "/"),
+                "intervalos": r["intervalos"], "parametros": r["parametros"],
+                "automaticos": r["automaticos"], "passo": r["passo"]}
+
+    @resposta_segura
+    def grafico_avaliacao(self, ident: str, topo=None, base=None):
+        self._exigir_projeto()
+        try:
+            return {"curvas": mav.dados_grafico(self._pasta_execucoes(), ident,
+                                                None if topo is None else float(topo),
+                                                None if base is None else float(base))}
+        except mav.ErroAvaliacao as e:
+            raise ErroUsuario(str(e)) from e
+
+    @resposta_segura
+    def exportar_avaliacao(self, ident: str, formato: str = "csv"):
+        self._exigir_projeto()
+        reg = next((h for h in mav.execucoes(self._pasta_execucoes()) if h["id"] == ident), None)
+        if reg is None:
+            raise ErroUsuario("Avaliação não encontrada.")
+        pasta = os.path.join(self._projeto.pasta_de("exportacoes"), mp.nome_seguro(reg["poco"] or "sem_poco"))
+        saida = os.path.join(pasta, f"{ident}.{formato}")
+        try:
+            r = mav.exportar(self._pasta_execucoes(), ident, saida, formato, reg["poco"])
+        except mav.ErroAvaliacao as e:
+            raise ErroUsuario(str(e)) from e
+        self._projeto.registrar("exportou_avaliacao", execucao=ident, saida=self._projeto.rel(saida))
+        return {"arquivo": self._projeto.rel(saida).replace(os.sep, "/"), **r}

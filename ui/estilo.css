@@ -423,7 +423,9 @@ input[type=text], input[type=number] {
 .pf-cab .ajuda { margin: 0; }
 .pf-faixa { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; font-size: 12.5px; }
 .pf-faixa input { width: 84px; font: 12.5px var(--mono); padding: 5px 7px; }
-.pf-trilhas { display: flex; gap: 0; border: 1px solid var(--linha); border-radius: 6px; overflow: hidden; background: #fff; }
+.pf-trilhas { display: flex; gap: 0; border: 1px solid var(--linha); border-radius: 6px; overflow-x: auto; overflow-y: hidden; background: #fff; }
+.pf-trilha.pf-trilha-flags { flex: 0 0 84px; min-width: 84px; }
+.pf-trilha-flags .pf-legenda { font-size: 10px; }
 .pf-trilha { flex: 1 1 0; min-width: 120px; border-left: 1px solid var(--linha); display: flex; flex-direction: column; }
 .pf-trilha:first-child { border-left: 0; }
 .pf-eixo { flex: 0 0 64px; min-width: 64px; }
@@ -519,3 +521,26 @@ input.sugestao { background: #fff6d6; border-color: #e0b84a; }
 .acervo-lista .fmt.perfil { background: #e2f0e6; color: #2f7d4f; }
 .acervo-lista .fmt.documento { background: #fbefdc; color: #9a5f10; }
 .acervo-lista .fmt.outro { background: var(--fundo); color: var(--suave); }
+
+/* ---------- avaliação de formação ---------- */
+.av-grade { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+@media (max-width: 1250px) { .av-grade { grid-template-columns: minmax(0, 1fr); } }
+.av-col { display: grid; gap: 6px; align-content: start; }
+.av-col h4 { font: 600 11px var(--sans); text-transform: uppercase; letter-spacing: .04em; color: var(--suave); margin: 8px 0 0; }
+.av-col label { display: grid; gap: 3px; font-size: 12px; color: var(--tinta); }
+.av-col label.opcao { display: flex; gap: 6px; align-items: center; }
+.av-par { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 6px; }
+.av-par input { width: 100%; }
+.av-curvas { display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 4px 8px; align-items: center; font-size: 12px; }
+.av-curvas select { width: 100%; font-size: 12px; padding: 4px 6px; }
+.av-curvas .obrig { font-weight: 700; }
+#av-intervalos label.opcao { margin: 0 0 2px; }
+.av-resultado table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.av-resultado th, .av-resultado td { padding: 4px 8px; border-bottom: 1px solid var(--linha); text-align: right; white-space: nowrap; }
+.av-resultado th:first-child, .av-resultado td:first-child { text-align: left; }
+.av-resultado thead th { font: 600 11px var(--sans); color: var(--suave); text-transform: uppercase; letter-spacing: .03em; }
+.av-resultado td.destaque { font-weight: 700; color: var(--ok); }
+.av-resultado .av-auto { margin-top: 6px; }
+.av-historico summary { cursor: pointer; font-size: 12.5px; color: var(--suave); }
+.av-historico li { cursor: pointer; }
+.av-historico li:hover span { color: var(--destaque); }
