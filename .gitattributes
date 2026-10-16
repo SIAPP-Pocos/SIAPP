@@ -1,0 +1,4 @@
+# Fins de linha: o Git guarda LF; o .bat precisa de CRLF para o Windows ler os rótulos (goto)
+* text=auto
+*.bat text eol=crlf
+*.png binary
