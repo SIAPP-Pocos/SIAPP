@@ -306,6 +306,10 @@ class Banco:
                 q = c.execute("SELECT * FROM arquivos ORDER BY rel")
             return [dict(r) for r in q]
 
+    def definir_tipo(self, rel: str, tipo: str) -> None:
+        with self.conexao() as c:
+            c.execute("UPDATE arquivos SET tipo = ? WHERE rel = ?", (tipo, rel))
+
     def definir_sha(self, rel: str, sha: str) -> None:
         with self.conexao() as c:
             c.execute("UPDATE arquivos SET sha256 = ? WHERE rel = ?", (sha, rel))

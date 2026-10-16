@@ -6,6 +6,22 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 
 ## [Não lançado]
 
+## [0.11.1] — 2026-10-16
+### Corrigido
+- **"Não está abrindo o TIF"**: o `5PX__0011__RN_5PX__0011__RN.tif` do 5-PX-11-RN não é
+  imagem — é um **DLIS** com extensão `.tif` (recuperação digital da Petrobras de 2020).
+  O SIAPP agora reconhece o formato **pelo conteúdo** (`motor/formatos.py`: TIFF, PDF, PNG,
+  JPEG, DLIS e LAS pelos primeiros bytes; LIS pela extensão), e um arquivo assim vai para a
+  aba **Perfis**, com o selo "conteúdo DLIS". Arquivos já registrados no banco têm o tipo
+  corrigido ao abrir o projeto.
+- Um arquivo que o leitor de imagens não reconhece dá uma mensagem clara (e a sugestão de
+  "No computador") em vez de "erro inesperado".
+- Quadros só com curva de enchimento (`DUMM`, 0–3 m) não contam mais para o intervalo de
+  profundidade do arquivo.
+### Documentação
+- `docs/acervo-reate.md`: o `.tif` da geração antiga pode ser DLIS; a contagem de poços
+  "só com imagem" precisa ser refeita pelo conteúdo.
+
 ## [0.11.0] — 2026-10-16
 ### Adicionado
 - **Abrir qualquer arquivo baixado.** PDF, TIF e imagens (PNG, JPG) abrem na aba

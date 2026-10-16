@@ -232,7 +232,12 @@ def _abrir_pagina(caminho: str, n_pagina: int):
         raise ErroDocumento(f"{os.path.basename(caminho)} é protegido por senha.")
     if not 1 <= n_pagina <= doc.page_count:
         raise ErroDocumento(f"Página {n_pagina} não existe (o arquivo tem {doc.page_count}).")
-    return doc, doc[n_pagina - 1]
+    try:
+        return doc, doc[n_pagina - 1]
+    except Exception as e:
+        doc.close()
+        raise ErroDocumento(f"{os.path.basename(caminho)}: o leitor de imagens não reconhece o conteúdo "
+                            f"({e}). Use “No computador” para abrir em outro programa.") from e
 
 
 def _destacar(pix: pymupdf.Pixmap, caixas: list) -> pymupdf.Pixmap:

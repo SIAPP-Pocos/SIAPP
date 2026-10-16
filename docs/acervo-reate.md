@@ -64,12 +64,23 @@ O nome **não é padronizado** — muda entre poços, até na mesma bacia.
 | | Geração antiga | Geração nova |
 |---|---|---|
 | Padrão de nome | `7CS__0016__AL_7CS__0016__AL.tif` (maiúsculas, zeros à esquerda, nome duplicado) | `7-anb-9-al_brsa_raw.dlis` · `1-AURI-12-RN_AIT_P.DLIS` |
-| Conteúdo da pasta de perfis | **só `.tif`** — imagem escaneada do perfil em papel | **`.dlis`** — curvas digitais |
-| Serve para petrofísica? | **Não** sem digitalização | Sim |
+| Conteúdo da pasta de perfis | **`.tif`** — que pode ser imagem escaneada **ou DLIS com extensão trocada** (ver abaixo) | **`.dlis`** — curvas digitais |
+| Serve para petrofísica? | Depende do conteúdo: imagem, não sem digitalização; DLIS, sim | Sim |
+
+> [!IMPORTANT]
+> **O `.tif` da geração antiga pode ser um DLIS.** Conferido em 16/10/2026:
+> `5-PX-11-RN/Perfil Convencional/5PX__0011__RN_5PX__0011__RN.tif` (20 MB) começa com
+> `V1.00RECORD … RECALL TO DLIS DATA TRANSFER` — rótulo de DLIS, não de TIFF. É uma
+> recuperação digital da Petrobras (2020, conjunto `SPEP-RN-01V1`, ferramentas
+> HRI/FWS/MSFL/SDL/DSN/GR) com 156–1.795 m e GR, SP, cáliper, resistividades, RHOB, NPHI, DT.
+> O dlisio lê normalmente. O SIAPP decide o formato pelos primeiros bytes
+> (`motor/formatos.py`), não pela extensão.
 
 > [!WARNING]
 > **Impacto direto no tamanho do acervo utilizável**
 > Em 10 poços abertos, **5 tinham só `.tif`** na pasta de perfis, e 2 não tinham perfil nenhum. O número de poços listados numa categoria **não é** o número de poços com dado digital. Quantificar isso por bacia é um resultado relevante para o artigo.
+>
+> **Revisão (16/10/2026):** "só `.tif`" não quer dizer "só imagem" — pelo menos um desses `.tif` é DLIS. O levantamento precisa baixar (ou ler o começo de) cada `.tif` e classificar pelo conteúdo antes de contar.
 >
 > O padrão de nome antigo é o mesmo dos arquivos `.lis` de Carmópolis (`7CP__0010__SE_7CP__0010__SE.lis`) — a geração antiga pode ter LIS em alguns casos, não só TIF. A verificar.
 

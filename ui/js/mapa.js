@@ -184,7 +184,7 @@ async function abrirFicha(id) {
   const ul = el("ul", "dic-lista");
   for (const a of r.arquivos) {
     const li = el("li");
-    li.append(el("span", "", `${a.rel.split("/").slice(3).join("/")} · ${tamanho(a.bytes)}`), botaoAbrir(a.rel));
+    li.append(el("span", "", `${a.rel.split("/").slice(3).join("/")} · ${tamanho(a.bytes)}`), botaoAbrir(a.rel, a.tipo));
     ul.appendChild(li);
   }
   corpo.appendChild(ul);

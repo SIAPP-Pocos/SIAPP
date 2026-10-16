@@ -118,7 +118,14 @@ class API(BaseAPI, PocosAPI, CatalogoAPI, DocumentosAPI, VocabularioAPI, Comunid
         """Arquivos baixados antes do banco existir (ou copiados à mão para
         bruto/) entram na tabela arquivos, com hash. Roda a cada abertura, mas só
         calcula o hash do que ainda não está no banco."""
-        conhecidos = {a["rel"] for a in self._banco.arquivos()}
+        conhecidos = {}
+        for a in self._banco.arquivos():
+            conhecidos[a["rel"]] = a
+            caminho = os.path.join(self._projeto.pasta, a["rel"])
+            # o tipo passou a vir do conteúdo (0.11.1): DLIS com extensão .tif vira perfil
+            if os.path.isfile(caminho) and (t := mp.tipo_arquivo(caminho)) != a["tipo"]:
+                self._banco.definir_tipo(a["rel"], t)
+                registro.log.info("tipo de %s corrigido pelo conteúdo: %s -> %s", a["rel"], a["tipo"], t)
         origem = {mp.rel_padrao(v["arquivo_local"]): v
                   for v in self._projeto.registro_downloads().values()}
         for raiz, _, nomes in os.walk(self._projeto.pasta_bruto):

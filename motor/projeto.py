@@ -40,6 +40,7 @@ from datetime import datetime
 _TRAVA_ESCRITA = threading.RLock()
 
 from . import __version__ as VERSAO_SIAPP  # noqa: E402  (uma fonte só para a versão)
+from . import formatos  # noqa: E402
 ARQUIVO_CONFIG = "siapp.json"
 NOME_PASTA_PADRAO = "ambiente_teste"
 SUBPASTAS = ("catalogo", "bruto", "texto", "pocos", "execucoes")
@@ -80,15 +81,10 @@ def sha256_arquivo(caminho: str) -> str:
     return h.hexdigest()
 
 
-TIPOS_ARQUIVO = {
-    "documento": (".pdf", ".tif", ".tiff"),
-    "perfil": (".dlis", ".lis", ".las"),
-}
-
-
-def tipo_arquivo(nome: str) -> str:
-    ext = os.path.splitext(nome)[1].lower()
-    return next((t for t, exts in TIPOS_ARQUIVO.items() if ext in exts), "outro")
+def tipo_arquivo(caminho: str) -> str:
+    """'documento', 'perfil' ou 'outro' — pelo conteúdo, quando o arquivo existe
+    (o REATE tem DLIS com extensão .tif; ver motor/formatos.py)."""
+    return formatos.tipo(caminho)
 
 
 def ler_json(caminho: str, padrao=None):
@@ -291,6 +287,8 @@ class Projeto:
                 if not nome.lower().endswith(extensoes):
                     continue
                 caminho = os.path.join(raiz, nome)
+                if tipo_arquivo(caminho) != "documento":   # ex.: DLIS com extensão .tif
+                    continue
                 rel = self.rel(caminho)
                 partes = os.path.relpath(caminho, self.pasta_bruto).split(os.sep)
                 info = resumo.get(rel)

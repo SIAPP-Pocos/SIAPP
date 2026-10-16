@@ -28,7 +28,10 @@ from datetime import datetime
 
 import numpy as np
 
+from . import formatos
+
 FORMATOS = (".dlis", ".lis", ".las")
+CURVAS_ENCHIMENTO = {"DUMM", "DUMMY"}
 NULOS = (-999.25, -9999.0, -999.0, -99999.0)
 VERSAO_CACHE = 1
 
@@ -217,12 +220,12 @@ def ler_las(caminho: str):
 
 
 def ler(caminho: str):
-    ext = os.path.splitext(caminho)[1].lower()
-    leitores = {".dlis": ler_dlis, ".lis": ler_lis, ".las": ler_las}
-    if ext not in leitores:
-        raise ErroPerfil(f"Formato não suportado: {ext}")
+    fmt = formatos.formato(caminho)          # pelo conteúdo: há DLIS com extensão .tif
+    leitores = {"dlis": ler_dlis, "lis": ler_lis, "las": ler_las}
+    if fmt not in leitores:
+        raise ErroPerfil(f"Formato não suportado: {os.path.splitext(caminho)[1] or fmt}")
     try:
-        return leitores[ext](caminho)
+        return leitores[fmt](caminho)
     except ErroPerfil:
         raise
     except Exception as e:  # noqa: BLE001 — qualquer falha do leitor vira mensagem legível
@@ -260,9 +263,13 @@ def inventariar(caminho: str, classificador: Classificador, pasta_cache: str) ->
         inventario.append({"nome": q["nome"], "indice": q["indice"], "topo_m": q["topo_m"],
                            "base_m": q["base_m"], "passo_m": q["passo_m"], "n_amostras": int(len(prof)),
                            "curvas": curvas})
-    topos = [q["topo_m"] for q in inventario if q["topo_m"] is not None]
-    bases = [q["base_m"] for q in inventario if q["base_m"] is not None]
-    resumo = {"arquivo": base, "formato": os.path.splitext(base)[1].lower().lstrip("."),
+    # quadros só com curva de enchimento (DUMM, nas recuperações da Petrobras: 0 a 3 m)
+    # não contam para o intervalo do arquivo
+    uteis = [q for q in inventario if any(c["mnemonico"].upper() not in CURVAS_ENCHIMENTO
+                                          for c in q["curvas"])] or inventario
+    topos = [q["topo_m"] for q in uteis if q["topo_m"] is not None]
+    bases = [q["base_m"] for q in uteis if q["base_m"] is not None]
+    resumo = {"arquivo": base, "formato": formatos.formato(caminho),
               "cabecalho": cab, "quadros": inventario,
               "topo_m": min(topos) if topos else None, "base_m": max(bases) if bases else None,
               "versao_cache": VERSAO_CACHE,

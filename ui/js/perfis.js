@@ -23,7 +23,13 @@ async function carregarPerfis() {
     b.dataset.rel = p.rel;
     if (pf.rel === p.rel) b.classList.add("ativo");
     const info = el("span", "d-info");
-    info.append(el("span", "", p.poco || "—"), el("span", "", tamanho(p.bytes)),
+    info.append(el("span", "", p.poco || "—"), el("span", "", tamanho(p.bytes)));
+    if (p.formato && extensao(p.nome) !== "." + p.formato) {
+      const s = el("span", "selo conv", `conteúdo ${p.formato.toUpperCase()}`);
+      s.title = `O nome termina em ${extensao(p.nome)}, mas o conteúdo do arquivo é ${p.formato.toUpperCase()}.`;
+      info.appendChild(s);
+    }
+    info.append(
       el("span", "selo" + (p.inventariado ? " ok" : ""),
          p.inventariado ? `${p.n_curvas} curvas · ${numero(p.topo_m, 0)}–${numero(p.base_m, 0)} m` : "não lido"));
     b.append(el("span", "d-nome", p.nome), info);
@@ -65,7 +71,8 @@ function mostrarPerfil(r) {
   const c = r.inventario.cabecalho || {};
   $("pf-titulo").textContent = `${r.poco || c.poco || "—"} · ${r.inventario.arquivo}`;
   $("pf-sub").textContent = [c.empresa, c.campo, c.produtor && `perfilagem: ${c.produtor}`,
-    c.cadastro && `cadastro ANP ${c.cadastro}`,
+    // o campo UWI às vezes traz o nome do poço ("5PX  0011  RN"), não o nº de cadastro
+    c.cadastro && (/^\d{6,}$/.test(c.cadastro.trim()) ? `cadastro ANP ${c.cadastro}` : `UWI ${c.cadastro}`),
     `${numero(pf.limites[0], 1)} a ${numero(pf.limites[1], 1)} m`,
     `${r.inventario.quadros.length} quadro(s)`].filter(Boolean).join(" · ");
   $("pf-aviso").hidden = !r.aviso;

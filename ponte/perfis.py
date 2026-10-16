@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 from datetime import datetime
 
+from motor import formatos
 from motor import perfis as mpf
 from motor import pocos as mpo
 from motor import projeto as mp
@@ -42,7 +43,9 @@ class PerfisAPI:
             if a["tipo"] != "perfil":
                 continue
             p = self._banco.perfil(a["rel"])
+            caminho = os.path.join(self._projeto.pasta, a["rel"])
             saida.append({"rel": a["rel"], "nome": os.path.basename(a["rel"]), "poco": a["poco_id"],
+                          "formato": formatos.formato(caminho),
                           "bytes": a["bytes"], "inventariado": bool(p and not p.get("erro")),
                           "n_curvas": p["n_curvas"] if p else 0,
                           "topo_m": p["topo_m"] if p else None, "base_m": p["base_m"] if p else None})

@@ -209,7 +209,7 @@ function marcarArquivo(item, estado) {
     item.cb.disabled = true;
     item.linha.title = `${item.no.nome}\n${tamanho(item.no.tamanho)}\nJá está em ambiente_teste\\bruto`;
     if (item.no.rel && !item.abrir) {
-      item.abrir = botaoAbrir(item.no.rel);
+      item.abrir = botaoAbrir(item.no.rel, item.no.tipo);
       item.selo.after(item.abrir);
     }
   } else if (estado === "fila" || estado === "baixando") {
@@ -263,7 +263,7 @@ window.eventoDownload = function (ev) {
     $("dl-num").textContent = `${tamanho(ev.feito)} de ${tamanho(ev.total)} · ${tamanho(ev.velocidade)}/s`;
   } else if (ev.tipo === "fim") {
     $("dl-barra").style.width = "100%";
-    if (item) { item.no.rel = ev.arquivo_local; marcarArquivo(item, "baixado"); }
+    if (item) { item.no.rel = ev.arquivo_local; item.no.tipo = ev.tipo; marcarArquivo(item, "baixado"); }
   } else if (ev.tipo === "erro") {
     if (item) { marcarArquivo(item, "erro"); item.selo.title = ev.erro; }
     status(ev.erro, "erro");

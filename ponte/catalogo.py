@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 
+from motor import projeto as mp
 from motor import reate
 
 from .base import ErroUsuario, resposta_segura
@@ -69,6 +70,7 @@ class CatalogoAPI:
             a["parcial"] = not a["baixado"] and os.path.isfile(destino + ".part")
             if a["baixado"]:
                 a["rel"] = self._projeto.rel(destino)
+                a["tipo"] = mp.tipo_arquivo(destino)
         return {**mapa, "categoria": categoria, "parte": parte,
                 "salvo_em": self._projeto.rel(arquivo)}
 
@@ -104,6 +106,7 @@ class CatalogoAPI:
     def _emitir_download(self, evento: dict):
         if evento.get("arquivo_local") and self._projeto:
             self._ao_terminar_download(evento)
+            evento["tipo"] = mp.tipo_arquivo(evento["arquivo_local"])
             evento["arquivo_local"] = self._projeto.rel(evento["arquivo_local"])
         self._js("eventoDownload", evento)
 

@@ -72,12 +72,20 @@ function extensao(nome) {
   return m ? m[0].toLowerCase() : "";
 }
 
-async function abrirBaixado(rel, botao) {
-  const ext = extensao(rel), nome = rel.split("/").pop();
-  if (EXT_VISOR.includes(ext)) {
+// `tipo` vem do motor, que olha o conteúdo ("documento", "perfil", "outro"): o
+// REATE tem DLIS com extensão .tif. Sem ele, decide pela extensão.
+function tipoPorExtensao(rel) {
+  const ext = extensao(rel);
+  return EXT_VISOR.includes(ext) ? "documento" : EXT_PERFIL.includes(ext) ? "perfil" : "outro";
+}
+
+async function abrirBaixado(rel, botao, tipo) {
+  const nome = rel.split("/").pop();
+  tipo = tipo || tipoPorExtensao(rel);
+  if (tipo === "documento") {
     trocarAba("docs");
     abrirPagina(rel, 1, "");
-  } else if (EXT_PERFIL.includes(ext)) {
+  } else if (tipo === "perfil") {
     trocarAba("perfis");
     abrirPerfil({ rel, nome });
   } else {
@@ -86,14 +94,14 @@ async function abrirBaixado(rel, botao) {
   }
 }
 
-function botaoAbrir(rel) {
-  const ext = extensao(rel);
-  const [rotulo, dica] = EXT_VISOR.includes(ext) ? ["Ver", "Ver no SIAPP (aba Documentos)"]
-    : EXT_PERFIL.includes(ext) ? ["Ver perfil", "Abrir na aba Perfis"]
+function botaoAbrir(rel, tipo) {
+  tipo = tipo || tipoPorExtensao(rel);
+  const [rotulo, dica] = tipo === "documento" ? ["Ver", "Ver no SIAPP (aba Documentos)"]
+    : tipo === "perfil" ? ["Ver perfil", "Abrir na aba Perfis"]
     : ["Abrir", "Abrir no programa do computador"];
   const b = el("button", "btn-abrir", rotulo);
   b.type = "button";
   b.title = dica;
-  b.onclick = (ev) => { ev.preventDefault(); ev.stopPropagation(); abrirBaixado(rel, b); };
+  b.onclick = (ev) => { ev.preventDefault(); ev.stopPropagation(); abrirBaixado(rel, b, tipo); };
   return b;
 }

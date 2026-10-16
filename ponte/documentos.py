@@ -7,6 +7,7 @@ import subprocess
 import sys
 
 from motor import documentos as md
+from motor import formatos
 from motor import projeto as mp
 
 from .base import PASTA_TESSDATA, ErroUsuario, resposta_segura
@@ -17,6 +18,13 @@ class DocumentosAPI:
 
     def _bacia_poco_de(self, rel: str) -> tuple[str, str]:
         return self._projeto.bacia_poco_de(rel)
+
+    def _exigir_documento(self, rel: str, caminho: str):
+        if not os.path.isfile(caminho):
+            raise ErroUsuario(f"Arquivo não encontrado: {rel}")
+        if mp.tipo_arquivo(caminho) == "perfil":
+            raise ErroUsuario(f"{os.path.basename(caminho)} tem nome de imagem, mas o conteúdo é um perfil "
+                              f"({formatos.formato(caminho).upper()}). Abra na aba Perfis.")
 
     @resposta_segura
     def documentos(self):
@@ -63,8 +71,7 @@ class DocumentosAPI:
         self._exigir_projeto()
         rel = mp.rel_padrao(rel)
         caminho = self._projeto.caminho_seguro(rel)
-        if not os.path.isfile(caminho):
-            raise ErroUsuario(f"Arquivo não encontrado: {rel}")
+        self._exigir_documento(rel, caminho)
         texto = self._projeto.ler_texto(rel)
         total = texto["n_paginas"] if texto else md.n_paginas(caminho)
         pagina = max(1, min(int(pagina), total))
@@ -94,6 +101,7 @@ class DocumentosAPI:
         self._exigir_projeto()
         rel = mp.rel_padrao(rel)
         caminho = self._projeto.caminho_seguro(rel)
+        self._exigir_documento(rel, caminho)
         return {"rel": rel, "nome": os.path.basename(caminho), "pagina": int(pagina),
                 **md.visor_info(caminho, int(pagina))}
 
