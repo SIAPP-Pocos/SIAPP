@@ -182,7 +182,11 @@ async function abrirFicha(id) {
   corpo.appendChild(el("h3", "", `Arquivos baixados (${r.arquivos.length})`));
   if (!r.arquivos.length) corpo.appendChild(el("p", "ajuda", "Nenhum."));
   const ul = el("ul", "dic-lista");
-  for (const a of r.arquivos) ul.appendChild(el("li", "", `${a.rel.split("/").slice(3).join("/")} · ${tamanho(a.bytes)}`));
+  for (const a of r.arquivos) {
+    const li = el("li");
+    li.append(el("span", "", `${a.rel.split("/").slice(3).join("/")} · ${tamanho(a.bytes)}`), botaoAbrir(a.rel));
+    ul.appendChild(li);
+  }
   corpo.appendChild(ul);
 
   if (r.curvas.length) {

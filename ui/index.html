@@ -298,7 +298,13 @@
         <button class="btn secundario" id="pg-ant" title="Página anterior">‹</button>
         <span id="pg-num">—</span>
         <button class="btn secundario" id="pg-prox" title="Próxima página">›</button>
-        <button class="btn secundario" id="pg-abrir" title="Abrir no leitor de PDF do computador">Abrir arquivo</button>
+        <button class="btn secundario" id="pg-ampliar" title="Ver a página em tela cheia, com zoom (também: duplo clique na imagem)">Ampliar</button>
+        <button class="btn secundario" id="pg-abrir" title="Abrir no programa do computador (leitor de PDF, visualizador de imagens)">No computador</button>
+      </div>
+      <div class="pg-aviso pg-pendente" id="pg-pendente" hidden>
+        <span>Documento <strong>ainda sem texto</strong>: dá para ler, ampliar e transcrever olhando a imagem.
+          Processar extrai o texto para a busca e para as sugestões da transcrição.</span>
+        <button class="btn pequeno" id="pg-processar">Processar este documento</button>
       </div>
       <p class="pg-aviso" id="pg-aviso" hidden>Texto lido por OCR: serve para encontrar a página.
         <strong>Confira qualquer número na imagem</strong> — o reconhecimento erra dígitos com frequência.</p>
@@ -328,7 +334,7 @@
         </form>
         <div id="tr-lista"></div>
       </details>
-      <section class="pg-texto">
+      <section class="pg-texto" id="pg-texto-box">
         <div class="pg-texto-cab">
           <strong>Texto reconhecido</strong>
           <span class="ajuda" id="pg-corr-resumo"></span>
@@ -503,11 +509,30 @@
     </div>
   </footer>
 
+  <div class="visor" id="visor" hidden role="dialog" aria-modal="true" aria-label="Visor de página">
+    <div class="v-barra">
+      <strong class="v-nome" id="v-nome">—</strong>
+      <button class="btn secundario pequeno" id="v-ant" title="Página anterior">‹</button>
+      <span class="v-num" id="v-num">—</span>
+      <button class="btn secundario pequeno" id="v-prox" title="Próxima página">›</button>
+      <span class="v-sep"></span>
+      <button class="btn secundario pequeno" id="v-menos" title="Diminuir (Ctrl + roda)">−</button>
+      <span class="v-num" id="v-zoom">100%</span>
+      <button class="btn secundario pequeno" id="v-mais" title="Aumentar (Ctrl + roda)">+</button>
+      <button class="btn secundario pequeno" id="v-largura" title="Ajustar à largura da janela">Largura</button>
+      <button class="btn secundario pequeno" id="v-real" title="Tamanho real da imagem renderizada">1:1</button>
+      <span class="v-dica">roda: rolar · Ctrl + roda: zoom · arrastar: mover · Esc: fechar</span>
+      <button class="fechar" id="v-fechar" title="Fechar (Esc)" aria-label="Fechar">×</button>
+    </div>
+    <div class="v-area" id="v-area"><div class="v-folha" id="v-folha"></div></div>
+  </div>
+
   <script src="vendor/leaflet/leaflet.js"></script>
   <script src="js/comum.js"></script>
   <script src="js/catalogo.js"></script>
   <script src="js/documentos.js"></script>
   <script src="js/fatos.js"></script>
+  <script src="js/visor.js"></script>
   <script src="js/comunidade.js"></script>
   <script src="js/mapa.js"></script>
   <script src="js/perfis.js"></script>

@@ -91,6 +91,9 @@ async function iniciar() {
   ligar("pg-ant", "onclick", () => docAtual && abrirPagina(docAtual.rel, docAtual.pagina - 1, termoAtual));
   ligar("pg-prox", "onclick", () => docAtual && abrirPagina(docAtual.rel, docAtual.pagina + 1, termoAtual));
   ligar("pg-abrir", "onclick", () => docAtual && chamar($("pg-abrir"), "abrir_arquivo", docAtual.rel));
+  ligar("pg-ampliar", "onclick", () => docAtual && abrirVisor(docAtual.rel, docAtual.pagina));
+  ligar("pg-img", "ondblclick", () => docAtual && !$("tr-box").open && abrirVisor(docAtual.rel, docAtual.pagina));
+  ligar("pg-processar", "onclick", processarEste);
   ligar("ed-form", "onsubmit", salvarCorrecao);
   ligar("ed-manter", "onclick", manterOriginal);
   ligar("ed-desfazer", "onclick", desfazerCorrecao);
@@ -98,6 +101,7 @@ async function iniciar() {
   ligar("ed-fechar", "onclick", fecharEditor);
   ligar("form-palavra", "onsubmit", adicionarPalavra);
   ligarTranscricao();
+  ligarVisor();
   ligar("tolerante", "onchange", () => termoAtual && $("busca").value.trim() && buscar());
   // mapa e comunidade
   ligarMapa();
@@ -110,7 +114,8 @@ async function iniciar() {
 
   document.addEventListener("keydown", (e) => {
     if (e.key !== "Escape") return;
-    if (!$("vista-docs").hidden) {
+    if (visorAberto()) fecharVisor();
+    else if (!$("vista-docs").hidden) {
       if (!$("editor").hidden) fecharEditor();
       else if (!$("painel-pagina").hidden) fecharPagina();
     } else if (!$("vista-catalogo").hidden && !$("gaveta").hidden) fecharGaveta();

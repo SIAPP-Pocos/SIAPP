@@ -6,7 +6,7 @@ let docAtual = null;           // {rel, pagina, n_paginas} da página aberta no 
 let termoAtual = "";
 
 const SITUACAO = {
-  pendente: "não processado",
+  pendente: "sem texto — clique para ver",
   desatualizado: "arquivo mudou — processar de novo",
   processado: "",
 };
@@ -30,7 +30,7 @@ async function carregarDocumentos() {
   const pend = docs.filter((d) => d.situacao !== "processado");
   $("docs-resumo").textContent = docs.length
     ? `${docs.length} documento(s) · ${docs.length - pend.length} processado(s) · ${pend.length} pendente(s)`
-    : "Nenhum PDF ou TIF baixado ainda. Baixe na aba Catálogo.";
+    : "Nenhum PDF, TIF ou imagem baixado ainda. Baixe na aba Catálogo.";
   $("btn-processar").disabled = pend.length === 0;
   $("aviso-idioma").hidden = r.idioma_ok || pend.length === 0;
   desenharDocs();
@@ -53,12 +53,18 @@ function desenharDocs() {
     sel.id = "sit-" + d.rel;
     info.appendChild(sel);
     b.append(el("span", "d-nome", d.nome), info);
-    b.onclick = () => d.situacao === "processado"
-      ? abrirPagina(d.rel, 1, termoAtual)
-      : status("Este documento ainda não foi processado. Use “Processar pendentes”.", "erro");
+    b.onclick = () => abrirPagina(d.rel, 1, d.situacao === "processado" ? termoAtual : "");
     li.appendChild(b);
     ul.appendChild(li);
   }
+}
+
+async function processarEste() {
+  if (!docAtual) return;
+  const r = await chamar($("pg-processar"), "processar_documentos", [docAtual.rel]);
+  if (!r.ok) return;
+  $("pg-processar").disabled = true;
+  status("Documento na fila de processamento. O texto aparece aqui quando terminar.", "trab");
 }
 
 async function processarPendentes() {
@@ -132,13 +138,16 @@ async function abrirPagina(rel, pagina, termo) {
   $("pg-num").textContent = "carregando…";
   const r = await chamar(null, "ver_pagina", rel, pagina, termo || "");
   if (meu !== pedidoPagina || !r.ok) return;
-  docAtual = { rel: r.rel, pagina: r.pagina, n_paginas: r.n_paginas };
+  docAtual = { rel: r.rel, pagina: r.pagina, n_paginas: r.n_paginas, processado: r.processado };
   $("pg-nome").textContent = r.nome;
   $("pg-sub").textContent = r.titulo || "";
   $("pg-num").textContent = `pág ${r.pagina} de ${r.n_paginas}`;
   $("pg-ant").disabled = r.pagina <= 1;
   $("pg-prox").disabled = r.pagina >= r.n_paginas;
   $("pg-aviso").hidden = r.metodo !== "ocr";
+  $("pg-pendente").hidden = r.processado;
+  $("pg-processar").disabled = false;
+  $("pg-texto-box").hidden = !r.processado;
   $("pg-img").src = r.imagem;
   iniciarTranscricao(r);
   fecharEditor();
@@ -377,6 +386,7 @@ window.eventoDocumento = function (ev) {
       const sel = document.getElementById("sit-" + ev.doc);
       if (sel) { sel.className = "selo ok"; sel.textContent = descreverDoc(d); }
     }
+    if (docAtual && docAtual.rel === ev.doc) abrirPagina(docAtual.rel, docAtual.pagina, termoAtual);
   } else if (ev.tipo === "erro") {
     const sel = document.getElementById("sit-" + ev.doc);
     if (sel) { sel.className = "selo err"; sel.textContent = "erro"; sel.title = ev.erro; }

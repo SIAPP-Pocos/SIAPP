@@ -162,3 +162,46 @@ def test_transcricao_com_caixa_e_sugestao(janela, tmp_path):
     assert f["prof_topo"] == 1234.5 and f["pagina"] == 1 and len(f["caixa"]) == 4 and f["fonte_sha256"]
     assert p.locator("#pg-caixas .pg-caixa.salva").count() == 1
     assert not janela.erros_js, janela.erros_js
+
+
+def test_tif_sem_processar_abre_amplia_e_arquivo_qualquer_abre_fora(janela, tmp_path, monkeypatch):
+    from PIL import Image
+    p = janela.page
+    abrir_projeto(janela)
+    pasta = tmp_path / "ambiente_teste" / "bruto" / "Potiguar" / "1-AURI-12-RN" / "Perfil Convencional"
+    pasta.mkdir(parents=True)
+    folhas = [Image.new("RGB", (500, 7000), "white"), Image.new("RGB", (500, 700), "gray")]
+    folhas[0].save(str(pasta / "perfil.tif"), save_all=True, append_images=folhas[1:])
+    p.click("#aba-docs")
+    janela.esperar("document.querySelectorAll('#lista-docs button').length === 1")
+    assert "sem texto" in p.text_content("#lista-docs")
+    p.click("#lista-docs button")
+    janela.esperar("document.getElementById('pg-num').textContent.includes('1 de 2')")
+    assert p.is_visible("#pg-pendente") and not p.is_visible("#pg-texto-box")
+    p.click("#pg-prox")
+    janela.esperar("document.getElementById('pg-num').textContent.includes('2 de 2')")
+    p.click("#pg-ant")
+    janela.esperar("document.getElementById('pg-num').textContent.includes('1 de 2')")
+    # visor ampliado: faixas sob demanda, zoom e Esc
+    p.click("#pg-ampliar")
+    janela.esperar("document.querySelectorAll('#v-folha .v-faixa').length === 14")
+    janela.esperar("document.querySelectorAll('#v-folha .v-faixa img').length >= 1")
+    carregadas = p.locator("#v-folha .v-faixa img").count()
+    assert carregadas < 14                         # só o que está perto da tela
+    antes = p.text_content("#v-zoom")
+    p.click("#v-mais")
+    assert p.text_content("#v-zoom") != antes
+    p.locator("#v-area").evaluate("e => e.scrollTop = e.scrollHeight")
+    janela.esperar("document.querySelector('#v-folha .v-faixa:last-child img') !== null")
+    p.keyboard.press("Escape")
+    assert not p.is_visible("#visor") and p.is_visible("#painel-pagina")
+    # outro tipo de arquivo: programa do computador
+    (pasta / "notas.txt").write_text("x")
+    abertos = []
+    monkeypatch.setattr("ponte.documentos.subprocess.Popen", lambda args: abertos.append(args))
+    monkeypatch.setattr("ponte.documentos.sys.platform", "linux")
+    p.evaluate("abrirBaixado('bruto/Potiguar/1-AURI-12-RN/Perfil Convencional/notas.txt')")
+    janela.descarregar()
+    janela.esperar("document.getElementById('status').textContent.includes('programa do computador')")
+    assert abertos and abertos[0][1].endswith("notas.txt")
+    assert not janela.erros_js, janela.erros_js

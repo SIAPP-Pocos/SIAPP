@@ -58,35 +58,58 @@ class DocumentosAPI:
 
     @resposta_segura
     def ver_pagina(self, rel: str, pagina: int, termo: str = ""):
+        """Imagem da página e, se o documento já foi processado, o texto com as
+        correções. Documento ainda não processado também abre: só a imagem."""
         self._exigir_projeto()
         rel = mp.rel_padrao(rel)
         caminho = self._projeto.caminho_seguro(rel)
+        if not os.path.isfile(caminho):
+            raise ErroUsuario(f"Arquivo não encontrado: {rel}")
         texto = self._projeto.ler_texto(rel)
+        total = texto["n_paginas"] if texto else md.n_paginas(caminho)
+        pagina = max(1, min(int(pagina), total))
+        bacia, poco = self._bacia_poco_de(rel)
+        base = {"rel": rel, "nome": os.path.basename(caminho), "pagina": pagina,
+                "n_paginas": total, "bacia": bacia, "poco": poco, "processado": texto is not None,
+                "poco_id": self._id_poco(poco) if poco else "",
+                "fatos": self._banco.fatos(fonte_rel=rel, pagina=pagina)}
         if texto is None:
-            raise ErroUsuario("Documento ainda não processado.")
-        pagina = max(1, min(int(pagina), texto["n_paginas"]))
+            return {**base, "metodo": "imagem", "titulo": "", "segmentos": [], "palavras": [],
+                    "n_corrigidas": 0, "imagem": md.imagem_pagina(caminho, pagina, [])}
         p = texto["paginas"][pagina - 1]
         variacoes = [v for e in self._indice.expandir(termo) for v in e["variacoes"]] if termo else []
         # destaque: casa com o que o OCR leu OU com a forma corrigida
         palavras = [[*w[:4], f"{w[4]} {self._corretor.corrigir(w[4])}"] for w in p["palavras"]]
         segmentos = self._corretor.segmentos(p["texto"])
-        bacia, poco = self._bacia_poco_de(rel)
-        return {"rel": rel, "nome": os.path.basename(caminho), "pagina": pagina,
-                "n_paginas": texto["n_paginas"], "metodo": p["metodo"],
-                "bacia": bacia, "poco": poco,
+        return {**base, "metodo": p["metodo"],
                 "titulo": self._indice.titulos(rel).get(pagina, ""),
                 "segmentos": segmentos,
                 "palavras": p["palavras"],
                 "n_corrigidas": sum(isinstance(x, dict) for x in segmentos),
-                "poco_id": self._id_poco(poco) if poco else "",
-                "fatos": self._banco.fatos(fonte_rel=rel, pagina=pagina),
                 "imagem": md.imagem_pagina(caminho, pagina, palavras, termo, variacoes=variacoes)}
+
+    @resposta_segura
+    def visor_pagina(self, rel: str, pagina: int):
+        """Medidas da página no visor ampliado (as faixas vêm por visor_faixa)."""
+        self._exigir_projeto()
+        rel = mp.rel_padrao(rel)
+        caminho = self._projeto.caminho_seguro(rel)
+        return {"rel": rel, "nome": os.path.basename(caminho), "pagina": int(pagina),
+                **md.visor_info(caminho, int(pagina))}
+
+    @resposta_segura
+    def visor_faixa(self, rel: str, pagina: int, indice: int):
+        self._exigir_projeto()
+        caminho = self._projeto.caminho_seguro(mp.rel_padrao(rel))
+        return {"indice": int(indice), "imagem": md.visor_faixa(caminho, int(pagina), int(indice))}
 
     @resposta_segura
     def abrir_arquivo(self, rel: str):
         """Abre o arquivo no programa padrão do sistema (leitor de PDF etc.)."""
         self._exigir_projeto()
-        caminho = self._projeto.caminho_seguro(rel)
+        caminho = self._projeto.caminho_seguro(mp.rel_padrao(rel))
+        if not os.path.isfile(caminho):
+            raise ErroUsuario(f"Arquivo não encontrado: {rel}")
         if sys.platform.startswith("win"):
             os.startfile(caminho)   # noqa: S606 — caminho validado dentro de bruto/
         elif sys.platform == "darwin":

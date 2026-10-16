@@ -60,3 +60,40 @@ function dataCurta(iso) {
   const [d, h] = String(iso).split("T");
   return d.split("-").reverse().join("/") + (h ? " " + h.slice(0, 5) : "");
 }
+
+// --------------------------------------------- abrir um arquivo baixado
+// PDF, TIF e imagens abrem no SIAPP (aba Documentos, mesmo sem processar);
+// perfis, na aba Perfis; o resto (planilha, texto, ZIP…) no programa do computador.
+const EXT_VISOR = [".pdf", ".tif", ".tiff", ".png", ".jpg", ".jpeg"];
+const EXT_PERFIL = [".dlis", ".lis", ".las"];
+
+function extensao(nome) {
+  const m = /\.[^./\\]+$/.exec(nome || "");
+  return m ? m[0].toLowerCase() : "";
+}
+
+async function abrirBaixado(rel, botao) {
+  const ext = extensao(rel), nome = rel.split("/").pop();
+  if (EXT_VISOR.includes(ext)) {
+    trocarAba("docs");
+    abrirPagina(rel, 1, "");
+  } else if (EXT_PERFIL.includes(ext)) {
+    trocarAba("perfis");
+    abrirPerfil({ rel, nome });
+  } else {
+    const r = await chamar(botao || null, "abrir_arquivo", rel);
+    if (r.ok) status(`${nome} aberto no programa do computador.`, "ok");
+  }
+}
+
+function botaoAbrir(rel) {
+  const ext = extensao(rel);
+  const [rotulo, dica] = EXT_VISOR.includes(ext) ? ["Ver", "Ver no SIAPP (aba Documentos)"]
+    : EXT_PERFIL.includes(ext) ? ["Ver perfil", "Abrir na aba Perfis"]
+    : ["Abrir", "Abrir no programa do computador"];
+  const b = el("button", "btn-abrir", rotulo);
+  b.type = "button";
+  b.title = dica;
+  b.onclick = (ev) => { ev.preventDefault(); ev.stopPropagation(); abrirBaixado(rel, b); };
+  return b;
+}

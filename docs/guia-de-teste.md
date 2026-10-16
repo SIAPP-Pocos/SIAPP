@@ -74,6 +74,25 @@ você já tinha baixado (com SHA-256) e refaz o índice de busca uma vez.
 - [ ] O dado aparece na ficha do 7-GMR-13-RN (Mapa) e entra no próximo **Exportar pacote**.
 - [ ] Tentar salvar topo de formação sem profundidade, ou base acima do topo: o SIAPP recusa e explica.
 
+## 0.11 — abrir qualquer arquivo
+
+- [ ] **Documentos**: um PDF ou TIF ainda não processado aparece como "sem texto — clique
+      para ver". Clicar abre a página na hora, com o aviso amarelo e o botão
+      **Processar este documento**.
+- [ ] TIF de várias páginas: **‹ ›** passam as páginas.
+- [ ] **Ampliar** (ou duplo clique na imagem): tela cheia. Ctrl + roda aproxima no ponto do
+      mouse; arrastar move; **Largura** e **1:1**; **Esc** fecha.
+- [ ] Com um perfil escaneado em TIF (pasta de perfis do poço): rolar até o fim no visor —
+      as faixas vão aparecendo, sem travar a janela.
+- [ ] **Processar este documento**: quando termina, o texto aparece na mesma página.
+- [ ] Buscar `barreiras` e abrir o resultado de um TIF já processado: o destaque amarelo
+      aparece (antes dava erro).
+- [ ] **Catálogo** → abrir um poço: os arquivos baixados têm o botão **Ver** (PDF/TIF),
+      **Ver perfil** (DLIS/LAS) ou **Abrir** (outros: abre no programa do Windows).
+- [ ] **Mapa** → ficha do poço → **Arquivos baixados**: os mesmos botões.
+- [ ] Transcrever num documento ainda não processado: desenhar a caixa avisa que não há
+      texto; digitar os valores e salvar funciona.
+
 ## O que continua valendo das versões anteriores
 
 - Catálogo em tempo real das 24 bacias, junção das subpastas "parte", árvore do poço com tamanhos.

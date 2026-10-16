@@ -67,6 +67,8 @@ class CatalogoAPI:
             a["baixado"] = (os.path.isfile(destino) and
                             (not a["tamanho"] or os.path.getsize(destino) == a["tamanho"]))
             a["parcial"] = not a["baixado"] and os.path.isfile(destino + ".part")
+            if a["baixado"]:
+                a["rel"] = self._projeto.rel(destino)
         return {**mapa, "categoria": categoria, "parte": parte,
                 "salvo_em": self._projeto.rel(arquivo)}
 

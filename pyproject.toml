@@ -23,7 +23,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8", "jsonschema>=4"]
+dev = ["pytest>=8", "jsonschema>=4", "pillow>=10"]
 
 [project.urls]
 "Código" = "https://github.com/SIAPP-Pocos/siapp"

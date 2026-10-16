@@ -78,3 +78,36 @@ def test_indice_de_versao_antiga_e_recriado(tmp_path):
     with sqlite3.connect(caminho) as c:
         c.execute("CREATE TABLE paginas (texto)")
     assert md.Indice(caminho).recriado
+
+
+# ------------------------------------------------- abrir sem processar e visor
+def tif_paginas(caminho, tamanhos):
+    from PIL import Image
+    imgs = [Image.new("RGB", t, c) for t, c in zip(tamanhos, ["white", "lightblue", "pink"])]
+    imgs[0].save(caminho, save_all=True, append_images=imgs[1:], dpi=(200, 200))
+
+
+def test_tif_de_varias_paginas_abre_e_destaca(tmp_path):
+    f = str(tmp_path / "perfil.tif")
+    tif_paginas(f, [(800, 1000), (800, 1000)])
+    assert md.n_paginas(f) == 2
+    # destaque em TIF: antes falhava com "is no PDF" (PyMuPDF só desenha em PDF)
+    url = md.imagem_pagina(f, 2, [[0.1, 0.1, 0.4, 0.2, "BARREIRAS"]], "barreiras")
+    assert url.startswith("data:image/png;base64,")
+    with pytest.raises(md.ErroDocumento):
+        md.imagem_pagina(f, 3, [])
+
+
+def test_visor_entrega_pagina_longa_em_faixas(tmp_path):
+    f = str(tmp_path / "longo.tif")
+    tif_paginas(f, [(500, 9000)])                       # perfil escaneado: 18× mais alto que largo
+    i = md.visor_info(f, 1, largura=1000)
+    assert i["largura"] == 1000 and i["altura"] == 18000 and i["faixas"] == 18
+    assert md.visor_faixa(f, 1, 17, largura=1000).startswith("data:image/jpeg;base64,")
+    with pytest.raises(md.ErroDocumento):
+        md.visor_faixa(f, 1, 18, largura=1000)
+    # a página no painel lateral nunca passa do limite de pixels
+    import base64
+    png = base64.b64decode(md.imagem_pagina(f, 1, []).split(",")[1])
+    larg, alt = int.from_bytes(png[16:20], "big"), int.from_bytes(png[20:24], "big")
+    assert larg * alt <= md.PIXELS_PAGINA and alt > larg * 15

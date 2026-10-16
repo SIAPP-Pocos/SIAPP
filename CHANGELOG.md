@@ -6,6 +6,25 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 
 ## [Não lançado]
 
+## [0.11.0] — 2026-10-16
+### Adicionado
+- **Abrir qualquer arquivo baixado.** PDF, TIF e imagens (PNG, JPG) abrem na aba
+  Documentos **sem processar antes**: dá para ler, folhear, ampliar e transcrever olhando
+  a imagem. "Processar este documento" extrai o texto quando a pessoa quiser, e a página
+  aberta mostra o texto assim que o processamento termina.
+- **Visor ampliado** (botão Ampliar ou duplo clique na página): tela cheia, Ctrl + roda
+  para zoom no ponto do cursor, arrastar para mover, ajuste à largura e 1:1, páginas
+  anteriores e seguintes. A página chega em faixas, só as que aparecem na tela: um perfil
+  escaneado em TIF de dezenas de metros de papel abre sem travar.
+- Botões **Ver / Ver perfil / Abrir** nos arquivos baixados — na árvore do poço (Catálogo)
+  e na ficha do poço (Mapa). Documentos e imagens abrem no SIAPP, DLIS/LIS/LAS na aba
+  Perfis, e o resto (planilhas, texto, ZIP…) no programa do computador.
+### Corrigido
+- Destaque da busca em **TIF já processado** falhava ("is no PDF"): o PyMuPDF só desenha
+  em PDF. O destaque agora é pintado na imagem.
+- A imagem da página no painel tem limite de pixels: um TIF muito comprido não pesa mais
+  na janela.
+
 ## [0.10.0] — 2026-10-16
 ### Adicionado
 - **Transcrição assistida** na página do documento: desenhe uma caixa em volta do valor

@@ -236,7 +236,12 @@ mark { background: #ffe58a; color: inherit; border-radius: 2px; padding: 0 1px; 
 
 .pg-barra { display: flex; align-items: center; gap: 8px; margin: 6px 0 12px; }
 .pg-barra .btn { padding: 5px 10px; }
-.pg-barra #pg-abrir { margin-left: auto; }
+.pg-barra #pg-ampliar { margin-left: auto; }
+.pg-pendente { display: flex; gap: 10px; align-items: center; }
+.pg-pendente[hidden] { display: none; }
+.pg-pendente span { flex: 1; }
+.pg-img { cursor: zoom-in; }
+.pg-quadro.marcando .pg-img { cursor: crosshair; }
 #pg-num { font: 12.5px var(--mono); color: var(--suave); }
 .pg-aviso {
   font-size: 12.5px; padding: 8px 10px; margin: 0 0 12px; border-radius: 6px;
@@ -465,3 +470,28 @@ input[type=text], input[type=number] {
 .tr-form .linha .ajuda { margin: 0; font-weight: 400; }
 input.sugestao { background: #fff6d6; border-color: #e0b84a; }
 #tr-lista { margin-top: 10px; }
+
+/* ---------- abrir arquivo baixado (catálogo, ficha do poço) ---------- */
+.btn-abrir {
+  font: 600 11px var(--sans); padding: 1px 8px; border-radius: 4px; cursor: pointer;
+  border: 1px solid var(--destaque); background: var(--painel); color: var(--destaque); white-space: nowrap;
+}
+.btn-abrir:hover { background: var(--destaque-claro); }
+.btn-abrir:disabled { opacity: .5; cursor: default; }
+
+/* ---------- visor ampliado ---------- */
+.visor { position: fixed; inset: 0; z-index: 2000; background: #2a2f33; display: flex; flex-direction: column; }
+.visor[hidden] { display: none; }
+.v-barra {
+  display: flex; align-items: center; gap: 8px; padding: 8px 14px; flex-wrap: wrap;
+  background: var(--painel); border-bottom: 1px solid var(--linha);
+}
+.v-nome { font: 600 13px var(--mono); max-width: 34vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.v-num { font: 12.5px var(--mono); color: var(--suave); min-width: 44px; text-align: center; }
+.v-sep { width: 12px; }
+.v-dica { color: var(--suave); font-size: 12px; margin-left: auto; }
+.v-area { flex: 1; overflow: auto; cursor: grab; position: relative; outline: none; }
+.v-area.arrastando { cursor: grabbing; user-select: none; }
+.v-folha { margin: 16px auto; background: #fff; box-shadow: 0 2px 14px rgba(0, 0, 0, .4); }
+.v-faixa { display: block; width: 100%; background: #f1f0ec; }
+.v-faixa img { display: block; width: 100%; height: 100%; -webkit-user-drag: none; user-select: none; }

@@ -118,7 +118,9 @@ function sugerirDoOCR(caixa) {
     return cx >= x0 && cx <= x1 && cy >= y0 && cy <= y1;
   }).sort((p, q) => (Math.abs(p[1] - q[1]) > 0.008 ? p[1] - q[1] : p[0] - q[0]));
   const texto = dentro.map((p) => p[4]).join(" ").trim();
-  $("tr-caixa-info").textContent = texto ? `O OCR leu na caixa: “${texto}”` : "O OCR não leu nada na caixa.";
+  $("tr-caixa-info").textContent = texto ? `O OCR leu na caixa: “${texto}”`
+    : docAtual && !docAtual.processado ? "Documento ainda sem texto: digite o valor olhando a imagem."
+    : "O OCR não leu nada na caixa.";
   if (!texto) return;
   // nome de poço (7-GMR-13-RN) não é profundidade; números com decimal ou 2+ dígitos primeiro
   const util = dentro.map((p) => p[4]).filter((w) => !RE_NOME_POCO.test(w)).join(" ");

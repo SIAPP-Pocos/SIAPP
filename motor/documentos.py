@@ -34,7 +34,13 @@ import numpy as np
 import pymupdf
 import requests
 
-EXTENSOES = (".pdf", ".tif", ".tiff")
+EXTENSOES = (".pdf", ".tif", ".tiff", ".png", ".jpg", ".jpeg")
+# Imagens grandes (perfil em papel escaneado em TIF chega a 2.500 × 80.000 px):
+# nenhuma imagem enviada à janela passa destes limites de pixels.
+PIXELS_PAGINA = 8_000_000
+# Visor ampliado: a página é renderizada nesta largura e entregue em faixas
+# quase quadradas, carregadas conforme a pessoa rola (perfil longo em TIF).
+LARGURA_VISOR = 2400
 IDIOMA = "por"
 URLS_IDIOMA = (   # tenta na ordem: modelo mais preciso, depois o padrão
     "https://github.com/tesseract-ocr/tessdata_best/raw/main/por.traineddata",
@@ -199,26 +205,132 @@ def precisa_ocr(caminho: str) -> bool:
 
 
 # ======================================================= imagem de página
+def n_paginas(caminho: str) -> int:
+    try:
+        with pymupdf.open(caminho) as doc:
+            return doc.page_count
+    except Exception as e:
+        raise ErroDocumento(f"Não foi possível abrir {os.path.basename(caminho)}: {e}") from e
+
+
+def _escala(page: pymupdf.Page, largura: int, pixels_max: int) -> float:
+    """Fator de zoom para a página ficar com `largura` px, sem passar de
+    `pixels_max` no total (páginas muito compridas ficam mais estreitas)."""
+    w, h = max(page.rect.width, 1), max(page.rect.height, 1)
+    z = largura / w
+    if w * h * z * z > pixels_max:
+        z = 0.995 * (pixels_max / (w * h)) ** 0.5   # margem: o PyMuPDF arredonda para cima
+    return max(z, 0.02)
+
+
+def _abrir_pagina(caminho: str, n_pagina: int):
+    try:
+        doc = pymupdf.open(caminho)
+    except Exception as e:
+        raise ErroDocumento(f"Não foi possível abrir {os.path.basename(caminho)}: {e}") from e
+    if doc.needs_pass:
+        raise ErroDocumento(f"{os.path.basename(caminho)} é protegido por senha.")
+    if not 1 <= n_pagina <= doc.page_count:
+        raise ErroDocumento(f"Página {n_pagina} não existe (o arquivo tem {doc.page_count}).")
+    return doc, doc[n_pagina - 1]
+
+
+def _destacar(pix: pymupdf.Pixmap, caixas: list) -> pymupdf.Pixmap:
+    """Pinta caixas amarelas translúcidas (com borda laranja) sobre a imagem.
+    Feito nos pixels, e não com draw_rect: o PyMuPDF só desenha em PDF, e
+    TIF/PNG/JPG falhariam com "is no PDF"."""
+    a = np.frombuffer(pix.samples, np.uint8).reshape(pix.height, pix.width, pix.n)[:, :, :3].astype(np.float32)
+    amarelo, laranja = np.array([255, 217, 0], np.float32), np.array([217, 140, 0], np.float32)
+    for x0, y0, x1, y1 in caixas:
+        c0, c1 = max(0, int(x0 * pix.width) - 2), min(pix.width, int(x1 * pix.width) + 3)
+        l0, l1 = max(0, int(y0 * pix.height) - 2), min(pix.height, int(y1 * pix.height) + 3)
+        if c1 <= c0 or l1 <= l0:
+            continue
+        a[l0:l1, c0:c1] = a[l0:l1, c0:c1] * 0.65 + amarelo * 0.35
+        a[l0:l0 + 1, c0:c1] = a[l1 - 1:l1, c0:c1] = laranja
+        a[l0:l1, c0:c0 + 1] = a[l0:l1, c1 - 1:c1] = laranja
+    rgb = np.ascontiguousarray(a.astype(np.uint8))
+    return pymupdf.Pixmap(pymupdf.csRGB, pix.width, pix.height, rgb.tobytes(), False)
+
+
 def imagem_pagina(caminho: str, n_pagina: int, palavras: list, termo: str = "",
-                  dpi: int = 110, variacoes: list | None = None) -> str:
+                  largura: int = 900, variacoes: list | None = None) -> str:
     """PNG (data URL) da página, com as palavras que casam com o termo (ou com
     suas variações de OCR) destacadas em amarelo. Nada é gravado no arquivo.
     `palavras`: [x0,y0,x1,y1,texto] com coordenadas normalizadas; o texto pode
     trazer a forma original e a corrigida separadas por espaço."""
-    doc = pymupdf.open(caminho)
-    page = doc[n_pagina - 1]
+    doc, page = _abrir_pagina(caminho, n_pagina)
+    try:
+        z = _escala(page, largura, PIXELS_PAGINA)
+        pix = page.get_pixmap(matrix=pymupdf.Matrix(z, z), colorspace=pymupdf.csRGB, alpha=False)
+    finally:
+        doc.close()
     tokens = [sem_acento(t) for t in re.findall(r"\w+", termo or "")] + list(variacoes or [])
     if tokens:
+        caixas = [w[:4] for w in palavras if any(t in sem_acento(w[4]) for t in tokens)]
+        if caixas:
+            pix = _destacar(pix, caixas)
+    return "data:image/png;base64," + base64.b64encode(pix.tobytes("png")).decode("ascii")
+
+
+class _DocAberto:
+    """Mantém o último documento aberto pelo visor: cada faixa de um TIF longo
+    seria uma nova leitura do arquivo inteiro. Chamadas da janela chegam em
+    threads diferentes, e o PyMuPDF não pode usar o mesmo documento em duas."""
+
+    def __init__(self):
+        self.trava = threading.Lock()
+        self.chave = None
+        self.doc = None
+
+    def pagina(self, caminho: str, n_pagina: int):
+        chave = (caminho, os.path.getmtime(caminho), os.path.getsize(caminho))
+        if chave != self.chave:
+            if self.doc is not None:
+                self.doc.close()
+            self.doc, self.chave = None, None
+            self.doc = _abrir_pagina(caminho, n_pagina)[0]
+            self.chave = chave
+        if not 1 <= n_pagina <= self.doc.page_count:
+            raise ErroDocumento(f"Página {n_pagina} não existe (o arquivo tem {self.doc.page_count}).")
+        return self.doc[n_pagina - 1]
+
+
+_visor = _DocAberto()
+
+
+def _medidas_visor(page: pymupdf.Page, largura: int) -> tuple[float, int, int]:
+    z = largura / max(page.rect.width, 1)
+    return z, round(page.rect.width * z), round(page.rect.height * z)
+
+
+def visor_info(caminho: str, n_pagina: int, largura: int = LARGURA_VISOR) -> dict:
+    """Tamanho da página no visor e em quantas faixas ela vem."""
+    with _visor.trava:
+        page = _visor.pagina(caminho, n_pagina)
+        _, w, h = _medidas_visor(page, largura)
+        n_paginas = page.parent.page_count
+    alt_faixa = largura
+    return {"largura": w, "altura": h, "altura_faixa": alt_faixa,
+            "faixas": max(1, -(-h // alt_faixa)), "n_paginas": n_paginas}
+
+
+def visor_faixa(caminho: str, n_pagina: int, indice: int, largura: int = LARGURA_VISOR) -> str:
+    """Faixa `indice` da página (JPEG, data URL): perfil escaneado fica ~10×
+    menor que em PNG, e só as faixas que aparecem na tela são pedidas."""
+    with _visor.trava:
+        page = _visor.pagina(caminho, n_pagina)
+        z, _, h = _medidas_visor(page, largura)
+        alt = largura
+        y0 = indice * alt
+        if not 0 <= y0 < h:
+            raise ErroDocumento(f"Faixa {indice} fora da página.")
         r = page.rect
-        for x0, y0, x1, y1, txt in palavras:
-            p = sem_acento(txt)
-            if any(t in p for t in tokens):
-                caixa = pymupdf.Rect(r.x0 + x0 * r.width, r.y0 + y0 * r.height,
-                                     r.x0 + x1 * r.width, r.y0 + y1 * r.height) + (-2, -2, 2, 2)
-                page.draw_rect(caixa, color=(0.85, 0.55, 0), fill=(1, 0.85, 0),
-                               fill_opacity=0.35, width=1.2, overlay=True)
-    png = page.get_pixmap(dpi=dpi).tobytes("png")
-    return "data:image/png;base64," + base64.b64encode(png).decode("ascii")
+        clip = pymupdf.Rect(r.x0, r.y0 + y0 / z, r.x1, r.y0 + min(h, y0 + alt) / z)
+        pix = page.get_pixmap(matrix=pymupdf.Matrix(z, z), clip=clip)
+    if pix.alpha or pix.n not in (1, 3):
+        pix = pymupdf.Pixmap(pymupdf.csRGB, pix, 0) if pix.n > 3 or pix.n == 2 else pymupdf.Pixmap(pix, 0)
+    return "data:image/jpeg;base64," + base64.b64encode(pix.tobytes("jpg", jpg_quality=85)).decode("ascii")
 
 
 # ================================================================== índice
