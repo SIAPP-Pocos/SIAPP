@@ -1,6 +1,6 @@
 {
-  "descricao": "Nomes por extenso das unidades estratigráficas que o AGP da ANP traz abreviadas (sigla de até 6 letras e código de 6 dígitos). Só entram aqui siglas vistas em AGPs reais e cuja unidade é inequívoca; as demais aparecem como a sigla. Editável: acrescente {sigla, codigos, nome, bacias}.",
-  "versao": 1,
+  "descricao": "Nomes por extenso das unidades estratigráficas que o AGP da ANP traz abreviadas (sigla de até 6 letras; no leiaute antigo também um código de 6 dígitos). Só entram siglas vistas em AGPs reais e cuja unidade é inequívoca na carta estratigráfica da bacia; as demais aparecem como a sigla. Editável: acrescente {sigla, codigos, nome, nivel, bacias}.",
+  "versao": 2,
   "unidades": [
     {"sigla": "JANDAI", "codigos": ["296038"], "nome": "Jandaíra", "nivel": "Formação", "bacias": ["Potiguar"]},
     {"sigla": "ACU", "codigos": ["312010"], "nome": "Açu", "nivel": "Formação", "bacias": ["Potiguar"]},
@@ -16,6 +16,22 @@
     {"sigla": "BANANE", "codigos": ["656054"], "nome": "Bananeiras", "nivel": "Formação", "bacias": ["Sergipe-Alagoas"]},
     {"sigla": "MASSAC", "codigos": ["432049"], "nome": "Massacará", "nivel": "Grupo", "bacias": ["Recôncavo"]},
     {"sigla": "SAOSEB", "codigos": ["442049"], "nome": "São Sebastião", "nivel": "Formação", "bacias": ["Recôncavo"]},
-    {"sigla": "POJUCA", "codigos": ["468050"], "nome": "Pojuca", "nivel": "Formação", "bacias": ["Recôncavo"]}
+    {"sigla": "POJUCA", "codigos": ["468050"], "nome": "Pojuca", "nivel": "Formação", "bacias": ["Recôncavo"]},
+    {"sigla": "APODI", "codigos": ["295010"], "nome": "Apodi", "nivel": "Grupo", "bacias": ["Potiguar"]},
+    {"sigla": "ABRANC", "codigos": ["318605"], "nome": "Areia Branca", "nivel": "Grupo", "bacias": ["Potiguar"]},
+    {"sigla": "AGULHA", "codigos": ["060005"], "nome": "Agulha", "nivel": "Grupo", "bacias": ["Potiguar"]},
+    {"sigla": "MACAU", "codigos": ["200512"], "nome": "Macau", "nivel": "Formação", "bacias": ["Potiguar"]},
+    {"sigla": "TIBAU", "codigos": ["070010"], "nome": "Tibau", "nivel": "Formação", "bacias": ["Potiguar"]},
+    {"sigla": "GUAMAR", "codigos": ["078007"], "nome": "Guamaré", "nivel": "Formação", "bacias": ["Potiguar"]},
+    {"sigla": "PONMEL", "codigos": ["311002"], "nome": "Ponta do Mel", "nivel": "Formação", "bacias": ["Potiguar"]},
+    {"sigla": "QUEBRA", "codigos": ["296148"], "nome": "Quebradas", "nivel": "Formação", "bacias": ["Potiguar"]},
+    {"sigla": "PORMAN", "codigos": ["305542"], "nome": "Porto do Mangue", "nivel": "Membro", "bacias": ["Potiguar"]},
+    {"sigla": "UPANEM", "codigos": ["329042"], "nome": "Upanema", "nivel": "Membro", "bacias": ["Potiguar"]},
+    {"sigla": "GALINH", "codigos": ["321042"], "nome": "Galinhos", "nivel": "Membro", "bacias": ["Potiguar"]},
+    {"sigla": "PONTUB", "codigos": ["325042"], "nome": "Ponta do Tubarão", "nivel": "Camadas", "bacias": ["Potiguar"]},
+    {"sigla": "ACU 1", "codigos": ["312525"], "nome": "Açu 1", "nivel": "Membro", "bacias": ["Potiguar"]},
+    {"sigla": "ACU 2", "codigos": ["312520"], "nome": "Açu 2", "nivel": "Membro", "bacias": ["Potiguar"]},
+    {"sigla": "ACU 3", "codigos": ["312515"], "nome": "Açu 3", "nivel": "Membro", "bacias": ["Potiguar"]},
+    {"sigla": "ACU 4", "codigos": ["312510"], "nome": "Açu 4", "nivel": "Membro", "bacias": ["Potiguar"]}
   ]
 }

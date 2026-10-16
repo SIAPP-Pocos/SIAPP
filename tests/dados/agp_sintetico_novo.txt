@@ -1,0 +1,127 @@
+PREFIXO ANP       : 1-TST-2-RN
+=====================================
+CADASTRO ANP      : 99999999999
+SIGLA DO PAIS     : 1-XYZ-2-RN
+DADOS DE LOCALIZACAO GEOLOGICA
+______________________________
+BACIA             : POTIGUAR (TERRA)
+CAMPO             :
+DADOS DE LOCALIZACAO POLITICA
+_____________________________
+UN.FEDERACAO      : RIO GRANDE DO NORTE
+MUNICIPIO         : MUNICIPIO TESTE
+NOME DA LOCACAO               :  LOCACAO TESTE N.2
+DADOS POSICIONAIS E GEOMETRICOS
+_______________________________
+LOCALIZACAO GEOGRAFICA DA BAP
+   Datum                      :      SIRGAS2000
+  COORD. GEOGRAFICA DA BAP:
+    Latitude     :   -5.25000   Longitude    :  -36.75000
+COTA ALTIMETRICA              :            40.0
+PROF. FINAL SONDADOR          :          1500.0
+MAIOR PROFUNDIDADE ALCANCADA  :          1500.0
+ALTITUDE MESA ROT(SONDA REF.PROF.)         46.0
+DATA DE INICIO DO POCO        : 01/03/2005
+DATA DE TERMINO DO POCO       : 20/03/2005
+FINALIDADE DO POCO            : PRODUCAO DE OLEO
+HISTORICO DA RECLASSIFICACAO
+____________________________
+  20/03/2005 INDEFINIDO
+  10/04/2005 PRODUTOR SUBCOMERCIAL DE OLEO
+ _______________________________________________________
+ UNIDADES LITOESTRATIGRAFICAS - Profundidades MEDIDAS
+ _______________________________________________________
+ Q UNIDADE      TOPO(Prof/Cota) Q BASE(Prof/Cota) Q  MET. INTERP  DATA INTERP FONTE INTERPRETACAO   COMENTARIO
+ B F JANDAI        10.0    36.0     300.0  -254.0    NAO REVISTO  01/04/2005  UN-TESTE/ABC
+ B F ACU          300.0  -254.0     700.0  -654.0    NAO REVISTO  01/04/2005  UN-TESTE/ABC
+ B M ACU  4       300.0  -254.0     420.0  -374.0    NAO REVISTO  01/04/2005  UN-TESTE/ABC
+ B F ALAGAM       700.0  -654.0    1000.0  -954.0    NAO REVISTO  01/04/2005  UN-TESTE/ABC
+ B C PONTUB       850.0  -804.0                      PERFIL       02/02/2009  UN-TESTE/XYZ
+ B F PENDEN      1000.0  -954.0 D  1500.0 -1454.0 N  NAO REVISTO  01/04/2005  UN-TESTE/ABC
+ _________________________________________________________
+ UNIDADES CRONOESTRATIGRAFICAS - Profundidades MEDIDAS
+ _________________________________________________________
+ Q UNIDADE      TOPO(Prof/Cota) Q BASE(Prof/Cota) Q  MET. INTERP  DATA INTERP FONTE INTERPRETACAO   COMENTARIO
+ B A. ARATU      1100.0 -1054.0    1200.0 -1154.0    PALEO        01/06/1997  UN-TESTE/LG
+_____________________________________________________
+ SEQUENCIAS ESTRATIGRAFICAS - Profundidades MEDIDAS
+_____________________________________________________
+ Q UNIDADE      TOPO(Prof/Cota) Q BASE(Prof/Cota) Q  MET. INTERP  DATA INTERP FONTE INTERPRETACAO   COMENTARIO
+ B SEQ3 PEN      1000.0  -954.0    1300.0 -1254.0    PERFIL       05/03/2008  UN-TESTE/ABC
+ B SEQ2 PEN      1300.0 -1254.0    1500.0 -1454.0 N  PERFIL       05/03/2008  UN-TESTE/ABC
+ ________________________________________
+ DISCORDANCIAS - Profundidades MEDIDAS
+ ________________________________________
+ Q Unidade      Prof.(Med./Cota) Tipo                 Met. Interp  Data Interp Fonte Interpretacao
+ B ALS           1000.0  -954.0                       PERFIL       16/08/2007  UN-TESTE/ABC
+ ____________________________________________________
+ MARCOS ESTRATIGRAFICOS - Profundidades MEDIDAS
+ ____________________________________________________
+ Q UNIDADE      TOPO(Prof/Cota) Q BASE(Prof/Cota) Q  MET. INTERP  DATA INTERP FONTE INTERPRETACAO   COMENTARIO
+ B SIM  PEN      1250.0 -1204.0                      PERFIL       05/03/2008  UN-TESTE/ABC
+ _______________________
+ PERFILAGEM DADOS GERAIS
+ _______________________
+  NUMERO PERFILAGEM           :    01        PROF. ALCANCADA:     600.00 ( -554.00  )             PROF. DA SAPATA:
+  NUMERO CONDICIONAMENTO      :    01        DENSIDADE               :      9.3 lb/gal              PH                  : 10.0
+  PERCENTAGEM DE OLEO         :              SALINIDADE DA LAMA      :     43.6 mil mg/l de NaCl    VISCOS. LAMA (MARSH): 72 s
+  RESISTIVIDADE DA LAMA       : 0.153 ohm.m  TEMPERATURA DA LAMA     :     91.0 F
+  RESISTIVIDADE DO FILTRADO   : 0.123 ohm.m  TEMPERATURA DO FILTRADO :     93.0 F
+  FLUIDO                      : NACL COM POLIMEROS
+  COMENTARIO                  :
+ GRUPO DE PERFIS COMBINADOS
+ __________________________
+  GRUPO DE PERFIS COMBINADOS  :    01        TEMP. FUNDO MAR/BAP    :                             TEMP. FUNDO POCO:  122.0 F
+  EMPRESA                     :    SCHLUMBERGER                                                   PROF. FUNDO POCO:  600.0 m
+  DATA/HORA CHEGADA FUNDO POCO:    10/03/2005, 19:00:00
+  GRUPO DE PERFIS COMBINADOS  :    02        TEMP. FUNDO MAR/BAP    :                             TEMP. FUNDO POCO:  
+  EMPRESA                     :    SCHLUMBERGER                                                   PROF. FUNDO POCO:  600.0 m
+  DATA/HORA CHEGADA FUNDO POCO:    10/03/2005, 19:00:00
+ _______________________
+ PERFILAGEM DADOS GERAIS
+ _______________________
+  NUMERO PERFILAGEM           :    02        PROF. ALCANCADA:     1500.00 ( -1454.00  )             PROF. DA SAPATA:
+  NUMERO CONDICIONAMENTO      :    01        DENSIDADE               :      9.3 lb/gal              PH                  : 10.0
+  PERCENTAGEM DE OLEO         :              SALINIDADE DA LAMA      :     43.6 mil mg/l de NaCl    VISCOS. LAMA (MARSH): 72 s
+  RESISTIVIDADE DA LAMA       :               TEMPERATURA DA LAMA     :     
+  RESISTIVIDADE DO FILTRADO   :               TEMPERATURA DO FILTRADO :     
+  FLUIDO                      : NACL COM POLIMEROS
+  COMENTARIO                  :
+ GRUPO DE PERFIS COMBINADOS
+ __________________________
+  GRUPO DE PERFIS COMBINADOS  :    01        TEMP. FUNDO MAR/BAP    :                             TEMP. FUNDO POCO:  180.0 F
+  EMPRESA                     :    SCHLUMBERGER                                                   PROF. FUNDO POCO:  600.0 m
+  DATA/HORA CHEGADA FUNDO POCO:    19/03/2005, 19:00:00
+  GRUPO DE PERFIS COMBINADOS  :    02        TEMP. FUNDO MAR/BAP    :                             TEMP. FUNDO POCO:  176.0 F
+  EMPRESA                     :    SCHLUMBERGER                                                   PROF. FUNDO POCO:  600.0 m
+  DATA/HORA CHEGADA FUNDO POCO:    19/03/2005, 19:00:00
+ _____________________________________
+ TEMPERATURA EXTRAPOLADA EM PERFILAGEM
+ _____________________________________
+ N.PERF.  TEMP. EXTRAPOLADA    PROF. GRAFICO      METODO DE EXTRAPOLACAO
+  2          185.0               1500.00          DADO NAO REVISTO
+   ___________________________
+   AQUISICAO/PROCESSAMENTO
+ ___________________________
+ COD GR TIPO     CIA                              COR DESC  DATA       TOPO                BASE               NIVEIS
+ 165 01 GR       SCHLUMBERGER                     01    A   10/03/2005    5.00(   41.00)    590.00( -544.00)        
+ 051 01 AITH\\    SCHLUMBERGER                     02    A   19/03/2005  590.00( -544.00)   1495.00(-1449.00)        
+ ___________________________
+ INDICIOS DE HIDROCARBONETOS
+ ___________________________
+FLUIDO  AMOSTRA TOPO/COTA               BASE/COTA             MODO   ROCHA    %  TIPO/COR/TONALIDADE
+OLEO    ACALHA    540.00 (  -494.00)      543.00 (  -497.00)   MANCHA ARN
+GAS     DETET     889.00 (  -843.00)      891.00 (  -845.00)   NA     ARN
+ ______________________
+ LITOLOGIA INTERPRETADA
+ ______________________
+  TOPO  /  COTA     BASE  /  COTA       ROCHA               COR                 TONALIDADE     GRANULOMETRIA  ARREDONDAMENTO
+    7.00/(   39.00)    8.50/(   37.50)  ARGILITO            VERDE               CLARO
+    8.50/(   37.50)   20.50/(   25.50)  CALCARENITO         CREME               CLARO          MUITO FINO
+  300.00/( -254.00)  320.00/( -274.00)  ARENITO             CINZA               ESBRANQUICADO  FINO           SUBARREDONDADO
+    ____________________
+    REVESTIMENTOS
+ ____________________
+ TIPO                PROFUNDIDADE        DIAMETRO           INDICADOR RECUPERACAO
+ REVESTIMENTO         146.70 (  -100.70)  13 3/8
+ REVESTIMENTO        1495.00 ( -1449.00)  5 1/2

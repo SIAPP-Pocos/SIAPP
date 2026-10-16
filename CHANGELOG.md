@@ -6,6 +6,25 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 
 ## [Não lançado]
 
+## [0.14.1] — 2026-10-16
+### Corrigido
+- **AGP no leiaute novo do BDEP** (`<poço>_dados.txt`, poços mais novos) era recusado como
+  "Não parece um AGP" — 72 de 438 na Categoria 1 da Potiguar. Agora lê cabeçalho (com o nome
+  antigo da Petrobras), unidades lito e cronoestratigráficas, sequências, discordâncias e
+  marcos, lama e BHT por corrida, temperatura extrapolada, perfis corridos, indícios,
+  litologia interpretada e revestimentos. Também o `_cabecalho.txt` (só perfilagem).
+- Letra de nível **C (Camadas)**: "C PONTUB" (142 poços) virava uma unidade sem nível.
+- Siglas com espaços repetidos ("ACU  4", "BFL  PEN") são normalizadas.
+- Perfis corridos com colunas depois da base (amostras, níveis) eram ignorados.
+- Contagem de AGPs no portal considerava só `*_agp*.txt`.
+### Adicionado
+- Levantar de novo relê os AGPs lidos por um leitor mais antigo **da cópia local**, sem baixar
+  (coluna `leitor`, migração 4 do banco).
+- Dicionário estratigráfico: 16 unidades da Potiguar (Apodi, Areia Branca, Agulha, Macau,
+  Tibau, Guamaré, Ponta do Mel, Quebradas, Porto do Mangue, Upanema, Galinhos, Ponta do
+  Tubarão, Açu 1 a 4).
+- Ficha do poço: cota altimétrica e nome antigo (Petrobras) quando o AGP traz.
+
 ## [0.14.0] — 2026-10-16
 ### Adicionado
 - **Leitura do AGP (Dados Gerais de Poço, ANP)** como 3ª etapa do Levantamento do acervo

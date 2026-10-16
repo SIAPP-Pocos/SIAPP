@@ -1,13 +1,28 @@
 # AGP — Dados Gerais de Poço
 
 O **AGP** (arquivo geral de poço, ANP/SDT/BDEP) é um texto de largura fixa que acompanha
-parte dos poços do REATE, na pasta `AGP` ou `Arquivo_geral_de_poco` (`<poço>_agp.txt`,
-~20–160 KB). É o resumo oficial do poço: cabeçalho, revestimentos, **topos das unidades
+parte dos poços do REATE, na pasta `AGP` ou `Arquivo_geral_de_poco` (~20–300 KB). É o resumo oficial do poço: cabeçalho, revestimentos, **topos das unidades
 estratigráficas**, indícios de hidrocarboneto, **dados de lama de cada corrida de perfilagem**,
 temperatura, zonas-reservatório, testes de formação e litologia das amostras de calha.
 
 O SIAPP 0.14 lê o AGP durante o **Levantamento do acervo** (aba Mapa) e usa o conteúdo na
 ficha do poço, na avaliação de formação e no gráfico de perfis.
+
+## Dois leiautes
+
+| | Antigo | Novo (BDEP) |
+|---|---|---|
+| Arquivo | `<poço>_agp.txt` (ex.: `1FL0001RN_agp.txt`) | `<poço>_dados.txt`; às vezes também `<poço>_cabecalho.txt` só com a perfilagem |
+| Poços | perfurados até ~2000 | mais novos (ex.: 1-BRSA-…) |
+| Identificação | `POÇO: 1FL 0001 RN` | `PREFIXO ANP: 1-BRSA-276-RN` e `SIGLA DO PAIS: 1-TRO-1-RN` (nome antigo da Petrobras) |
+| Unidades | uma tabela "UNID.VERTICALIZADAS", tipo na 1ª coluna, código de 6 dígitos | tabelas separadas: litoestratigráficas, cronoestratigráficas, **sequências**, discordâncias, marcos; sem código |
+| Lama | "PERFIS: REGISTRO DE CABECALHO DE PERFIS" | "PERFILAGEM DADOS GERAIS" + "GRUPO DE PERFIS COMBINADOS" (BHT por grupo; o SIAPP guarda o maior) |
+| Litologia | "LITOLOGIA" (calha, código de rocha) | "LITOLOGIA INTERPRETADA" (rocha, cor, tonalidade, granulometria) |
+| Testes | "TESTES DE FORMACAO" com salinidade nas observações | pré-testes e amostragem a cabo (ainda não lidos) |
+
+Na Categoria 1 da Potiguar, 72 de 438 AGPs (16%) estão no leiaute novo. O SIAPP 0.14.0 só
+lia o antigo; a 0.14.1 lê os dois. Quando o leitor melhora, o levantamento relê os AGPs
+**da cópia local** (sem baixar de novo) — basta levantar as mesmas categorias outra vez.
 
 ## Onde existe
 
@@ -35,8 +50,10 @@ O AGP cobre bem os pioneiros e as extensões e pouco os poços de desenvolviment
 - **Formato pelo conteúdo**: um `.txt` que não tem as seções de um AGP é registrado com
   erro ("Não parece um AGP") e não entra em nada.
 - **AGP de outro poço**: o portal às vezes guarda na pasta de um poço o AGP de outro (ex.: a
-  pasta do 3-AP-10-RN contém o `3SG0010BA`). O SIAPP associa os dados ao poço **do próprio
-  AGP** (cabeçalho), marca `confere = 0` e mostra o aviso na ficha.
+  pasta do 1-BRSA-354-RN contém o AGP do 1-BRSA-264-ES). O SIAPP associa os dados ao poço
+  **do próprio AGP** (cabeçalho), marca `confere = 0` e mostra o aviso na ficha. No leiaute
+  novo, a pasta com o nome antigo (`SIGLA DO PAIS`) também conta como o mesmo poço; o
+  `_cabecalho.txt`, que só traz o nome antigo, fica no poço da pasta.
 
 ### O que é extraído
 
@@ -59,12 +76,19 @@ O AGP cobre bem os pioneiros e as extensões e pouco os poços de desenvolviment
   S crono-sísmica, M marco, N nanofóssil, P palinologia, O ostracodes, F foraminífero,
   X estéril, T ambiente, G dinoflagelados.
 - **Qualidade**: B bom, R regular, Q questionável, I inferido, X dado não revisto.
-- **Nível** (letra antes do nome, só em TIP L): F formação, M membro, G grupo, S supergrupo.
+- **Nível** (letra antes do nome, só em TIP L): F formação, M membro, G grupo, S supergrupo,
+  C camadas (ex.: `C PONTUB`, Camadas Ponta do Tubarão).
+- **Leiaute novo**: o tipo vem da tabela; sequências estratigráficas recebem o tipo `Q`
+  (código do SIAPP, não do AGP). Qualificadores depois do topo e da base (`D`, `N`, `K`, `R`,
+  `M`) são guardados como estão, em `desc_topo` / `desc_base`.
 
-As siglas viram nomes por `recursos/estratigrafia.json` — **só as 15 vistas em AGPs reais**
-(Jandaíra, Açu, Alagamar, Pendência, Embasamento, Barreiras, Coqueiro Seco, Morro do Chaves,
-Penedo, Barra de Itiúba, Serraria, Bananeiras, Massacará, São Sebastião, Pojuca). Sigla fora
-da tabela aparece como está no AGP. Acrescentar uma é editar o JSON (sigla, código, nome).
+As siglas viram nomes por `recursos/estratigrafia.json` — **só as vistas em AGPs reais** e
+inequívocas na carta estratigráfica da bacia (31 na 0.14.1; na Potiguar: Barreiras, Tibau,
+Guamaré, Agulha, Macau, Jandaíra, Quebradas e Membro Porto do Mangue, Ponta do Mel, Açu e
+Açu 1–4, Apodi, Alagamar e Membros Galinhos e Upanema, Camadas Ponta do Tubarão, Areia
+Branca, Pendência, Embasamento). Sigla fora da tabela aparece como está no AGP (ex.:
+`TIBGUA`, `SPA`). Acrescentar uma é editar o JSON (sigla, código, nome); o código também
+identifica a unidade do leiaute novo, que não tem código.
 
 ## Onde aparece
 
@@ -87,8 +111,9 @@ da tabela aparece como está no AGP. Acrescentar uma é editar o JSON (sigla, c�
 - Os topos são a **interpretação registrada pela operadora** (fonte e data na tabela), não
   uma verdade: a qualidade X ("dado não revisto") é comum em poços antigos.
 - A profundidade do AGP é a do sondador; o perfil pode ter deslocamento de alguns metros.
-- Leiaute de largura fixa: as expressões regulares foram conferidas em 40 AGPs reais
-  (Potiguar, Alagoas e Sergipe; 194 linhas de unidade). 4 desses não tinham a seção de
-  unidades; 11 tinham dados de lama. Um leiaute novo pode deixar uma seção vazia — a cópia
+- Leiaute de largura fixa: o antigo foi conferido em 40 AGPs reais (Potiguar, Alagoas e
+  Sergipe; 194 linhas de unidade) e, na 0.14.1, em mais 51 da Potiguar comparando com a
+  0.14.0 linha a linha; o novo, nos 72 da Categoria 1 da Potiguar (todas as 1.114 linhas de
+  unidade lidas). Um leiaute novo pode deixar uma seção vazia — a cópia
   local fica sempre disponível para conferir.
 - A salinidade do teste só é lida no padrão `SAL= … PPM`.

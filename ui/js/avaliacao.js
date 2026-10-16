@@ -81,7 +81,10 @@ function desenharLamaAv() {
     c.rmf != null ? `Rmf ${numero(c.rmf, 3)} a ${numero(c.t_rmf, 1)} °F` : "",
     c.bht != null ? `BHT ${numero(c.bht, 0)} °F` : "",
     c.prof_alcancada != null ? `até ${numero(c.prof_alcancada, 0)} m` : ""].filter(Boolean).join(", "));
-  for (const t of ts) partes.push(`gradiente ${numero(t.gradiente_f_m, 3)} °F/m (corrida ${t.corrida})`);
+  for (const t of ts) {
+    partes.push(t.gradiente_f_m != null ? `gradiente ${numero(t.gradiente_f_m, 3)} °F/m (corrida ${t.corrida})`
+      : `${numero(t.temperatura_f, 1)} °F extrapolada a ${numero(t.prof, 0)} m (corrida ${t.corrida})`);
+  }
   p.textContent = "No AGP: " + partes.join(" · ") + ". Referência para escolher o Rw — o SIAPP não converte.";
   p.hidden = false;
 }

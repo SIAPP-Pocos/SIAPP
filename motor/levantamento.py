@@ -362,33 +362,24 @@ class Levantamento:
                 "resumo": resumo(self.banco, self.bacia)}
 
     def _ler_agps(self, alvo: list[str]) -> int:
-        """3. AGP de cada poço (~20–160 KB): só os novos ou que mudaram de tamanho."""
+        """3. AGP de cada poço (~20–160 KB): só os novos, os que mudaram de tamanho e os
+        lidos por um leitor mais antigo — estes, da cópia local, sem baixar de novo."""
         with self.banco.conexao() as c:
             marcadas = ",".join("?" * len(alvo))
             cands = [dict(r) for r in c.execute(
-                f"""SELECT a.caminho, a.nome, a.pasta, a.tamanho, a.poco_caminho, p.poco_id
+                f"""SELECT a.caminho, a.nome, a.pasta, a.tamanho, a.poco_caminho, p.poco_id,
+                           g.arquivo_local AS local_antigo, g.tamanho AS tamanho_antigo
                     FROM acervo_arquivos a JOIN acervo_pocos p
                       ON p.bacia = a.bacia AND p.caminho = a.poco_caminho
                     LEFT JOIN agp g ON g.bacia = a.bacia AND g.caminho = a.caminho
                     WHERE a.bacia = ? AND p.categoria IN ({marcadas}) AND lower(a.nome) LIKE '%.txt'
-                      AND (g.caminho IS NULL OR g.tamanho IS NOT a.tamanho)
-                    ORDER BY a.caminho""", (self.bacia, *alvo))]
+                      AND (g.caminho IS NULL OR g.tamanho IS NOT a.tamanho OR coalesce(g.leitor, 1) < ?)
+                    ORDER BY a.caminho""", (self.bacia, *alvo, magp.VERSAO_LEITOR))]
         fila = [a for a in cands if magp.eh_agp(a["nome"], a["pasta"])]
         for k, a in enumerate(fila, 1):
             self._checar()
-            texto, erro, local = None, "", ""
-            try:
-                dados = self.cliente.ler_inicio(a["caminho"], max(1, min(a["tamanho"] or 1, 4 * 1024 * 1024)))
-                texto = magp.decodificar(dados)
-                if self.pasta_agp:
-                    local = os.path.join(self.pasta_agp, re.sub(r"[^\w .-]+", "_", self.bacia), a["nome"])
-                    os.makedirs(os.path.dirname(local), exist_ok=True)
-                    with open(local, "wb") as f:
-                        f.write(dados)
-                    # guardado relativo à pasta do projeto: o projeto pode mudar de lugar
-                    local = os.path.relpath(local, os.path.dirname(os.path.abspath(self.pasta_agp))).replace(os.sep, "/")
-            except ErroREATE as e:
-                erro = str(e)
+            copia = self._copia_local(a)
+            texto, local, erro = self._texto_local(copia) if copia else self._baixar_agp(a)
             magp.gravar(self.banco, bacia=self.bacia, caminho=a["caminho"], poco_caminho=a["poco_caminho"],
                         poco_pasta=a["poco_id"], tamanho=a["tamanho"], texto=texto,
                         estratigrafia=self.estratigrafia, arquivo_local=local, erro=erro)
@@ -396,6 +387,36 @@ class Levantamento:
                 self.emitir({"tipo": "agp", "feito": k, "total": len(fila),
                              "texto": f"Lendo os AGPs (topos de formação): {a['nome']}"})
         return len(fila)
+
+    def _baixar_agp(self, a: dict) -> tuple[str | None, str, str]:
+        """(texto, cópia local relativa ao projeto, erro)."""
+        try:
+            dados = self.cliente.ler_inicio(a["caminho"], max(1, min(a["tamanho"] or 1, 4 * 1024 * 1024)))
+        except ErroREATE as e:
+            return None, "", str(e)
+        local = ""
+        if self.pasta_agp:
+            destino = os.path.join(self.pasta_agp, re.sub(r"[^\w .-]+", "_", self.bacia), a["nome"])
+            os.makedirs(os.path.dirname(destino), exist_ok=True)
+            with open(destino, "wb") as f:
+                f.write(dados)
+            # guardado relativo à pasta do projeto: o projeto pode mudar de lugar
+            local = os.path.relpath(destino, os.path.dirname(os.path.abspath(self.pasta_agp))).replace(os.sep, "/")
+        return magp.decodificar(dados), local, ""
+
+    @staticmethod
+    def _texto_local(copia: tuple[str, str]) -> tuple[str, str, str]:
+        with open(copia[0], "rb") as f:
+            return magp.decodificar(f.read()), copia[1], ""
+
+    def _copia_local(self, a: dict) -> tuple[str, str] | None:
+        """(caminho absoluto, relativo) da cópia guardada, se ainda for o mesmo arquivo."""
+        if not (self.pasta_agp and a.get("local_antigo") and a.get("tamanho_antigo") == a["tamanho"]):
+            return None
+        absoluto = os.path.join(os.path.dirname(os.path.abspath(self.pasta_agp)), a["local_antigo"])
+        if not os.path.isfile(absoluto) or os.path.getsize(absoluto) != a["tamanho"]:
+            return None
+        return absoluto, a["local_antigo"]
 
     def _listar_tudo(self, cam: str) -> list[dict]:
         """Listagem recursiva numa requisição; se o portal recusar, poço a poço."""
@@ -454,8 +475,9 @@ def _resumo_agp(banco: Banco, bacia: str) -> dict:
             """SELECT count(*), sum(confere = 0),
                       sum(EXISTS (SELECT 1 FROM agp_unidades u WHERE u.bacia = g.bacia AND u.caminho = g.caminho))
                FROM agp g WHERE bacia = ? AND dados IS NOT NULL""", (bacia,)).fetchone()
-        disp = c.execute("""SELECT count(*) FROM acervo_arquivos WHERE bacia = ? AND lower(nome) LIKE '%_agp%.txt'""",
-                         (bacia,)).fetchone()[0]
+        # os dois leiautes: <poço>_agp.txt e, na pasta AGP, <poço>_dados.txt / _cabecalho.txt
+        disp = sum(magp.eh_agp(n, pa) for n, pa in c.execute(
+            "SELECT nome, pasta FROM acervo_arquivos WHERE bacia = ? AND lower(nome) LIKE '%.txt'", (bacia,)))
     return {"agp_disponiveis": disp, "agp_lidos": lidos or 0, "agp_com_topos": com_topos or 0,
             "agp_de_outro_poco": outro or 0}
 

@@ -210,8 +210,9 @@ function secaoAcervoFicha(corpo, acervo) {
 }
 
 // ------------------------------------------------ ficha do poço: AGP da ANP
-const NIVEL_AGP = { F: "Formação", M: "Membro", G: "Grupo", S: "Supergrupo" };
-const TIP_AGP = { L: "litoestratigráfica", C: "cronoestratigráfica", M: "marco", D: "discordância", O: "ostracodes" };
+const NIVEL_AGP = { F: "Formação", M: "Membro", G: "Grupo", S: "Supergrupo", C: "Camadas" };
+const TIP_AGP = { L: "litoestratigráfica", C: "cronoestratigráfica", M: "marco", D: "discordância", O: "ostracodes",
+                  Q: "sequência estratigráfica" };
 
 function secaoAgpFicha(corpo, agps) {
   if (!agps || !agps.length) return;
@@ -227,6 +228,8 @@ function secaoAgpFicha(corpo, agps) {
   linhaFicha(t, "Formação na prof. final", c.formacao_pf);
   linhaFicha(t, "Mesa rotativa", c.mesa_rotativa != null ? `${numero(c.mesa_rotativa, 1)} m` : "");
   linhaFicha(t, "Datum", c.datum);
+  linhaFicha(t, "Cota altimétrica", c.bap != null ? `${numero(c.bap, 1)} m` : "");
+  if (c.sigla_pais && c.sigla_pais_id !== c.poco_id) linhaFicha(t, "Nome antigo (Petrobras)", c.sigla_pais);
   corpo.appendChild(t);
   const us = (g.unidades || []).filter((u) => u.tip === "L");
   if (us.length) {
@@ -237,7 +240,7 @@ function secaoAgpFicha(corpo, agps) {
     for (const u of us) {
       const tr = el("tr");
       const nome = el("td", "", `${NIVEL_AGP[u.nivel] || ""} ${u.nome}`.trim());
-      nome.title = `${u.sigla} · código ${u.codigo} · ${u.tipo_desc || TIP_AGP[u.tip] || u.tip}` +
+      nome.title = `${u.sigla}${u.codigo ? ` · código ${u.codigo}` : ""} · ${u.tipo_desc || TIP_AGP[u.tip] || u.tip}` +
         (u.qualidade ? ` · qualidade: ${u.qualidade}` : "") + (u.metodo_desc ? ` · método: ${u.metodo_desc}` : "") +
         (u.desc_topo ? ` · topo: ${u.desc_topo}` : "");
       tr.append(nome, el("td", "", numero(u.topo, 1)), el("td", "", u.base == null ? "—" : numero(u.base, 1)),
@@ -253,7 +256,11 @@ function secaoAgpFicha(corpo, agps) {
   if ((g.revestimentos || []).length) extras.push(`${g.revestimentos.length} revestimento(s)`);
   if ((g.litologia || []).length) extras.push(`litologia descrita em ${g.litologia.length} camada(s) (trilha na aba Perfis)`);
   for (const cr of g.corridas || []) {
-    extras.push(`corrida ${cr.corrida}: Rm ${numero(cr.rm, 3)} a ${numero(cr.t_rm, 1)} °F, Rmf ${numero(cr.rmf, 3)} a ${numero(cr.t_rmf, 1)} °F, BHT ${numero(cr.bht, 0)} °F`);
+    const partes = [];
+    if (cr.rm != null) partes.push(`Rm ${numero(cr.rm, 3)}${cr.t_rm != null ? ` a ${numero(cr.t_rm, 1)} °F` : ""}`);
+    if (cr.rmf != null) partes.push(`Rmf ${numero(cr.rmf, 3)}${cr.t_rmf != null ? ` a ${numero(cr.t_rmf, 1)} °F` : ""}`);
+    if (cr.bht != null) partes.push(`BHT ${numero(cr.bht, 0)} °F`);
+    if (partes.length) extras.push(`corrida ${cr.corrida}: ${partes.join(", ")}`);
   }
   if (extras.length) corpo.appendChild(el("p", "ajuda", extras.join(" · ")));
   for (const ts of (g.testes || []).slice(0, 5)) {

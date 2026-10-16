@@ -218,8 +218,31 @@ def test_levantamento_le_os_agps(banco, tmp_path):
     c.lidos.clear()
     r, _ = rodar(banco, c, ["Categoria-7"], agp=True)
     assert r["agps_lidos"] == 0
+    # leitor melhorou (versão maior): relê da cópia local, sem baixar
+    with banco.conexao() as con:
+        con.execute("UPDATE agp SET leitor = 1")
+    r, _ = rodar(banco, c, ["Categoria-7"], agp=True, pasta_agp=str(tmp_path / "agp"))
+    assert r["agps_lidos"] == 1 and not c.lidos
+    assert magp.do_poco(banco, "7-TST-1-RN")[0]["leitor"] == magp.VERSAO_LEITOR
     pocos_csv, arqs_csv, topos_csv = lv.exportar_csv(banco, "Alagoas", str(tmp_path / "exp"))
     with open(topos_csv, encoding="utf-8-sig") as f:
         linhas = list(csv.DictReader(f, delimiter=";"))
     acu = next(x for x in linhas if x["sigla"] == "ACU")
     assert acu["poco"] == "7-TST-1-RN" and acu["topo_m"] == "300,00" and acu["agp_do_proprio_poco"] == "sim"
+
+
+def test_levantamento_le_o_agp_do_leiaute_novo(banco, tmp_path):
+    """<poço>_dados.txt na pasta AGP (BDEP, poços mais novos): também é AGP."""
+    dados = os.path.join(os.path.dirname(__file__), "dados")
+    arqs = portal()
+    base = "/POCO/Categoria-7/Categoria-7_parte1/1-TST-2-RN/AGP/"
+    with open(os.path.join(dados, "agp_sintetico_novo.txt"), "rb") as f:
+        arqs[base + "1-TST-2-RN_dados.txt"] = f.read()
+    with open(os.path.join(dados, "agp_sintetico_cabecalho.txt"), "rb") as f:
+        arqs[base + "1-tst-2-rn_cabecalho.txt"] = f.read()
+    r, _ = rodar(banco, ClienteFalso(arqs), ["Categoria-7"], agp=True, pasta_agp=str(tmp_path / "agp"))
+    assert r["agps_lidos"] == 2
+    assert r["resumo"]["agp_disponiveis"] == 2 and r["resumo"]["agp_com_topos"] == 1
+    assert r["resumo"]["agp_de_outro_poco"] == 0
+    from motor import agp as magp
+    assert "PENDEN" in [u["sigla"] for u in magp.unidades_do_poco(banco, "1-TST-2-RN")]

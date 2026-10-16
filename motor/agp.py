@@ -13,8 +13,17 @@ interpretados pela operadora:
 - temperatura extrapolada e gradiente geotérmico (°F/m);
 - testes de formação (intervalo, resultado, observações).
 
-Formato conferido em 16/10/2026 em AGPs da Potiguar (cat. 1 e 3), Alagoas (cat. 7) e
-Recôncavo. Linha que não tem a forma esperada é ignorada — nunca inventada. As
+Há **dois leiautes**, ambos lidos aqui:
+
+- *antigo* (`<poço>_agp.txt`): seções "UNID.VERTICALIZADAS -", "PERFIS: REGISTRO DE
+  CABECALHO DE PERFIS"…, unidades com código de 6 dígitos;
+- *novo* do BDEP (`<poço>_dados.txt`, poços perfurados a partir de ~2000; às vezes com um
+  `_cabecalho.txt` só com a perfilagem): "PREFIXO ANP", unidades separadas em
+  litoestratigráficas, cronoestratigráficas, sequências, discordâncias e marcos, sem código
+  numérico; "PERFILAGEM DADOS GERAIS" por corrida; "LITOLOGIA INTERPRETADA".
+
+Formato conferido em 16/10/2026 em AGPs da Potiguar (cat. 1 e 3, os dois leiautes),
+Alagoas (cat. 7) e Recôncavo. Linha que não tem a forma esperada é ignorada — nunca inventada. As
 temperaturas do AGP estão em **°F** (o próprio arquivo rotula o gradiente em GRAU F/M).
 
 Os nomes das unidades vêm abreviados (JANDAI, ACU, BARITI…) com um código numérico
@@ -65,7 +74,13 @@ METODOS = {
     "I": "paleontologia e sísmica", "J": "perfil, litologia e paleontologia", "K": "perfil, litologia e sísmica",
     "L": "perfil, litologia, paleontologia e sísmica", "X": "dado não revisto", "Z": "informação não existente",
 }
-NIVEIS = {"F": "Formação", "M": "Membro", "G": "Grupo", "S": "Supergrupo"}
+NIVEIS = {"F": "Formação", "M": "Membro", "G": "Grupo", "S": "Supergrupo", "C": "Camadas"}
+# leiaute novo: o tipo da unidade vem da seção, não de uma coluna
+TIPOS_UNIDADE["Q"] = "sequência estratigráfica"
+SECOES_UNIDADES_NOVO = {"UNIDADES LITOESTRATIGRAFICAS": "L", "UNIDADES CRONOESTRATIGRAFICAS": "C",
+                        "SEQUENCIAS ESTRATIGRAFICAS": "Q", "DISCORDANCIAS": "D", "MARCOS ESTRATIGRAFICOS": "M"}
+# muda quando a leitura muda: AGPs lidos por um leitor mais antigo são relidos da cópia local
+VERSAO_LEITOR = 2
 
 
 class ErroAGP(ValueError):
@@ -174,8 +189,8 @@ def unidades(linhas: list[str], estratigrafia: dict | None = None) -> list[dict]
         mt = re.match(r"\s*(?P<desc>[A-Z][A-Z. ]*?[A-Z.])?\s+(?P<met>[A-Z])\s+(?P<tempo>\d{4})?\s*(?P<fonte>.*?)\s*$",
                       cauda)
         nome = m["nome"].strip()
-        nv = re.match(r"^([FMGS])\s+(\S.*)$", nome) if m["tip"] == "L" else None
-        sigla = nv.group(2).strip() if nv else nome
+        nv = re.match(r"^([FMGSC])\s+(\S.*)$", nome) if m["tip"] == "L" else None
+        sigla = " ".join((nv.group(2) if nv else nome).split())
         conhecido = est.get(m["codigo"]) or est.get(sigla.upper())
         saida.append({
             "tip": m["tip"], "ql": m["ql"], "nivel": nv.group(1) if nv else "",
@@ -304,7 +319,7 @@ def temperaturas(linhas: list[str]) -> list[dict]:
 
 
 _RE_AQUIS = re.compile(rf"^\s+(?P<cod>\d{{3}})\s+(?P<gr>\d+)\s+(?P<tipo>\S+?)\s.*?"
-                       rf"(?P<topo>{NUM})\s*\(\s*{NUM}\s*\)\s*(?P<base>{NUM})\s*\(\s*{NUM}\s*\)\s*$")
+                       rf"(?P<topo>{NUM})\s*\(\s*{NUM}\s*\)\s*(?P<base>{NUM})\s*\(\s*{NUM}\s*\)")
 
 
 def perfis_corridos(linhas: list[str]) -> list[dict]:
@@ -312,7 +327,7 @@ def perfis_corridos(linhas: list[str]) -> list[dict]:
     for ln in linhas:
         m = _RE_AQUIS.match(ln)
         if m:
-            saida.append({"codigo": m["cod"], "tipo": m["tipo"].rstrip("/"),
+            saida.append({"codigo": m["cod"], "tipo": m["tipo"].rstrip("/\\"),
                           "topo": _num(m["topo"]), "base": _num(m["base"])})
     return saida
 
@@ -362,13 +377,243 @@ def testes(linhas: list[str]) -> list[dict]:
     return saida
 
 
+# ======================================================= leiaute novo (BDEP)
+def eh_formato_novo(texto: str) -> bool:
+    return "PREFIXO ANP" in texto[:600] or ("PERFILAGEM DADOS GERAIS" in texto and "UNID.VERTICALIZADAS" not in texto)
+
+
+_RE_SUBLINHADO = re.compile(r"^\s*_{5,}\s*$")
+
+
+def secoes_novo(texto: str) -> dict[str, list[str]]:
+    """Título de seção = linha seguida de uma linha de sublinhados. A mesma seção
+    pode repetir (uma por corrida): as linhas se somam."""
+    linhas = texto.splitlines()
+    saida: dict[str, list[str]] = {"cabecalho": []}
+    atual = "cabecalho"
+    for i, ln in enumerate(linhas):
+        prox = linhas[i + 1] if i + 1 < len(linhas) else ""
+        # título: sem ":" e sem algarismos (a última linha de uma tabela também vem antes de um sublinhado)
+        if (ln.strip() and ":" not in ln and not re.search(r"\d", ln) and _RE_SUBLINHADO.match(prox)
+                and not _RE_SUBLINHADO.match(ln)):
+            atual = " ".join(ln.split()).split(" - ")[0]
+            saida.setdefault(atual, [])
+            continue
+        saida.setdefault(atual, []).append(ln)
+    return saida
+
+
+_RE_KV_NOVO = re.compile(r"^\s*(?P<k>[A-Za-z][^:]{0,40}?)\s*:\s*(?P<v>.*?)\s*$")
+_RE_LATLON = re.compile(rf"Latitude\s*:\s*(?P<lat>{NUM})\s+Longitude\s*:\s*(?P<lon>{NUM})")
+
+
+def cabecalho_novo(texto: str, s: dict) -> dict:
+    cab = {}
+    for ln in s.get("cabecalho", []) + s.get("DADOS DE LOCALIZACAO GEOLOGICA", []) + \
+            s.get("DADOS DE LOCALIZACAO POLITICA", []) + s.get("DADOS POSICIONAIS E GEOMETRICOS", []):
+        m = _RE_KV_NOVO.match(ln)
+        if m and m["v"]:
+            k = " ".join(m["k"].split()).upper()
+            cab.setdefault(k, " ".join(m["v"].split()))
+    mesa = re.search(rf"ALTITUDE MESA ROT[^\d\n]*?({NUM})\s*$", texto, re.M)
+    ll = _RE_LATLON.search(texto)
+    sigla = re.search(r"^\s*Sigla:\s*(\S.*?)\s*$", texto, re.M)
+    poco = cab.get("PREFIXO ANP", "")
+    recl = [ln.strip() for ln in s.get("HISTORICO DA RECLASSIFICACAO", []) if re.match(r"^\s*\d\d/\d\d/\d{4}", ln)]
+    sigla_pais = cab.get("SIGLA DO PAIS") or (" ".join(sigla.group(1).split()) if sigla else "")
+    return {
+        "poco_agp": poco or sigla_pais, "poco_id": chave(poco) if poco else "",
+        "sigla_pais": sigla_pais, "sigla_pais_id": chave(sigla_pais) if sigla_pais else "",
+        "cadastro_anp": cab.get("CADASTRO ANP", ""),
+        "bacia": cab.get("BACIA", ""), "campo": cab.get("CAMPO", ""), "datum": cab.get("DATUM", ""),
+        "lat": _num(ll["lat"]) if ll else None, "lon": _num(ll["lon"]) if ll else None,
+        "estado": cab.get("UN.FEDERACAO", ""), "municipio": cab.get("MUNICIPIO", ""),
+        "mesa_rotativa": _num(mesa.group(1)) if mesa else None, "bap": _num(cab.get("COTA ALTIMETRICA")),
+        "prof_final": _num(cab.get("PROF. FINAL SONDADOR")), "maior_prof": _num(cab.get("MAIOR PROFUNDIDADE ALCANCADA")),
+        "formacao_pf": "", "classificacao": cab.get("FINALIDADE DO POCO", ""),
+        "reclassificacao": " ".join(recl[-1].split()[1:]) if recl else "", "direcional": "",
+        "terra_mar": "", "inicio": cab.get("DATA DE INICIO DO POCO", ""), "termino": cab.get("DATA DE TERMINO DO POCO", ""),
+        "operadora": "", "nome": cab.get("NOME DA LOCACAO", ""),
+        "campos": cab,
+    }
+
+
+_RE_UNID_RESTO = re.compile(
+    rf"^\s*(?P<topo>{NUM})\s+(?P<cota_topo>{NUM})(?:\s+(?P<qt>[A-Z]))?"
+    rf"(?:\s+(?P<base>{NUM})\s+(?P<cota_base>{NUM})(?:\s+(?P<qb>[A-Z]))?)?"
+    rf"\s+(?P<met>\S.*?)\s+(?P<data>\d\d/\d\d/\d{{4}})\s*(?P<fonte>.*?)\s*$")
+
+
+def unidades_novo(s: dict, estratigrafia: dict | None = None) -> list[dict]:
+    """Colunas fixas: qualidade na 2ª, nome da 4ª à 15ª (com a letra de nível nas
+    litoestratigráficas: "F ACU", "M ACU  4", "C PONTUB"), depois os números."""
+    est = estratigrafia or {}
+    saida = []
+    for titulo, tip in SECOES_UNIDADES_NOVO.items():
+        for ln in s.get(titulo, []):
+            if len(ln) < 20 or ln[0] != " " or not ln[1].isalpha() or ln[2] != " " or ln[1:3] == "Q ":
+                continue
+            m = _RE_UNID_RESTO.match(ln[15:])
+            nome = ln[3:15].strip()
+            if not m or not nome:
+                continue
+            nv = re.match(r"^([FMGSC])\s+(\S.*)$", nome) if tip == "L" else None
+            sigla = " ".join((nv.group(2) if nv else nome).split())
+            partes = re.split(r"\s{2,}", m["met"].strip())
+            saida.append({
+                "tip": tip, "ql": ln[1], "nivel": nv.group(1) if nv else "",
+                "tipo_desc": TIPOS_UNIDADE.get(tip, ""), "qualidade": QUALIDADES.get(ln[1], ""),
+                "sigla": sigla, "codigo": est.get("#" + sigla.upper(), ""),
+                "nome": est.get(sigla.upper()) or sigla,
+                "topo": _num(m["topo"]), "cota_topo": _num(m["cota_topo"]),
+                "desc_topo": " ".join(partes[:-1]) if len(partes) > 1 else (m["qt"] or ""),
+                "base": _num(m["base"]), "cota_base": _num(m["cota_base"]), "desc_base": m["qb"] or "",
+                "metodo": partes[-1], "metodo_desc": partes[-1].lower(),
+                "fonte": " ".join(m["fonte"].split()), "data": m["data"],
+            })
+    return saida
+
+
+_RE_KV_LINHA = re.compile(r"(?P<k>[A-Z][A-Z0-9. /()%]*?[A-Z.)])\s*:[ \t]?(?P<v>.*?)"
+                          r"(?=\s{2,}[A-Z][A-Z0-9. /()%]*?[A-Z.)]\s*:|\s*$)")
+_CAMPOS_CORRIDA_NOVO = {
+    "NUMERO PERFILAGEM": "corrida", "PROF. ALCANCADA": "prof_alcancada", "PROF. DA SAPATA": "prof_sapata",
+    "DENSIDADE": "densidade_lama", "SALINIDADE DA LAMA": "salinidade_lama", "PH": "ph_lama",
+    "RESISTIVIDADE DA LAMA": "rm", "TEMPERATURA DA LAMA": "t_rm", "RESISTIVIDADE DO FILTRADO": "rmf",
+    "TEMPERATURA DO FILTRADO": "t_rmf", "RESISTIVIDADE DO REBOCO": "rmc", "TEMPERATURA DO REBOCO": "t_rmc",
+    "FLUIDO": "tipo_lama", "EMPRESA": "companhia", "TEMP. FUNDO POCO": "bht",
+    "GRUPO DE PERFIS COMBINADOS": "grupo", "DATA/HORA CHEGADA FUNDO POCO": "data",
+}
+
+
+def _primeiro_num(v: str):
+    m = re.search(NUM, v or "")
+    return _num(m.group(0)) if m else None
+
+
+def corridas_novo(texto: str) -> list[dict]:
+    """Uma por "NUMERO PERFILAGEM"; os grupos de perfis combinados que vêm depois
+    pertencem a ela (o BHT é o maior entre os grupos). Temperaturas em °F."""
+    saida, atual = [], None
+    for ln in texto.splitlines():
+        if re.match(r"^\s*NUMERO PERFILAGEM\s*:", ln):
+            atual = {}
+            saida.append(atual)
+        if atual is None:
+            continue
+        for m in _RE_KV_LINHA.finditer(ln):
+            campo = _CAMPOS_CORRIDA_NOVO.get(" ".join(m["k"].split()))
+            v = " ".join(m["v"].split())
+            if not campo or not v:
+                continue
+            if campo in ("tipo_lama", "companhia"):
+                atual.setdefault(campo, v)
+            elif campo == "data":
+                d = re.match(r"\d\d/\d\d/\d{4}", v)
+                if d:
+                    atual.setdefault("data", d.group(0))
+            elif campo == "corrida" or campo == "grupo":
+                atual.setdefault(campo, v.split()[0])
+            elif campo == "bht":
+                b = _primeiro_num(v)
+                if b is not None and (atual.get("bht") is None or b > atual["bht"]):
+                    atual["bht"] = b
+            else:
+                n = _primeiro_num(v.split("(")[0])
+                if n is not None:
+                    atual.setdefault(campo, n)
+    return [c for c in saida if any(c.get(k) is not None for k in ("rm", "rmf", "bht", "prof_alcancada"))]
+
+
+def temperaturas_novo(linhas: list[str]) -> list[dict]:
+    saida = []
+    for ln in linhas:
+        m = re.match(rf"^\s+(?P<corrida>\d+)\s+(?P<temp>{NUM})\s+(?P<prof>{NUM})\s+(?P<metodo>\S.*?)\s*$", ln)
+        if m:
+            saida.append({"corrida": m["corrida"].zfill(2), "metodo": m["metodo"], "temperatura_f": _num(m["temp"]),
+                          "prof": _num(m["prof"]), "gradiente_f_m": None})
+    return saida
+
+
+def litologia_novo(linhas: list[str]) -> list[dict]:
+    """LITOLOGIA INTERPRETADA: topo/(cota) base/(cota) e colunas ROCHA, COR,
+    TONALIDADE, GRANULOMETRIA… nas posições do próprio cabeçalho."""
+    cols, saida = None, []
+    for ln in linhas:
+        if "ROCHA" in ln and "TOPO" in ln:
+            nomes = [n for n in ("ROCHA", "COR", "TONALIDADE", "GRANULOMETRIA", "ARREDONDAMENTO") if n in ln]
+            cols = [(n, ln.index(n)) for n in nomes]
+            continue
+        m = re.match(rf"^\s*(?P<topo>{NUM})/\(\s*{NUM}\s*\)\s+(?P<base>{NUM})/\(\s*{NUM}\s*\)", ln)
+        if not m or not cols:
+            continue
+        pedacos = []
+        for k, (n, ini) in enumerate(cols):
+            fim = cols[k + 1][1] if k + 1 < len(cols) else len(ln)
+            pedacos.append(" ".join(ln[ini:fim].split()))
+        saida.append({"topo": _num(m["topo"]), "base": _num(m["base"]), "codigo": "",
+                      "rocha": pedacos[0], "descricao": " ".join(p for p in pedacos[1:] if p)})
+    return saida
+
+
+_RE_REVEST_NOVO = re.compile(rf"^\s+(?P<tipo>[A-Z][A-Z .]*?)\s{{2,}}(?P<prof>{NUM})\s*\(\s*(?P<cota>{NUM})\s*\)\s+"
+                             rf"(?P<diam>\d[\d /]*?)(?:\s{{2,}}(?P<rec>\S.*?))?\s*$")
+
+
+def revestimentos_novo(linhas: list[str]) -> list[dict]:
+    saida = []
+    for ln in linhas:
+        m = _RE_REVEST_NOVO.match(ln)
+        if m:
+            saida.append({"tipo": m["tipo"], "prof": _num(m["prof"]), "cota": _num(m["cota"]),
+                          "diametro": " ".join(m["diam"].split()), "recuperacao": m["rec"] or ""})
+    return saida
+
+
+_RE_INDICIO_NOVO = re.compile(rf"^(?P<fluido>GAS|OLEO|CONDENSADO|AGUA)\s+(?P<amostra>\S+)\s+"
+                              rf"(?P<topo>{NUM})\s*\(\s*{NUM}\s*\)(?:\s+(?P<base>{NUM})\s*\(\s*{NUM}\s*\))?(?P<resto>.*)$")
+_FLUIDOS = {"GAS": "gás", "OLEO": "óleo", "CONDENSADO": "condensado", "AGUA": "água"}
+
+
+def indicios_novo(linhas: list[str]) -> list[dict]:
+    saida = []
+    for ln in linhas:
+        m = _RE_INDICIO_NOVO.match(ln)
+        if m:
+            saida.append({"tipo": m["fluido"][0], "fluido": _FLUIDOS[m["fluido"]], "origem": "",
+                          "amostra": m["amostra"], "topo": _num(m["topo"]), "base": _num(m["base"]),
+                          "descricao": " ".join(m["resto"].split())})
+    return saida
+
+
+def ler_novo(texto: str, estratigrafia: dict | None = None) -> dict:
+    s = secoes_novo(texto)
+    return {
+        "formato": "novo",
+        "cabecalho": cabecalho_novo(texto, s),
+        "unidades": unidades_novo(s, estratigrafia),
+        "zonas": [],
+        "revestimentos": revestimentos_novo(s.get("REVESTIMENTOS", [])),
+        "indicios": indicios_novo(s.get("INDICIOS DE HIDROCARBONETOS", [])),
+        "corridas": corridas_novo(texto),
+        "temperaturas": temperaturas_novo(s.get("TEMPERATURA EXTRAPOLADA EM PERFILAGEM", [])),
+        "perfis": perfis_corridos(s.get("AQUISICAO/PROCESSAMENTO", [])),
+        "testes": [],
+        "litologia": litologia_novo(s.get("LITOLOGIA INTERPRETADA", [])),
+        "secoes": sorted(k for k in s if k != "cabecalho"),
+    }
+
+
 # ================================================================ geral
 def ler(texto: str, estratigrafia: dict | None = None) -> dict:
+    if eh_formato_novo(texto):
+        return ler_novo(texto, estratigrafia)
     if "UNID.VERTICALIZADAS" not in texto and "AGP" not in texto[:600] and "POCO" not in texto[:300].upper():
         raise ErroAGP("Não parece um AGP (Dados Gerais de Poços).")
     s = secoes(texto)
     cab = cabecalho(s.get("cabecalho", []))
     return {
+        "formato": "antigo",
         "cabecalho": cab,
         "unidades": unidades(s.get("unidades", []), estratigrafia),
         "zonas": zonas(s.get("zonas", [])),
@@ -384,7 +629,8 @@ def ler(texto: str, estratigrafia: dict | None = None) -> dict:
 
 
 def ler_estratigrafia(caminho: str) -> dict:
-    """{código ou sigla: nome por extenso} de recursos/estratigrafia.json."""
+    """{código ou sigla: nome por extenso} de recursos/estratigrafia.json; também
+    {"#" + sigla: código}, para dar código às unidades do leiaute novo (que não tem)."""
     try:
         with open(caminho, encoding="utf-8") as f:
             d = json.load(f)
@@ -392,9 +638,12 @@ def ler_estratigrafia(caminho: str) -> dict:
         return {}
     saida = {}
     for item in d.get("unidades", []):
-        for k in [item.get("sigla", "")] + list(item.get("codigos", [])):
+        sigla = " ".join(item.get("sigla", "").split()).upper()
+        for k in [sigla] + list(item.get("codigos", [])):
             if k:
                 saida[str(k).upper()] = item["nome"]
+        if sigla and item.get("codigos"):
+            saida["#" + sigla] = str(item["codigos"][0])
     return saida
 
 
@@ -417,16 +666,24 @@ def gravar(banco: Banco, *, bacia: str, caminho: str, poco_caminho: str, poco_pa
     if texto is not None and not erro:
         try:
             dados = ler(texto, estratigrafia)
-            poco_agp = dados["cabecalho"]["poco_agp"]
-            if dados["cabecalho"]["poco_id"]:
-                confere = int(dados["cabecalho"]["poco_id"] == poco_pasta)
-                poco_id = dados["cabecalho"]["poco_id"]
+            cab = dados["cabecalho"]
+            poco_agp = cab["poco_agp"]
+            if cab["poco_id"]:
+                # o leiaute novo traz também o nome antigo da Petrobras (SIGLA DO PAIS)
+                confere = int(poco_pasta in (cab["poco_id"], cab.get("sigla_pais_id")))
+                poco_id = cab["poco_id"]
+            elif cab.get("sigla_pais_id"):
+                # _cabecalho.txt: só o nome antigo; o poço é o da pasta
+                confere = None
         except ErroAGP as e:
             erro = str(e)
     with banco.conexao() as c:
-        c.execute("INSERT OR REPLACE INTO agp VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        c.execute("""INSERT OR REPLACE INTO agp (bacia, caminho, poco_caminho, poco_pasta, poco_id, poco_agp,
+                         confere, tamanho, arquivo_local, lido_em, dados, erro, leitor)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                   (bacia, caminho, poco_caminho, poco_pasta, poco_id, poco_agp, confere, tamanho,
-                   arquivo_local, agora(), json.dumps(dados, ensure_ascii=False) if dados else None, erro or None))
+                   arquivo_local, agora(), json.dumps(dados, ensure_ascii=False) if dados else None, erro or None,
+                   VERSAO_LEITOR))
         c.execute("DELETE FROM agp_unidades WHERE bacia = ? AND caminho = ?", (bacia, caminho))
         if dados:
             c.executemany(
@@ -441,7 +698,8 @@ def do_poco(banco: Banco, poco_id: str) -> list[dict]:
     """AGPs que descrevem o poço (normalmente um), com os dados lidos."""
     with banco.conexao() as c:
         linhas = [dict(r) for r in c.execute(
-            "SELECT * FROM agp WHERE poco_id = ? AND dados IS NOT NULL ORDER BY confere DESC, lido_em DESC",
+            """SELECT * FROM agp WHERE poco_id = ? AND dados IS NOT NULL
+               ORDER BY coalesce(confere, 1) DESC, tamanho DESC, lido_em DESC""",
             (poco_id,))]
     for r in linhas:
         r["dados"] = json.loads(r["dados"])

@@ -147,7 +147,8 @@ class PerfisAPI:
         for u in magp.unidades_do_poco(self._banco, poco):
             if u["topo"] is None or u["base"] is None or u["base"] <= u["topo"] or u["tip"] not in ("L", "C"):
                 continue
-            ident = f"agp:u:{u['codigo']}"
+            # o leiaute novo não tem código numérico: a sigla identifica
+            ident = f"agp:u:{u['codigo'] or u['tip'] + ':' + u['sigla']}"
             if ident in vistos:
                 continue
             vistos.add(ident)

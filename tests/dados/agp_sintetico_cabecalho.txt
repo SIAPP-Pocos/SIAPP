@@ -1,0 +1,43 @@
+
+ __________________________
+
+ Sigla:    1XYZ 0002  RN
+ __________________________
+
+
+ _______________________
+ PERFILAGEM DADOS GERAIS
+ _______________________
+  NUMERO PERFILAGEM           :    01        PROF. ALCANCADA:     600.00 ( -554.00  )             PROF. DA SAPATA:
+  NUMERO CONDICIONAMENTO      :    01        DENSIDADE               :      9.3 lb/gal              PH                  : 10.0
+  PERCENTAGEM DE OLEO         :              SALINIDADE DA LAMA      :     43.6 mil mg/l de NaCl    VISCOS. LAMA (MARSH): 72 s
+  RESISTIVIDADE DA LAMA       : 0.153 ohm.m  TEMPERATURA DA LAMA     :     91.0 F
+  RESISTIVIDADE DO FILTRADO   : 0.123 ohm.m  TEMPERATURA DO FILTRADO :     93.0 F
+  FLUIDO                      : NACL COM POLIMEROS
+  COMENTARIO                  :
+ GRUPO DE PERFIS COMBINADOS
+ __________________________
+  GRUPO DE PERFIS COMBINADOS  :    01        TEMP. FUNDO MAR/BAP    :                             TEMP. FUNDO POCO:  122.0 F
+  EMPRESA                     :    SCHLUMBERGER                                                   PROF. FUNDO POCO:  600.0 m
+  DATA/HORA CHEGADA FUNDO POCO:    10/03/2005, 19:00:00
+  GRUPO DE PERFIS COMBINADOS  :    02        TEMP. FUNDO MAR/BAP    :                             TEMP. FUNDO POCO:  
+  EMPRESA                     :    SCHLUMBERGER                                                   PROF. FUNDO POCO:  600.0 m
+  DATA/HORA CHEGADA FUNDO POCO:    10/03/2005, 19:00:00
+ _______________________
+ PERFILAGEM DADOS GERAIS
+ _______________________
+  NUMERO PERFILAGEM           :    02        PROF. ALCANCADA:     1500.00 ( -1454.00  )             PROF. DA SAPATA:
+  NUMERO CONDICIONAMENTO      :    01        DENSIDADE               :      9.3 lb/gal              PH                  : 10.0
+  PERCENTAGEM DE OLEO         :              SALINIDADE DA LAMA      :     43.6 mil mg/l de NaCl    VISCOS. LAMA (MARSH): 72 s
+  RESISTIVIDADE DA LAMA       :               TEMPERATURA DA LAMA     :     
+  RESISTIVIDADE DO FILTRADO   :               TEMPERATURA DO FILTRADO :     
+  FLUIDO                      : NACL COM POLIMEROS
+  COMENTARIO                  :
+ GRUPO DE PERFIS COMBINADOS
+ __________________________
+  GRUPO DE PERFIS COMBINADOS  :    01        TEMP. FUNDO MAR/BAP    :                             TEMP. FUNDO POCO:  180.0 F
+  EMPRESA                     :    SCHLUMBERGER                                                   PROF. FUNDO POCO:  600.0 m
+  DATA/HORA CHEGADA FUNDO POCO:    19/03/2005, 19:00:00
+  GRUPO DE PERFIS COMBINADOS  :    02        TEMP. FUNDO MAR/BAP    :                             TEMP. FUNDO POCO:  176.0 F
+  EMPRESA                     :    SCHLUMBERGER                                                   PROF. FUNDO POCO:  600.0 m
+  DATA/HORA CHEGADA FUNDO POCO:    19/03/2005, 19:00:00

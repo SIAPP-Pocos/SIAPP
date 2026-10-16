@@ -131,6 +131,17 @@ Precisa de internet. Comece por uma categoria pequena para ver o tempo.
 - [ ] Sem intervalo marcado, **Calcular** explica que precisa de um intervalo-alvo.
 - [ ] Repetir no `5PX__0011__RN_5PX__0011__RN.tif` (DLIS de 2020).
 
+## 0.14.1 — AGP no leiaute novo
+
+- [ ] **Mapa → Levantamento do acervo**: Potiguar, **Cat. 1**, **Ler os AGPs**, **Levantar** de
+      novo. A etapa 3/3 passa rápido (relê da cópia local, sem baixar) e o resumo mostra os
+      AGPs lidos subindo de ~366 para ~438 e nenhum "Não parece um AGP".
+- [ ] Ficha do **1-BRSA-276-RN**: unidades (Jandaíra, Açu, Alagamar, **Camadas Ponta do
+      Tubarão**, Pendência), nome antigo **1-TRO-1-RN**, corridas com Rm/Rmf/BHT.
+- [ ] Ficha do **1-AE-1-RN** (leiaute antigo): "Camadas Ponta do Tubarão" com nome por extenso.
+- [ ] Ficha do **1-BRSA-264-ES**: aviso de que o AGP estava na pasta do 1-BRSA-354-RN.
+- [ ] Perfis de um 1-BRSA com DLIS: trilha **Litol. (AGP)** com a litologia interpretada.
+
 ## 0.14 — AGP (dados gerais do poço)
 
 - [ ] **Mapa → Levantamento do acervo**: Potiguar, **Escolher categorias…** → só **Cat. 1**,

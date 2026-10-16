@@ -158,6 +158,11 @@ MIGRACOES: list[str] = [
     CREATE INDEX agp_unidades_poco ON agp_unidades(poco_id);
     CREATE INDEX agp_unidades_codigo ON agp_unidades(codigo);
     """,
+    # 4 — versão do leitor que leu cada AGP: leitura melhor relê da cópia local (SIAPP 0.14.1)
+    """
+    ALTER TABLE agp ADD COLUMN leitor INTEGER;
+    CREATE INDEX agp_unidades_sigla ON agp_unidades(sigla);
+    """,
 ]
 
 

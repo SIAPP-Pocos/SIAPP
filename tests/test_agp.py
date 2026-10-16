@@ -43,7 +43,8 @@ def test_unidades_verticalizadas(texto, est):
     assert porsig["ALAGAM"]["desc_topo"] == "DISCORDANCIA" and porsig["ALAGAM"]["desc_base"] == "FALH.INTERNA"
     assert porsig["PENDEN"]["base"] is None                       # última unidade: sem base
     assert porsig["MARCO L"]["tip"] == "M" and porsig["MARCO L"]["nivel"] == ""
-    assert porsig["BFL  PEN"]["fonte"] == "E&P RNCE GEXP/GEINT" and porsig["BFL  PEN"]["data"] == "27/07/1993"
+    # espaços repetidos na sigla viram um só ("BFL  PEN" → "BFL PEN")
+    assert porsig["BFL PEN"]["fonte"] == "E&P RNCE GEXP/GEINT" and porsig["BFL PEN"]["data"] == "27/07/1993"
     assert len(us) == 8
 
 
@@ -52,6 +53,14 @@ def test_linha_sem_letra_de_nivel_e_topo_sem_zero():
     u = agp.unidades([" L   B    SPA    010004      .1(   50.0)                 3.0 (   47.)"
                       "                E        A.G.P.  ANTIGO               01/01/1900"])[0]
     assert (u["sigla"], u["nivel"], u["topo"], u["base"]) == ("SPA", "", 0.1, 3.0)
+
+
+def test_letra_de_nivel_camadas():
+    # visto em 142 poços da Potiguar: "C PONTUB" = Camadas Ponta do Tubarão
+    est = agp.ler_estratigrafia(os.path.join(RAIZ, "recursos", "estratigrafia.json"))
+    u = agp.unidades([" L   B  C PONTUB 325042  1176.0(-1164.0)              1176.0 (-1164.)"
+                      "                B        A.G.P.  ANTIGO               01/01/1900"], est)[0]
+    assert (u["nivel"], u["sigla"], u["nome"]) == ("C", "PONTUB", "Ponta do Tubarão")
 
 
 def test_corridas_temperaturas_e_zonas(texto):
@@ -112,3 +121,69 @@ def test_campo_vazio_no_cabecalho_e_litologia(texto):
     assert r["cabecalho"]["bap"] == 45.0 and r["cabecalho"]["campos"]["QUADRICULA"] == ""
     assert [(x["topo"], x["base"], x["rocha"]) for x in r["litologia"]] == [
         (5.0, 8.0, "CALCARENITO"), (8.0, 13.5, "ARENITO"), (13.5, 20.0, "ARGILITO")]
+
+
+# ------------------------------------------------ leiaute novo (BDEP, <poço>_dados.txt)
+NOVO = os.path.join(RAIZ, "tests", "dados", "agp_sintetico_novo.txt")
+SO_CABECALHO = os.path.join(RAIZ, "tests", "dados", "agp_sintetico_cabecalho.txt")
+
+
+def _ler_arquivo(caminho):
+    with open(caminho, "rb") as f:
+        return agp.decodificar(f.read())
+
+
+def test_leiaute_novo_cabecalho(est):
+    d = agp.ler(_ler_arquivo(NOVO), est)
+    c = d["cabecalho"]
+    assert d["formato"] == "novo"
+    assert (c["poco_id"], c["sigla_pais_id"], c["cadastro_anp"]) == ("1-TST-2-RN", "1-XYZ-2-RN", "99999999999")
+    assert (c["lat"], c["lon"], c["mesa_rotativa"], c["bap"], c["prof_final"]) == (-5.25, -36.75, 46.0, 40.0, 1500.0)
+    assert c["reclassificacao"] == "PRODUTOR SUBCOMERCIAL DE OLEO" and c["datum"] == "SIRGAS2000"
+
+
+def test_leiaute_novo_unidades(est):
+    us = agp.ler(_ler_arquivo(NOVO), est)["unidades"]
+    porsig = {(u["tip"], u["sigla"]): u for u in us}
+    assert [u["tip"] for u in us].count("L") == 6 and {u["tip"] for u in us} == {"L", "C", "Q", "D", "M"}
+    acu4 = porsig[("L", "ACU 4")]
+    assert (acu4["nivel"], acu4["nome"], acu4["codigo"], acu4["topo"], acu4["base"]) == ("M", "Açu 4", "312510", 300.0, 420.0)
+    pen = porsig[("L", "PENDEN")]
+    assert (pen["desc_topo"], pen["desc_base"], pen["base"], pen["cota_base"]) == ("D", "N", 1500.0, -1454.0)
+    assert porsig[("L", "PONTUB")]["nivel"] == "C" and porsig[("L", "PONTUB")]["base"] is None
+    assert porsig[("Q", "SEQ2 PEN")]["metodo"] == "PERFIL" and porsig[("M", "SIM PEN")]["topo"] == 1250.0
+    assert porsig[("D", "ALS")]["fonte"] == "UN-TESTE/ABC" and porsig[("C", "A. ARATU")]["data"] == "01/06/1997"
+
+
+def test_leiaute_novo_lama_litologia_e_outros(est):
+    d = agp.ler(_ler_arquivo(NOVO), est)
+    c1, c2 = d["corridas"]
+    assert (c1["corrida"], c1["rm"], c1["t_rm"], c1["rmf"], c1["t_rmf"], c1["bht"]) == ("01", 0.153, 91.0, 0.123, 93.0, 122.0)
+    assert c1["data"] == "10/03/2005" and c1["tipo_lama"] == "NACL COM POLIMEROS" and c1["prof_alcancada"] == 600.0
+    assert c2["bht"] == 180.0 and c2.get("rm") is None                  # o maior BHT entre os grupos
+    assert d["temperaturas"][0]["temperatura_f"] == 185.0
+    assert [(p["tipo"], p["topo"], p["base"]) for p in d["perfis"]] == [("GR", 5.0, 590.0), ("AITH", 590.0, 1495.0)]
+    assert [(i["fluido"], i["topo"]) for i in d["indicios"]] == [("óleo", 540.0), ("gás", 889.0)]
+    assert d["litologia"][2] == {"topo": 300.0, "base": 320.0, "codigo": "", "rocha": "ARENITO",
+                                 "descricao": "CINZA ESBRANQUICADO FINO SUBARREDONDADO"}
+    assert [(r["prof"], r["diametro"]) for r in d["revestimentos"]] == [(146.7, "13 3/8"), (1495.0, "5 1/2")]
+
+
+def test_leiaute_novo_no_banco(tmp_path, est):
+    b = Banco(str(tmp_path / "p.sqlite"))
+    # pasta com o nome novo (ANP) e o AGP também: confere
+    agp.gravar(b, bacia="Potiguar", caminho="/P/1-TST-2-RN/AGP/1-TST-2-RN_dados.txt", poco_caminho="/P/1-TST-2-RN/",
+               poco_pasta="1-TST-2-RN", tamanho=9000, texto=_ler_arquivo(NOVO), estratigrafia=est)
+    # o _cabecalho.txt só tem o nome antigo da Petrobras: fica no poço da pasta
+    agp.gravar(b, bacia="Potiguar", caminho="/P/1-TST-2-RN/AGP/1-tst-2-rn_cabecalho.txt", poco_caminho="/P/1-TST-2-RN/",
+               poco_pasta="1-TST-2-RN", tamanho=3000, texto=_ler_arquivo(SO_CABECALHO), estratigrafia=est)
+    gs = agp.do_poco(b, "1-TST-2-RN")
+    assert [g["caminho"].rsplit("/", 1)[1] for g in gs] == ["1-TST-2-RN_dados.txt", "1-tst-2-rn_cabecalho.txt"]
+    assert [g["confere"] for g in gs] == [1, None] and gs[1]["poco_agp"] == "1XYZ 0002 RN"
+    with b.conexao() as c:
+        assert {r[0] for r in c.execute("SELECT leitor FROM agp")} == {agp.VERSAO_LEITOR}
+    assert len(agp.unidades_do_poco(b, "1-TST-2-RN")) == 11
+    # pasta com o nome antigo (SIGLA DO PAIS) também confere
+    agp.gravar(b, bacia="Potiguar", caminho="/P/1-XYZ-2-RN/AGP/x_dados.txt", poco_caminho="/P/1-XYZ-2-RN/",
+               poco_pasta="1-XYZ-2-RN", tamanho=9001, texto=_ler_arquivo(NOVO), estratigrafia=est)
+    assert agp.do_poco(b, "1-TST-2-RN")[0]["confere"] == 1
