@@ -4,16 +4,21 @@ AMBIENTE DE TESTE DO SIAPP
 Esta e a pasta de projeto do SIAPP. Tudo o que o aplicativo baixar e
 produzir fica aqui dentro, sempre neste mesmo lugar, ao lado do aplicativo.
 
-Ao clicar em "Escolher pasta", o SIAPP abre direto nesta pasta e so aceita
+Ao clicar em "Abrir o projeto", o SIAPP abre direto nesta pasta e so aceita
 ela. Basta confirmar sem entrar em nenhuma subpasta.
 
-Estrutura (as subpastas sao criadas pelo proprio SIAPP):
+O que o SIAPP cria aqui:
 
-  siapp.json     configuracao do projeto e historico de cada acao
-  catalogo\      o que existe no portal REATE, por bacia e categoria
-                 (so a lista; nada e baixado nesta etapa)
-  bruto\         arquivos baixados, intocados (.dlis / .lis)
-  pocos\         curvas padronizadas, uma tabela por poco
-  execucoes\     cada processamento, com os parametros usados
+  siapp.json       configuracao do projeto e historico de cada acao
+  projeto.sqlite   banco do projeto: pocos, arquivos, curvas, correcoes, dados transcritos
+  siapp.log        registro de erros (envie este arquivo quando algo falhar)
+  catalogo\        o que existe no portal REATE, por bacia e categoria
+  bruto\           arquivos baixados, intocados (.dlis, .lis, .las, .pdf, .tif)
+  texto\           texto extraido dos documentos e indice de busca
+  pocos\           copia rapida das curvas de cada perfil ja lido
+  cadastro\        Tabela de Pocos baixada da ANP
+  exportacoes\     LAS e CSV exportados
+  contribuicoes\   pacotes de contribuicao exportados por voce
+  comunidade\      base comunitaria baixada
 
 Para recomecar do zero, apague tudo desta pasta, menos este arquivo.

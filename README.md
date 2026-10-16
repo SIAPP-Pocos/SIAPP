@@ -2,14 +2,14 @@
 
 [![testes](https://github.com/SIAPP-Pocos/siapp/actions/workflows/testes.yml/badge.svg)](https://github.com/SIAPP-Pocos/siapp/actions/workflows/testes.yml)
 [![licença: AGPL-3.0](https://img.shields.io/badge/licen%C3%A7a-AGPL--3.0-blue)](LICENSE)
-![versão](https://img.shields.io/badge/vers%C3%A3o-0.6.0-informational)
+![versão](https://img.shields.io/badge/vers%C3%A3o-0.10.0-informational)
 
 Ferramenta aberta para transformar o acervo **público** de dados de poços da ANP
 (portal [REATE](https://reate.cprm.gov.br/anp/TERRESTRE), ANP/CPRM) em dados
 organizados, pesquisáveis e prontos para análise — sem software comercial.
 
-> **Estado:** em desenvolvimento ativo (v0.6). A interface e os formatos ainda
-> podem mudar entre versões.
+> **Estado:** em desenvolvimento ativo (v0.10). A interface e os formatos ainda
+> podem mudar entre versões; a 1.0 sai no lançamento público.
 
 ---
 
@@ -24,14 +24,18 @@ que cada usuário receba os dados já tratados.
 
 ## O que já faz
 
-| Etapa | Funcionalidade |
+| Aba | Funcionalidade |
 |---|---|
-| **Catálogo** | Lista categorias e poços de qualquer uma das 24 bacias terrestres do REATE, em tempo real; junta categorias divididas em subpastas "parte" |
-| **Explorar poço** | Mostra a árvore de pastas e arquivos de um poço, com tamanhos, antes de baixar |
-| **Download** | Baixa os arquivos escolhidos em segundo plano, com retomada após queda de conexão, cancelamento e registro de procedência |
-| **Documentos** | Extrai o texto de PDFs e TIFs — direto, quando o PDF tem texto; por OCR local, quando é escaneado |
-| **Busca** | Busca em todos os documentos, sem acento, tolerante a erros de OCR, com a página aberta e o termo destacado |
-| **Correção** | Dicionário de domínio corrige erros de OCR; o usuário corrige palavras com um clique; o OCR original nunca é apagado |
+| **Início** | O que é cada pasta e sufixo do REATE, qual arquivo baixar para cada finalidade, limites do OCR e os números do projeto |
+| **Catálogo** | Categorias e poços de qualquer uma das 24 bacias terrestres do REATE, em tempo real; árvore de pastas e arquivos de cada poço; download em segundo plano com retomada e registro de procedência |
+| **Mapa** | Cadastro oficial de poços da ANP (dados abertos) no mapa, com filtros, e a **ficha do poço**: cadastro, pastas no REATE, arquivos baixados, curvas e dados transcritos |
+| **Documentos** | Texto de PDFs e TIFs (embutido ou OCR local), busca sem acento e tolerante a erro de OCR, correção de palavras com um clique e **transcrição assistida**: caixa na imagem, sugestão do OCR, dado salvo com página e caixa como fonte |
+| **Perfis** | DLIS, LIS e LAS em metros, curvas classificadas por família, gráfico em trilhas, intervalo-alvo e topos marcados no perfil, exportação LAS 2.0 e CSV |
+| **Comunidade** | Exportar as próprias correções e transcrições como pacote assinado, importar pacotes de colegas com prévia de conflitos e atualizar a base comunitária ([SIAPP-dados](https://github.com/SIAPP-Pocos/SIAPP-dados)) |
+
+Tudo fica num **banco do projeto** (`ambiente_teste/projeto.sqlite`) com o mesmo modelo
+da base comunitária: cada dado sabe se foi feito aqui, veio de um pacote ou da base, e
+qual documento, página e trecho o sustentam.
 
 ## Como usar (Windows)
 
@@ -41,7 +45,8 @@ que cada usuário receba os dados já tratados.
 
 Na primeira execução, o `iniciar.bat` encontra um Python válido, cria um ambiente
 isolado (`.venv`) e instala as dependências. No primeiro documento escaneado, o
-SIAPP baixa o modelo de português do OCR (~8 MB).
+SIAPP baixa o modelo de português do OCR (~8 MB); na aba Mapa, a Tabela de Poços da
+ANP (~12 MB).
 
 Os dados ficam sempre em `ambiente_teste/`, ao lado do aplicativo. O guia de teste
 passo a passo está em [`docs/guia-de-teste.md`](docs/guia-de-teste.md).
@@ -49,21 +54,27 @@ passo a passo está em [`docs/guia-de-teste.md`](docs/guia-de-teste.md).
 ## Como funciona
 
 ```
-siapp.py          janela (pywebview) + ponte JavaScript ↔ Python — camada fina
+siapp.py          abre a janela (pywebview) — só isso
+ponte/            API da janela, uma parte por aba: valida, chama o motor, devolve dicionários
 motor/            toda a lógica, sem nenhuma dependência de interface
-  reate.py        cliente do portal REATE (WebDAV): listar, mapear poço, baixar
+  reate.py        cliente do portal REATE (WebDAV): listar, mapear poço, baixar com retomada
   downloads.py    fila de downloads em segundo plano
+  banco.py        banco do projeto (SQLite): vocabulário, poços, arquivos, perfis, fatos, pacotes
+  pocos.py        nome canônico de poço e cadastro da ANP
   documentos.py   texto de PDF/TIF (embutido ou OCR) e índice de busca (SQLite FTS5)
   vocabulario.py  dicionário de domínio e correção de texto de OCR
-  projeto.py      pasta de projeto: configuração, catálogo, procedência
-ui/               interface em HTML, CSS e JavaScript puros
-recursos/         dicionário de domínio (editável) e modelo de idioma do OCR
+  perfis.py       DLIS/LIS/LAS → curvas em metros, famílias, gráfico, exportação
+  comunidade.py   pacotes de contribuição e base comunitária
+  projeto.py      pasta de projeto: configuração, procedência, escrita atômica
+  registro.py     siapp.log
+ui/               HTML, CSS e JavaScript puros (ui/js/: um script por aba; ui/vendor/: Leaflet)
+recursos/         dicionário de domínio, famílias de curvas (editáveis) e modelo do OCR
 ```
 
-A **pasta de projeto** (`ambiente_teste/`) é o contrato entre as partes: tudo o
-que o SIAPP baixa e produz fica nela, em formatos abertos (JSON, SQLite), com o
-histórico de cada ação em `siapp.json`. Detalhes em
-[`docs/arquitetura.md`](docs/arquitetura.md).
+A **pasta de projeto** (`ambiente_teste/`) é o contrato entre as partes: tudo o que o
+SIAPP baixa e produz fica nela, em formatos abertos (JSON, SQLite, LAS, CSV), com o
+histórico de cada ação em `siapp.json`. Detalhes em [`docs/arquitetura.md`](docs/arquitetura.md),
+[`docs/comunidade.md`](docs/comunidade.md) e [`docs/perfis.md`](docs/perfis.md).
 
 ## Dados e procedência
 
@@ -73,7 +84,10 @@ histórico de cada ação em `siapp.json`. Detalhes em
   (`bruto/registro_downloads.json`).
 - Texto obtido por **OCR serve para encontrar páginas, não para fornecer números**:
   em teste com documento real, 6 de 18 profundidades foram lidas erradas. A
-  correção automática nunca altera números. Ver [`docs/ocr.md`](docs/ocr.md).
+  correção automática nunca altera números; números entram no banco só por
+  transcrição conferida na imagem. Ver [`docs/ocr.md`](docs/ocr.md).
+- Todo dado transcrito guarda a fonte: SHA-256 e caminho do documento no REATE,
+  página e a caixa desenhada sobre a imagem.
 
 ## Desenvolvimento
 
@@ -83,8 +97,11 @@ pip install -r requirements.txt -r requirements-dev.txt
 pytest
 ```
 
-Os testes não acessam a internet: o portal REATE é simulado, inclusive com falhas
-(conexão caindo, servidor que ignora retomada, arquivo truncado). Contribuições:
+Os testes não acessam a internet: o portal REATE, o GitHub e a ANP são simulados,
+inclusive com falhas (conexão caindo, servidor que ignora retomada, arquivo truncado).
+Os testes da interface abrem `ui/` num Chromium sem tela, ligado à API Python de verdade;
+rodam se o Playwright estiver instalado (`pip install playwright && playwright install chromium`).
+Para conferir a leitura de um DLIS real: `SIAPP_DLIS_REAL=caminho/do/arquivo.dlis pytest -k real`. Contribuições:
 [`CONTRIBUTING.md`](CONTRIBUTING.md). Histórico: [`CHANGELOG.md`](CHANGELOG.md).
 
 ## Licença

@@ -125,7 +125,18 @@ MIGRACOES: list[str] = [
 
 
 def agora() -> str:
-    return datetime.now().isoformat(timespec="seconds")
+    """Data e hora com fuso (2026-10-16T10:05:00-03:00), como pede o formato de contribuição."""
+    return datetime.now().astimezone().isoformat(timespec="seconds")
+
+
+def com_fuso(iso: str | None) -> str | None:
+    """Acrescenta o fuso local a uma data sem fuso (gravada pelo SIAPP 0.6/0.7)."""
+    if not iso or iso[-6] in "+-" or iso.endswith("Z"):
+        return iso
+    try:
+        return datetime.fromisoformat(iso).astimezone().isoformat(timespec="seconds")
+    except ValueError:
+        return iso
 
 
 def novo_id() -> str:

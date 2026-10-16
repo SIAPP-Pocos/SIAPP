@@ -17,13 +17,16 @@ as instruções estão no README daquele repositório.
 
 ### Princípios do projeto
 
-- **O motor não conhece a interface.** Toda lógica fica em `motor/`; `siapp.py` só traduz
-  chamadas da janela.
+- **O motor não conhece a interface.** Toda lógica fica em `motor/`; `ponte/` só traduz
+  chamadas da janela (uma parte por aba) e `ui/js/` tem um script por aba.
 - **Nenhum dado sem procedência.** Todo arquivo e todo número precisa apontar para a origem.
 - **Nada é apagado em silêncio.** Correções são camadas por cima do original; o QC marca, não remove.
 - **Limitação declarada vale mais do que limitação escondida.** Se algo não é confiável
   (ex.: números lidos por OCR), a interface diz.
-- **Testes não acessam a internet.** O portal é simulado em `tests/`.
+- **Testes não acessam a internet.** O portal, a ANP e o GitHub são simulados em `tests/`.
+  Mudou a interface? Rode também os testes de interface (`tests/test_interface.py`, com Playwright).
+- **O banco evolui por migração.** Mudança de tabela = novo item em `motor/banco.py:MIGRACOES`,
+  nunca edição de um item publicado.
 
 ### Mensagens de commit
 

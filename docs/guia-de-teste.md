@@ -1,161 +1,82 @@
 # Guia de teste
 
-Arquitetura escolhida: **motor Python + interface HTML numa janela nativa (pywebview)**,
-com uma **pasta de projeto** como contrato entre as partes. Mais tarde, o mesmo HTML
-poderá abrir uma pasta de projeto direto no navegador, sem o motor.
+Roteiro para validar o SIAPP no Windows, aba por aba. Marque o que funcionou; se algo
+falhar, envie a mensagem da barra inferior **e** o arquivo `ambiente_teste\siapp.log`.
 
 ## Como rodar
 
-1. Dê **dois cliques em `iniciar.bat`**.
-   Na primeira vez ele procura um Python válido (ignorando o do MySQL Shell), cria um
-   ambiente isolado `.venv` dentro desta pasta e instala `pywebview` e `requests`.
-   Leva um minuto; das próximas vezes abre direto.
-   *Se mover a pasta `siapp.vf` de lugar, apague a `.venv` — ela é recriada sozinha.*
-2. Na janela: **Escolher pasta**. O diálogo já abre na pasta `ambiente_teste`
-   (dentro da `siapp.vf`); é só confirmar. **Por enquanto só essa pasta é aceita**:
-   assim os dados ficam sempre ao lado do aplicativo e vão junto quando a pasta
-   for compactada para outra pessoa.
-3. Escolha a bacia (já vem **Sergipe**) → **Conectar**.
-4. Clique numa categoria para listar os poços.
-5. Clique num poço para ver, ao lado, todas as pastas e arquivos dele no portal,
-   com tamanhos. Nenhum arquivo vem marcado: cada tipo serve a uma finalidade.
-6. Marque os arquivos que quiser e clique em **Baixar selecionados**. O progresso
-   aparece no rodapé; **Cancelar** interrompe e guarda o que já foi baixado.
-7. Aba **Documentos**: lista os PDFs e TIFs baixados. **Processar pendentes** extrai o texto
-   (direto, se o PDF tiver texto; por OCR, se for escaneado). Depois é só **buscar**: clicar
-   num resultado mostra a página com o termo destacado.
-8. **Palavras-chave**: atalhos de busca prontos (operações, fluidos, rochas, formações), com o
-   número de páginas de cada um. A busca **tolera erros de OCR** e mostra as variações usadas.
-9. **Corrigir o OCR**: no texto da página, clique numa palavra lida errado e digite a forma
-   certa — vale para todos os documentos. Em verde, o que o dicionário corrigiu sozinho (clique
-   e use "O OCR estava certo" se a correção estiver errada); em azul, o que você corrigiu.
-   O OCR original nunca é apagado.
+1. Dê **dois cliques em `iniciar.bat`**. Na primeira vez (e quando a lista de dependências
+   muda, como agora), ele instala o que falta no ambiente `.venv`: `dlisio` e `lasio` são
+   novos na 0.9. Leva um ou dois minutos.
+   *Se mover a pasta do SIAPP de lugar, apague a `.venv` — ela é recriada sozinha.*
+2. A janela abre na aba **Início**. Clique em **Abrir o projeto** e confirme a pasta
+   `ambiente_teste` (o diálogo já abre nela).
 
-Alternativa pelo terminal: `python siapp.py` (ou `python siapp.py --debug`,
-que habilita o inspetor do navegador com F12/botão direito).
+Alternativa pelo terminal: `.venv\Scripts\python.exe siapp.py --debug` (F12 abre o inspetor).
 
-## Passo 1 — o que validar
+## 0.7 — banco do projeto e comunidade
 
-- [ ] A janela abre.
-- [ ] O diálogo abre em `ambiente_teste` e, ao confirmar, cria `siapp.json` e as
-      subpastas `catalogo`, `bruto`, `pocos`, `execucoes`.
-- [ ] Escolher qualquer outra pasta (ou entrar numa subpasta) mostra o aviso de recusa.
-- [ ] **Conectar** traz as categorias da bacia. *Esta é a primeira vez que o código novo
-      fala com o REATE a partir do seu computador — é o teste mais importante.*
-- [ ] Clicar numa categoria lista os poços e grava `catalogo\<Bacia>\<Categoria>.json`.
-- [ ] Testar uma segunda bacia (ex.: Potiguar ou Alagoas).
-- [ ] Fechar e reabrir escolhendo a mesma pasta: deve lembrar a última bacia.
+Na primeira abertura, o SIAPP cria `ambiente_teste\projeto.sqlite`, registra os arquivos que
+você já tinha baixado (com SHA-256) e refaz o índice de busca uma vez.
 
-## Passo 2 — o que validar
+- [ ] **Início**: os números do projeto aparecem (3 arquivos baixados, 2 documentos com texto).
+- [ ] **Documentos**: a busca continua achando `barreiras`, `cimento`, `calha`.
+- [ ] Corrigir uma palavra (clique nela no texto da página) continua funcionando.
+- [ ] **Comunidade**: preencher nome e instituição e **Salvar**.
+- [ ] **Exportar pacote**: aparece `contribuicoes\AAAA-MM-DD_nobre_siapp.json`; **Abrir a pasta** abre o Explorer.
+- [ ] Exportar de novo com "só o que é novo" marcado: avisa que não há nada novo.
+- [ ] **Escolher pacote…** com o arquivo exportado: a prévia mostra autor, itens e o que você já tem.
+- [ ] Depois de importar, o pacote aparece em "Pacotes importados"; **Desfazer** remove.
+- [ ] **Atualizar pela internet**: enquanto o SIAPP-dados for privado, deve dizer que a base
+      ainda não foi publicada (é o comportamento certo).
+- [ ] `siapp.log` existe em `ambiente_teste`.
 
-- [ ] Clicar num poço abre o painel lateral com a árvore de pastas e arquivos.
-- [ ] Os tamanhos fazem sentido (compare um ou dois com o site do REATE).
-- [ ] A pasta de perfis (`Perfis_digitais`, `Perfil Convencional`…) aparece com o selo **pasta de perfis**.
-- [ ] Clicar em outro poço com o painel aberto troca o conteúdo; `Esc` ou `×` fecha.
-- [ ] A árvore fica salva em `ambiente_teste\catalogo\<Bacia>\arvores\<poço>.json`.
-- [ ] Testar poços de 2 ou 3 bacias diferentes: a estrutura de pastas muda entre elas?
+## 0.8 — poços, cadastro da ANP e mapa
 
-## Passo 3 — o que validar
+- [ ] **Mapa** → **Baixar da ANP**: baixa a Tabela de Poços (~12 MB) e diz quantos poços importou.
+      *É o primeiro contato do SIAPP com o site de dados abertos da ANP a partir do seu computador.*
+      Se falhar, baixe o CSV pelo navegador em
+      [dados abertos da ANP](https://www.gov.br/anp/pt-br/centrais-de-conteudo/dados-abertos/acervo-de-dados-tecnicos)
+      e use **Importar CSV…**.
+- [ ] O mapa mostra a bacia Potiguar; os poços que você já listou no Catálogo aparecem em verde-escuro,
+      os com arquivos baixados em laranja (1-AURI-12-RN, 3-BRSA-1151-RN, 7-GMR-13-RN).
+- [ ] O fundo do mapa carrega (precisa de internet); "Satélite" troca a imagem.
+- [ ] Filtrar por nome (`GMR`), campo ou operador; terra/mar; categoria.
+- [ ] Clicar num poço abre a **ficha**: cadastro (campo, operador, datas, profundidade, mesa rotativa,
+      coordenadas, nº de cadastro), pastas no REATE, arquivos baixados.
+- [ ] **Ver arquivos** na ficha leva à árvore do poço na aba Catálogo.
+- [ ] Catálogo → conectar Potiguar → Mapa → **Catalogar a bacia conectada**: lista todas as categorias
+      (leva alguns minutos na Potiguar: são mais de 7 mil poços só na categoria 7) e marca no mapa.
 
-- [ ] Um DLIS marcado baixa e aparece em `ambiente_teste\bruto\<Bacia>\<poço>\<pasta do portal>\`.
-- [ ] O arquivo baixado tem o mesmo tamanho mostrado no painel.
-- [ ] Reabrir o poço mostra o arquivo com o selo **baixado** (caixa desativada).
-- [ ] **Cancelar** no meio de um arquivo grande; depois pedir de novo: ele **continua** de onde
-      parou (selo "parcial — retoma") em vez de começar do zero.
-- [ ] Fechar a janela no meio de um download; reabrir e pedir de novo: também continua.
-- [ ] `bruto\registro_downloads.json` lista cada arquivo com origem no portal e data.
-- [ ] Baixar arquivos de 2 poços seguidos (o segundo entra na fila do primeiro).
+## 0.9 — perfis
 
-## Passo 3c — o que validar
+- [ ] **Perfis**: aparece o `1-AURI-12-RN_AIT_P.DLIS`. Clicar: o SIAPP lê o arquivo (10–30 s na
+      primeira vez) e mostra **354 curvas, 23,5 a 2.155,2 m**, cadastro ANP 72100021414.
+- [ ] O gráfico mostra trilhas de GR/SP/cáliper, resistividades (escala log), densidade/neutrão,
+      fotoelétrico e sônico.
+- [ ] Roda do mouse rola; Ctrl + roda aproxima; "de/até" + **Ir** vai a um intervalo; **Tudo** volta.
+- [ ] Passar o mouse mostra profundidade e valores.
+- [ ] Marcar e desmarcar curvas na lista à esquerda muda o gráfico.
+- [ ] Arrastar na vertical sobre o gráfico preenche topo e base; dar um nome e **Salvar** — a faixa
+      amarela aparece no gráfico e o dado aparece na ficha do poço (Mapa).
+- [ ] **LAS** e **CSV** gravam em `ambiente_teste\exportacoes\1-AURI-12-RN\`. Abrir o LAS num
+      programa de perfis (ou no Bloco de Notas) e o CSV no Excel.
+- [ ] Reabrir o arquivo é instantâneo (cache em `ambiente_teste\pocos\`).
 
-- [ ] Na primeira vez que houver documento escaneado, o rodapé mostra o download do idioma
-      português do OCR (~15 MB) e o arquivo aparece em `recursos\tessdata\por.traineddata`.
-- [ ] O PDF novo (CDPE) processa em segundos e aparece como "2 pág · 2 com texto".
-- [ ] A pasta de poço antiga (7-GMR-13-RN, 55 pág.) processa em segundo plano, com
-      "processando N/55" na lista e barra no rodapé. *Leva alguns minutos* (~4 s por página).
-- [ ] Buscar `cimento`, `calha`, `completacao`, `pressao`: os resultados abrem a página certa,
-      com o termo destacado em amarelo.
-- [ ] O aviso "confira qualquer número na imagem" aparece nas páginas lidas por OCR.
-- [ ] **Abrir arquivo** abre o PDF no leitor do computador.
-- [ ] Comparar o texto reconhecido (em "Texto reconhecido nesta página") com a imagem:
-      com o idioma português, os acentos devem sair (DESCRIÇÃO, COMPLETAÇÃO).
+## 0.10 — transcrição assistida
 
-## Passo 3c+ — o que validar
+- [ ] **Documentos** → 7GMR_0013 → página 28 (teste de formação).
+- [ ] Abrir **Transcrever um dado desta página**, escolher "Teste de formação".
+- [ ] Desenhar uma caixa na imagem em volta de `INT.: 590,0-610.5`: o SIAPP mostra o que o OCR leu e
+      sugere topo 590,0 e base 610.5 (campos em amarelo = sugestão).
+- [ ] **Conferir os números na imagem**, dar um nome e **Salvar**: a caixa fica marcada na imagem
+      com o rótulo, e o dado aparece na lista da página.
+- [ ] O dado aparece na ficha do 7-GMR-13-RN (Mapa) e entra no próximo **Exportar pacote**.
+- [ ] Tentar salvar topo de formação sem profundidade, ou base acima do topo: o SIAPP recusa e explica.
 
-- [ ] Os atalhos de palavras-chave aparecem com o número de páginas; clicar busca.
-- [ ] Buscar `Barreiras` e `amostras contaminadas`: com "Tolerar erros de OCR" marcado, acha a
-      pág. 1 e mostra as variações ("barigiras", "contlmindas"); desmarcado, não acha.
-- [ ] No texto da pág. 1: BARREIRAS em verde. Clicar em `T-GRMAA3-RN`, corrigir para
-      `7-GRM-13-RN` → aparece em azul e em "Correções" no painel da esquerda.
-- [ ] Tentar corrigir um número (ex.: `87`): o SIAPP recusa e explica por quê.
-- [ ] Adicionar uma palavra própria: ela vira atalho em "Minhas palavras".
-- [ ] Desfazer uma correção pelo × do painel: o texto volta ao que o OCR leu.
+## O que continua valendo das versões anteriores
 
-Se algo falhar, envie a mensagem da barra inferior **e** o texto do terminal.
-
-## Estrutura
-
-```
-siapp.vf/
-├── iniciar.bat          atalho: instala dependências e abre a janela
-├── siapp.py             janela + ponte JS ↔ Python (camada fina)
-├── ambiente_teste/      PASTA DE PROJETO (dados) — fixa, ao lado do aplicativo
-├── recursos/
-│   ├── tessdata/        idioma português do OCR (baixado na 1ª vez)
-│   └── vocabulario_base.json   dicionário de domínio (editável)
-├── motor/               toda a lógica; não sabe nada de interface
-│   ├── reate.py         cliente do portal REATE: listar, mapear poço, baixar
-│   ├── downloads.py     fila de downloads em segundo plano
-│   ├── documentos.py    texto de PDF/TIF (embutido ou OCR), índice de busca
-│   ├── vocabulario.py   dicionário e correção do texto de OCR
-│   └── projeto.py       pasta de projeto: siapp.json, catálogo, registro de downloads
-└── ui/                  interface (HTML/CSS/JS puros, sem framework)
-```
-
-Pasta de projeto (`ambiente_teste/`):
-
-```
-ambiente_teste/
-├── siapp.json                         configuração + histórico de cada ação
-├── catalogo/<Bacia>/
-│   ├── categorias.json
-│   ├── <Categoria>.json               poços listados (nada baixado ainda)
-│   └── arvores/<poço>.json            pastas e arquivos de cada poço explorado
-├── bruto/                             arquivos baixados, intocados
-│   ├── <Bacia>/<poço>/<pastas do portal>/<arquivo>
-│   └── registro_downloads.json        de onde veio cada arquivo e quando
-├── texto/                             texto extraído dos documentos
-│   ├── <mesmo caminho de bruto>.json  texto + posição das palavras, por página
-│   ├── resumo.json                    situação de cada documento
-│   ├── vocabulario_projeto.json       suas palavras, correções e exceções
-│   └── indice.sqlite                  índice de busca
-├── pocos/                             (passo 5) curvas padronizadas
-└── execucoes/                         (passo 7) processamentos + parâmetros
-```
-
-## Próximos passos (um de cada vez, validando entre eles)
-
-1. ✅ Esqueleto + catálogo por categoria
-2. ✅ Explorar um poço: árvore de arquivos e tamanhos
-3. ✅ **Download selecionado**, retomável, com barra de progresso (este passo)
-3b. ✅ Abrir os PDFs do poço (botão "Abrir arquivo" na aba Documentos)
-3c. ✅ Texto dos documentos (embutido ou OCR) + busca
-3c+. ✅ **Palavras-chave, busca tolerante a erro de OCR, correção pelo usuário** (este passo)
-3d. Transcrição assistida de tabelas escaneadas (imagem ao lado do texto editável)
-4. Cruzar com o cadastro de poços da ANP → **mapa** do catálogo
-5. Conversão DLIS/LIS → Parquet padronizado
-6. Visualizador de perfis + intervalo-alvo
-7. Avaliação de formação, seção estratigráfica, bloco 3D
-8. Empacotar em `.exe`
-
-Documentação técnica: [arquitetura](arquitetura.md) · [acervo REATE](acervo-reate.md) · [documentos e OCR](ocr.md).
-
-## Dependências e licenças
-
-| Pacote | Para quê | Licença |
-|---|---|---|
-| pywebview | janela | BSD |
-| requests | portal REATE | Apache 2.0 |
-| PyMuPDF | PDF, imagem e OCR (motor Tesseract embutido) | **AGPL-3.0** — exige que o SIAPP seja distribuído com código aberto |
-| numpy | limpeza da imagem antes do OCR | BSD |
-| `por.traineddata` | modelo de português do Tesseract | Apache 2.0 |
+- Catálogo em tempo real das 24 bacias, junção das subpastas "parte", árvore do poço com tamanhos.
+- Download retomável (cancelar no meio e pedir de novo continua de onde parou), registro de procedência.
+- OCR de documentos escaneados, busca tolerante a erro de OCR, atalhos de palavras-chave.
+- Correção global de número é recusada ("87" → "83" estragaria valores certos em outras páginas).

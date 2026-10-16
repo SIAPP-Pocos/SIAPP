@@ -35,7 +35,7 @@ import unicodedata
 
 import requests
 
-from .banco import Banco, agora, novo_id
+from .banco import Banco, agora, com_fuso, novo_id
 from .vocabulario import normalizar
 
 FORMATO = "siapp-contribuicao"
@@ -82,6 +82,8 @@ def _fato_para_pacote(f: dict, arquivos: dict) -> dict:
     saida = {k: f[k] for k in ("id", "tipo", "nome", "valor", "unidade", "prof_topo",
                                "prof_base", "observacao", "criado_em") if f.get(k) not in (None, "")}
     saida["poco"] = f["poco_id"]
+    if saida.get("criado_em"):
+        saida["criado_em"] = com_fuso(saida["criado_em"])
     arq = arquivos.get(f.get("fonte_rel") or "", {})
     fonte = {"sha256": f.get("fonte_sha256") or arq.get("sha256"),
              "caminho_remoto": f.get("fonte_caminho") or arq.get("caminho_remoto"),

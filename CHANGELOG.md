@@ -19,6 +19,11 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
   Validação de profundidade (faixa, base abaixo do topo, campos obrigatórios por tipo).
 - Os dados transcritos aparecem na ficha do poço (Mapa), no gráfico de perfis e entram
   no pacote de contribuição.
+- Documentação: `docs/comunidade.md`, `docs/perfis.md`, arquitetura e guia de teste
+  atualizados para as versões 0.7 a 0.10.
+### Corrigido
+- Datas do pacote de contribuição com fuso horário (exigência do formato RFC 3339 do
+  esquema do SIAPP-dados).
 
 ## [0.9.0] — 2026-10-16
 ### Adicionado

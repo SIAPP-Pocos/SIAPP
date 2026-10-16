@@ -96,8 +96,8 @@ O nome **não é padronizado** — muda entre poços, até na mesma bacia.
 | `_raw` | Corrida principal de perfilagem (GR, resistividade, porosidade…) | Único DLIS em `Perfil Convencional` no 7-GMR-83 | ⏳ abrir e listar curvas |
 | `_sft`, `_rft` | Corrida de **testador de formação** (pressões pontuais), não perfil contínuo | RFT = *Repeat Formation Tester*; pasta `Teste de Formacao a Cabo` contém `RFT1…8` | ⏳ abrir e listar curvas |
 | `_RFT1…N` | Uma tomada de pressão por arquivo | 8 arquivos pequenos numerados | ⏳ |
-| `AIT` | Ferramenta de indução em arranjo (*Array Induction Imager Tool*, Schlumberger) — nome da ferramenta principal da corrida | Sigla padrão de mercado | ⏳ |
-| `_P` / `_R` | Passada **principal** / passada **repetida** (seção de repetição para controle de qualidade) | Convenção de perfilagem; `_R` bem menor que `_P` | ⏳ comparar intervalo de profundidade |
+| `AIT` | Ferramenta de indução em arranjo (*Array Induction Imager Tool*, Schlumberger) — nome da ferramenta principal da corrida | O DLIS lista a ferramenta HAIT, junto de HILTD, DSLT-H e DTCH | ✅ conferido (16/10/2026) |
+| `_P` / `_R` | Passada **principal** / passada **repetida** (seção de repetição para controle de qualidade) | `_AIT_P` do 1-AURI-12-RN: 354 curvas de 23,5 a 2.155,2 m (poço todo), com GR, resistividades, densidade, neutrão, PE e sônico | ✅ `_P` conferido · ⏳ `_R` |
 | `tsc` / `toolstring` / `_tool` (PDF) | Esquema da coluna de ferramentas daquela corrida | Mesmo sufixo do DLIS correspondente | provável |
 
 **Como confirmar:** baixar pelo SIAPP os dois DLIS do 7-ANB-9-AL, o `raw` do 7-GMR-83-RN e o par `AIT_P`/`AIT_R` mais um `RFT` do 1-AURI-12-RN, e listar curvas, unidades e intervalo de profundidade de cada um (`dlisio`).
