@@ -6,6 +6,29 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 
 ## [Não lançado]
 
+## [0.22.0] — 2026-10-17
+### Adicionado
+- **Saídas do bloco** (quadro "Saídas do bloco", embaixo do visor):
+  - **Mapas para SIG** (`motor/bloco_mapas.py`): terreno, topo e espessura (isópaca) de cada
+    camada em **GeoTIFF** (um por mapa, float32, sem dado = −9999) e um **XYZ** com todos, em
+    SIRGAS 2000 / UTM (fuso do centro do bloco, EPSG 31977–31985). GeoTIFF escrito pelo
+    SIAPP (sem GDAL); conferido com o rasterio.
+  - **Simulador** (`motor/bloco_eclipse.py`): deck no formato **ECLIPSE** (.DATA + .GRDECL +
+    .inc) para tNavigator, OPM, Petrel. Grade corner-point em UTM, formações escolhidas (o
+    embasamento fica de fora por padrão) divididas em camadas proporcionais à espessura;
+    ACTNUM (fora do contorno ou mais fina que 0,1 m) com PINCH; **FIPNUM por formação**;
+    **PORO e NTG da avaliação de formação**; poços com o caminho real, fechados.
+    Permeabilidade, PVT, curvas relativas e contatos saem **provisórios**, marcados nos
+    arquivos e no LEIA-ME. Teto de 275.625 células (licença acadêmica do tNavigator),
+    ajustável; prévia do tamanho da grade antes de exportar. Conferido com o parser do OPM.
+  - **Volumetria preliminar** (`motor/bloco_volumetria.py`): por formação, volume de rocha,
+    N/G, φ, Sw (da avaliação ou digitados — cada valor diz de onde veio), volume poroso,
+    hidrocarboneto, óleo in place (com Bo) e capacidade teórica de CO₂ (com E e ρ). CSV.
+  - **Modelo 3D (.glb)** (`motor/bloco_glb.py`): o bloco fechado com as camadas ligadas, o
+    exagero da tela e os poços, para o PowerPoint (Inserir → Modelos 3D) ou o Blender.
+- `motor/utm.py`: UTM no SIRGAS 2000 (séries de Krüger), ida e volta; confere com o pyproj
+  ao milímetro.
+
 ## [0.21.0] — 2026-10-17
 ### Adicionado
 - **Validação cruzada do bloco** (`motor/bloco_validacao.py`), botão **Deixar um poço de

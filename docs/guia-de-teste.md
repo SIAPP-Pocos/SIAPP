@@ -131,6 +131,25 @@ Precisa de internet. Comece por uma categoria pequena para ver o tempo.
 - [ ] Sem intervalo marcado, **Calcular** explica que precisa de um intervalo-alvo.
 - [ ] Repetir no `5PX__0011__RN_5PX__0011__RN.tif` (DLIS de 2020).
 
+## 0.22 — saídas do bloco
+
+Abra **Saídas do bloco** (embaixo do visor) num bloco do `ESTREITO`.
+
+- [ ] **Exportar os mapas** → pasta `exportacoes\blocos\bloco_…_mapas\`: um `.tif` por mapa (terreno,
+      topo_…, isopaca_…), o XYZ e o LEIA-ME. No **QGIS**: arraste `topo_acu.tif` — cai no lugar certo
+      (SIRGAS 2000 / UTM 24S), cores pela cota; o XYZ abre como texto delimitado (`;`).
+- [ ] **Simulador**: a prévia mostra a grade (ex.: 232 × 78 × 15 = 271.440 células, teto 275.625). Desmarque
+      uma formação ou mude Camadas/Célula: a prévia muda. **Exportar o .DATA**.
+- [ ] No **tNavigator**: abra o `.DATA` da pasta `bloco_…_eclipse\`. A grade aparece no lugar, uma região
+      por formação (FIPNUM), os poços (fechados). O deck roda com os valores provisórios (veja o LEIA-ME:
+      permeabilidade, PVT, curvas relativas e contatos marcados para trocar).
+- [ ] **Volumetria**: a tabela mostra área, espessura média e volume de rocha; onde há avaliação de
+      formação, N/G e φ aparecem em cinza (passe o mouse: "da avaliação (n poços)"). Digite Sw e Bo numa
+      formação e **Calcular**: volume poroso, hidrocarboneto e óleo in place. Com E = 0,02 e ρ = 650:
+      capacidade de CO₂ em Mt. **CSV**.
+- [ ] **Exportar o .glb** → `bloco_….glb`. No **PowerPoint**: Inserir → Modelos 3D → Este dispositivo: o bloco
+      aparece colorido e gira com o mouse.
+
 ## 0.21 — validação cruzada e prognóstico
 
 - [ ] **Bloco 3D** → `ESTREITO` → Montar → **Deixar um poço de fora**: em segundos, o quadro "Validação

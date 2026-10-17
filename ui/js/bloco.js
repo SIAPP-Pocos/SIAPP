@@ -134,6 +134,7 @@ function mostrarBloco(r) {
     $(id).title = temSolido ? $(id).dataset.titulo : "O prognóstico usa o bloco fechado, que este bloco não tem.";
   }
   mostrarValidacao(m.validacao || null);
+  prepararSaidas(temSolido);
   // exagero inicial: o relevo das superfícies ocupa ~1/4 da largura do bloco
   const g = m.grade, lado = Math.max(g.nx, g.ny) * g.passo;
   // pela faixa das superfícies (não pelo fundo dos poços, que pode ir muito abaixo)
@@ -161,6 +162,151 @@ function mostrarBloco(r) {
                                                modo: bl.modo, corte: opcoesCorte() });
   window.BlocoVisor.validacao(m.validacao || null);
   trocarModo3d(bl.modo);
+}
+
+// ------------------------------------------------ saídas: mapas, simulador, volumetria, 3D
+function prepararSaidas(temSolido) {
+  bl.saidasDe = null;
+  for (const id of ["bl-ecl-box", "bl-vol-box", "bl-glb-box"]) {
+    $(id).classList.toggle("desligado", !temSolido);
+    for (const c of $(id).querySelectorAll("button, input")) c.disabled = !temSolido;
+  }
+  limpar($("bl-ecl-camadas"));
+  limpar($("bl-vol-tabela"));
+  $("bl-ecl-previa").textContent = temSolido ? "" : "Sem bloco fechado neste bloco (veja os avisos): só os mapas.";
+  $("bl-vol-notas").textContent = "";
+  if ($("bl-saidas").open) carregarSaidas();
+}
+
+async function carregarSaidas() {
+  if (!bl.ultimo || bl.saidasDe === bl.ultimo || !(bl.modelo.solido && bl.modelo.solido.ok)) return;
+  bl.saidasDe = bl.ultimo;
+  await previaEcl(true);
+  await calcularVolumetria();
+}
+
+function opcoesEcl(inicial) {
+  const caixas = [...document.querySelectorAll("#bl-ecl-camadas input")];
+  return { camadas: inicial || !caixas.length ? null : caixas.filter((c) => c.checked).map((c) => c.value),
+           nz: $("bl-ecl-nz").value, dx: $("bl-ecl-dx").value, max_celulas: $("bl-ecl-max").value };
+}
+
+async function previaEcl(inicial = false) {
+  const r = await chamar(null, "bloco_eclipse_previa", bl.ultimo, opcoesEcl(inicial));
+  if (!r.ok) return;
+  if (inicial || !$("bl-ecl-camadas").children.length) {
+    const box = limpar($("bl-ecl-camadas"));
+    for (const c of r.camadas) {
+      const lab = el("label");
+      const cb = document.createElement("input");
+      cb.type = "checkbox";
+      cb.value = c.chave;
+      cb.checked = !!c.marcada;
+      cb.onchange = () => previaEcl();
+      lab.append(cb, document.createTextNode(c.nome));
+      box.appendChild(lab);
+    }
+  }
+  if (r.erro) { $("bl-ecl-previa").textContent = r.erro; return; }
+  const nk = r.camadas.filter((c) => c.marcada).map((c) => `${c.nome} ${c.nk}`).join(", ");
+  $("bl-ecl-previa").textContent = `Sairia: ${r.nx} × ${r.ny} × ${r.nz} = ${numero(r.celulas, 0)} células ` +
+    `(teto ${numero(r.max_celulas, 0)}), células de ${numero(r.dx, 0)} m, EPSG:${r.epsg}. Camadas por formação: ${nk}.`;
+}
+
+async function exportarEcl() {
+  status("Gerando o deck do simulador…", "trab");
+  const r = await chamar($("bl-ecl"), "bloco_exportar_eclipse", bl.ultimo, opcoesEcl(false));
+  if (!r.ok) return;
+  $("bl-exportado").textContent = `Salvo em ambiente_teste/${r.pasta}/${r.deck}`;
+  $("bl-ecl-previa").textContent = `${r.deck}: ${r.nx} × ${r.ny} × ${r.nz} = ${numero(r.celulas, 0)} células ` +
+    `(${numero(r.ativas, 0)} ativas), células de ${numero(r.dx, 0)} m, ${r.pocos} poço(s). ` + r.notas.join("; ") +
+    ". Permeabilidade, PVT, curvas relativas e contatos: provisórios (veja o LEIA-ME).";
+  status(`Deck exportado: ${r.pasta}/${r.deck}`, "ok");
+}
+
+async function exportarMapas() {
+  status("Gerando os mapas…", "trab");
+  const r = await chamar($("bl-mapas"), "bloco_exportar_mapas", bl.ultimo, $("bl-mapas-passo").value);
+  if (!r.ok) return;
+  $("bl-exportado").textContent = `Salvo em ambiente_teste/${r.pasta}/ (${r.mapas.length} mapas, ${r.nx} × ${r.ny} ` +
+    `pixels de ${numero(r.passo_m, 0)} m, EPSG:${r.epsg})`;
+  status(`Mapas exportados: ${r.pasta}`, "ok");
+}
+
+function informadosVol() {
+  const inf = {};
+  for (const i of document.querySelectorAll("#bl-vol-tabela input")) {
+    if (!i.value.trim()) continue;
+    (inf[i.dataset.chave] = inf[i.dataset.chave] || {})[i.dataset.par] = i.value.trim();
+  }
+  return inf;
+}
+
+const co2Vol = () => ({ eficiencia: $("bl-vol-e").value.trim(), densidade: $("bl-vol-rho").value.trim() });
+const mi = (v, casas = 1) => (v == null ? "—" : numero(v / 1e6, casas));
+const fr = (v) => (v == null ? "" : numero(v, 3));
+
+async function calcularVolumetria() {
+  const inf = informadosVol();
+  const r = await chamar($("bl-vol-calc"), "bloco_volumetria", bl.ultimo, inf, co2Vol());
+  if (!r.ok) return;
+  mostrarVolumetria(r, inf);
+}
+
+function mostrarVolumetria(v, inf) {
+  const t = limpar($("bl-vol-tabela"));
+  const cab = document.createElement("thead");
+  t.appendChild(cab);
+  linhaTabela(cab, ["formação", "área (km²)", "esp. média (m)", "rocha (10⁶ m³)", "N/G", "φ", "Sw", "Bo",
+                    "poroso (10⁶ m³)", "HC (10⁶ m³)", "óleo in place (10⁶ m³)", "CO₂ (Mt)"], true);
+  const corpo = document.createElement("tbody");
+  t.appendChild(corpo);
+  const campo = (l, par, valor, fonte) => {
+    const i = document.createElement("input");
+    i.dataset.chave = l.chave;
+    i.dataset.par = par;
+    i.inputMode = "decimal";
+    const dig = ((inf || {})[l.chave] || {})[par];
+    i.value = dig || "";
+    i.placeholder = fonte === "informado" || valor == null ? "" : fr(valor);
+    i.title = fonte && fonte !== "informado" ? `da ${fonte}` : valor == null ? "sem avaliação: digite" : "";
+    i.onkeydown = (ev) => { if (ev.key === "Enter") calcularVolumetria(); };
+    return { nos: [i] };
+  };
+  for (const l of v.linhas) {
+    linhaTabela(corpo, [chipUnidade(l.nome, l.cor), numero(l.area_km2, 1), l.espessura_media_m == null ? "—" : numero(l.espessura_media_m, 0),
+                        mi(l.grv_m3, 0), campo(l, "ntg", l.ntg, l.fonte.ntg), campo(l, "phi", l.phi, l.fonte.phi),
+                        campo(l, "sw", l.sw, l.fonte.sw), campo(l, "bo", l.bo, ""), mi(l.vp_m3), mi(l.hc_m3),
+                        mi(l.voip_m3), l.co2_t == null ? "—" : numero(l.co2_t / 1e6, 2)]);
+  }
+  const pe = document.createElement("tfoot");
+  t.appendChild(pe);
+  const T = v.total;
+  linhaTabela(pe, ["total", "", "", mi(T.grv_m3, 0), "", "", "", "", mi(T.vp_m3), mi(T.hc_m3), mi(T.voip_m3),
+                   T.co2_t == null ? "—" : numero(T.co2_t / 1e6, 2)]);
+  $("bl-vol-notas").textContent = "Placeholder cinza = média da avaliação de formação (passe o mouse para ver de quantos poços). " +
+    v.notas.join(" ");
+}
+
+async function exportarVolumetria() {
+  const r = await chamar($("bl-vol-csv"), "bloco_exportar_volumetria", bl.ultimo, informadosVol(), co2Vol());
+  if (r.ok) {
+    $("bl-exportado").textContent = `Salvo em ambiente_teste/${r.arquivo}`;
+    status(`Volumetria exportada: ${r.arquivo}`, "ok");
+  }
+}
+
+async function exportarGlb() {
+  const va = window.BlocoVisor ? window.BlocoVisor.vistaAtual() : {};
+  status("Gerando o modelo 3D…", "trab");
+  const r = await chamar($("bl-glb"), "bloco_exportar_glb", bl.ultimo,
+                         { exagero: va.exagero, camadas: va.camadas && va.camadas.length ? va.camadas : null,
+                           pocos: $("bl-glb-pocos").checked });
+  if (r.ok) {
+    $("bl-exportado").textContent = `Salvo em ambiente_teste/${r.arquivo} (${numero(r.triangulos, 0)} triângulos, ` +
+      `${numero(r.bytes / 1e6, 1)} MB)`;
+    status(`Modelo 3D exportado: ${r.arquivo}`, "ok");
+  }
 }
 
 // ------------------------------------------------ validação cruzada
@@ -543,6 +689,13 @@ function ligarBloco() {
   ligar("bl-afastar", "oninput", () => window.BlocoVisor && window.BlocoVisor.afastar(Number($("bl-afastar").value)));
   ligar("bl-parede", "onchange", paredeBloco);
   ligar("bl-validar", "onclick", validarBloco);
+  ligar("bl-saidas", "ontoggle", () => { if ($("bl-saidas").open) carregarSaidas(); });
+  ligar("bl-mapas", "onclick", exportarMapas);
+  ligar("bl-ecl", "onclick", exportarEcl);
+  for (const id of ["bl-ecl-nz", "bl-ecl-dx", "bl-ecl-max"]) ligar(id, "onchange", () => previaEcl());
+  ligar("bl-vol-calc", "onclick", calcularVolumetria);
+  ligar("bl-vol-csv", "onclick", exportarVolumetria);
+  ligar("bl-glb", "onclick", exportarGlb);
   for (const b of document.querySelectorAll("[data-validacao]")) b.onclick = () => exportarValidacao(b);
   ligar("bl-prog-clique", "onclick", () => {
     const sim = $("bl-prog-clique").getAttribute("aria-pressed") !== "true";

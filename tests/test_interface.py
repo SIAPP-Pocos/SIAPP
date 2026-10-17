@@ -659,3 +659,44 @@ def test_bloco_validacao_e_prognostico(janela, tmp_path):
     p.click("#bl-historico button")
     janela.esperar("!document.getElementById('bl-val').hidden", 30)
     assert not janela.erros_js, janela.erros_js
+
+
+def test_bloco_saidas(janela, tmp_path):
+    from test_secao import poco
+    p = janela.page
+    abrir_projeto(janela)
+    b = janela.api._banco
+    for pid, la, lo in [("1-AA-1-RN", -5.00, -37.00), ("1-AA-2-RN", -5.00, -36.96), ("1-AA-3-RN", -5.04, -37.00),
+                        ("1-AA-4-RN", -5.04, -36.96), ("1-AA-5-RN", -5.02, -36.98)]:
+        leste = (lo + 37.00) * 111.0
+        poco(b, pid, la, lo, 50.0, [("F", "JANDAI", 20, 300 + 10 * leste), ("F", "ACU", 300 + 10 * leste, 700)],
+             prof_final=900)
+    p.click("#aba-bloco")
+    janela.esperar("document.getElementById('bl-disponiveis').textContent.includes('5 poço')")
+    p.click("#bl-selecionar")
+    janela.esperar("document.getElementById('bl-n').textContent === '5'")
+    p.click("#bl-montar")
+    janela.esperar("window.BlocoVisor && window.BlocoVisor.estado().superficies === 2", 30)
+    p.click("#bl-saidas summary")
+    janela.esperar("document.querySelectorAll('#bl-vol-tabela tbody tr').length >= 2", 30)
+    janela.esperar("document.getElementById('bl-ecl-previa').textContent.includes('células')", 30)
+    assert p.locator("#bl-ecl-camadas input").count() >= 2
+    # menos camadas → a prévia muda
+    p.fill("#bl-ecl-nz", "4")
+    p.dispatch_event("#bl-ecl-nz", "change")
+    janela.esperar("document.getElementById('bl-ecl-previa').textContent.includes('× 4 =')", 30)
+    # volumetria com valores digitados
+    p.fill("#bl-vol-tabela input[data-chave='ACU'][data-par='ntg']", "0,5")
+    p.fill("#bl-vol-tabela input[data-chave='ACU'][data-par='phi']", "0,2")
+    p.fill("#bl-vol-tabela input[data-chave='ACU'][data-par='sw']", "0,3")
+    p.click("#bl-vol-calc")
+    janela.esperar("document.querySelector('#bl-vol-tabela tfoot').textContent.match(/\\d/)", 30)
+    pasta = tmp_path / "ambiente_teste" / "exportacoes" / "blocos"
+    for botao, texto in (("#bl-mapas", "_mapas"), ("#bl-ecl", ".DATA"), ("#bl-vol-csv", "_volumetria.csv"),
+                         ("#bl-glb", ".glb")):
+        p.click(botao)
+        janela.esperar(f"document.getElementById('bl-exportado').textContent.includes('{texto}')", 60)
+    assert any(pasta.glob("*_mapas/terreno.tif")) and any(pasta.glob("*_eclipse/*.GRDECL"))
+    assert next(pasta.glob("*.glb")).read_bytes()[:4] == b"glTF"
+    assert "informado" in next(pasta.glob("*_volumetria.csv")).read_text("utf-8-sig")
+    assert not janela.erros_js, janela.erros_js

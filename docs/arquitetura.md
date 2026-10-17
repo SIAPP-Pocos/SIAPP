@@ -28,6 +28,11 @@
     bloco.py        bloco 3D: contorno convexo, Delaunay, superfícies de topo (só numpy) → janela com three.js
     bloco_solido.py bloco fechado: limites das camadas em grade (espessuras), malha do contorno, perfil A–A′
     bloco_validacao.py deixar um poço de fora (interpolador por ponto que refaz só a estrela) e prognóstico
+    bloco_mapas.py  grade UTM regular → GeoTIFF (escrito à mão, chaves GeoTIFF do EPSG) e XYZ
+    bloco_eclipse.py deck ECLIPSE: GRDECL corner-point em UTM, FIPNUM, PORO/NTG, poços; o resto em .inc provisórios
+    bloco_volumetria.py rocha × N/G × φ × (1 − Sw) por formação, cada parâmetro com a origem
+    bloco_glb.py    glTF binário (JSON + buffer) do bloco fechado
+    utm.py          SIRGAS 2000 / UTM, séries de Krüger (6ª ordem)
     bloco_figura.py figura estática do bloco (SVG → PDF/PNG pelo PyMuPDF)
     direcionais.py  dados direcionais: 5 leiautes, curvatura mínima (tabela direcionais)
     ferramentas.py  esquemas de ferramentas: tipo da corrida, ferramentas, vínculo com os perfis (tabela esquemas)

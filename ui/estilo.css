@@ -615,6 +615,17 @@ input.sugestao { background: #fff6d6; border-color: #e0b84a; }
 .bl-controles input[type=range] { width: 130px; }
 .bl-fechado-ctl { display: contents; }
 .bl-latlon { width: 210px; }
+.bl-saidas > summary { cursor: pointer; list-style: revert; }
+.bl-saidas > summary h3 { display: inline; }
+.bl-saida { border-top: 1px solid var(--linha); margin-top: 10px; padding-top: 8px; }
+.bl-saida h4 { margin: 0 0 4px; font-size: 13px; }
+.bl-saida input.curto { width: 70px; }
+.bl-saida input.medio { width: 90px; }
+.bl-ecl-camadas { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 6px 0; font-size: 13px; }
+.bl-ecl-camadas label { display: inline-flex; align-items: center; gap: 5px; }
+.bl-tabela input { width: 54px; text-align: right; font: inherit; padding: 2px 4px; }
+.bl-tabela td.fonte { color: var(--suave); font-size: 11px; text-align: left; }
+.bl-tabela tfoot td { font-weight: 600; border-bottom: none; }
 .bl-quadro { border: 1px solid var(--linha); border-radius: 8px; padding: 10px 14px; margin: 10px 0; background: var(--painel); overflow-x: auto; }
 .bl-quadro-cab { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 6px 12px; }
 .bl-quadro-cab h3 { margin: 0; font-size: 14px; }
@@ -650,3 +661,4 @@ input.sugestao { background: #fff6d6; border-color: #e0b84a; }
 .bl-escala-barra { height: 10px; border-radius: 2px; }
 .bl-escala-lim { display: flex; justify-content: space-between; color: var(--suave); margin-top: 2px; }
 .bl-escala-nota { color: var(--suave); font-style: italic; margin-top: 2px; }
+.bl-saida.desligado { opacity: .55; }

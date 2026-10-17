@@ -210,3 +210,78 @@ da montagem (sem a grade):
 > A profundidade é a partir do terreno; a mesa rotativa de um poço novo ficaria alguns metros
 > acima. O prognóstico é o que o bloco prevê, com o erro que ele mostrou ter — não substitui
 > a interpretação sísmica.
+
+## Saídas do bloco (0.22)
+
+O quadro **Saídas do bloco**, embaixo do visor, leva o bloco para outros programas. Tudo vai
+para `exportacoes/blocos/`.
+
+### Coordenadas: SIRGAS 2000 / UTM
+
+`motor/utm.py`: projeção transversa de Mercator pelas séries de Krüger (6ª ordem), no
+elipsoide GRS80 do SIRGAS 2000 — confere com o pyproj ao milímetro e com o UTM escrito nos
+próprios arquivos de dados direcionais. O fuso é o do centro do bloco (EPSG 31977–31985 no
+hemisfério sul; 31972–31976 no norte). Um bloco que atravessa dois fusos fica todo no do
+centro, como é costume.
+
+### Mapas para SIG
+
+`motor/bloco_mapas.py`. Uma grade UTM regular (pixel padrão: o passo da grade do bloco,
+arredondado — 200 m no Estreito), cada pixel levado ao plano do bloco e amostrado por
+interpolação bilinear; fora do contorno do bloco, sem dado.
+
+- **GeoTIFF**, um por mapa: `terreno`, `topo_<unidade>` (cota, só onde a camada tem
+  espessura) e `isopaca_<unidade>` (espessura). Float32, sem dado = −9999, com o EPSG nas
+  chaves GeoTIFF — o QGIS abre já no lugar certo. Escrito pelo SIAPP (TIFF sem compressão),
+  sem GDAL.
+- **XYZ**: um CSV com leste, norte, lat, lon e todos os mapas em colunas (`;`, vírgula
+  decimal), mais o `.prj`. Abre no Excel, Surfer, Petrel, QGIS (texto delimitado).
+- Sem bloco fechado, saem os topos das superfícies.
+
+### Simulador (.DATA, formato ECLIPSE)
+
+`motor/bloco_eclipse.py`. Deck que o tNavigator, o OPM Flow, o Petrel e o ResInsight leem.
+
+| Do dado (SIAPP) | Provisório (o SIAPP não tem; troque antes de simular) |
+|---|---|
+| Geometria: grade corner-point em UTM, pilares verticais, profundidade = −cota | Permeabilidade (100 mD; PERMZ = 0,1 × PERMX) |
+| Formações escolhidas, cada uma em camadas iguais entre o topo e a base | PVT: óleo morto e água genéricos |
+| ACTNUM: fora do contorno do bloco ou mais fina que 0,1 m, inativa; PINCH | Curvas relativas: Corey genérico |
+| FIPNUM: uma região por formação | Contato e pressão inicial (EQUIL) |
+| PORO e NTG da avaliação de formação (grade com 3+ poços, senão a média) — sem avaliação, 0,20 e 1,0 **marcados** | |
+| Poços com o caminho real (trajetória), WELSPECS/COMPDAT, fechados; nomes de 8 caracteres (1-AURI-12-RN → AURI12) | |
+
+- **Tamanho**: o teto padrão é **275.625 células** (licença acadêmica do tNavigator). O
+  SIAPP escolhe as camadas (≥ 1 por formação, proporcionais à espessura média) e a célula
+  (múltiplo de 10 m) para caber; a **prévia** mostra a grade antes de exportar. Dá para fixar
+  camadas, célula e teto.
+- **Formações**: todas menos o embasamento, de saída; marque e desmarque.
+- **Arquivos**: `<NOME>.DATA` (o deck), `.GRDECL` (geometria), `_PORO_NTG.inc`,
+  `_PERM.inc`, `_FIPNUM.inc`, `_PVT.inc`, `_SCAL.inc`, `_SOLUCAO.inc`, `_POCOS.inc` e o
+  `LEIA-ME.txt` (o que é dado, o que é provisório, a lista de poços, o volume poroso).
+- Conferido com o parser do OPM (o deck abre, a grade e os poços batem) e com o resdata
+  (volumes de célula positivos, coordenadas certas).
+
+> O deck é a geometria do bloco com o que se sabe pelos poços. Simular de verdade pede
+> permeabilidade, PVT, curvas relativas e contatos do campo — o SIAPP deixa o lugar pronto e
+> marcado.
+
+### Volumetria preliminar
+
+`motor/bloco_volumetria.py`. Por formação: área, espessura média, **volume de rocha** (da
+malha do bloco fechado), N/G, φ e Sw — da avaliação de formação (média dos poços avaliados na
+formação) ou **digitados** (a origem de cada valor fica registrada) —, **volume poroso**,
+**hidrocarboneto** (condições de reservatório), **óleo in place** (com Bo) e **capacidade
+teórica de CO₂** (volume poroso × E × ρ, com E e ρ digitados). Sem N/G ou φ, a formação fica
+sem conta: o SIAPP não inventa parâmetro. CSV com tudo e as notas.
+
+> Preliminar: o volume de rocha inclui a parte extrapolada do bloco, e uma média de poucos
+> poços avaliados não representa a formação inteira. Afira com um volume oficial (Plano de
+> Desenvolvimento da ANP) — foi assim que o caso de Carmópolis mostrou um net pay 5× inflado.
+
+### Modelo 3D (.glb)
+
+`motor/bloco_glb.py`. glTF binário do bloco fechado: uma malha por camada (a parte
+extrapolada num material mais claro), os poços como tubos finos, o exagero vertical da tela e
+só as camadas ligadas. Abre no **PowerPoint** (Inserir → Modelos 3D, e gira no slide), no
+Visualizador 3D do Windows e no Blender. Unidades em km; ~3 MB num campo, ~12 MB na bacia.

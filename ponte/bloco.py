@@ -11,7 +11,12 @@ from datetime import datetime
 from motor import agp as magp
 from motor import bloco as mbl
 from motor import bloco_figura as mbf
+from motor import bloco_eclipse as mbe
+from motor import bloco_glb as mbg
+from motor import bloco_mapas as mbm
+from motor import bloco_solido as mbs
 from motor import bloco_validacao as mbv
+from motor import bloco_volumetria as mbvol
 from motor import direcionais as mdi
 from motor import reate
 from motor import secao as msc
@@ -242,6 +247,116 @@ class BlocoAPI:
         self._projeto.registrar("exportou_bloco", execucao=ident, formato="prognostico_csv",
                                 lat=p["lat"], lon=p["lon"])
         return {"arquivo": os.path.relpath(saida, self._projeto.pasta).replace(os.sep, "/"), "prognostico": p}
+
+    # ------------------------------------------------ saídas: mapas, simulador, volumetria, 3D
+    def _rel(self, caminho: str) -> str:
+        return os.path.relpath(caminho, self._projeto.pasta).replace(os.sep, "/")
+
+    @resposta_segura
+    def bloco_exportar_mapas(self, ident: str, passo_m=None):
+        """GeoTIFF + XYZ em SIRGAS 2000 / UTM: terreno, topo e isópaca de cada camada."""
+        self._exigir_projeto()
+        ident = self._ident_bloco(ident)
+        reg = self._registro_bloco(ident)
+        try:
+            r = mbm.exportar(reg, os.path.join(self._projeto.pasta, PASTA_EXPORTACAO), ident, self._num(passo_m))
+        except mbm.ErroMapa as e:
+            raise ErroUsuario(str(e)) from e
+        self._projeto.registrar("exportou_bloco", execucao=ident, formato="mapas", epsg=r["epsg"], passo_m=r["passo_m"])
+        return {"pasta": self._rel(r["pasta"]), "mapas": r["mapas"], "epsg": r["epsg"], "passo_m": r["passo_m"],
+                "nx": r["nx"], "ny": r["ny"]}
+
+    def _opcoes_eclipse(self, op: dict) -> dict:
+        nz = self._num(op.get("nz"))
+        return {"camadas": op.get("camadas"), "nz": int(nz) if nz else None, "dx_m": self._num(op.get("dx")),
+                "max_celulas": int(self._num(op.get("max_celulas"), mbe.MAX_CELULAS_PADRAO))}
+
+    @resposta_segura
+    def bloco_eclipse_previa(self, ident: str, opcoes: dict | None = None):
+        """Formações (com as do padrão marcadas) e o tamanho da grade que sairia."""
+        self._exigir_projeto()
+        reg = self._registro_bloco(self._ident_bloco(ident))
+        sol = reg.get("solido") or {}
+        if not sol.get("ok"):
+            raise ErroUsuario("O deck sai do bloco fechado, que este bloco não tem.")
+        op = self._opcoes_eclipse(opcoes or {})
+        todas = [c for c in sol["camadas"] if c["chave"] not in (mbs.CHAVE_COBERTURA, mbs.CHAVE_ABAIXO)]
+        try:
+            p = mbe.planejar(reg, **op)
+        except mbe.ErroEclipse as e:
+            return {"erro": str(e), "camadas": [{"chave": c["chave"], "nome": c["nome"]} for c in todas]}
+        escolhidas = {c["chave"] for c in p["camadas"]}
+        return {"camadas": [{"chave": c["chave"], "nome": c["nome"], "marcada": c["chave"] in escolhidas,
+                             "nk": dict(zip([q["chave"] for q in p["camadas"]], p["nk"])).get(c["chave"], 0)}
+                            for c in todas],
+                "nx": p["nx"], "ny": p["ny"], "nz": p["nz"], "dx": p["dx"], "celulas": p["celulas"],
+                "max_celulas": p["max_celulas"], "epsg": p["epsg"]}
+
+    @resposta_segura
+    def bloco_exportar_eclipse(self, ident: str, opcoes: dict | None = None):
+        """Deck ECLIPSE (.DATA + .GRDECL + .inc) do bloco fechado."""
+        self._exigir_projeto()
+        ident = self._ident_bloco(ident)
+        reg = self._registro_bloco(ident)
+        try:
+            r = mbe.exportar(reg, os.path.join(self._projeto.pasta, PASTA_EXPORTACAO), ident,
+                             titulo=(reg.get("titulo") or "").strip(), **self._opcoes_eclipse(opcoes or {}))
+        except mbe.ErroEclipse as e:
+            raise ErroUsuario(str(e)) from e
+        self._projeto.registrar("exportou_bloco", execucao=ident, formato="eclipse", celulas=r["celulas"],
+                                ativas=r["ativas"], camadas=[c["chave"] for c in r["camadas"]])
+        return {"pasta": self._rel(r["pasta"]), "deck": r["deck"], "nx": r["nx"], "ny": r["ny"], "nz": r["nz"],
+                "dx": r["dx"], "celulas": r["celulas"], "ativas": r["ativas"], "pocos": r["pocos"],
+                "camadas": r["camadas"], "notas": r["notas"], "epsg": r["epsg"]}
+
+    @resposta_segura
+    def bloco_volumetria(self, ident: str, informados: dict | None = None, co2: dict | None = None):
+        self._exigir_projeto()
+        reg = self._registro_bloco(self._ident_bloco(ident))
+        try:
+            return mbvol.calcular(reg, informados, co2)
+        except mbvol.ErroVolumetria as e:
+            raise ErroUsuario(str(e)) from e
+
+    @resposta_segura
+    def bloco_exportar_volumetria(self, ident: str, informados: dict | None = None, co2: dict | None = None):
+        self._exigir_projeto()
+        ident = self._ident_bloco(ident)
+        reg = self._registro_bloco(ident)
+        try:
+            v = mbvol.calcular(reg, informados, co2)
+        except mbvol.ErroVolumetria as e:
+            raise ErroUsuario(str(e)) from e
+        pasta = os.path.join(self._projeto.pasta, PASTA_EXPORTACAO)
+        os.makedirs(pasta, exist_ok=True)
+        saida = os.path.join(pasta, f"{ident}_volumetria.csv")
+        with open(saida, "w", newline="", encoding="utf-8-sig") as f:
+            w = csv.writer(f, delimiter=";")
+            w.writerow(mbvol.COLUNAS_CSV)
+            for linha in mbvol.linhas_csv(v):
+                w.writerow(["" if x is None else (f"{x:.6g}".replace(".", ",") if isinstance(x, float) else x)
+                            for x in linha])
+            w.writerow([])
+            for n_ in v["notas"]:
+                w.writerow([n_])
+        self._projeto.registrar("exportou_bloco", execucao=ident, formato="volumetria")
+        return {"arquivo": self._rel(saida), "volumetria": v}
+
+    @resposta_segura
+    def bloco_exportar_glb(self, ident: str, vista: dict | None = None):
+        """Modelo 3D (.glb) do bloco fechado, com o exagero e as camadas da tela."""
+        self._exigir_projeto()
+        ident = self._ident_bloco(ident)
+        reg = self._registro_bloco(ident)
+        vi = vista or {}
+        saida = os.path.join(self._projeto.pasta, PASTA_EXPORTACAO, f"{ident}.glb")
+        try:
+            r = mbg.exportar(reg, saida, exagero=float(vi.get("exagero") or 10), camadas=vi.get("camadas"),
+                             pocos=vi.get("pocos", True) is not False, titulo=(reg.get("titulo") or "").strip())
+        except ValueError as e:
+            raise ErroUsuario(str(e)) from e
+        self._projeto.registrar("exportou_bloco", execucao=ident, formato="glb", triangulos=r["triangulos"])
+        return {"arquivo": self._rel(saida), "triangulos": r["triangulos"], "bytes": r["bytes"]}
 
     @resposta_segura
     def bloco_figura(self, ident: str, vista: dict | None = None, formato: str = "pdf"):

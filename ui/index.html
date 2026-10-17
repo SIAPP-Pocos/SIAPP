@@ -818,6 +818,57 @@
           <table class="bl-tabela estreita" id="bl-val-faixas"></table>
           <ul class="sec-avisos" id="bl-val-avisos"></ul>
         </section>
+        <details class="bl-quadro bl-saidas" id="bl-saidas">
+          <summary><h3>Saídas do bloco: mapas para SIG, simulador (.DATA), volumetria, modelo 3D</h3></summary>
+          <div class="bl-saida">
+            <h4>Mapas para SIG</h4>
+            <p class="ajuda">Terreno, topo e espessura de cada camada em GeoTIFF (um por mapa) e um XYZ com todos,
+              em SIRGAS 2000 / UTM. Abre no QGIS, ArcGIS, Surfer, Petrel.</p>
+            <div class="linha">
+              <label>Pixel (m) <input type="text" id="bl-mapas-passo" class="curto" inputmode="numeric" placeholder="auto"></label>
+              <button class="btn secundario pequeno" id="bl-mapas">Exportar os mapas</button>
+            </div>
+          </div>
+          <div class="bl-saida" id="bl-ecl-box">
+            <h4>Simulador (.DATA, formato ECLIPSE)</h4>
+            <p class="ajuda">Grade corner-point do bloco fechado para tNavigator, OPM, Petrel. Do dado: geometria, uma
+              região (FIPNUM) por formação, φ e N/G da avaliação de formação, poços (fechados). Permeabilidade, PVT,
+              curvas relativas e contatos saem <strong>provisórios</strong>, marcados, para trocar.</p>
+            <div class="bl-ecl-camadas" id="bl-ecl-camadas"></div>
+            <div class="linha">
+              <label>Camadas (NZ) <input type="text" id="bl-ecl-nz" class="curto" inputmode="numeric" placeholder="auto"></label>
+              <label>Célula (m) <input type="text" id="bl-ecl-dx" class="curto" inputmode="numeric" placeholder="auto"></label>
+              <label>Teto de células <input type="text" id="bl-ecl-max" class="medio" inputmode="numeric" value="275625"
+                     title="275.625: o teto da licença acadêmica do tNavigator"></label>
+              <button class="btn secundario pequeno" id="bl-ecl">Exportar o .DATA</button>
+            </div>
+            <p class="ajuda" id="bl-ecl-previa"></p>
+          </div>
+          <div class="bl-saida" id="bl-vol-box">
+            <h4>Volumetria preliminar</h4>
+            <p class="ajuda">Volume de rocha do bloco × N/G × φ = volume poroso; × (1 − Sw) = hidrocarboneto (condições
+              de reservatório); ÷ Bo = óleo in place. Vazio = média da avaliação de formação; digite para usar outro
+              valor (frações: 0,25).</p>
+            <table class="bl-tabela" id="bl-vol-tabela"></table>
+            <div class="linha">
+              <span class="ajuda">Capacidade teórica de CO₂ = volume poroso × E × ρ:</span>
+              <label>E <input type="text" id="bl-vol-e" class="curto" inputmode="decimal" placeholder="ex.: 0,02"></label>
+              <label>ρ CO₂ (kg/m³) <input type="text" id="bl-vol-rho" class="curto" inputmode="decimal" placeholder="ex.: 650"></label>
+              <button class="btn secundario pequeno" id="bl-vol-calc">Calcular</button>
+              <button class="btn secundario pequeno" id="bl-vol-csv">CSV</button>
+            </div>
+            <p class="ajuda" id="bl-vol-notas"></p>
+          </div>
+          <div class="bl-saida" id="bl-glb-box">
+            <h4>Modelo 3D (.glb)</h4>
+            <p class="ajuda">O bloco fechado com as camadas ligadas e o exagero da tela, para girar no PowerPoint
+              (Inserir → Modelos 3D), no Visualizador 3D do Windows ou no Blender.</p>
+            <div class="linha">
+              <label class="opcao"><input type="checkbox" id="bl-glb-pocos" checked> <span>com os poços</span></label>
+              <button class="btn secundario pequeno" id="bl-glb">Exportar o .glb</button>
+            </div>
+          </div>
+        </details>
         <p class="ajuda" id="bl-resumo"></p>
         <div class="bl-unidades" id="bl-unidades"></div>
         <ul class="sec-avisos" id="bl-avisos"></ul>
