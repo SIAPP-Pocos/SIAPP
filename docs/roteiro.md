@@ -15,8 +15,13 @@ existe e a validação científica ficam **para o final**, antes do lançamento 
       figura estática no estilo artigo.
 - [x] **Bloco fechado** (0.20): o volume do terreno a uma base plana, camadas por espessura,
       corte, seção A–A′, camadas afastadas; figura dos dois modos.
-- [ ] **Exportar para simuladores** (0.21): `.DATA`/`.GRDECL` no formato ECLIPSE (grade
-      corner-point, uma região por formação, poços com a trajetória), para tNavigator e afins.
+- [x] **Validação cruzada e prognóstico** (0.21): quanto o bloco erra sem cada poço, por
+      unidade e por distância; coluna prevista num ponto com incerteza.
+- [ ] **Saídas do bloco** (0.22): `.DATA`/`.GRDECL` no formato ECLIPSE (grade corner-point,
+      uma região por formação, poços com a trajetória), para tNavigator e afins; mapas de topo
+      e isópaca (XYZ, GeoTIFF) para o QGIS; volumetria preliminar por formação; modelo `.glb`.
+- [ ] **Gasodutos e blocos exploratórios** (com o Ruan): camadas do IBGE/EPE/ANP, distância
+      do bloco exploratório ao gasoduto mais próximo, para a eficiência econômica de injetar CO₂.
 
 ## No final — melhorias do que já existe
 

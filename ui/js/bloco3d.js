@@ -21,6 +21,9 @@ const v = {
   corte: { ativo: false, quadrante: "SW", fx: 0.5, fy: 0.5 },
   afastar: 0,           // 0–1: camadas afastadas na vertical
   parede: null,         // seção A–A′: {linha: [[x, y]], pocos: [ids]}
+  validacao: null,      // "poço|unidade" → linha da validação cruzada (para a dica nos topos)
+  pino: null,           // prognóstico num ponto: {grupo, marcas, dados}
+  escolher: null,       // clique no bloco: função que recebe {x, y}
 };
 const ESP_MIN = 0.5;    // m: camada mais fina que isso não é desenhada (acunhamento)
 
@@ -34,7 +37,7 @@ function limparCena() {
   });
   while (v.scene.children.length) v.scene.remove(v.scene.children[0]);
   v.marcas = []; v.rotulos = []; v.superficies = {}; v.topos = {}; v.marcasProp = []; v.alvosTrilha = [];
-  v.camadas = {}; v.sm = null;
+  v.camadas = {}; v.sm = null; v.pino = null;
   if (v.overlay) v.overlay.textContent = "";
 }
 
@@ -87,6 +90,8 @@ function iniciar(container) {
   v.raio = new THREE.Raycaster();
   v.renderer.domElement.addEventListener("mousemove", passarMouse);
   v.renderer.domElement.addEventListener("mouseleave", () => { v.dica.hidden = true; });
+  v.renderer.domElement.addEventListener("pointerdown", (ev) => { v.apertou = [ev.clientX, ev.clientY]; });
+  v.renderer.domElement.addEventListener("pointerup", soltou);
   new ResizeObserver(() => redimensionar()).observe(container);
 }
 
@@ -721,7 +726,7 @@ function projetar(x, cota, z, w, h) {
 function atualizarRotulos() {
   const c = v.renderer.domElement, w = c.clientWidth, h = c.clientHeight;
   for (const r of v.rotulos) {
-    const oculto = r.tipo === "secao" ? v.modo !== "fechado"
+    const oculto = r.tipo === "pino" ? false : r.tipo === "secao" ? v.modo !== "fechado"
       : (r.tipo === "poco" && (!v.mostrarNomes || (v.modo === "fechado" && v.afastar > 0))) ||
         (r.tipo !== "poco" && !v.mostrarCaixa);
     const p = projetar(r.x, r.cota, r.z, w, h);
@@ -778,6 +783,15 @@ function passarMouse(ev) {
     h.object !== v.camadas[h.object.userData.camada.chave].corpo || !noCorte(h.point));
   if (!hit) { v.dica.hidden = true; return; }
   const d = hit.object.userData, p = d.poco;
+  if (d.tipo === "pino") {
+    const c = d.camada;
+    v.dica.textContent = [`Prognóstico · ${c.nome}`, `topo ${fmt(c.topo, 0)} m (${fmt(c.prof_topo, 0)} m abaixo do terreno)` +
+      (c.incerteza_m != null ? ` ± ${fmt(c.incerteza_m, 0)} m` : ""), `espessura ${fmt(c.espessura, 0)} m`].join("\n");
+    v.dica.style.left = (ev.clientX - rc.left + 12) + "px";
+    v.dica.style.top = (ev.clientY - rc.top + 12) + "px";
+    v.dica.hidden = false;
+    return;
+  }
   if (d.tipo === "camada") {
     const linhasC = dicaCamada(d.camada, hit.point, hit.object.parent.position.y);
     v.dica.textContent = linhasC.join("\n");
@@ -793,6 +807,13 @@ function passarMouse(ev) {
     linhas.push(`${d.nomeProp} em ${d.unidade}: ${fmtProp(d.valor, d.prop)}` + (d.intervalo ? ` (intervalo "${d.intervalo}")` : ""));
   } else if (d.tipo === "topo") {
     linhas.push(`${d.unidade.nome}: topo ${fmt(d.unidade.topo, 1)} m · cota ${fmt(d.unidade.cota_topo, 1)} m`);
+    const val = v.validacao && v.validacao[`${p.id}|${d.unidade.chave}`];
+    if (val) {
+      const partes = [];
+      if (val.erro_fechado != null) partes.push(`bloco fechado ${fmt(val.fechado, 0)} m (erro ${sinal(val.erro_fechado)} m)`);
+      if (val.erro_superficie != null) partes.push(`superfície ${fmt(val.superficie, 0)} m (erro ${sinal(val.erro_superficie)} m)`);
+      if (partes.length) linhas.push(`sem este poço: ${partes.join(" · ")}`);
+    }
   } else {
     if (p.mesa != null) linhas.push(`mesa rotativa ${fmt(p.mesa, 1)} m`);
     if (p.prof_final) linhas.push(`prof. final ${fmt(p.prof_final, 0)} m` + (p.desviado ? " · desviado" : ""));
@@ -812,6 +833,70 @@ function noCorte(pt) {
   const k = geometriaCorte();
   const x = pt.x + v.centro.x, y = v.centro.y - pt.z;
   return (k.oeste ? x < k.cx - 1e-6 : x > k.cx + 1e-6) && (k.sul ? y < k.cy - 1e-6 : y > k.cy + 1e-6);
+}
+
+function sinal(n) { return (n > 0 ? "+" : "") + fmt(n, 0); }
+
+// ------------------------------------------------ clique no bloco e pino do prognóstico
+function soltou(ev) {
+  if (!v.escolher || !v.apertou) return;
+  if (Math.hypot(ev.clientX - v.apertou[0], ev.clientY - v.apertou[1]) > 5) return;   // foi giro, não clique
+  const c = v.renderer.domElement, rc = c.getBoundingClientRect();
+  const mouse = new THREE.Vector2(((ev.clientX - rc.left) / rc.width) * 2 - 1, -((ev.clientY - rc.top) / rc.height) * 2 + 1);
+  v.raio.setFromCamera(mouse, v.camera);
+  const alvos = [];
+  if (v.modo === "fechado") {
+    for (const cam of Object.values(v.camadas)) if (cam.grupo.visible) for (const o of [cam.corpo, cam.tampa]) if (o) alvos.push(o);
+  } else {
+    for (const m of Object.values(v.superficies)) if (m.visible) alvos.push(m);
+  }
+  const hit = v.raio.intersectObjects(alvos, false).find((h) => !(h.object.userData.camada &&
+    h.object === v.camadas[h.object.userData.camada.chave].corpo && noCorte(h.point)));
+  let pt = hit && hit.point;
+  if (!pt) {        // fora do bloco desenhado: o plano horizontal na cota do topo
+    const plano = new THREE.Plane(new THREE.Vector3(0, 1, 0), -cenaDeY(v.cotaMax));
+    pt = v.raio.ray.intersectPlane(plano, new THREE.Vector3());
+  }
+  if (!pt) return;
+  const f = v.escolher;
+  f({ x: pt.x + v.centro.x, y: v.centro.y - pt.z });
+}
+
+function limparPino() {
+  if (!v.pino) return;
+  v.mundo.remove(v.pino.linha);
+  v.pino.linha.geometry.dispose(); v.pino.linha.material.dispose();
+  for (const o of v.pino.marcas) { v.scene.remove(o); o.geometry.dispose(); o.material.dispose(); }
+  v.marcas = v.marcas.filter((mk) => !mk.pino);
+  v.rotulos = v.rotulos.filter((r) => { if (r.tipo === "pino") { r.el.remove(); return false; } return true; });
+  v.pino = null;
+}
+
+function desenharPino(p) {
+  limparPino();
+  if (!p) { desenhar(); return; }
+  const X = v.X(p.x), Z = v.Z(p.y);
+  const topo = p.terreno + (v.cotaMax - v.cotaMin) * 0.06;
+  const linha = new THREE.Line(new THREE.BufferGeometry().setFromPoints([
+    new THREE.Vector3(X, topo - v.centro.cota, Z), new THREE.Vector3(X, p.base - v.centro.cota, Z)]),
+    new THREE.LineBasicMaterial({ color: 0xc0262d, depthTest: false }));
+  linha.renderOrder = 10;
+  v.mundo.add(linha);
+  const marcas = [];
+  const r = v.lado * 0.009;
+  for (const c of p.camadas) {
+    if (!c.presente) continue;
+    const esf = new THREE.Mesh(new THREE.SphereGeometry(r, 14, 10),
+                               new THREE.MeshLambertMaterial({ color: c.cor, depthTest: false }));
+    esf.renderOrder = 11;
+    esf.userData = { tipo: "pino", camada: c };
+    v.scene.add(esf);
+    marcas.push(esf);
+    v.marcas.push({ obj: esf, x: X, cota: c.topo, z: Z, pino: true });
+  }
+  rotulo("P", X, topo, Z, "pino");
+  v.pino = { linha, marcas, dados: p };
+  aplicarExagero();
 }
 
 function dicaCamada(c, pt, deslocY) {
@@ -975,6 +1060,16 @@ window.BlocoVisor = {
   caixa(sim) { v.mostrarCaixa = sim; if (v.caixa) v.caixa.visible = sim; desenhar(); },
   vista,
   imagem,
+  // validação cruzada: as linhas, para a dica nos topos dos poços
+  validacao(val) {
+    v.validacao = val ? Object.fromEntries(val.linhas.map((l) => [`${l.poco}|${l.chave}`, l])) : null;
+  },
+  pino: desenharPino,
+  // modo clique: chama f({x, y}) no próximo clique (sem arrastar) sobre o bloco; null desliga
+  escolherPonto(f) {
+    v.escolher = f || null;
+    if (v.renderer) v.renderer.domElement.classList.toggle("escolhendo", !!f);
+  },
   vistaAtual() {
     const visiveis = v.modelo.legenda.map((u) => u.chave).filter((k) => v.visivel[k] !== false);
     return { azimute: v.controls.getAzimuthalAngle(), elevacao: Math.PI / 2 - v.controls.getPolarAngle(),
@@ -993,6 +1088,7 @@ window.BlocoVisor = {
              camadas: Object.keys(v.camadas).length,
              tampas: Object.values(v.camadas).filter((c) => c.tampa).length,
              paredes: Object.values(v.camadas).filter((c) => c.parede).length,
+             pino: v.pino ? v.pino.marcas.length : 0, escolhendo: !!v.escolher,
              escala: v.escala && !v.escala.hidden ? v.escala.textContent : "" };
   },
 };

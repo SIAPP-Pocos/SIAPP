@@ -147,3 +147,66 @@ poços), 14 camadas em ~7 s.
 - A **figura estilo artigo** e o **PNG** saem no modo da tela (com corte, camadas afastadas ou
   a parede). Na figura, com as camadas juntas, só a superfície exposta é desenhada, em pedaços
   que não se sobrepõem (o algoritmo do pintor não erra no topo).
+
+## Validação cruzada (0.21)
+
+`motor/bloco_validacao.py`, botão **Deixar um poço de fora**. Cada poço sai do bloco, um de
+cada vez; o bloco é refeito sem ele e prevê a cota de cada topo daquele poço, que se compara
+com a do AGP (erro = previsto − AGP). É o número que diz quanto o bloco erra a uma certa
+distância do poço mais próximo — o que transforma o "contexto espacial" em algo medido.
+
+- **Os dois modos, com as regras da montagem**: o bloco fechado (referência + espessuras,
+  cortado no terreno e na base; fora do contorno dos outros poços, o valor da borda — conta
+  como *extrapolado*) e as superfícies (só dentro do contorno dos outros poços com a unidade;
+  fora, não prevê).
+- **Por unidade**: comparações, viés (média do erro), mediana do |erro|, o erro que **68%**
+  das previsões não passam, máximo e o poço do máximo; erro médio da espessura.
+- **Por faixa de distância** ao poço mais próximo com a unidade (0–1, 1–2, 2–5, 5–10, > 10 km).
+- **Mediana e 68%, não a raiz do erro quadrático**: um poço com o AGP errado (ou numa falha)
+  dispara a raiz do erro quadrático; a mediana e o percentil 68 descrevem o grosso dos poços.
+  A raiz continua no registro.
+- Fica no registro do bloco (`execucoes/bloco_….json`, chave `validacao`); reabrir o bloco
+  traz a validação. **CSV** (uma linha por topo) e **figura estilo artigo**: (a) previsto ×
+  AGP, com a linha 1:1; (b) |erro| × distância, com o erro de 68% por faixa nos dois modos;
+  (c) tabela por unidade.
+- Os maiores erros aparecem no resumo: ou o AGP daquele poço tem problema, ou há uma
+  mudança brusca real entre os poços (uma falha). Os dois valem uma olhada.
+
+**Rápido mesmo no regional.** Refazer a triangulação de Delaunay de cada campo para cada poço
+seria lento (429 poços × 15 campos). Tirar um ponto de uma triangulação só muda a *estrela*
+dele: os triângulos que o tocam viram a triangulação dos vizinhos. O `Interpolador` faz isso
+(e os testes conferem, em milhares de consultas, que dá o mesmo que refazer tudo). Na
+Potiguar (Cat. 1, 429 poços, 1.867 topos): ~12 s.
+
+**O que a Potiguar mostrou** (Cat. 1, depois de tirar os topos abaixo do fundo): metade dos
+topos com erro até ~15 m e 68% até ~31 m no bloco fechado; a 0–1 km do poço mais próximo,
+68% até ~14 m; a 5–10 km, ~69 m. O Embasamento é o que mais erra (68% até ~175 m: o rifte
+muda de profundidade de um bloco de falha para outro). As superfícies erram um pouco menos
+nos topos (o empilhamento acumula o erro das espessuras), mas não preveem fora do contorno.
+
+### Topos abaixo do fundo do poço
+
+O AGP às vezes traz um topo mais fundo que o próprio poço — estimativa da operadora (sísmica,
+poço vizinho), não o que o poço atravessou: o `1-JD-2-RN` (1.865 m) tem o Embasamento a
+6.134 m. Esses topos ficam **fora do bloco** (com aviso), e uma base abaixo do fundo conta
+como não atingida. Na Potiguar, 64 poços da Cat. 1. Foi a validação que mostrou: eram os
+maiores erros.
+
+## Prognóstico num ponto (0.21)
+
+**Clicar no bloco** (o botão liga o modo; arrastar continua girando) ou escrever **lat, lon**
+em graus decimais. O SIAPP calcula, no ponto, a coluna do bloco fechado com as mesmas regras
+da montagem (sem a grade):
+
+- cada camada: **topo** (cota e profundidade abaixo do terreno), **espessura**, base;
+  "ausente" onde a espessura é zero; interpolado ou extrapolado (mais claro no visor);
+- a distância ao poço mais próximo com a unidade e os três poços mais próximos;
+- com a validação feita, a **incerteza (±)** de cada topo: o erro que 68% das previsões da
+  validação não passaram, da unidade na mesma faixa de distância (com menos de 5 comparações,
+  a faixa com todas as unidades; depois, a unidade inteira);
+- um **pino** no visor, com uma esfera no topo de cada camada (a dica mostra os valores);
+  **CSV** em `exportacoes/blocos/`.
+
+> A profundidade é a partir do terreno; a mesa rotativa de um poço novo ficaria alguns metros
+> acima. O prognóstico é o que o bloco prevê, com o erro que ele mostrou ter — não substitui
+> a interpretação sísmica.

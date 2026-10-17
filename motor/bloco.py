@@ -47,6 +47,7 @@ CELULAS_PADRAO = 160          # células no lado maior da grade
 FRACAO_COLINEAR = 0.04        # largura / comprimento do contorno abaixo disso = colinear
 TRAJ_MIN_M = 5.0              # afastamento abaixo disso: o poço é tratado como vertical
 LONGE_KM = 100.0              # poço a mais que isso (e 5× a distância mediana) do centro: fora
+FOLGA_FUNDO_M = 10.0          # topo mais fundo que o fundo do poço + isso: não foi perfurado
 NIVEIS = msc.NIVEIS_SECAO
 
 
@@ -329,7 +330,22 @@ def montar(banco: Banco, pocos: list[str], *, nivel: str = "formacoes", margem_k
 
     saida = []
     sem_traj, com_traj = [], []
+    abaixo_do_fundo = []
     for (d, col), xi, yi in zip(dados, x, y):
+        # topo abaixo do fundo do poço: a operadora registrou uma estimativa (sísmica, poço
+        # vizinho), não o que o poço atravessou — ex.: 1-JD-2-RN, Embasamento a 6.134 m num
+        # poço de ~1.900 m. Fica fora do bloco, com aviso.
+        pf = col["prof_final"]
+        if pf:
+            fora = [u for u in col["unidades"] if u["topo"] is not None and u["topo"] > float(pf) + FOLGA_FUNDO_M]
+            if fora:
+                abaixo_do_fundo.append(f"{d['id']} ({', '.join(f'{u['nome']} a {u['topo']:.0f} m' for u in fora)}; "
+                                       f"fundo {float(pf):.0f} m)")
+                col = dict(col, unidades=[u for u in col["unidades"] if u not in fora])
+            # base abaixo do fundo: também não foi atingida (a espessura fica desconhecida)
+            col = dict(col, unidades=[dict(u, base=float(pf), cota_base=col["cota_fundo"], base_atingida=False)
+                                      if u["base"] is not None and u["base"] > float(pf) + FOLGA_FUNDO_M
+                                      and col["cota_fundo"] is not None else u for u in col["unidades"]])
         classe_txt = " ".join(filter(None, [d["cab"].get("reclassificacao"), d["cab"].get("classificacao"),
                                             (d["cad"] or {}).get("reclassificacao")])).upper()
         p = {"id": d["id"], "lat": d["lat"], "lon": d["lon"], "x": round(float(xi), 4), "y": round(float(yi), 4),
@@ -378,6 +394,10 @@ def montar(banco: Banco, pocos: list[str], *, nivel: str = "formacoes", margem_k
             gas = [(i["md_topo"], i["md_base"]) for i in p["indicios"] if i["fluido"] == "gás"]
             p["classes"] = _classes_avaliacao(pasta_execucoes, av[0]["id"], gas)
         saida.append(p)
+    if abaixo_do_fundo:
+        avisos.append(f"Topos abaixo do fundo do poço (estimativa da operadora, não perfurados), fora do bloco: "
+                      f"{'; '.join(abaixo_do_fundo[:10])}{' …' if len(abaixo_do_fundo) > 10 else ''}"
+                      f"{f' ({len(abaixo_do_fundo)} poços)' if len(abaixo_do_fundo) > 10 else ''}.")
     if com_traj:
         avisos.append(f"Trajetória pelos dados direcionais (topos na posição real): {', '.join(com_traj)}.")
     if sem_traj:
@@ -640,6 +660,16 @@ def registrar(pasta_execucoes: str, modelo: dict, autor: str = "") -> tuple[str,
         json.dump(reg, f, ensure_ascii=False)
     os.replace(caminho + ".tmp", caminho)
     return ident, caminho
+
+
+def atualizar(pasta_execucoes: str, ident: str, **campos) -> None:
+    """Acrescenta campos ao registro de um bloco (ex.: a validação cruzada), sem recalcular."""
+    reg = abrir(pasta_execucoes, ident)
+    reg.update(campos)
+    caminho = os.path.join(pasta_execucoes, ident + ".json")
+    with open(caminho + ".tmp", "w", encoding="utf-8") as f:
+        json.dump(reg, f, ensure_ascii=False)
+    os.replace(caminho + ".tmp", caminho)
 
 
 def abrir(pasta_execucoes: str, ident: str) -> dict:

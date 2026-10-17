@@ -173,3 +173,16 @@ def test_figura_do_bloco_fechado(banco, tmp_path):
     with pytest.raises(mbf.ErroFigura):
         mbf.desenhar(velho, modo="fechado")
     assert "Topo das unidades" in mbf.desenhar(velho)
+
+
+def test_topo_abaixo_do_fundo_do_poco_fica_fora(banco):
+    # a operadora registrou o Embasamento a 6.000 m num poço de 1.200 m (estimativa, não perfurado)
+    poco(banco, "1-AA-7-RN", -5.01, -36.99, 50.0, [("F", "JANDAI", 20, 330), ("F", "ACU", 330, 6000),
+                                                    ("", "EMBASA", 6000, None)], prof_final=1200)
+    m = mb.montar(banco, IDS + ["1-AA-7-RN"])
+    p = next(q for q in m["pocos"] if q["id"] == "1-AA-7-RN")
+    assert [u["chave"] for u in p["unidades"]] == ["JANDAI", "ACU"]
+    acu = p["unidades"][1]
+    assert acu["base_atingida"] is False and acu["base"] == 1200
+    assert any("abaixo do fundo do poço" in a and "1-AA-7-RN" in a for a in m["avisos"])
+    assert m["solido"]["base"] > -1500                    # a base do bloco não desce até a estimativa

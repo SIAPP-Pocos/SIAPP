@@ -749,6 +749,17 @@
             <button class="btn secundario pequeno" id="bl-csv" title="Topos e grade das superfícies, para o Excel">CSV</button>
             <button class="btn secundario pequeno" id="bl-pasta">Abrir a pasta</button>
           </div>
+          <div class="linha">
+            <span class="ajuda">Quanto o bloco erra:</span>
+            <button class="btn secundario pequeno" id="bl-validar"
+                    title="Tira cada poço, refaz o bloco sem ele e compara os topos previstos com os do AGP">Deixar um poço de fora</button>
+            <span class="ajuda">· Prognóstico num ponto:</span>
+            <button class="btn secundario pequeno" id="bl-prog-clique" aria-pressed="false"
+                    title="Clique num ponto do bloco para ver a coluna prevista ali">Clicar no bloco</button>
+            <input type="text" id="bl-prog-latlon" class="bl-latlon" placeholder="ou lat, lon (ex.: -5,02; -36,98)"
+                   inputmode="decimal">
+            <button class="btn secundario pequeno" id="bl-prog-ir">Prever</button>
+          </div>
         </div>
         <p class="ajuda resultado" id="bl-exportado"></p>
         <div class="bl-visor-box">
@@ -780,6 +791,33 @@
             </span>
           </div>
         </div>
+        <section class="bl-quadro" id="bl-prog" hidden>
+          <div class="bl-quadro-cab">
+            <h3 id="bl-prog-titulo">Prognóstico</h3>
+            <span>
+              <button class="btn secundario pequeno" id="bl-prog-csv">CSV</button>
+              <button class="btn secundario pequeno" id="bl-prog-limpar">Limpar</button>
+            </span>
+          </div>
+          <table class="bl-tabela" id="bl-prog-tabela"></table>
+          <p class="ajuda" id="bl-prog-notas"></p>
+        </section>
+        <section class="bl-quadro" id="bl-val" hidden>
+          <div class="bl-quadro-cab">
+            <h3>Validação cruzada (deixar um poço de fora)</h3>
+            <span>
+              <button class="btn secundario pequeno" data-validacao="csv">CSV</button>
+              <span class="ajuda">Figura:</span>
+              <button class="btn secundario pequeno" data-validacao="svg">SVG</button>
+              <button class="btn secundario pequeno" data-validacao="pdf">PDF</button>
+              <button class="btn secundario pequeno" data-validacao="png">PNG</button>
+            </span>
+          </div>
+          <p id="bl-val-resumo"></p>
+          <table class="bl-tabela" id="bl-val-tabela"></table>
+          <table class="bl-tabela estreita" id="bl-val-faixas"></table>
+          <ul class="sec-avisos" id="bl-val-avisos"></ul>
+        </section>
         <p class="ajuda" id="bl-resumo"></p>
         <div class="bl-unidades" id="bl-unidades"></div>
         <ul class="sec-avisos" id="bl-avisos"></ul>

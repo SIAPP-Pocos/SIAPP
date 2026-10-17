@@ -124,6 +124,16 @@ function mostrarBloco(r) {
   $("bl-corte").checked = false;
   $("bl-afastar").value = "0";
   $("bl-parede").checked = false;
+  // validação (guardada no registro) e prognóstico
+  bl.prog = null;
+  $("bl-prog").hidden = true;
+  ligarEscolha(false);
+  for (const id of ["bl-prog-clique", "bl-prog-ir", "bl-prog-latlon"]) {
+    if ($(id).dataset.titulo == null) $(id).dataset.titulo = $(id).title;
+    $(id).disabled = !temSolido;
+    $(id).title = temSolido ? $(id).dataset.titulo : "O prognóstico usa o bloco fechado, que este bloco não tem.";
+  }
+  mostrarValidacao(m.validacao || null);
   // exagero inicial: o relevo das superfícies ocupa ~1/4 da largura do bloco
   const g = m.grade, lado = Math.max(g.nx, g.ny) * g.passo;
   // pela faixa das superfícies (não pelo fundo dos poços, que pode ir muito abaixo)
@@ -149,7 +159,148 @@ function mostrarBloco(r) {
                                                nomes: $("bl-nomes").checked, caixa: $("bl-caixa").checked,
                                                trilha: $("bl-trilha").value, drape: drapeEscolhido(),
                                                modo: bl.modo, corte: opcoesCorte() });
+  window.BlocoVisor.validacao(m.validacao || null);
   trocarModo3d(bl.modo);
+}
+
+// ------------------------------------------------ validação cruzada
+async function validarBloco() {
+  if (!bl.ultimo) return;
+  status(`Validando: tirando cada um dos ${bl.modelo.pocos.length} poços e refazendo o bloco sem ele…`, "trab");
+  const r = await chamar($("bl-validar"), "bloco_validar", bl.ultimo);
+  if (!r.ok) return;
+  bl.modelo.validacao = r.validacao;
+  mostrarValidacao(r.validacao);
+  if (window.BlocoVisor) window.BlocoVisor.validacao(r.validacao);
+  if (bl.prog) preverBloco({ x: bl.prog.x, y: bl.prog.y });     // ganha a incerteza
+  const g = r.validacao.global.fechado.n ? r.validacao.global.fechado : r.validacao.global.superficie;
+  status(`Validação: ${r.validacao.n_comparacoes} topos de ${r.validacao.n_pocos} poços; metade com erro até ` +
+         `${numero(g.mediana, 0)} m.`, "ok");
+}
+
+function linhaTabela(tabela, textos, cabecalho = false) {
+  const tr = document.createElement("tr");
+  for (const t of textos) {
+    const c = document.createElement(cabecalho ? "th" : "td");
+    if (t && typeof t === "object") { c.append(...t.nos); if (t.cls) c.className = t.cls; if (t.span) c.colSpan = t.span; }
+    else c.textContent = t ?? "—";
+    tr.appendChild(c);
+  }
+  tabela.appendChild(tr);
+  return tr;
+}
+
+function chipUnidade(nome, cor) {
+  const i = el("i", "bl-cor");
+  i.style.background = cor;
+  return { nos: [i, document.createTextNode(" " + nome)] };
+}
+
+const m1 = (v) => (v == null ? "—" : numero(v, 1));
+
+function mostrarValidacao(val) {
+  $("bl-val").hidden = !val;
+  if (!val) return;
+  const f = val.global.fechado, s = val.global.superficie;
+  const piores = val.linhas.filter((l) => l.erro_fechado != null)
+    .sort((a, b) => Math.abs(b.erro_fechado) - Math.abs(a.erro_fechado)).slice(0, 5)
+    .map((l) => `${l.poco} (${l.unidade}, ${numero(l.erro_fechado, 0)} m)`);
+  let txt = `Tirando um poço de cada vez, ${val.n_comparacoes} topos de ${val.n_pocos} poços foram previstos sem o próprio poço.`;
+  if (f.n) txt += ` Bloco fechado: metade dos erros até ${numero(f.mediana, 0)} m, 68% até ${numero(f.p68, 0)} m` +
+                  (f.n_extrapolado ? ` (${f.n_extrapolado} topos extrapolados, fora do contorno dos outros poços).` : ".");
+  if (s.n) txt += ` Superfícies (só dentro do contorno, ${s.n} topos): ${numero(s.mediana, 0)} m e ${numero(s.p68, 0)} m.`;
+  if (piores.length) txt += ` Maiores erros (confira o AGP desses poços; pode ser também uma mudança brusca real, como uma falha): ${piores.join("; ")}.`;
+  $("bl-val-resumo").textContent = txt;
+  const t = limpar($("bl-val-tabela"));
+  const cab = document.createElement("thead");
+  t.appendChild(cab);
+  const g = linhaTabela(cab, ["", { nos: [document.createTextNode("bloco fechado (m)")], span: 6 },
+                              { nos: [document.createTextNode("superfícies (m)")], span: 3 }, ""], true);
+  g.className = "grupo";
+  linhaTabela(cab, ["unidade", "n", "viés", "mediana", "68% ≤", "máx.", "poço do máx.", "n", "mediana", "68% ≤",
+                    "espessura, erro médio"], true);
+  const corpo = document.createElement("tbody");
+  t.appendChild(corpo);
+  for (const u of val.unidades) {
+    const a = u.fechado, b = u.superficie;
+    linhaTabela(corpo, [chipUnidade(u.nome, u.cor), String(u.n), a.n ? m1(a.vies) : "—", a.n ? m1(a.mediana) : "—",
+                        a.n ? m1(a.p68) : "—", a.n ? numero(a.max, 0) : "—", { nos: [document.createTextNode(a.max_poco || "")], cls: "texto" },
+                        String(b.n || 0), b.n ? m1(b.mediana) : "—", b.n ? m1(b.p68) : "—",
+                        u.espessura.n ? m1(u.espessura.ema) : "—"]);
+  }
+  const fx = limpar($("bl-val-faixas"));
+  const cab2 = document.createElement("thead");
+  fx.appendChild(cab2);
+  linhaTabela(cab2, ["distância ao poço mais próximo", "topos", "68% ≤ (fechado)", "68% ≤ (superfícies)"], true);
+  const corpo2 = document.createElement("tbody");
+  fx.appendChild(corpo2);
+  for (const q of val.faixas) {
+    if (!q.n) continue;
+    const rot = q.ate == null ? `mais de ${numero(q.de, 0)} km` : `${numero(q.de, 0)} a ${numero(q.ate, 0)} km`;
+    linhaTabela(corpo2, [rot, String(q.n), m1(q.p68_fechado), q.n_superficie ? m1(q.p68_superficie) : "—"]);
+  }
+  const ul = limpar($("bl-val-avisos"));
+  for (const a of val.avisos || []) ul.appendChild(el("li", "", a));
+}
+
+async function exportarValidacao(botao) {
+  if (!bl.ultimo) return;
+  const r = await chamar(botao, "bloco_exportar_validacao", bl.ultimo, botao.dataset.validacao);
+  if (r.ok) {
+    $("bl-exportado").textContent = `Salvo em ambiente_teste/${r.arquivo}`;
+    status(`Validação exportada: ${r.arquivo}`, "ok");
+  }
+}
+
+// ------------------------------------------------ prognóstico num ponto
+function ligarEscolha(sim) {
+  const b = $("bl-prog-clique");
+  b.setAttribute("aria-pressed", String(sim));
+  if (!window.BlocoVisor) return;
+  window.BlocoVisor.escolherPonto(sim ? (pt) => { ligarEscolha(false); preverBloco(pt); } : null);
+}
+
+async function preverBloco(ponto) {
+  if (!bl.ultimo) return;
+  const r = await chamar($("bl-prog-ir"), "bloco_prognostico", bl.ultimo, ponto);
+  if (!r.ok) return;
+  bl.prog = r;
+  mostrarPrognostico(r);
+  if (window.BlocoVisor) window.BlocoVisor.pino(r);
+}
+
+function mostrarPrognostico(p) {
+  $("bl-prog").hidden = false;
+  $("bl-prog-titulo").textContent = `Prognóstico em ${numero(p.lat, 5)}°, ${numero(p.lon, 5)}° · terreno ${numero(p.terreno, 0)} m`;
+  const t = limpar($("bl-prog-tabela"));
+  const cab = document.createElement("thead");
+  t.appendChild(cab);
+  linhaTabela(cab, ["camada", "topo (cota, m)", "prof. abaixo do terreno (m)", "± (m)", "espessura (m)",
+                    "base (cota, m)", "", "poço mais próximo com a unidade a"], true);
+  const corpo = document.createElement("tbody");
+  t.appendChild(corpo);
+  for (const c of p.camadas) {
+    const tr = linhaTabela(corpo, [chipUnidade(c.nome, c.cor), numero(c.topo, 0), numero(c.prof_topo, 0),
+                                   c.presente && c.incerteza_m != null ? numero(c.incerteza_m, 0) : "—",
+                                   c.presente ? numero(c.espessura, 0) : "ausente", numero(c.base, 0),
+                                   { nos: [document.createTextNode(c.presente ? (c.interpolado ? "interpolado" : "extrapolado") : "")], cls: "texto" },
+                                   c.dist_km != null ? `${numero(c.dist_km, 1)} km` : "—"]);
+    if (!c.presente) tr.className = "ausente";
+  }
+  const notas = [`Poços mais próximos: ${p.proximos.map((q) => `${q.poco} (${numero(q.dist_km, 1)} km)`).join(", ")}.`,
+                 "Profundidade a partir do terreno (a mesa rotativa fica alguns metros acima).",
+                 "± = erro que 68% das previsões da validação cruzada não passaram, para a unidade e a distância.",
+                 ...p.avisos];
+  $("bl-prog-notas").textContent = notas.join(" ");
+}
+
+async function exportarPrognostico() {
+  if (!bl.ultimo || !bl.prog) return;
+  const r = await chamar($("bl-prog-csv"), "bloco_exportar_prognostico", bl.ultimo, { x: bl.prog.x, y: bl.prog.y });
+  if (r.ok) {
+    $("bl-exportado").textContent = `Salvo em ambiente_teste/${r.arquivo}`;
+    status(`Prognóstico exportado: ${r.arquivo}`, "ok");
+  }
 }
 
 function opcoesCorte() {
@@ -391,6 +542,24 @@ function ligarBloco() {
   for (const id of ["bl-corte-x", "bl-corte-y"]) ligar(id, "oninput", corte);
   ligar("bl-afastar", "oninput", () => window.BlocoVisor && window.BlocoVisor.afastar(Number($("bl-afastar").value)));
   ligar("bl-parede", "onchange", paredeBloco);
+  ligar("bl-validar", "onclick", validarBloco);
+  for (const b of document.querySelectorAll("[data-validacao]")) b.onclick = () => exportarValidacao(b);
+  ligar("bl-prog-clique", "onclick", () => {
+    const sim = $("bl-prog-clique").getAttribute("aria-pressed") !== "true";
+    ligarEscolha(sim);
+    if (sim) status("Clique num ponto do bloco (sem arrastar).");
+  });
+  ligar("bl-prog-ir", "onclick", () => {
+    if ($("bl-prog-latlon").value.trim()) preverBloco({ latlon: $("bl-prog-latlon").value });
+    else status("Escreva lat, lon ou use \"Clicar no bloco\".", "erro");
+  });
+  ligar("bl-prog-csv", "onclick", exportarPrognostico);
+  ligar("bl-prog-latlon", "onkeydown", (ev) => { if (ev.key === "Enter") $("bl-prog-ir").click(); });
+  ligar("bl-prog-limpar", "onclick", () => {
+    bl.prog = null;
+    $("bl-prog").hidden = true;
+    if (window.BlocoVisor) window.BlocoVisor.pino(null);
+  });
   for (const b of document.querySelectorAll("[data-vista3d]")) {
     b.onclick = () => window.BlocoVisor && window.BlocoVisor.vista(b.dataset.vista3d);
   }

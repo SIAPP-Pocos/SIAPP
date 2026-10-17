@@ -6,6 +6,31 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 
 ## [Não lançado]
 
+## [0.21.0] — 2026-10-17
+### Adicionado
+- **Validação cruzada do bloco** (`motor/bloco_validacao.py`), botão **Deixar um poço de
+  fora**: cada poço sai do bloco, o bloco é refeito sem ele e prevê a cota de cada topo
+  daquele poço, comparada com a do AGP. Nos dois modos (bloco fechado e superfícies), com as
+  mesmas regras da montagem. Por unidade: viés, mediana do erro, erro que 68% não passam,
+  máximo (e o poço); por faixa de distância ao poço mais próximo com a unidade; erro da
+  espessura. Guardada no registro do bloco (reabre junto); CSV e **figura estilo artigo**
+  (previsto × AGP, erro × distância, tabela). Tirar um ponto da triangulação só refaz a
+  estrela dele (conferido igual a refazer tudo): 429 poços em ~12 s.
+- **Prognóstico num ponto**: clicar no bloco (ou escrever lat, lon) mostra a coluna prevista
+  — topo (cota e profundidade abaixo do terreno), espessura e base de cada camada,
+  interpolado ou extrapolado, distância ao poço mais próximo com a unidade e, com a validação
+  feita, a **incerteza** de cada topo (o erro que 68% das previsões não passaram, da unidade
+  na mesma faixa de distância). Pino no visor; CSV.
+- Na dica de cada topo dos poços: a cota prevista sem aquele poço e o erro.
+### Corrigido
+- **Topos abaixo do fundo do poço** (estimativas da operadora, não perfuradas — ex.:
+  Embasamento a 6.134 m no 1-JD-2-RN, de 1.865 m) ficam fora do bloco, com aviso; base abaixo
+  do fundo conta como não atingida. Na Potiguar (Cat. 1), 64 poços; a base automática do
+  bloco regional subiu de −6.310 para −4.690 m.
+- Base automática do bloco fechado pelo dado (fundos e limites observados), não pela
+  interpolação.
+- Pontos repetidos (poços do mesmo pad) entram uma vez, com a média.
+
 ## [0.20.0] — 2026-10-17
 ### Adicionado
 - **Bloco fechado** (`motor/bloco_solido.py`): da mesma montagem do bloco, o volume inteiro

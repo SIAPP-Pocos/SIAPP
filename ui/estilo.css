@@ -614,6 +614,21 @@ input.sugestao { background: #fff6d6; border-color: #e0b84a; }
 .bl-controles label[hidden] { display: none; }
 .bl-controles input[type=range] { width: 130px; }
 .bl-fechado-ctl { display: contents; }
+.bl-latlon { width: 210px; }
+.bl-quadro { border: 1px solid var(--linha); border-radius: 8px; padding: 10px 14px; margin: 10px 0; background: var(--painel); overflow-x: auto; }
+.bl-quadro-cab { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 6px 12px; }
+.bl-quadro-cab h3 { margin: 0; font-size: 14px; }
+.bl-quadro p { margin: 6px 0; font-size: 13px; }
+.bl-tabela { width: 100%; border-collapse: collapse; font-size: 12.5px; margin: 6px 0; }
+.bl-tabela.estreita { width: auto; min-width: 420px; }
+.bl-tabela th, .bl-tabela td { padding: 3px 8px; border-bottom: 1px solid var(--linha); text-align: right; white-space: nowrap; }
+.bl-tabela th:first-child, .bl-tabela td:first-child { text-align: left; }
+.bl-tabela th { font-weight: 600; color: var(--suave); }
+.bl-tabela td.texto { text-align: left; }
+.bl-tabela tr.ausente td { color: var(--suave); }
+.bl-tabela .grupo th { border-bottom: none; font-style: italic; font-weight: 400; text-align: center; }
+.bl-visor canvas.escolhendo { cursor: crosshair; }
+#bl-prog-clique[aria-pressed="true"] { border-color: var(--destaque); background: var(--destaque-claro); font-weight: 600; }
 .bl-fechado-ctl[hidden] { display: none; }
 .bl-fechado-ctl input[type=range] { width: 100px; }
 .bl-modos { display: inline-flex; margin-right: 10px; }

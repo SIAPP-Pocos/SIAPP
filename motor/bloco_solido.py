@@ -55,7 +55,7 @@ def interpolar_grade(pts, valores, grade: dict) -> tuple[np.ndarray, np.ndarray]
     """Valor em todos os nós da grade: linear nos triângulos dos pontos; fora deles, o do
     ponto mais próximo na borda do contorno (com menos de 3 pontos ou alinhados: o do ponto
     mais próximo). Devolve (z, controle), controle = nó dentro do contorno dos pontos."""
-    pts, valores = np.asarray(pts, float).reshape(-1, 2), np.asarray(valores, float)
+    pts, valores = unicos(pts, valores)
     nx, ny = grade["nx"], grade["ny"]
     gx, gy = _nos(grade)
     if len(pts) == 0:
@@ -77,13 +77,28 @@ def interpolar_grade(pts, valores, grade: dict) -> tuple[np.ndarray, np.ndarray]
     return z, controle
 
 
+def unicos(pts, valores) -> tuple[np.ndarray, np.ndarray]:
+    """Pontos repetidos (mesma posição, ao milímetro) viram um só, com a média dos valores —
+    poços do mesmo pad, ou o topo de duas unidades no mesmo ponto."""
+    pts, valores = np.asarray(pts, float).reshape(-1, 2), np.asarray(valores, float)
+    if len(pts) == 0:
+        return pts, valores
+    chaves = [(round(float(a), 6), round(float(b), 6)) for a, b in pts]
+    grupos: dict = {}
+    for i, c in enumerate(chaves):
+        grupos.setdefault(c, []).append(i)
+    if len(grupos) == len(pts):
+        return pts, valores
+    ids = list(grupos.values())
+    return (np.array([pts[g[0]] for g in ids]), np.array([float(np.mean(valores[g])) for g in ids]))
+
+
 def _pela_borda(pts, valores, h, x, y) -> np.ndarray:
     """Valor no ponto mais próximo da borda do contorno convexo `h`: as arestas do contorno
-    são arestas da triangulação, e nelas a interpolação linear vai de um poço ao outro."""
-    val = {}
-    for (a, b), v in zip(np.round(pts, 9), valores):
-        val.setdefault((a, b), v)                       # repetido: o 1º (como a triangulação)
-    vh = np.array([val[(a, b)] for a, b in np.round(h, 9)])
+    são arestas da triangulação, e nelas a interpolação linear vai de um poço ao outro.
+    (`pts` sem repetidos.)"""
+    val = {(round(float(a), 9), round(float(b), 9)): v for (a, b), v in zip(pts, valores)}
+    vh = np.array([val[(round(float(a), 9), round(float(b), 9))] for a, b in h])
     melhor = np.full(x.shape, np.inf)
     out = np.zeros(x.shape)
     for k in range(len(h)):
@@ -259,6 +274,63 @@ def borda(grade: dict, poligono) -> np.ndarray:
 
 
 # ============================================================== bloco fechado
+def observacoes(modelo: dict) -> dict:
+    """O que os poços dizem, nas regras do bloco fechado (usado pela montagem, pela validação
+    cruzada e pelo prognóstico, para os três seguirem exatamente as mesmas regras).
+
+    - terreno: [(x, y, cota, poço)];
+    - lim[k]: [(x, y, cota, poço, presente)] — limite *k* observado no poço; `presente` = é o
+      topo da própria unidade *k* (e não o de uma mais funda, com a *k* ausente);
+    - esp[k]: [(x, y, espessura, poço)] — espessura da unidade *k* (≥ 0);
+    - referencia: índice do limite interpolado direto (o mais fundo com ≥ 90% das observações).
+    """
+    pocos, legenda = modelo["pocos"], modelo["legenda"]
+    ordem = {u["chave"]: k for k, u in enumerate(legenda)}
+    n = len(legenda)
+    terreno, fonte = [], {"cadastro": 0, "mesa": 0}
+    difs = [p["mesa"] - p["terreno"] for p in pocos if p.get("terreno") is not None and p["mesa"] is not None]
+    dif = float(np.median(difs)) if difs else DIF_MESA_PADRAO_M
+    for p in pocos:
+        if p.get("terreno") is not None:
+            terreno.append((p["x"], p["y"], float(p["terreno"]), p["id"]))
+            fonte["cadastro"] += 1
+        elif p["mesa"] is not None:
+            terreno.append((p["x"], p["y"], float(p["mesa"]) - dif, p["id"]))
+            fonte["mesa"] += 1
+    lim = [[] for _ in range(n + 1)]
+    esp = [[] for _ in range(n)]
+    negativas = set()
+    for p in pocos:
+        us = sorted((u for u in p["unidades"] if u["chave"] in ordem), key=lambda u: ordem[u["chave"]])
+        if not us:
+            continue
+        por = {}
+        for u in us:                                  # unidade repetida: a de cima
+            por.setdefault(ordem[u["chave"]], u)
+        ultimo = max(por)
+        B = [None] * (n + 1)
+        for k in range(n + 1):
+            j = next((j for j in sorted(por) if j >= k), None)
+            if j is not None:
+                B[k] = (por[j]["x"], por[j]["y"], por[j]["cota_topo"], p["id"], j == k)
+        u = por[ultimo]
+        if u.get("base_atingida") and ultimo + 1 <= n:
+            B[ultimo + 1] = (u["x"], u["y"], u["cota_base"], p["id"], False)
+        for k in range(n + 1):
+            if B[k] is not None:
+                lim[k].append(B[k])
+        for k in range(n):
+            if B[k] is not None and B[k + 1] is not None:
+                e = B[k][2] - B[k + 1][2]
+                if e < -0.5:
+                    negativas.add(p["id"])
+                esp[k].append((B[k][0], B[k][1], max(0.0, e), p["id"]))
+    cont = [len(v) for v in lim[:n]]
+    ref = max(k for k in range(n) if cont[k] >= FRACAO_REFERENCIA * max(cont)) if n and max(cont) else None
+    return {"n": n, "ordem": ordem, "terreno": terreno, "fonte": fonte, "dif": dif, "dif_medida": bool(difs),
+            "lim": lim, "esp": esp, "negativas": negativas, "referencia": ref}
+
+
 def montar(modelo: dict, *, base_cota: float | None = None) -> dict:
     """Bloco fechado a partir do modelo do bloco (motor/bloco.montar). Não lê o banco."""
     pocos, legenda, g = modelo["pocos"], modelo["legenda"], modelo["grade"]
@@ -273,67 +345,26 @@ def montar(modelo: dict, *, base_cota: float | None = None) -> dict:
     ordem = {u["chave"]: k for k, u in enumerate(legenda)}
     n = len(legenda)
 
-    # ---- terreno
-    tp, tv, fonte = [], [], {"cadastro": 0, "mesa": 0}
-    difs = [p["mesa"] - p["terreno"] for p in pocos if p.get("terreno") is not None and p["mesa"] is not None]
-    dif = float(np.median(difs)) if difs else DIF_MESA_PADRAO_M
-    for p in pocos:
-        if p.get("terreno") is not None:
-            tp.append((p["x"], p["y"]))
-            tv.append(p["terreno"])
-            fonte["cadastro"] += 1
-        elif p["mesa"] is not None:
-            tp.append((p["x"], p["y"]))
-            tv.append(p["mesa"] - dif)
-            fonte["mesa"] += 1
+    ob = observacoes(modelo)
+    tp, tv = [o[:2] for o in ob["terreno"]], [o[2] for o in ob["terreno"]]
+    lim_pts, lim_val = [[o[:2] for o in L] for L in ob["lim"]], [[o[2] for o in L] for L in ob["lim"]]
+    esp_pts, esp_val = [[o[:2] for o in L] for L in ob["esp"]], [[o[2] for o in L] for L in ob["esp"]]
+    fonte, dif, negativas = ob["fonte"], ob["dif"], ob["negativas"]
     if not tp:
         return {"ok": False, "avisos": ["Nenhum poço com cota do terreno ou da mesa: sem bloco fechado."]}
     if fonte["mesa"]:
         avisos.append(f"Terreno: {fonte['mesa']} poço(s) sem cota altimétrica no cadastro, usada a mesa rotativa "
-                      f"menos {dif:.1f} m " + ("(diferença mediana dos outros)." if difs else "(diferença típica)."))
+                      f"menos {dif:.1f} m " + ("(diferença mediana dos outros)." if ob["dif_medida"]
+                                               else "(diferença típica)."))
     terreno, _ = interpolar_grade(tp, tv, g)
-
-    # ---- limites observados em cada poço
-    lim_pts = [[] for _ in range(n + 1)]
-    lim_val = [[] for _ in range(n + 1)]
-    esp_pts = [[] for _ in range(n)]
-    esp_val = [[] for _ in range(n)]
-    negativas = set()
-    for p in pocos:
-        us = sorted((u for u in p["unidades"] if u["chave"] in ordem), key=lambda u: ordem[u["chave"]])
-        if not us:
-            continue
-        por = {}
-        for u in us:                                  # unidade repetida: a de cima
-            por.setdefault(ordem[u["chave"]], u)
-        ultimo = max(por)
-        B = [None] * (n + 1)
-        for k in range(n + 1):
-            prox = next((por[j] for j in sorted(por) if j >= k), None)
-            if prox is not None:
-                B[k] = (prox["x"], prox["y"], prox["cota_topo"])
-        u = por[ultimo]
-        if u.get("base_atingida") and ultimo + 1 <= n:
-            B[ultimo + 1] = (u["x"], u["y"], u["cota_base"])
-        for k in range(n + 1):
-            if B[k] is not None:
-                lim_pts[k].append(B[k][:2])
-                lim_val[k].append(B[k][2])
-        for k in range(n):
-            if B[k] is not None and B[k + 1] is not None:
-                e = B[k][2] - B[k + 1][2]
-                if e < -0.5:
-                    negativas.add(p["id"])
-                esp_pts[k].append(B[k][:2])
-                esp_val[k].append(max(0.0, e))
     if negativas:
         avisos.append(f"Ordem das unidades diferente da ordem média em {len(negativas)} poço(s) (espessura negativa "
                       f"tratada como zero): {', '.join(sorted(negativas)[:12])}{'…' if len(negativas) > 12 else ''}.")
 
-    cont = [len(v) for v in lim_val[:n]]
-    if max(cont) == 0:
+    ref = ob["referencia"]
+    if ref is None:
         return {"ok": False, "avisos": ["Sem topos utilizáveis: sem bloco fechado."]}
-    ref = max(k for k in range(n) if cont[k] >= FRACAO_REFERENCIA * max(cont))
+    cont = [len(v) for v in lim_val[:n]]
     if cont[ref] < 3:
         avisos.append(f"Referência ({legenda[ref]['nome']}) com só {cont[ref]} poço(s): o bloco é plano por partes.")
 
@@ -354,8 +385,9 @@ def montar(modelo: dict, *, base_cota: float | None = None) -> dict:
     # ---- base plana
     fundos = [p["cota_fundo"] for p in pocos if p.get("cota_fundo") is not None]
     obs = [v for vs in lim_val for v in vs]
-    conhecidos = [float(np.min(z)) for z in lim if z is not None]
-    baixo = min(fundos + obs + conhecidos)
+    # pelo dado (fundos dos poços e limites observados), não pela interpolação: espessuras
+    # extrapoladas na borda podem descer muito além de qualquer poço — ali o bloco é cortado
+    baixo = min(fundos + obs)
     alto = float(np.max(terreno))
     if base_cota is None:
         folga = max(10.0, 0.05 * (alto - baixo))

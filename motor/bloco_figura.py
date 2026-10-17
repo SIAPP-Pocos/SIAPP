@@ -647,7 +647,7 @@ def _no_caminho(p: dict, md: float):
 
 
 def exportar(svg: str, saida: str, formato: str) -> str:
-    os.makedirs(os.path.dirname(saida), exist_ok=True)
+    os.makedirs(os.path.dirname(saida) or ".", exist_ok=True)
     if formato == "svg":
         with open(saida, "w", encoding="utf-8") as f:
             f.write(svg)

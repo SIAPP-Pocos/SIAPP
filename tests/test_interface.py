@@ -600,3 +600,62 @@ def test_bloco_fechado_corte_camadas_e_secao(janela, tmp_path):
     janela.esperar("window.BlocoVisor.estado().modo === 'superficies'")
     assert p.input_value("#bl-opacidade") == "0.85"
     assert not janela.erros_js, janela.erros_js
+
+
+def test_bloco_validacao_e_prognostico(janela, tmp_path):
+    from test_secao import poco
+    p = janela.page
+    abrir_projeto(janela)
+    b = janela.api._banco
+    for pid, la, lo in [("1-AA-1-RN", -5.00, -37.00), ("1-AA-2-RN", -5.00, -36.96), ("1-AA-3-RN", -5.04, -37.00),
+                        ("1-AA-4-RN", -5.04, -36.96), ("1-AA-5-RN", -5.02, -36.98)]:
+        leste = (lo + 37.00) * 111.0
+        poco(b, pid, la, lo, 50.0, [("F", "JANDAI", 20, 300 + 10 * leste), ("F", "ACU", 300 + 10 * leste, 700)],
+             prof_final=900)
+    p.click("#aba-bloco")
+    janela.esperar("document.getElementById('bl-disponiveis').textContent.includes('5 poço')")
+    p.click("#bl-selecionar")
+    janela.esperar("document.getElementById('bl-n').textContent === '5'")
+    p.click("#bl-montar")
+    janela.esperar("window.BlocoVisor && window.BlocoVisor.estado().superficies === 2", 30)
+    assert p.locator("#bl-val").is_hidden() and p.locator("#bl-prog").is_hidden()
+    # validação cruzada
+    p.click("#bl-validar")
+    janela.esperar("!document.getElementById('bl-val').hidden", 60)
+    assert "previstos sem o próprio poço" in p.text_content("#bl-val-resumo")
+    assert "Açu" in p.text_content("#bl-val-tabela") or "ACU" in p.text_content("#bl-val-tabela")
+    assert p.locator("#bl-val-faixas tbody tr").count() >= 1
+    # prognóstico pelo clique no bloco
+    p.click("#bl-prog-clique")
+    assert p.evaluate("window.BlocoVisor.estado().escolhendo")
+    p.click("[data-vista3d='cima']")
+    caixa = p.locator("#bl-visor canvas").bounding_box()
+    p.mouse.click(caixa["x"] + caixa["width"] / 2, caixa["y"] + caixa["height"] / 2)
+    janela.esperar("!document.getElementById('bl-prog').hidden", 30)
+    assert p.evaluate("window.BlocoVisor.estado().pino") >= 2
+    assert not p.evaluate("window.BlocoVisor.estado().escolhendo")
+    assert "Prognóstico em" in p.text_content("#bl-prog-titulo")
+    assert "±" in p.text_content("#bl-prog-tabela") and "interpolado" in p.text_content("#bl-prog-tabela")
+    # por coordenadas
+    p.fill("#bl-prog-latlon", "-5,02; -36,98")
+    p.press("#bl-prog-latlon", "Enter")
+    janela.esperar("document.getElementById('bl-prog-titulo').textContent.includes('-5,02')", 30)
+    p.fill("#bl-prog-latlon", "abc")
+    p.click("#bl-prog-ir")
+    janela.esperar("document.getElementById('status').textContent.includes('graus decimais')")
+    # exportações
+    for f in ("csv", "svg"):
+        p.click(f"[data-validacao='{f}']")
+        janela.esperar(f"document.getElementById('bl-exportado').textContent.includes('_validacao.{f}')", 30)
+    p.click("#bl-prog-csv")
+    janela.esperar("document.getElementById('bl-exportado').textContent.includes('_prognostico_')", 30)
+    pasta = tmp_path / "ambiente_teste" / "exportacoes" / "blocos"
+    assert next(pasta.glob("*_validacao.csv")).read_text("utf-8-sig").startswith("poco;unidade")
+    assert "Formação" in next(pasta.glob("*_prognostico_*.csv")).read_text("utf-8-sig") or \
+        "JANDAI" in next(pasta.glob("*_prognostico_*.csv")).read_text("utf-8-sig")
+    p.click("#bl-prog-limpar")
+    assert p.evaluate("window.BlocoVisor.estado().pino") == 0
+    # reabrir do histórico: a validação vem junto
+    p.click("#bl-historico button")
+    janela.esperar("!document.getElementById('bl-val').hidden", 30)
+    assert not janela.erros_js, janela.erros_js

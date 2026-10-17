@@ -131,6 +131,19 @@ Precisa de internet. Comece por uma categoria pequena para ver o tempo.
 - [ ] Sem intervalo marcado, **Calcular** explica que precisa de um intervalo-alvo.
 - [ ] Repetir no `5PX__0011__RN_5PX__0011__RN.tif` (DLIS de 2020).
 
+## 0.21 — validação cruzada e prognóstico
+
+- [ ] **Bloco 3D** → `ESTREITO` → Montar → **Deixar um poço de fora**: em segundos, o quadro "Validação
+      cruzada" com o resumo (metade dos erros até ~15 m), a tabela por unidade e a tabela por distância.
+- [ ] Passe o mouse no disco de um topo de um poço: "sem este poço: bloco fechado … (erro …)".
+- [ ] **CSV** e **Figura → PDF** da validação em `exportacoes\blocos\bloco_…_validacao.*`.
+- [ ] Feche e reabra o bloco em *Blocos anteriores*: a validação volta junto.
+- [ ] **Clicar no bloco** → clique num ponto entre os poços (sem arrastar): o quadro "Prognóstico" com a
+      coluna prevista (topo, profundidade abaixo do terreno, ±, espessura) e um pino vermelho no visor.
+- [ ] Escreva `-5,40; -36,85` e **Prever** (ou Enter). **CSV** do prognóstico. **Limpar** tira o pino.
+- [ ] Bacia inteira (Potiguar, Cat. 1): a validação leva ~15 s; o aviso "Topos abaixo do fundo do poço"
+      lista os poços com o topo estimado (ex.: 1-JD-2-RN); a base do bloco fica perto de −4.700 m.
+
 ## 0.20 — bloco fechado
 
 - [ ] **Bloco 3D** → `ESTREITO` → Montar → botão **Bloco fechado**: um bloco opaco com paredes retas,

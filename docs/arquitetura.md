@@ -27,6 +27,7 @@
     secao_classica.py  estilo clássico: padrões de rocha, carimbo, mapa de localização
     bloco.py        bloco 3D: contorno convexo, Delaunay, superfícies de topo (só numpy) → janela com three.js
     bloco_solido.py bloco fechado: limites das camadas em grade (espessuras), malha do contorno, perfil A–A′
+    bloco_validacao.py deixar um poço de fora (interpolador por ponto que refaz só a estrela) e prognóstico
     bloco_figura.py figura estática do bloco (SVG → PDF/PNG pelo PyMuPDF)
     direcionais.py  dados direcionais: 5 leiautes, curvatura mínima (tabela direcionais)
     ferramentas.py  esquemas de ferramentas: tipo da corrida, ferramentas, vínculo com os perfis (tabela esquemas)
