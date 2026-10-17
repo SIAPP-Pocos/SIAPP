@@ -6,6 +6,26 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 
 ## [Não lançado]
 
+## [0.17.0] — 2026-10-16
+### Adicionado
+- **Esquemas de ferramentas**: o SIAPP diz o que é cada arquivo de perfil do poço —
+  perfilagem convencional, teste de formação a cabo, imagem, RMN, cimentação, correlação…
+  — com nº da corrida, passada (principal/repetida) e fase.
+  - Pelo **nome** (sem baixar nada): o esquema se liga aos perfis da mesma corrida
+    (`raw1_toolstring.pdf` ↔ `raw1-10028.dlis`, `RFT_tool.pdf` ↔ `RFT1..8.DLIS`); 84% dos
+    perfis da Potiguar ficam ligados só assim.
+  - Pela **leitura do PDF**: texto embutido ou OCR (modelo inglês, baixado uma vez, ~4 MB;
+    imagem de baixa resolução ampliada; página girada tratada). Ferramentas reconhecidas
+    pelo dicionário `recursos/ferramentas.json` tolerando os erros típicos do OCR,
+    fabricante, carimbo (data, poço, cadastro, operadora), diâmetro máximo.
+- Ficha do poço: seção **Esquemas de ferramentas** (tipo, ferramentas, o que medem,
+  perfis da corrida, abrir o PDF) e botão **Ler os esquemas**; rótulo da corrida em cada
+  arquivo de perfil do acervo.
+- Aba Perfis: rótulo da corrida na lista e no cabeçalho do perfil aberto, com as ferramentas.
+- Levantamento: etapa 4 opcional, **ler os esquemas de ferramentas**; resumo por tipo.
+- Tabela `esquemas` no banco (migração 5); cópias em `ambiente_teste/esquemas/`.
+  `docs/ferramentas.md`. `docs/roteiro.md` com o que fica para o final.
+
 ## [0.16.0] — 2026-10-16
 ### Adicionado
 - Seção estratigráfica no **estilo clássico (indústria)**, agora o padrão: coluna

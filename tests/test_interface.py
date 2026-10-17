@@ -389,3 +389,63 @@ def test_secao_com_gr_do_perfil_lido(janela, tmp_path):
     e = api.secao_exportar(r["id"], "pdf")
     assert e["ok"] and os.path.isfile(tmp_path / "ambiente_teste" / e["arquivo"])
     assert not api.secao_exportar("../x", "svg")["ok"]
+
+
+def test_esquemas_de_ferramentas_na_ficha_e_na_aba_perfis(janela, monkeypatch, tmp_path):
+    from test_avaliacao import las_reservatorio
+    from test_ferramentas import esquema_pdf
+    from test_levantamento import LAS, ClienteFalso
+    from test_pocos import csv_exemplo
+    from motor import documentos as md
+    from motor import reate
+    pdf = open(esquema_pdf(tmp_path / "e.pdf", carimbo=["DATA: 10/05/2008", "POCO: 1-AURI-12-RN"]), "rb").read()
+    base = "/POCO/Categoria-1/1-AURI-12-RN/"
+    falso = ClienteFalso({
+        base + "Perfil Convencional/1-auri-12-rn_raw.las": LAS,
+        base + "Esquema de Ferramentas/1-auri-12-rn_raw_toolstring.pdf": pdf,
+    })
+    monkeypatch.setattr(reate.ClienteREATE, "da_bacia", classmethod(lambda cls, bacia, **kw: falso))
+    # sem internet no teste: o modelo de OCR não é baixado (o PDF sintético tem texto)
+    monkeypatch.setattr("ponte.ferramentas.PASTA_TESSDATA", str(tmp_path / "tessdata"))
+
+    def sem_rede(*a, **k):
+        raise md.ErroDocumento("sem rede")
+    monkeypatch.setattr("ponte.ferramentas.md.baixar_idioma", sem_rede)
+    p = janela.page
+    abrir_projeto(janela)
+    janela.api._importar_cadastro(csv_exemplo(), "anp:teste")
+    p.click("#aba-mapa")
+    janela.esperar("document.getElementById('mapa-resumo').textContent.includes('poço')")
+    p.select_option("#lv-bacia", "Potiguar")
+    assert not p.is_checked("#lv-esquemas")
+    p.click("#lv-iniciar")
+    janela.esperar("document.getElementById('lv-resumo').textContent.includes('Esquemas de ferramentas')", 30)
+    p.evaluate("abrirFicha('1-AURI-12-RN')")
+    janela.esperar("document.getElementById('fi-corpo').textContent.includes('Esquemas de ferramentas (1)')")
+    # antes de ler: o tipo da corrida pelo nome, e o perfil já rotulado
+    assert "Perfilagem convencional" in p.text_content(".esq-cartao")
+    assert "Perfilagem convencional" in p.text_content(".acervo-lista")
+    assert "1-auri-12-rn_raw.las" in p.text_content(".esq-perfis")
+    p.click(".esq-ficha + .linha .btn-abrir")
+    janela.esperar("document.querySelectorAll('.esq-chips .chip').length >= 5", 30)
+    p.evaluate("lerEsquemasPoco(null, '1-AURI-12-RN')")     # já lido: nada a baixar, só o aviso
+    janela.esperar("document.getElementById('status').textContent.includes('já foram lidos')")
+    chips = p.text_content(".esq-chips")
+    assert "HILTB" in chips and "DSLT" in chips and "HAIT" in chips and "LEH" not in chips
+    cartao = p.text_content(".esq-cartao")
+    assert "Schlumberger" in cartao and "10/05/2008" in cartao and "Abrir o PDF" in cartao
+    assert (tmp_path / "ambiente_teste" / "esquemas" / "Potiguar" / "1-AURI-12-RN" /
+            "1-auri-12-rn_raw_toolstring.pdf").is_file()
+    # o perfil baixado com o mesmo nome mostra a corrida na aba Perfis
+    pasta = tmp_path / "ambiente_teste" / "bruto" / "Potiguar" / "1-AURI-12-RN" / "Perfil Convencional"
+    pasta.mkdir(parents=True)
+    las_reservatorio(pasta / "1-auri-12-rn_raw.las")
+    janela.api._abrir_projeto(str(tmp_path / "ambiente_teste"))
+    p.click("#aba-perfis")
+    janela.esperar("document.querySelectorAll('#lista-perfis button').length === 1")
+    assert "Perfilagem convencional" in p.text_content("#lista-perfis")
+    p.click("#lista-perfis button")
+    janela.esperar("!document.getElementById('pf-corrida').hidden", 30)
+    texto = p.text_content("#pf-corrida")
+    assert "Perfilagem convencional" in texto and "HILTB" in texto
+    assert not janela.erros_js, janela.erros_js

@@ -9,7 +9,8 @@
 │        ▼                                         │ eventoDocumento(…)         │
 │                                                  │ eventoLevantamento(…)      │
 │  ponte/  API da janela, uma parte por aba (catalogo, pocos, documentos,       │
-│          vocabulario, fatos, perfis, comunidade, levantamento, secao) — valida│
+│          vocabulario, fatos, perfis, comunidade, levantamento, secao,         │
+│          ferramentas) — valida,                                               │
 │          chama o motor, devolve dicionários; nunca deixa exceção chegar ao JS │
 └──────────────┬───────────────────────────────────────────────────────────────┘
                ▼
@@ -24,6 +25,7 @@
     agp.py          AGP da ANP: topos, lama, testes, litologia (tabelas agp, agp_unidades)
     secao.py        seção estratigráfica pelos topos do AGP → SVG (PNG/PDF pelo PyMuPDF)
     secao_classica.py  estilo clássico: padrões de rocha, carimbo, mapa de localização
+    ferramentas.py  esquemas de ferramentas: tipo da corrida, ferramentas, vínculo com os perfis (tabela esquemas)
                ▼
   ambiente_teste/  — pasta de projeto (contrato entre as partes)
 ```

@@ -131,6 +131,28 @@ Precisa de internet. Comece por uma categoria pequena para ver o tempo.
 - [ ] Sem intervalo marcado, **Calcular** explica que precisa de um intervalo-alvo.
 - [ ] Repetir no `5PX__0011__RN_5PX__0011__RN.tif` (DLIS de 2020).
 
+## 0.17 — esquemas de ferramentas
+
+Antes: o levantamento da Potiguar já feito (Cat. 1 basta). Sem marcar nada novo.
+
+- [ ] **Mapa** → ficha do `1-AURI-12-RN`: seção **Esquemas de ferramentas (2)** — `AIT_tool`
+      como *Perfil de resistividade* e `RFT_tool` como *Teste de formação a cabo*, pelo nome.
+- [ ] Em **No acervo do REATE**, embaixo de cada arquivo: `AIT_P` → *passada principal*,
+      `AIT_R` → *passada repetida*, `RFT1`…`RFT8` → *Teste de formação a cabo · corrida N*.
+- [ ] **Ler os esquemas (OCR)**: na primeira vez baixa o modelo de OCR em inglês (~4 MB).
+      Depois de alguns segundos o `AIT_tool` vira *Perfilagem convencional* com as ferramentas
+      (HGNS, HILTB, MCFL, HRCC, DSLT, HAIT), "Mede: raios gama, nêutron, densidade…",
+      Schlumberger, Ø máx. 4,63". Passe o mouse num código: nome, como foi lido, o que mede.
+- [ ] **Abrir o PDF**: abre a cópia em `ambiente_teste\esquemas\Potiguar\1-AURI-12-RN\` —
+      confira se as ferramentas batem com o desenho.
+- [ ] Outros poços para olhar: `8-PV-14-RN` (Tucker: GRT + FTT = testador), `3-BRSA-590-RN`
+      (FMI + GPIT = imagem), `7-CAM-1130-RN` (PDF com texto: lê sem OCR).
+- [ ] **Perfis**: um DLIS baixado de um poço com esquema mostra o rótulo na lista e, aberto,
+      "Corrida: … · ferramentas: …" embaixo do título.
+- [ ] Levantamento com **Ler os esquemas de ferramentas** marcado numa categoria pequena: a
+      etapa 4 aparece na barra e o resumo ganha "Esquemas de ferramentas" por tipo.
+- [ ] Sem internet: o botão ainda lê os PDFs com texto e avisa que faltou o OCR.
+
 ## 0.16 — seção no estilo clássico
 
 - [ ] **Seção** → Estilo **clássico (indústria)** (já vem marcado) → montar a seção de Estreito

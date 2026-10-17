@@ -10,6 +10,9 @@ _Como o SIAPP trata cada tipo de arquivo, com os testes em documentos reais e os
 
 ---
 
+> Esquemas de ferramentas (0.17) usam o mesmo OCR com o modelo **inglês "fast"**
+> (`eng.traineddata`, ~4 MB): ver [`ferramentas.md`](ferramentas.md).
+
 ## Visão geral
 
 | Tipo | O que é | Ver | Extrair | Usado em |

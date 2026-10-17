@@ -92,6 +92,7 @@ class PocosAPI:
         if d is None:
             raise ErroUsuario(f"Poço {poco} não está no cadastro nem no catálogo deste projeto.")
         d["acervo"] = mlv.arquivos_do_poco(self._banco, pid)
+        d["esquemas"] = self._esquemas(pid)
         d["agp"] = [{"caminho": g["caminho"], "poco_pasta": g["poco_pasta"], "confere": g["confere"],
                      "arquivo_local": g["arquivo_local"], "lido_em": g["lido_em"], **g["dados"]}
                     for g in magp.do_poco(self._banco, pid)]

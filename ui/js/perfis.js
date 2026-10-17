@@ -29,6 +29,8 @@ async function carregarPerfis() {
       s.title = `O nome termina em ${extensao(p.nome)}, mas o conteúdo do arquivo é ${p.formato.toUpperCase()}.`;
       info.appendChild(s);
     }
+    const sc = seloCorrida(p.corrida);
+    if (sc) info.appendChild(sc);
     info.append(
       el("span", "selo" + (p.inventariado ? " ok" : ""),
          p.inventariado ? `${p.n_curvas} curvas · ${numero(p.topo_m, 0)}–${numero(p.base_m, 0)} m` : "não lido"));
@@ -77,6 +79,12 @@ function mostrarPerfil(r) {
     c.cadastro && (/^\d{6,}$/.test(c.cadastro.trim()) ? `cadastro ANP ${c.cadastro}` : `UWI ${c.cadastro}`),
     `${numero(pf.limites[0], 1)} a ${numero(pf.limites[1], 1)} m`,
     `${r.inventario.quadros.length} quadro(s)`].filter(Boolean).join(" · ");
+  const co = r.corrida;
+  $("pf-corrida").hidden = !(co && co.rotulo);
+  $("pf-corrida").textContent = co && co.rotulo
+    ? `Corrida: ${co.rotulo}` + (co.ferramentas && co.ferramentas.length ? ` · ferramentas: ${co.ferramentas.join(" ")}` : "") +
+      (co.esquemas && co.esquemas.length ? ` (esquema ${co.esquemas.join(", ")})` : ` (pelo ${co.fonte})`)
+    : "";
   $("pf-aviso").hidden = !r.aviso;
   $("pf-aviso").textContent = r.aviso || "";
   const principal = r.inventario.quadros.find((q) => q.curvas.some((x) => x.familia === "GR")) || r.inventario.quadros[0];

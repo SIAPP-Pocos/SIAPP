@@ -229,6 +229,7 @@
           <span class="ajuda">sem escolher, levanta a bacia inteira</span>
         </div>
         <label class="opcao"><input type="checkbox" id="lv-agp" checked> <span>Ler o <strong>AGP</strong> de cada poço (topos de formação, lama, testes; ~40 KB por poço)</span></label>
+        <label class="opcao"><input type="checkbox" id="lv-esquemas"> <span>Ler os <strong>esquemas de ferramentas</strong> (OCR; ~200 KB e ~2 s por esquema — horas numa bacia inteira; dá para ler poço a poço na ficha)</span></label>
         <label class="opcao"><input type="checkbox" id="lv-curvas"> Listar as curvas (lê até 256 KB de cada perfil)</label>
         <label class="opcao"><input type="checkbox" id="lv-todos"> <span>Conferir também <code>.dlis</code> e <code>.las</code> pelo conteúdo</span></label>
         <div class="linha">
@@ -442,6 +443,7 @@
           <div>
             <h2 id="pf-titulo">—</h2>
             <p class="ajuda" id="pf-sub"></p>
+            <p class="ajuda" id="pf-corrida" hidden></p>
           </div>
           <div class="pf-faixa">
             <label>de <input id="pf-topo" type="text" inputmode="decimal"> m</label>
@@ -754,6 +756,7 @@
   <script src="js/comunidade.js"></script>
   <script src="js/mapa.js"></script>
   <script src="js/levantamento.js"></script>
+  <script src="js/ferramentas.js"></script>
   <script src="js/perfis.js"></script>
   <script src="js/avaliacao.js"></script>
   <script src="js/app.js"></script>

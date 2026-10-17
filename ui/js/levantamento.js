@@ -60,7 +60,8 @@ async function iniciarLevantamento() {
   const bacia = $("lv-bacia").value;
   const cats = [...document.querySelectorAll(".lv-cat:checked")].map((c) => c.value);
   const r = await chamar($("lv-iniciar"), "levantar_acervo", bacia, cats,
-                         $("lv-curvas").checked, $("lv-todos").checked, $("lv-agp").checked);
+                         $("lv-curvas").checked, $("lv-todos").checked, $("lv-agp").checked,
+                         $("lv-esquemas").checked);
   if (!r.ok) return;
   lvAtivo = true;
   mostrarAtivo(true);
@@ -144,6 +145,21 @@ function desenharResumoLevantamento(r) {
     }
     box.appendChild(ta);
   }
+  if (r.esquemas_disponiveis) {
+    box.appendChild(el("h3", "", "Esquemas de ferramentas"));
+    const te = el("table");
+    const linhas = [["Esquemas no portal", r.esquemas_disponiveis], ["lidos", r.esquemas_lidos],
+                    ["com ferramentas reconhecidas", r.esquemas_com_ferramentas]];
+    for (const [tipo, n] of Object.entries(r.esquemas_por_tipo || {}).sort((a, b) => b[1] - a[1])) {
+      linhas.push([`· ${NOMES_TIPO_CORRIDA[tipo] || tipo}`, n]);
+    }
+    for (const [rot, n] of linhas) {
+      const tr = el("tr");
+      tr.append(el("th", "", rot), el("td", "n", numero(n, 0)));
+      te.appendChild(tr);
+    }
+    box.appendChild(te);
+  }
   if (r.atualizado_em) box.appendChild(el("p", "ajuda", `Atualizado em ${dataCurta(r.atualizado_em)}.`));
 }
 
@@ -156,8 +172,8 @@ async function exportarLevantamento() {
 window.eventoLevantamento = function (ev) {
   if (ev.tipo === "etapa") {
     $("lv-texto").textContent = ev.texto;
-  } else if (ev.tipo === "listagem" || ev.tipo === "arquivo" || ev.tipo === "agp") {
-    const fase = { listagem: "1/3 · ", arquivo: "2/3 · ", agp: "3/3 · " }[ev.tipo];
+  } else if (["listagem", "arquivo", "agp", "esquema"].includes(ev.tipo)) {
+    const fase = { listagem: "1 · ", arquivo: "2 · ", agp: "3 · ", esquema: "4 · " }[ev.tipo];
     $("lv-texto").textContent = `${fase}${ev.texto} (${numero(ev.feito, 0)} de ${numero(ev.total, 0)})`;
     $("lv-texto").title = ev.texto;
     $("lv-barra").style.width = ev.total ? (100 * ev.feito / ev.total).toFixed(1) + "%" : "0%";
@@ -167,7 +183,8 @@ window.eventoLevantamento = function (ev) {
     mostrarAtivo(false);
     if (ev.tipo === "fim") {
       status(`Levantamento concluído: ${numero(ev.pocos, 0)} poço(s), ${numero(ev.arquivos_lidos, 0)} arquivo(s) conferidos pelo conteúdo` +
-             (ev.agps_lidos ? `, ${numero(ev.agps_lidos, 0)} AGP(s) lidos.` : "."), "ok");
+             (ev.agps_lidos ? `, ${numero(ev.agps_lidos, 0)} AGP(s) lidos` : "") +
+             (ev.esquemas_lidos ? `, ${numero(ev.esquemas_lidos, 0)} esquema(s) de ferramentas lidos.` : "."), "ok");
     } else if (ev.tipo === "cancelado") {
       status("Levantamento cancelado. O que já foi lido fica salvo; levante de novo para continuar.", "ok");
     } else {
@@ -182,7 +199,7 @@ window.eventoLevantamento = function (ev) {
 };
 
 // ------------------------------------------------ ficha do poço: o que há no portal
-function secaoAcervoFicha(corpo, acervo) {
+function secaoAcervoFicha(corpo, acervo, corridas) {
   if (!acervo || !acervo.length) return;
   corpo.appendChild(el("h3", "", `No acervo do REATE (${acervo.length} arquivo(s) de perfil)`));
   const ul = el("ul", "dic-lista acervo-lista");
@@ -197,6 +214,8 @@ function secaoAcervoFicha(corpo, acervo) {
     const nome = el("span", "", `${a.pasta ? a.pasta + "/" : ""}${a.nome} · ${tamanho(a.tamanho)}`);
     nome.title = a.caminho;
     li.append(selo, nome);
+    const sc = seloCorrida((corridas || {})[a.nome]);
+    if (sc) nome.append(el("br"), sc);
     const lista = a.curvas ? JSON.parse(a.curvas) : [];
     if (lista.length) {
       const c = el("span", "ajuda", `${lista.length} curva(s)${a.curvas_completas ? "" : "+"}`);

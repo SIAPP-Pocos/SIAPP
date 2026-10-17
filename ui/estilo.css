@@ -573,3 +573,22 @@ input.sugestao { background: #fff6d6; border-color: #e0b84a; }
 #sec-form-poco input { flex: 1; min-width: 0; }
 .dic-lista button.link { background: none; border: none; padding: 0; cursor: pointer; color: var(--destaque); font: 12px var(--sans); text-align: left; }
 .dic-lista button.link:hover { text-decoration: underline; }
+
+/* esquemas de ferramentas (0.17) */
+.selo.corrida { background: #eef1f6; color: #3b4a63; white-space: nowrap; }
+.selo.corrida.t-testador { background: #fdeee5; color: #a8471b; }
+.selo.corrida.t-imagem, .selo.corrida.t-mergulho { background: #efeafb; color: #5340b0; }
+.selo.corrida.t-rmn { background: #fbe9f1; color: #a43d6c; }
+.selo.corrida.t-convencional, .selo.corrida.t-resistividade, .selo.corrida.t-sonico { background: #e4eefb; color: #1f5fae; }
+.selo.corrida.t-cimentacao, .selo.corrida.t-correlacao { background: #fbf2dc; color: #8a6200; }
+.selo.corrida.t-amostrador, .selo.corrida.t-lwd { background: #e2f3ec; color: #157a55; }
+.selo.corrida.t-nd { background: var(--fundo); color: var(--suave); }
+.esq-ficha { display: grid; gap: 6px; max-height: 340px; overflow-y: auto; }
+.esq-cartao { border: 1px solid var(--linha); border-radius: 6px; padding: 6px 8px; background: var(--painel); display: grid; gap: 3px; }
+.esq-topo { display: flex; gap: 6px; align-items: baseline; flex-wrap: wrap; }
+.esq-nome { font: 12px var(--mono); overflow-wrap: anywhere; }
+.esq-chips { display: flex; flex-wrap: wrap; gap: 3px; }
+.esq-chips .chip { font: 600 10.5px var(--mono); padding: 1px 6px; border-radius: 4px; color: var(--tinta); cursor: help; }
+.esq-perfis { font: 11.5px var(--mono); color: var(--suave); overflow-wrap: anywhere; }
+.esq-cartao .btn-abrir { justify-self: start; }
+.acervo-lista .selo.corrida { display: inline-block; margin-top: 2px; white-space: normal; font-family: var(--sans); }

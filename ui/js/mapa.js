@@ -209,7 +209,8 @@ async function abrirFicha(id) {
   corpo.appendChild(ul);
 
   secaoAgpFicha(corpo, r.agp);
-  secaoAcervoFicha(corpo, r.acervo);
+  secaoEsquemasFicha(corpo, r.esquemas, id);
+  secaoAcervoFicha(corpo, r.acervo, (r.esquemas || {}).perfis);
 
   if (r.curvas.length) {
     corpo.appendChild(el("h3", "", "Curvas disponíveis"));

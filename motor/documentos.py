@@ -42,10 +42,11 @@ PIXELS_PAGINA = 8_000_000
 # quase quadradas, carregadas conforme a pessoa rola (perfil longo em TIF).
 LARGURA_VISOR = 2400
 IDIOMA = "por"
-URLS_IDIOMA = (   # tenta na ordem: modelo mais preciso, depois o padrão
-    "https://github.com/tesseract-ocr/tessdata_best/raw/main/por.traineddata",
-    "https://github.com/tesseract-ocr/tessdata/raw/main/por.traineddata",
+MODELOS_IDIOMA = (   # tenta na ordem: modelo mais preciso, depois o padrão
+    "https://github.com/tesseract-ocr/tessdata_best/raw/main/{idioma}.traineddata",
+    "https://github.com/tesseract-ocr/tessdata/raw/main/{idioma}.traineddata",
 )
+URLS_IDIOMA = tuple(u.format(idioma=IDIOMA) for u in MODELOS_IDIOMA)
 MIN_CARACTERES_EMBUTIDO = 40   # menos que isso: página tratada como imagem
 DPI_OCR = 300
 VERSAO_EXTRACAO = 1
@@ -65,21 +66,22 @@ def sem_acento(texto: str) -> str:
 
 
 # =========================================================== idioma do OCR
-def caminho_idioma(tessdata: str) -> str:
-    return os.path.join(tessdata, f"{IDIOMA}.traineddata")
+def caminho_idioma(tessdata: str, idioma: str = IDIOMA) -> str:
+    return os.path.join(tessdata, f"{idioma}.traineddata")
 
 
-def idioma_disponivel(tessdata: str) -> bool:
-    f = caminho_idioma(tessdata)
+def idioma_disponivel(tessdata: str, idioma: str = IDIOMA) -> bool:
+    f = caminho_idioma(tessdata, idioma)
     return os.path.isfile(f) and os.path.getsize(f) > 1_000_000
 
 
-def baixar_idioma(tessdata: str, progresso=None) -> None:
-    """Baixa o modelo de português do repositório oficial do Tesseract."""
+def baixar_idioma(tessdata: str, progresso=None, idioma: str = IDIOMA, modelos=MODELOS_IDIOMA) -> None:
+    """Baixa o modelo do idioma (português; inglês para os esquemas de ferramentas)
+    do repositório oficial do Tesseract. `modelos`: endereços a tentar, na ordem."""
     os.makedirs(tessdata, exist_ok=True)
-    destino = caminho_idioma(tessdata)
+    destino = caminho_idioma(tessdata, idioma)
     ultimo_erro = ""
-    for url in URLS_IDIOMA:
+    for url in (u.format(idioma=idioma) for u in modelos):
         try:
             with requests.get(url, stream=True, timeout=(20, 120)) as r:
                 if r.status_code != 200:
@@ -100,9 +102,10 @@ def baixar_idioma(tessdata: str, progresso=None) -> None:
             return
         except requests.exceptions.RequestException as e:
             ultimo_erro = type(e).__name__
+    nome = {"por": "português", "eng": "inglês"}.get(idioma, idioma)
     raise ErroDocumento(
-        f"Não foi possível baixar o idioma português do OCR ({ultimo_erro}). "
-        f"Baixe manualmente {URLS_IDIOMA[0]} e coloque o arquivo em {tessdata}")
+        f"Não foi possível baixar o idioma {nome} do OCR ({ultimo_erro}). "
+        f"Baixe manualmente {modelos[0].format(idioma=idioma)} e coloque o arquivo em {tessdata}")
 
 
 # ======================================================== limpeza da imagem

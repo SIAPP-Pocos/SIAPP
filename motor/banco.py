@@ -163,6 +163,16 @@ MIGRACOES: list[str] = [
     ALTER TABLE agp ADD COLUMN leitor INTEGER;
     CREATE INDEX agp_unidades_sigla ON agp_unidades(sigla);
     """,
+    # 5 — esquemas de ferramentas lidos (SIAPP 0.17): ferramentas, carimbo, tipo da corrida
+    """
+    CREATE TABLE esquemas(
+        bacia TEXT NOT NULL, caminho TEXT NOT NULL, poco_caminho TEXT, poco_id TEXT,
+        nome TEXT, tamanho INTEGER, arquivo_local TEXT, leitor INTEGER, metodo TEXT,
+        tipo TEXT, dados TEXT, erro TEXT, lido_em TEXT,
+        PRIMARY KEY (bacia, caminho)
+    );
+    CREATE INDEX esquemas_poco ON esquemas(poco_id);
+    """,
 ]
 
 

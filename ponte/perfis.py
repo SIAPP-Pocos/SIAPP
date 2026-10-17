@@ -40,7 +40,7 @@ class PerfisAPI:
     @resposta_segura
     def perfis(self):
         self._exigir_projeto()
-        saida = []
+        saida, cache = [], {}
         for a in self._banco.arquivos():
             if a["tipo"] != "perfil":
                 continue
@@ -50,7 +50,8 @@ class PerfisAPI:
                           "formato": formatos.formato(caminho),
                           "bytes": a["bytes"], "inventariado": bool(p and not p.get("erro")),
                           "n_curvas": p["n_curvas"] if p else 0,
-                          "topo_m": p["topo_m"] if p else None, "base_m": p["base_m"] if p else None})
+                          "topo_m": p["topo_m"] if p else None, "base_m": p["base_m"] if p else None,
+                          "corrida": self._corrida_do_arquivo(a["poco_id"], os.path.basename(a["rel"]), cache)})
         return {"perfis": saida}
 
     @resposta_segura
@@ -75,6 +76,7 @@ class PerfisAPI:
 
     def _curvas(self, rel, poco, inv):
         return {"rel": rel, "poco": poco, "inventario": inv,
+                "corrida": self._corrida_do_arquivo(poco, os.path.basename(rel)),
                 "topos_agp": [{"sigla": u["sigla"], "nome": u["nome"], "nivel": u["nivel"], "tip": u["tip"],
                                "topo": u["topo"], "base": u["base"]}
                               for u in magp.unidades_do_poco(self._banco, poco) if u["topo"] is not None],

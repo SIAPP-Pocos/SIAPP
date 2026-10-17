@@ -27,6 +27,7 @@ import threading
 from collections import Counter
 
 from . import agp as magp
+from . import ferramentas as mfe
 from . import formatos
 from .banco import Banco, agora
 from .pocos import chave
@@ -263,10 +264,14 @@ class Levantamento:
     def __init__(self, banco: Banco, bacia: str, categorias: list[str], *, emitir,
                  curvas: bool = False, conferir_todos: bool = False, familia=None,
                  cliente: ClienteREATE | None = None, agp: bool = False,
-                 pasta_agp: str | None = None, estratigrafia: dict | None = None):
+                 pasta_agp: str | None = None, estratigrafia: dict | None = None,
+                 esquemas: bool = False, pasta_projeto: str | None = None, tessdata: str | None = None,
+                 ferramentas: dict | None = None):
         self.banco, self.bacia, self.categorias = banco, bacia, list(categorias)
         self.emitir, self.curvas, self.conferir_todos, self.familia = emitir, curvas, conferir_todos, familia
         self.agp, self.pasta_agp, self.estratigrafia = agp, pasta_agp, estratigrafia or {}
+        self.esquemas, self.pasta_projeto, self.tessdata = esquemas, pasta_projeto, tessdata
+        self.ferramentas = ferramentas
         self.cliente = cliente or ClienteREATE.da_bacia(bacia)
         self.cancelar = threading.Event()
         self.thread: threading.Thread | None = None
@@ -358,8 +363,22 @@ class Levantamento:
                 self.emitir({"tipo": "arquivo", "feito": k, "total": len(fila),
                              "texto": f"Conferindo arquivos pelo conteúdo: {a['nome']}"})
         n_agp = self._ler_agps(alvo) if self.agp else 0
-        return {"pocos": n_pocos, "arquivos_lidos": len(fila), "agps_lidos": n_agp,
+        n_esq = self._ler_esquemas(alvo) if self.esquemas and self.ferramentas and self.pasta_projeto else 0
+        return {"pocos": n_pocos, "arquivos_lidos": len(fila), "agps_lidos": n_agp, "esquemas_lidos": n_esq,
                 "resumo": resumo(self.banco, self.bacia)}
+
+    def _ler_esquemas(self, alvo: list[str]) -> int:
+        """4. Esquemas de ferramentas (opcional; ~200 KB e ~2 s de OCR cada): só os ainda não lidos."""
+        fila = mfe.pendentes(self.banco, self.bacia, alvo)
+
+        def progresso(k, n, nome):
+            self._checar()
+            if k % 2 == 1 or k == n:
+                self.emitir({"tipo": "esquema", "feito": k - 1, "total": n,
+                             "texto": f"Lendo os esquemas de ferramentas: {nome}"})
+        return mfe.ler_do_portal(self.banco, self.cliente, self.bacia, fila, self.ferramentas,
+                                 pasta_projeto=self.pasta_projeto, tessdata=self.tessdata,
+                                 progresso=progresso, cancelar=self.cancelar)
 
     def _ler_agps(self, alvo: list[str]) -> int:
         """3. AGP de cada poço (~20–160 KB): só os novos, os que mudaram de tamanho e os
@@ -466,6 +485,7 @@ def resumo(banco: Banco, bacia: str) -> dict:
         "arquivos_candidatos": sum(r["n"] for r in arqs),
         "atualizado_em": max((p["classificado_em"] or p["listado_em"] or "") for p in pocos),
         **_resumo_agp(banco, bacia),
+        **mfe.resumo(banco, bacia),
     }
 
 
