@@ -36,7 +36,8 @@ class LevantamentoAPI:
 
     @resposta_segura
     def levantar_acervo(self, bacia: str, categorias: list, curvas: bool = False,
-                        conferir_todos: bool = False, agp: bool = True, esquemas: bool = False):
+                        conferir_todos: bool = False, agp: bool = True, esquemas: bool = False,
+                        direcionais: bool = True):
         self._exigir_projeto()
         if self._levantamento and self._levantamento.ativo:
             raise ErroUsuario(f"Já há um levantamento em andamento ({self._levantamento.bacia}).")
@@ -50,11 +51,11 @@ class LevantamentoAPI:
             estratigrafia=magp.ler_estratigrafia(CAMINHO_ESTRATIGRAFIA),
             esquemas=bool(esquemas), pasta_projeto=self._projeto.pasta,
             tessdata=PASTA_TESSDATA if (esquemas and self._garantir_ocr_ingles()) else None,
-            ferramentas=self._dic() if esquemas else None)
+            ferramentas=self._dic() if esquemas else None, direcionais=bool(direcionais))
         self._levantamento.iniciar()
         self._projeto.registrar("iniciou_levantamento", bacia=bacia, categorias=list(categorias or []),
                                 curvas=bool(curvas), conferir_todos=bool(conferir_todos), agp=bool(agp),
-                                esquemas=bool(esquemas))
+                                esquemas=bool(esquemas), direcionais=bool(direcionais))
         return {"iniciado": True}
 
     @resposta_segura
@@ -97,5 +98,6 @@ class LevantamentoAPI:
                                     bacia=self._levantamento.bacia if self._levantamento else "",
                                     pocos=ev.get("pocos"), arquivos_lidos=ev.get("arquivos_lidos"),
                                     agps_lidos=ev.get("agps_lidos"), esquemas_lidos=ev.get("esquemas_lidos"),
+                                    direcionais_lidos=ev.get("direcionais_lidos"),
                                     erro=ev.get("erro"))
         self._js("eventoLevantamento", ev)

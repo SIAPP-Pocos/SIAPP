@@ -145,3 +145,98 @@ def test_registro_historico_e_csv(banco, tmp_path):
         g = list(csv.reader(f, delimiter=";"))
     assert g[0][4:] == ["cota_topo_JANDAI_m", "cota_topo_ACU_m", "cota_topo_ALAGAM_m"] and len(g) > 100
     assert os.path.basename(grade) == f"{i1}_superficies.csv"
+
+
+# ============================================== trajetórias, trilhas, propriedades (0.19)
+def _avaliacao(pasta, poco_id, ident, prof, res, pay, intervalos):
+    os.makedirs(pasta, exist_ok=True)
+    np.savez_compressed(os.path.join(pasta, ident + ".npz"), prof=np.asarray(prof, float),
+                        RES=np.asarray(res, np.float32), PAY=np.asarray(pay, np.float32))
+    import json
+    with open(os.path.join(pasta, ident + ".json"), "w", encoding="utf-8") as f:
+        json.dump({"id": ident, "tipo": "avaliacao_formacao", "criado_em": "2026-10-17T09:00:00-03:00",
+                   "poco": poco_id, "intervalos": intervalos}, f)
+
+
+def test_trajetoria_move_os_topos(banco):
+    from motor import direcionais as mdi
+    from test_direcionais import NOVO
+    # 1-AA-5-RN: 100 m vertical e depois ~77 m para leste até 400 m
+    mdi.gravar(banco, bacia="Potiguar", caminho="/d/1.txt", poco_id="1-AA-5-RN", nome="1.txt", tamanho=1,
+               texto=NOVO.replace("7-xx-2d-rn", "1-AA-5-RN"))
+    ids = ["1-AA-1-RN", "1-AA-2-RN", "1-AA-3-RN", "1-AA-4-RN", "1-AA-5-RN"]
+    m = mb.montar(banco, ids)
+    p = next(q for q in m["pocos"] if q["id"] == "1-AA-5-RN")
+    assert p["trajetoria"]["afastamento_m"] > 70
+    acu = next(u for u in p["unidades"] if u["chave"] == "ACU")          # topo a ~343 m: já desviado
+    assert (acu["x"] - p["x"]) * 1000 == pytest.approx(mdi.posicao(mdi.do_poco(banco, "1-AA-5-RN"), acu["topo"])[1][0],
+                                                       abs=1)
+    assert p["caminho"][0][0] == 0 and p["caminho"][-1][0] >= 900
+    assert any("Trajetória pelos dados direcionais" in a for a in m["avisos"])
+    sem = mb.montar(banco, ids, usar_trajetorias=False)
+    p2 = next(q for q in sem["pocos"] if q["id"] == "1-AA-5-RN")
+    assert p2["trajetoria"] is None and all(u["x"] == p2["x"] for u in p2["unidades"])
+
+
+def test_trilhas_de_pay_com_prioridade_e_gas(banco, tmp_path):
+    ex = str(tmp_path / "execucoes")
+    prof = np.arange(400, 500, 0.2)
+    res = np.where(prof < 430, 0, 1.0)
+    pay = np.where((prof >= 460) & (prof < 460.4), 1.0, 0)          # pay de 0,4 m: não pode sumir
+    _avaliacao(ex, "1-AA-1-RN", "avaliacao_1-AA-1-RN_1", prof, res, pay,
+               [{"nome": "Açu", "topo": 400, "base": 500, "hpv_m": 5.0, "net_pay_m": 0.4, "ntg": 0.7,
+                 "phi_media_pay": 0.2, "sw_media_pay": 0.4}])
+    m = mb.montar(banco, ["1-AA-1-RN", "1-AA-2-RN", "1-AA-3-RN", "1-AA-4-RN"], pasta_execucoes=ex)
+    p = next(q for q in m["pocos"] if q["id"] == "1-AA-1-RN")
+    assert p["avaliacao"] == "avaliacao_1-AA-1-RN_1"
+    classes = [c for _, _, c in p["classes"]]
+    assert classes == [1, 2, 3, 2]
+    a, b, _ = next(t for t in p["classes"] if t[2] == 3)
+    assert a <= 460 and b >= 460.4 and b - a <= mb.BLOCO_TRILHA_M + 0.01
+    # indício de gás do AGP sobre o pay → "pay com indício de gás"
+    import json
+    with banco.conexao() as c:
+        r = c.execute("SELECT caminho, dados FROM agp WHERE poco_id = '1-AA-1-RN'").fetchone()
+        d = json.loads(r["dados"])
+        d["indicios"] = [{"fluido": "gás", "topo": 455, "base": 465}, {"fluido": "óleo", "topo": 470, "base": 480}]
+        c.execute("UPDATE agp SET dados = ? WHERE caminho = ?", (json.dumps(d), r["caminho"]))
+    m = mb.montar(banco, ["1-AA-1-RN", "1-AA-2-RN", "1-AA-3-RN", "1-AA-4-RN"], pasta_execucoes=ex)
+    p = next(q for q in m["pocos"] if q["id"] == "1-AA-1-RN")
+    assert 4 in [c for _, _, c in p["classes"]] and 3 not in [c for _, _, c in p["classes"]]
+    assert [i["fluido"] for i in p["indicios"]] == ["gás", "óleo"]
+
+
+def test_propriedade_no_topo(banco, tmp_path):
+    ex = str(tmp_path / "execucoes")
+    ids = ["1-AA-1-RN", "1-AA-2-RN", "1-AA-3-RN", "1-AA-4-RN", "1-AA-5-RN"]
+    for k, pid in enumerate(ids[:4]):
+        _avaliacao(ex, pid, f"avaliacao_{pid}_1", [400, 401], [1, 1], [1, 1],
+                   [{"nome": "Formação Açu (teste)", "topo": 350, "base": 650, "hpv_m": 2.0 + 4 * k,
+                     "net_pay_m": 10.0, "ntg": 0.5, "phi_media_pay": 0.2, "sw_media_pay": 0.3}])
+    m = mb.montar(banco, ids, pasta_execucoes=ex)
+    pr = m["propriedades"]["ACU"]
+    assert len(pr["pocos"]) == 4 and pr["faixas"]["hpv_m"] == [2.0, 14.0]
+    vals = [v for linha in pr["grades"]["hpv_m"] for v in linha if v is not None]
+    assert min(vals) >= 2.0 - 1e-6 and max(vals) <= 14.0 + 1e-6
+    assert "JANDAI" not in m["propriedades"]           # a avaliação é do Açu (pelo nome)
+
+
+def test_figura_estilo_artigo(banco, tmp_path):
+    import math
+    from motor import bloco_figura as bf
+    ex = str(tmp_path / "execucoes")
+    ids = ["1-AA-1-RN", "1-AA-2-RN", "1-AA-3-RN", "1-AA-4-RN", "1-AA-5-RN"]
+    for k, pid in enumerate(ids[:3]):
+        _avaliacao(ex, pid, f"avaliacao_{pid}_1", np.arange(300, 700, 0.5), np.ones(800), np.ones(800),
+                   [{"nome": "Açu", "topo": 300, "base": 700, "hpv_m": 3.0 * (k + 1), "net_pay_m": 9.0,
+                     "ntg": 0.5, "phi_media_pay": 0.2, "sw_media_pay": 0.3}])
+    m = mb.montar(banco, ids, pasta_execucoes=ex)
+    svg = bf.desenhar(m, azimute=math.radians(-35), elevacao=math.radians(30), exagero=20, trilha="avaliacao",
+                      drape={"chave": "ACU", "prop": "hpv_m"}, titulo="Campo teste", autor="Fulano", data="17/10/2026")
+    assert svg.startswith("<svg") and "Campo teste" in svg and "HPV (m)" in svg and "pay" in svg
+    assert "<pattern" not in svg and "clipPath" not in svg and svg.count("<polygon") > 50
+    for fmt in ("svg", "pdf", "png"):
+        f = bf.exportar(svg, str(tmp_path / "fig" / f"f.{fmt}"), fmt)
+        assert os.path.getsize(f) > 2000
+    # de cima (elevação 90°): continua desenhando
+    assert "<polygon" in bf.desenhar(m, azimute=0, elevacao=math.radians(89.9), exagero=1)

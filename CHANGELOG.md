@@ -6,6 +6,28 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 
 ## [Não lançado]
 
+## [0.19.0] — 2026-10-17
+### Adicionado
+- **Dados direcionais** (`motor/direcionais.py`): leitor dos 5 leiautes da pasta "Dados
+  Direcionais" (antigo da Petrobras, novo com cabeçalho, tabulado, por coordenadas, relatório
+  "Deviation data"); trajetória pela **curvatura mínima** a partir de prof. medida, inclinação
+  e azimute (confere com a prof. vertical do arquivo); arquivo de outro poço na pasta é
+  reconhecido pelo cabeçalho e não é usado. Tabela `direcionais` (migração 6), cópias em
+  `ambiente_teste/direcionais/`. Lidos no levantamento (opção marcada) e pelo botão **Ler as
+  trajetórias** da aba Bloco 3D.
+- **Bloco 3D, etapa 2** (requisito 7.4 da Especificação):
+  - poço desviado com trajetória: desenhado pelo caminho real, e **cada topo na posição real**
+    (x, y na prof. medida do topo) — as superfícies usam essas posições;
+  - **trilhas nos poços**: classes da avaliação de formação mais recente de cada poço
+    (não reservatório · reservatório sem pay · pay · **pay com indício de gás** do AGP), em
+    blocos de 2 m com prioridade de classe (um pay fino nunca some); ou os **indícios de
+    óleo e gás** do AGP;
+  - **propriedade no topo** de uma unidade: HPV, net pay, N/G, φ média ou Sw média da
+    avaliação, interpolada entre os poços avaliados (3 ou mais), com escala de cor; as outras
+    superfícies ficam translúcidas;
+  - **figura estática no estilo artigo** da vista atual: projeção ortográfica, serifa,
+    moldura, legenda, escala de cor, norte, notas de fonte e método; SVG, PDF e PNG 300 ppp.
+
 ## [0.18.0] — 2026-10-17
 ### Adicionado
 - **Aba Bloco 3D**: poços no espaço e superfícies de topo das unidades pelos topos do AGP.

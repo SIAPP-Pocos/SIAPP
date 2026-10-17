@@ -493,3 +493,50 @@ def test_aba_bloco_3d(janela, tmp_path):
     janela.esperar("document.getElementById('bl-n').textContent === '5'")
     assert "reaberto" in janela.status()
     assert not janela.erros_js, janela.erros_js
+
+
+def test_bloco_3d_trilhas_propriedade_e_figura(janela, tmp_path):
+    import numpy as np
+    from test_bloco import _avaliacao
+    from test_secao import poco
+    p = janela.page
+    abrir_projeto(janela)
+    b = janela.api._banco
+    ex = str(tmp_path / "ambiente_teste" / "execucoes")
+    pocos = [("1-AA-1-RN", -5.00, -37.00), ("1-AA-2-RN", -5.00, -36.96), ("1-AA-3-RN", -5.04, -37.00),
+             ("1-AA-4-RN", -5.04, -36.96), ("1-AA-5-RN", -5.02, -36.98)]
+    for k, (pid, la, lo) in enumerate(pocos):
+        leste = (lo + 37.00) * 111.0
+        poco(b, pid, la, lo, 50.0, [("F", "JANDAI", 20, 300 + 10 * leste), ("F", "ACU", 300 + 10 * leste, 700)],
+             prof_final=900)
+        if k < 4:
+            prof = np.arange(320, 700, 0.5)
+            _avaliacao(ex, pid, f"avaliacao_{pid}_1", prof, (prof > 400).astype(float), (prof > 500).astype(float),
+                       [{"nome": "Açu", "topo": 320, "base": 700, "hpv_m": 2.0 + 3 * k, "net_pay_m": 20.0,
+                         "ntg": 0.6, "phi_media_pay": 0.2, "sw_media_pay": 0.35}])
+    p.click("#aba-bloco")
+    janela.esperar("document.getElementById('bl-disponiveis').textContent.includes('5 poço')")
+    p.click("#bl-selecionar")
+    janela.esperar("document.getElementById('bl-n').textContent === '5'")
+    p.click("#bl-montar")
+    janela.esperar("window.BlocoVisor && window.BlocoVisor.estado().superficies === 2", 30)
+    # avaliados → trilha de pay de saída
+    assert p.input_value("#bl-trilha") == "avaliacao"
+    janela.esperar("window.BlocoVisor.estado().trilhas >= 8")
+    assert "pay" in p.text_content(".bl-leg-trilha")
+    p.select_option("#bl-drape-unidade", "ACU")
+    janela.esperar("window.BlocoVisor.estado().drape === 'ACU'")
+    assert "HPV (m)" in p.evaluate("window.BlocoVisor.estado().escala")
+    p.select_option("#bl-drape-prop", "ntg")
+    janela.esperar("window.BlocoVisor.estado().escala.includes('N/G')")
+    p.select_option("#bl-trilha", "indicios")
+    janela.esperar("window.BlocoVisor.estado().trilhas === 0")
+    p.click("[data-figura='pdf']")
+    janela.esperar("document.getElementById('bl-exportado').textContent.includes('_figura.pdf')", 30)
+    pdfs = list((tmp_path / "ambiente_teste" / "exportacoes" / "blocos").glob("*_figura.pdf"))
+    assert len(pdfs) == 1 and pdfs[0].read_bytes()[:4] == b"%PDF"
+    p.click("[data-figura='svg']")
+    janela.esperar("document.getElementById('bl-exportado').textContent.includes('_figura.svg')", 30)
+    svg = next((tmp_path / "ambiente_teste" / "exportacoes" / "blocos").glob("*_figura.svg")).read_text("utf-8")
+    assert "N/G" in svg and "Formação Açu" in svg
+    assert not janela.erros_js, janela.erros_js

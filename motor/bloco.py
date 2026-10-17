@@ -17,9 +17,10 @@ Regras (requisitos 4.4–4.8 da Especificação):
   transversal não tem dado): a unidade fica só nos poços, com aviso;
 - opcional: esconder a superfície onde o poço mais próximo com a unidade está longe.
 
-Poço desviado: desenhado na vertical, na posição da cabeça (o cadastro só tem esta
-posição; a trajetória dos arquivos de dados direcionais fica para depois). A **cota** dos
-topos é a do AGP, que já considera o desvio.
+Poço desviado: com os **dados direcionais** lidos (motor/direcionais.py), o poço segue a
+trajetória e cada topo fica na posição real (x, y na profundidade medida do topo); as
+superfícies usam essas posições. Sem eles, vertical na posição da cabeça. A **cota** dos
+topos é sempre a do AGP.
 
 Só numpy: a triangulação (Bowyer–Watson) e o contorno (cadeia monótona) estão aqui.
 """
@@ -30,19 +31,35 @@ import csv
 import json
 import math
 import os
+import re
 from datetime import datetime
 
 import numpy as np
 
 from . import __version__
+from . import avaliacao as mav
+from . import direcionais as mdi
 from . import secao as msc
 from .banco import Banco, agora
 
 MAX_POCOS = 1000
 CELULAS_PADRAO = 160          # células no lado maior da grade
 FRACAO_COLINEAR = 0.04        # largura / comprimento do contorno abaixo disso = colinear
+TRAJ_MIN_M = 5.0              # afastamento abaixo disso: o poço é tratado como vertical
 LONGE_KM = 100.0              # poço a mais que isso (e 5× a distância mediana) do centro: fora
 NIVEIS = msc.NIVEIS_SECAO
+
+
+# propriedades da avaliação que podem colorir o topo de uma unidade
+PROPRIEDADES = [("hpv_m", "HPV (m)"), ("net_pay_m", "Net pay (m)"), ("ntg", "N/G"),
+                ("phi_media_pay", "φ média no pay"), ("sw_media_pay", "Sw média no pay")]
+# classes ao longo do poço (requisito 7.3 da Especificação), com a cor da trilha
+CLASSES = {1: {"nome": "não reservatório", "cor": "#9a9890"},
+           2: {"nome": "reservatório sem pay", "cor": "#eda100"},
+           3: {"nome": "pay", "cor": "#1baf7a"},
+           4: {"nome": "pay com indício de gás", "cor": "#e34948"}}
+CORES_FLUIDO = {"óleo": "#008300", "gás": "#e34948", "outro": "#898781"}
+BLOCO_TRILHA_M = 2.0          # resolução das trilhas de pay no bloco (prioridade por classe)
 
 
 class ErroBloco(Exception):
@@ -270,7 +287,8 @@ def selecionar(banco: Banco, *, modo: str, campo: str = "", poco: str = "", raio
 # ================================================================== modelo
 def montar(banco: Banco, pocos: list[str], *, nivel: str = "formacoes", margem_km: float = 0.0,
            celulas: int = CELULAS_PADRAO, dist_max_km: float | None = None, nomes: dict | None = None,
-           slots: dict | None = None) -> dict:
+           slots: dict | None = None, usar_trajetorias: bool = True,
+           pasta_execucoes: str | None = None) -> dict:
     """Modelo do bloco (só dados; o desenho é da janela)."""
     pocos = list(dict.fromkeys(p for p in pocos if p))
     if len(pocos) < 3:
@@ -284,6 +302,7 @@ def montar(banco: Banco, pocos: list[str], *, nivel: str = "formacoes", margem_k
     nomes, slots = nomes or {}, slots or {}
     avisos: list[str] = []
 
+    avaliacoes = avaliacoes_por_poco(pasta_execucoes) if pasta_execucoes else {}
     dados = []
     for pid in pocos:
         d = msc.dados_poco(banco, pid, nomes)
@@ -308,27 +327,64 @@ def montar(banco: Banco, pocos: list[str], *, nivel: str = "formacoes", margem_k
     x, y, lat0, lon0 = plano([d["lat"] for d, _ in dados], [d["lon"] for d, _ in dados])
 
     saida = []
-    desviados = []
+    sem_traj, com_traj = [], []
     for (d, col), xi, yi in zip(dados, x, y):
-        if col["ctrl"][2]:
-            desviados.append(d["id"])
         classe_txt = " ".join(filter(None, [d["cab"].get("reclassificacao"), d["cab"].get("classificacao"),
                                             (d["cad"] or {}).get("reclassificacao")])).upper()
-        saida.append({
-            "id": d["id"], "lat": d["lat"], "lon": d["lon"], "x": round(float(xi), 4), "y": round(float(yi), 4),
-            "mesa": col["mesa"], "prof_final": col["prof_final"], "cota_fundo": col["cota_fundo"],
-            "desviado": col["ctrl"][2], "campo": (d["cad"] or {}).get("campo") or "",
-            "classe": msc._classe_poco(classe_txt),
-            "unidades": [{k: u[k] for k in ("chave", "nome", "topo", "base", "cota_topo", "cota_base",
-                                             "base_atingida")} for u in col["unidades"]]})
-    if desviados:
-        avisos.append(f"Poços desviados desenhados na vertical, na posição da cabeça (a cota dos topos é a do "
-                      f"AGP): {', '.join(desviados)}.")
+        p = {"id": d["id"], "lat": d["lat"], "lon": d["lon"], "x": round(float(xi), 4), "y": round(float(yi), 4),
+             "mesa": col["mesa"], "prof_final": col["prof_final"], "cota_fundo": col["cota_fundo"],
+             "desviado": col["ctrl"][2], "campo": (d["cad"] or {}).get("campo") or "",
+             "classe": msc._classe_poco(classe_txt), "trajetoria": None,
+             "unidades": [{k: u[k] for k in ("chave", "nome", "topo", "base", "cota_topo", "cota_base",
+                                              "base_atingida")} for u in col["unidades"]]}
+        traj = mdi.do_poco(banco, d["id"]) if usar_trajetorias else None
+        mesa = col["mesa"] if col["mesa"] is not None else (traj or {}).get("elevacao_ref")
+        fundo = max([col["prof_final"] or 0] + [u["base"] or u["topo"] or 0 for u in col["unidades"]])
+        if traj and mesa is not None and traj["afastamento_max"] >= TRAJ_MIN_M:
+            fundo = max(fundo, traj["md_final"])
+            mds = np.unique(np.r_[np.asarray(traj["md"], float), np.linspace(0, fundo, 60)])
+            mds = mds[mds <= fundo + 1e-6]
+            nn, ll, tt = mdi.posicao(traj, mds)
+            cot = mesa - tt
+            p["trajetoria"] = {"arquivo": traj.get("arquivo", ""), "afastamento_m": traj["afastamento_max"],
+                               "inclinacao_max": traj["inclinacao_max"]}
+            for u in p["unidades"]:
+                n1, l1, _ = mdi.posicao(traj, u["topo"])
+                u["x"], u["y"] = round(float(xi + l1[0] / 1000), 4), round(float(yi + n1[0] / 1000), 4)
+            com_traj.append(d["id"])
+        else:
+            mds = np.linspace(0, fundo or 1, 41)
+            nn = ll = np.zeros_like(mds)
+            cc = msc._md_para_cota(mds, mesa, col["ctrl"]) if mesa is not None else None
+            cot = cc if cc is not None else np.interp(
+                mds, [u["topo"] for u in col["unidades"]] or [0], [u["cota_topo"] for u in col["unidades"]] or [0])
+            if col["ctrl"][2]:
+                sem_traj.append(d["id"])
+            for u in p["unidades"]:
+                u["x"], u["y"] = p["x"], p["y"]
+        passo = max(1, len(mds) // 200)
+        idx = sorted(set(range(0, len(mds), passo)) | {len(mds) - 1})
+        # caminho do poço: [prof. medida, x (km), y (km), cota (m)] — base para as trilhas
+        p["caminho"] = [[round(float(mds[i]), 2), round(float(xi + ll[i] / 1000), 4),
+                         round(float(yi + nn[i] / 1000), 4), round(float(cot[i]), 2)] for i in idx]
+        p["indicios"] = _indicios(d)
+        p["classes"], p["avaliacao"] = [], None
+        av = (avaliacoes or {}).get(d["id"])
+        if av:
+            p["avaliacao"] = av[0]["id"]
+            gas = [(i["md_topo"], i["md_base"]) for i in p["indicios"] if i["fluido"] == "gás"]
+            p["classes"] = _classes_avaliacao(pasta_execucoes, av[0]["id"], gas)
+        saida.append(p)
+    if com_traj:
+        avisos.append(f"Trajetória pelos dados direcionais (topos na posição real): {', '.join(com_traj)}.")
+    if sem_traj:
+        avisos.append(f"Poços desviados sem dados direcionais lidos, desenhados na vertical na posição da cabeça "
+                      f"(a cota dos topos é a do AGP): {', '.join(sem_traj)}.")
     sem = [p["id"] for p in saida if not p["unidades"]]
     if sem:
         avisos.append(f"Sem {msc.ROTULO_NIVEL[nivel]} com topo no AGP: {', '.join(sem)}.")
 
-    xy = np.c_[[p["x"] for p in saida], [p["y"] for p in saida]]
+    xy = np.array([[p["x"], p["y"]] for p in saida] + [[u["x"], u["y"]] for p in saida for u in p["unidades"]])
     hull = contorno_convexo(xy)
     area = area_shoelace(hull)
     externo = com_margem(hull, margem_km)
@@ -362,7 +418,7 @@ def montar(banco: Banco, pocos: list[str], *, nivel: str = "formacoes", margem_k
     superficies = []
     for item in legenda:
         trios = acum[item["chave"]]
-        pts = np.array([[p["x"], p["y"]] for p, _, _ in trios])
+        pts = np.array([[u["x"], u["y"]] for _, u, _ in trios])
         val = np.array([u["cota_topo"] for _, u, _ in trios])
         sup = {"chave": item["chave"], "nome": item["nome"], "cor": item["cor"], "n_pocos": len(trios),
                "z": None, "area_km2": None, "contorno": None, "aviso": ""}
@@ -414,11 +470,16 @@ def montar(banco: Banco, pocos: list[str], *, nivel: str = "formacoes", margem_k
             s["cota_min"], s["cota_max"] = float(np.nanmin(zz)), float(np.nanmax(zz))
             s["z"] = [[None if math.isnan(v) else round(float(v), 2) for v in linha] for linha in zz]
 
+    propriedades = _propriedades(saida, avaliacoes, superficies, gx, gy)
+    if any(p["classes"] for p in saida):
+        avisos.append("Trilhas de pay pela avaliação de formação mais recente de cada poço (aba Perfis); "
+                      "\"pay com gás\" = pay dentro de um indício de gás do AGP.")
     cotas = [v for p in saida for v in ([p["mesa"]] if p["mesa"] is not None else []) +
              ([p["cota_fundo"]] if p["cota_fundo"] is not None else []) +
              [u["cota_topo"] for u in p["unidades"]]]
     return {
-        "versao": 1, "pocos": saida, "legenda": legenda, "superficies": superficies, "avisos": avisos,
+        "versao": 2, "pocos": saida, "legenda": legenda, "superficies": superficies, "avisos": avisos,
+        "propriedades": propriedades, "nomes_propriedades": dict(PROPRIEDADES), "classes": CLASSES,
         "origem": {"lat": lat0, "lon": lon0},
         "contorno": [[round(float(a), 4), round(float(b), 4)] for a, b in hull],
         "area_km2": round(area, 3), "margem_km": margem_km,
@@ -428,6 +489,135 @@ def montar(banco: Banco, pocos: list[str], *, nivel: str = "formacoes", margem_k
                        "pocos": [p["id"] for p in saida]},
     }
 
+
+
+# ============================================================ trilhas e propriedades
+def avaliacoes_por_poco(pasta_execucoes: str) -> dict[str, list[dict]]:
+    """{poço: [registros de avaliação, do mais novo ao mais velho]}."""
+    por: dict[str, list[dict]] = {}
+    for reg in mav.execucoes(pasta_execucoes):
+        if reg.get("poco"):
+            por.setdefault(reg["poco"], []).append(reg)
+    for lst in por.values():
+        lst.sort(key=lambda r: (r.get("criado_em", ""), r["id"]), reverse=True)
+    return por
+
+
+def _fluido(txt: str) -> str:
+    t = (txt or "").lower()
+    return "gás" if ("gás" in t or "gas" in t or t == "g") else "óleo" if ("óleo" in t or "oleo" in t or t == "o") \
+        else "outro"
+
+
+def _indicios(d: dict) -> list[dict]:
+    """Indícios de hidrocarboneto do AGP (prof. medida), com os trechos vizinhos do mesmo fluido unidos."""
+    brutos = []
+    for c in ((d.get("agp") or {}).get("dados") or {}).get("indicios", []):
+        if c.get("topo") is None:
+            continue
+        base = c.get("base") if c.get("base") is not None else c["topo"]
+        brutos.append([float(min(c["topo"], base)), float(max(c["topo"], base)), _fluido(c.get("fluido", ""))])
+    brutos.sort()
+    unidos: list[list] = []
+    for a, b, f in brutos:
+        if unidos and unidos[-1][2] == f and a <= unidos[-1][1] + 1.0:
+            unidos[-1][1] = max(unidos[-1][1], b)
+        else:
+            unidos.append([a, b, f])
+    return [{"md_topo": round(a, 2), "md_base": round(max(b, a + 1.0), 2), "fluido": f} for a, b, f in unidos]
+
+
+def _classes_avaliacao(pasta_execucoes: str, ident: str, gas: list[tuple]) -> list[list]:
+    """[[prof. topo, prof. base, classe]] da avaliação: trechos contínuos da mesma classe
+    (sem decimar — um pay de 1 m continua lá)."""
+    try:
+        z = mav.carregar_curvas(pasta_execucoes, ident)
+    except mav.ErroAvaliacao:
+        return []
+    prof, res, pay = z["prof"], z.get("RES"), z.get("PAY")
+    if res is None or pay is None or len(prof) < 2:
+        return []
+    cls = np.where(np.isnan(res), 0, np.where(pay > 0.5, 3, np.where(res > 0.5, 2, 1)))
+    for a, b in gas:
+        cls[(cls == 3) & (prof >= a) & (prof <= b)] = 4
+    # blocos de BLOCO_TRILHA_M: cada bloco fica com a classe mais prioritária presente nele
+    # (gás > pay > reservatório > não reservatório) — um pay fino nunca some (Especificação,
+    # "decimação não pode ser cega"); depois, blocos vizinhos iguais viram um trecho só
+    bloco = np.floor((prof - prof[0]) / BLOCO_TRILHA_M).astype(int)
+    nb = int(bloco.max()) + 1
+    cb = np.zeros(nb, int)
+    np.maximum.at(cb, bloco, cls)
+    out, ini = [], 0
+    for k in range(1, nb + 1):
+        if k == nb or cb[k] != cb[ini]:
+            if cb[ini]:
+                a = prof[0] + ini * BLOCO_TRILHA_M
+                b = min(prof[0] + k * BLOCO_TRILHA_M, float(prof[-1]))
+                out.append([round(float(a), 2), round(float(max(b, a + 0.1)), 2), int(cb[ini])])
+            ini = k
+    return out
+
+
+def _normal(txt: str) -> str:
+    import unicodedata
+    t = "".join(c for c in unicodedata.normalize("NFD", (txt or "").lower()) if unicodedata.category(c) != "Mn")
+    t = re.sub(r"\(.*?\)|\b(formacao|membro|grupo|camadas|fm|mb|gr)\b\.?", " ", t)
+    return " ".join(re.findall(r"[a-z0-9]+", t))
+
+
+def _intervalo_da_unidade(av: dict, u: dict) -> dict | None:
+    """O intervalo avaliado que corresponde à unidade: mesmo nome, ou metade do intervalo
+    dentro do topo–base da unidade no poço."""
+    nu = _normal(u["nome"])
+    for i in av.get("intervalos", []):
+        ni = _normal(i.get("nome", ""))
+        if nu and ni and (nu == ni or nu in ni.split() or ni in nu.split()):
+            return i
+        base = u["base"] if u["base"] is not None else u["topo"]
+        dentro = min(i["base"], base) - max(i["topo"], u["topo"])
+        if i["base"] > i["topo"] and dentro >= 0.5 * (i["base"] - i["topo"]):
+            return i
+    return None
+
+
+def _propriedades(pocos: list[dict], avaliacoes: dict, superficies: list[dict], gx, gy) -> dict:
+    """Por unidade: as propriedades da avaliação em cada poço e, com 3+ poços não alinhados,
+    a grade interpolada (linear, dentro do contorno desses poços e da superfície)."""
+    saida: dict = {}
+    sups = {s["chave"]: s for s in superficies}
+    for p in pocos:
+        for u in p["unidades"]:
+            for av in avaliacoes.get(p["id"], []):
+                i = _intervalo_da_unidade(av, u)
+                if i is None:
+                    continue
+                item = {"id": p["id"], "x": u["x"], "y": u["y"], "cota": u["cota_topo"], "avaliacao": av["id"],
+                        "intervalo": i.get("nome", ""), "topo": i["topo"], "base": i["base"]}
+                item.update({k: i.get(k) for k, _ in PROPRIEDADES})
+                saida.setdefault(u["chave"], {"pocos": [], "grades": {}, "faixas": {}})["pocos"].append(item)
+                break
+    for chave, info in saida.items():
+        s = sups.get(chave)
+        for k, _ in PROPRIEDADES:
+            com = [q for q in info["pocos"] if q.get(k) is not None]
+            if not com:
+                continue
+            vals = [q[k] for q in com]
+            info["faixas"][k] = [float(min(vals)), float(max(vals))]
+            if len(com) < 3 or not s or s.get("z") is None:
+                continue
+            pts = np.array([[q["x"], q["y"]] for q in com])
+            h = contorno_convexo(pts)
+            if len(h) < 3 or largura_relativa(h) < FRACAO_COLINEAR:
+                continue
+            z = interpolar_linear(pts, np.array(vals, float), delaunay(pts), gx, gy)
+            z[~dentro(h, gx, gy)] = np.nan
+            zs = np.array([[np.nan if v is None else v for v in linha] for linha in s["z"]], float)
+            z[np.isnan(zs)] = np.nan
+            if np.isnan(z).all():
+                continue
+            info["grades"][k] = [[None if math.isnan(v) else round(float(v), 4) for v in linha] for linha in z]
+    return saida
 
 # ========================================================= registro e saída
 def registrar(pasta_execucoes: str, modelo: dict, autor: str = "") -> tuple[str, str]:
@@ -485,7 +675,7 @@ def exportar_csv(modelo: dict, pasta: str, ident: str) -> list[str]:
         w.writerow(["poco", "lat", "lon", "x_km", "y_km", "unidade", "topo_m", "cota_topo_m", "cota_base_m"])
         for p in modelo["pocos"]:
             for u in p["unidades"]:
-                w.writerow([p["id"], n(p["lat"], 6), n(p["lon"], 6), n(p["x"], 3), n(p["y"], 3), u["nome"],
+                w.writerow([p["id"], n(p["lat"], 6), n(p["lon"], 6), n(u.get("x", p["x"]), 3), n(u.get("y", p["y"]), 3), u["nome"],
                             n(u["topo"]), n(u["cota_topo"]), n(u["cota_base"])])
     grade = os.path.join(pasta, f"{ident}_superficies.csv")
     g, o = modelo["grade"], modelo["origem"]

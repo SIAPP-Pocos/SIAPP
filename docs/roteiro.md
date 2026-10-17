@@ -10,9 +10,9 @@ existe e a validação científica ficam **para o final**, antes do lançamento 
       repetida, testador de formação, imagem, RMN…). Ver `docs/ferramentas.md`.
 - [x] **Bloco 3D** (0.18): poços e superfícies de topo pelos topos do AGP, dentro do
       contorno dos poços; visor 3D; PNG e CSV. Ver `docs/bloco.md`.
-- [ ] Bloco 3D, etapa 2 (a decidir): trajetória real dos poços desviados (Dados
-      Direcionais); zonas de pay e fluido nas trajetórias; propriedade (HPV) sobre o topo
-      (requisito 7.4 da Especificação); figura estática no estilo artigo.
+- [x] Bloco 3D, etapa 2 (0.19): trajetória real dos poços desviados (Dados Direcionais);
+      pay e indícios ao longo dos poços; HPV/net pay/N/G/φ/Sw sobre o topo (requisito 7.4);
+      figura estática no estilo artigo.
 
 ## No final — melhorias do que já existe
 

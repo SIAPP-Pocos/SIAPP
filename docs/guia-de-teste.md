@@ -131,6 +131,27 @@ Precisa de internet. Comece por uma categoria pequena para ver o tempo.
 - [ ] Sem intervalo marcado, **Calcular** explica que precisa de um intervalo-alvo.
 - [ ] Repetir no `5PX__0011__RN_5PX__0011__RN.tif` (DLIS de 2020).
 
+## 0.19 — bloco 3D, etapa 2
+
+Antes: levantar a Potiguar de novo (Cat. 1 basta) com **Ler os dados direcionais** marcado
+(já vem marcado) — lê só os arquivos de trajetória, ~5 KB por poço.
+
+- [ ] O resumo do levantamento ganha "Dados direcionais (trajetória)": no portal, lidos, com trajetória.
+- [ ] **Bloco 3D** → em volta do `1-FG-2D-RN`, 15 km → Montar. O 1-FG-2D-RN aparece curvo (afasta ~1 km
+      para o norte); passe o mouse: "trajetória dos dados direcionais · afastamento 1.052 m".
+      O aviso lista os poços com trajetória.
+- [ ] Sem ter levantado de novo: escolha os poços e **Ler as trajetórias**; depois monte de novo.
+- [ ] **Nos poços** → *indícios de óleo e gás (AGP)*: trechos verdes (óleo) e vermelhos (gás) ao
+      longo dos poços, com legenda no canto.
+- [ ] Faça uma avaliação de formação (aba Perfis) num poço do bloco, no intervalo de uma formação, e
+      monte o bloco de novo: **Nos poços** → *pay (avaliação de formação)* mostra não reservatório /
+      reservatório / pay / pay com indício de gás.
+- [ ] Com 3 ou mais poços avaliados na mesma formação: **Colorir o topo de** → a formação → por HPV:
+      superfície em azul claro→escuro com a escala; as outras ficam translúcidas. Troque para N/G, φ, Sw.
+      Com menos de 3: só as esferas coloridas nos poços ("só nos poços").
+- [ ] **Figura → PDF** (e SVG, PNG): a mesma vista em projeção ortográfica, estilo artigo, em
+      `exportacoes\blocos\bloco_…_figura.pdf`. Gire o bloco e exporte de novo: a figura acompanha.
+
 ## 0.18 — bloco 3D
 
 Antes: AGPs lidos (Cat. 1 da Potiguar basta).

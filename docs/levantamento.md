@@ -38,6 +38,12 @@ mnemônicos; cada um é classificado na família (GR, RHOB, NPHI, DT…, de
 nesse caso a lista é **parcial** (a ficha mostra "N curva(s)+"). Exemplo medido: no
 `1-AURI-12-RN_AIT_P.DLIS` (192 MB), os 685 canais já estão nos primeiros 256 KB.
 
+### Dados direcionais (0.19, marcado de saída)
+
+Com **Ler os dados direcionais**, depois dos AGPs, o SIAPP baixa os arquivos de texto da pasta
+"Dados Direcionais" (~1–10 KB cada; na Potiguar, 1.384 arquivos) e calcula a trajetória de
+cada poço (ver [`bloco.md`](bloco.md)). Os PDFs da mesma pasta (pasta do poço) não são baixados.
+
 ### Esquemas de ferramentas (opcional, 0.17)
 
 Com **Ler os esquemas de ferramentas**, a etapa 4 baixa cada PDF da pasta "Esquema de
@@ -52,6 +58,7 @@ poço, pela ficha. Mesmo sem ler, o **nome** dos esquemas já rotula os perfis.
 | Listagem de uma categoria com N partes | N + 1 | ~5 KB por poço |
 | Classificação | 1 por arquivo ambíguo | 1 KB cada |
 | Com lista de curvas | 1 por arquivo de perfil | até 256 KB cada |
+| Com dados direcionais | 1 por arquivo de texto | ~5 KB cada |
 | Com esquemas de ferramentas | 1 por esquema | ~200 KB cada (+ ~2 s de OCR) |
 
 Entre requisições o SIAPP espera 0,3 s (cortesia com o servidor). A Bacia Potiguar

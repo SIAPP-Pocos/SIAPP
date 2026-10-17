@@ -45,9 +45,9 @@ a mesma da seção, e a **cor** é a mesma da seção (`slot` em `recursos/estra
 - **Superfícies que se cruzam**: onde a superfície de uma unidade mais funda passa acima da
   mais rasa em mais de 1% da área. Acontece quando as duas vêm de conjuntos diferentes de
   poços — pouco controle ali.
-- **Poço desviado**: desenhado na vertical, na posição da cabeça (o cadastro só tem essa
-  posição). A **cota** dos topos é a do AGP, que já considera o desvio. A trajetória pelos
-  arquivos de *Dados Direcionais* do acervo fica para uma etapa seguinte.
+- **Poço desviado**: com os *Dados Direcionais* lidos (0.19), segue a trajetória e cada topo
+  fica na posição real; sem eles, vertical na posição da cabeça, com aviso. A **cota** dos
+  topos é sempre a do AGP.
 
 ## Visor
 
@@ -71,9 +71,37 @@ a mesma da seção, e a **cor** é a mesma da seção (`slot` em `recursos/estra
   cotas) e `<id>_superficies.csv` (cada nó da grade com valor: x, y, lat, lon e a cota do
   topo de cada unidade).
 
-## Próximas etapas (Especificação, requisito 7.4)
+## Trajetórias (0.19)
 
-- Trajetória real dos poços desviados (Dados Direcionais).
-- Zonas de pay e classe de fluido nas trajetórias (da avaliação de formação); propriedade
-  (ex.: HPV) sobre a superfície do topo.
-- Figura estática no estilo artigo.
+Os arquivos da pasta *Dados Direcionais* (`motor/direcionais.py`) vêm em cinco leiautes; de
+todos, o SIAPP usa prof. medida, inclinação, azimute e prof. vertical, e calcula os
+afastamentos pela **curvatura mínima** (conferido em 36 arquivos da Potiguar: afastamentos
+iguais aos do próprio arquivo, ao centímetro). Arquivo de outro poço na pasta (o do
+`7-FP-46D-BA` está na pasta do `7-FP-406-RN`) é reconhecido pelo cabeçalho e descartado.
+Afastamento menor que 5 m: tratado como vertical.
+
+## Ao longo dos poços (0.19)
+
+- **Pay (avaliação de formação)**: a avaliação mais recente de cada poço (aba Perfis), nas
+  classes do requisito 7.3 — não reservatório, reservatório sem pay, pay e **pay com indício
+  de gás** (pay dentro de um intervalo de indício de gás do AGP; o SIAPP não infere gás pelas
+  curvas). Em blocos de 2 m, cada bloco com a classe mais prioritária presente: um pay de 40
+  cm continua aparecendo (decimação não pode ser cega).
+- **Indícios (AGP)**: óleo e gás, como registrados pela operadora.
+
+## Propriedade no topo (0.19)
+
+HPV, net pay, N/G, φ média no pay ou Sw média no pay, do intervalo avaliado que corresponde
+à unidade (mesmo nome, ou metade do intervalo dentro do topo–base da unidade no poço).
+Interpolação linear entre os poços avaliados (3 ou mais, não alinhados), dentro do contorno
+deles e da superfície; fora, cinza. Escala azul de um tom (claro = menor); com uma
+propriedade no topo, as outras superfícies ficam translúcidas. É contexto: um mapa de HPV com
+poucos poços não é um mapa de reservas.
+
+## Figura estilo artigo (0.19)
+
+`motor/bloco_figura.py`: a vista atual do visor (azimute, elevação, exagero, unidades
+ligadas, trilha, propriedade) em **projeção ortográfica**, pelo algoritmo do pintor, com
+sombreamento por face, fonte serifada, moldura, legenda, escala de cor, seta do norte e as
+notas de método e fonte. SVG (editável), PDF (vetorial) e PNG 300 ppp em
+`exportacoes/blocos/<id>_figura.*`.

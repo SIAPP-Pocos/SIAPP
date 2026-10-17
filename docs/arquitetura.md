@@ -26,6 +26,8 @@
     secao.py        seção estratigráfica pelos topos do AGP → SVG (PNG/PDF pelo PyMuPDF)
     secao_classica.py  estilo clássico: padrões de rocha, carimbo, mapa de localização
     bloco.py        bloco 3D: contorno convexo, Delaunay, superfícies de topo (só numpy) → janela com three.js
+    bloco_figura.py figura estática do bloco (SVG → PDF/PNG pelo PyMuPDF)
+    direcionais.py  dados direcionais: 5 leiautes, curvatura mínima (tabela direcionais)
     ferramentas.py  esquemas de ferramentas: tipo da corrida, ferramentas, vínculo com os perfis (tabela esquemas)
                ▼
   ambiente_teste/  — pasta de projeto (contrato entre as partes)

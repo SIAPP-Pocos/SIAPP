@@ -173,6 +173,15 @@ MIGRACOES: list[str] = [
     );
     CREATE INDEX esquemas_poco ON esquemas(poco_id);
     """,
+    # 6 — dados direcionais lidos (SIAPP 0.19): trajetória do poço para o bloco 3D
+    """
+    CREATE TABLE direcionais(
+        bacia TEXT NOT NULL, caminho TEXT NOT NULL, poco_id TEXT, nome TEXT, tamanho INTEGER,
+        arquivo_local TEXT, leitor INTEGER, leiaute TEXT, dados TEXT, erro TEXT, lido_em TEXT,
+        PRIMARY KEY (bacia, caminho)
+    );
+    CREATE INDEX direcionais_poco ON direcionais(poco_id);
+    """,
 ]
 
 

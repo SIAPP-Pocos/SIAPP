@@ -116,7 +116,11 @@ function mostrarBloco(r) {
   desenharUnidadesBloco(m);
   // exagero inicial: o relevo das superfícies ocupa ~1/4 da largura do bloco
   const g = m.grade, lado = Math.max(g.nx, g.ny) * g.passo;
-  const faixa = Math.max(50, (m.cota_max - m.cota_min)) / 1000;
+  // pela faixa das superfícies (não pelo fundo dos poços, que pode ir muito abaixo)
+  const comZ = m.superficies.filter((s) => s.z);
+  const zmax = comZ.length ? Math.max(...comZ.map((s) => s.cota_max)) : m.cota_max;
+  const zmin = comZ.length ? Math.min(...comZ.map((s) => s.cota_min)) : m.cota_min;
+  const faixa = Math.max(50, zmax - zmin) / 1000;
   const ex = Math.min(60, Math.max(1, Math.round((lado * 0.25) / faixa)));
   // muitos poços: nomes desligados de saída (viram um borrão); o mouse mostra o nome
   $("bl-nomes").checked = m.pocos.length <= 40;
@@ -126,8 +130,42 @@ function mostrarBloco(r) {
     $("bl-visor").textContent = "O visor 3D não carregou (o computador precisa de WebGL).";
     return;
   }
+  preencherDrapeBloco(m);
+  // trilha padrão: pay se algum poço foi avaliado; senão, indícios do AGP se houver
+  const temPay = m.pocos.some((p) => (p.classes || []).length);
+  const temInd = m.pocos.some((p) => (p.indicios || []).length);
+  $("bl-trilha").value = temPay ? "avaliacao" : temInd ? "indicios" : "nenhuma";
   window.BlocoVisor.mostrar($("bl-visor"), m, { exagero: ex, opacidade: Number($("bl-opacidade").value),
-                                               nomes: $("bl-nomes").checked, caixa: $("bl-caixa").checked });
+                                               nomes: $("bl-nomes").checked, caixa: $("bl-caixa").checked,
+                                               trilha: $("bl-trilha").value, drape: drapeEscolhido() });
+}
+
+function preencherDrapeBloco(m) {
+  const su = limpar($("bl-drape-unidade"));
+  const o0 = document.createElement("option");
+  o0.value = ""; o0.textContent = "— (cor da unidade)";
+  su.appendChild(o0);
+  const props = m.propriedades || {};
+  for (const u of m.legenda) {
+    if (!props[u.chave]) continue;
+    const o = document.createElement("option");
+    o.value = u.chave;
+    o.textContent = `${u.nome} (${props[u.chave].pocos.length} poço(s) avaliado(s))`;
+    su.appendChild(o);
+  }
+  su.disabled = su.options.length === 1;
+  su.title = su.disabled ? "Nenhuma unidade com avaliação de formação nos poços deste bloco (aba Perfis)." : "";
+  const sp = limpar($("bl-drape-prop"));
+  for (const [k, nome] of Object.entries(m.nomes_propriedades || {})) {
+    const o = document.createElement("option");
+    o.value = k; o.textContent = nome;
+    sp.appendChild(o);
+  }
+  sp.disabled = su.disabled;
+}
+
+function drapeEscolhido() {
+  return $("bl-drape-unidade").value ? { chave: $("bl-drape-unidade").value, prop: $("bl-drape-prop").value } : null;
 }
 
 function desenharUnidadesBloco(m) {
@@ -193,6 +231,16 @@ async function exportarPngBloco() {
   }
 }
 
+async function exportarFiguraBloco(botao) {
+  if (!bl.ultimo || !window.BlocoVisor) return;
+  const r = await chamar(botao, "bloco_figura", bl.ultimo, { ...window.BlocoVisor.vistaAtual(),
+                                                              titulo: bl.modelo.titulo || "" }, botao.dataset.figura);
+  if (r.ok) {
+    $("bl-exportado").textContent = `Salvo em ambiente_teste/${r.arquivo}`;
+    status(`Figura do bloco: ${r.arquivo}`, "ok");
+  }
+}
+
 async function exportarCsvBloco() {
   if (!bl.ultimo) return;
   const r = await chamar($("bl-csv"), "bloco_exportar_csv", bl.ultimo);
@@ -202,7 +250,16 @@ async function exportarCsvBloco() {
   }
 }
 
+async function lerDirecionaisBloco() {
+  if (!bl.pocos.length) { status("Escolha os poços primeiro.", "erro"); return; }
+  status("Lendo os dados direcionais…", "trab");
+  const r = await chamar($("bl-direcionais"), "bloco_ler_direcionais", bl.pocos);
+  if (r.ok) status(`${r.lidos} arquivo(s) de dados direcionais lido(s); ${r.com_trajetoria} poço(s) com trajetória. ` +
+                   "Monte o bloco de novo para usar.", "ok");
+}
+
 function ligarBloco() {
+  ligar("bl-direcionais", "onclick", lerDirecionaisBloco);
   ligar("bl-modo", "onchange", trocarModoBloco);
   ligar("bl-selecionar", "onclick", selecionarPocosBloco);
   ligar("bl-limpar", "onclick", () => { bl.pocos = []; desenharListaBloco(); });
@@ -214,12 +271,20 @@ function ligarBloco() {
   ligar("bl-montar", "onclick", montarBloco);
   ligar("bl-png", "onclick", exportarPngBloco);
   ligar("bl-csv", "onclick", exportarCsvBloco);
+  for (const b of document.querySelectorAll("[data-figura]")) b.onclick = () => exportarFiguraBloco(b);
   ligar("bl-pasta", "onclick", () => chamar(null, "abrir_pasta_blocos"));
   ligar("bl-exagero", "oninput", () => {
     $("bl-exagero-v").textContent = `${$("bl-exagero").value}×`;
     if (window.BlocoVisor) window.BlocoVisor.exagero(Number($("bl-exagero").value));
   });
   ligar("bl-opacidade", "oninput", () => window.BlocoVisor && window.BlocoVisor.opacidade(Number($("bl-opacidade").value)));
+  ligar("bl-trilha", "onchange", () => window.BlocoVisor && window.BlocoVisor.trilha($("bl-trilha").value));
+  const drape = () => {
+    const d = drapeEscolhido();
+    if (window.BlocoVisor) window.BlocoVisor.drape(d && d.chave, d && d.prop);
+  };
+  ligar("bl-drape-unidade", "onchange", drape);
+  ligar("bl-drape-prop", "onchange", drape);
   ligar("bl-nomes", "onchange", () => window.BlocoVisor && window.BlocoVisor.nomes($("bl-nomes").checked));
   ligar("bl-caixa", "onchange", () => window.BlocoVisor && window.BlocoVisor.caixa($("bl-caixa").checked));
   for (const b of document.querySelectorAll("[data-vista3d]")) {

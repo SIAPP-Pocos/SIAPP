@@ -24,7 +24,7 @@ function limparCena() {
     if (o.material) (Array.isArray(o.material) ? o.material : [o.material]).forEach((m) => m.dispose());
   });
   while (v.scene.children.length) v.scene.remove(v.scene.children[0]);
-  v.marcas = []; v.rotulos = []; v.superficies = {}; v.topos = {};
+  v.marcas = []; v.rotulos = []; v.superficies = {}; v.topos = {}; v.marcasProp = []; v.alvosTrilha = [];
   if (v.overlay) v.overlay.textContent = "";
 }
 
@@ -98,6 +98,7 @@ function montarCena(m) {
                cota: (m.cota_max + m.cota_min) / 2 };
   v.lado = Math.max((g.nx - 1) * g.passo, (g.ny - 1) * g.passo, 0.5);
   const X = (x) => x - v.centro.x, Z = (y) => -(y - v.centro.y);
+  v.X = X; v.Z = Z;
 
   v.scene.add(new THREE.AmbientLight(0xffffff, 0.75));
   const luz = new THREE.DirectionalLight(0xffffff, 0.9);
@@ -172,13 +173,15 @@ function desenharPocosECaixa(m, g, X, Z) {
   const geoTopo = new THREE.CylinderGeometry(r * 1.6, r * 1.6, r * 0.5, 16);
   const matCabeca = new THREE.MeshLambertMaterial({ color: 0x1c2227 });
   const matLinha = new THREE.LineBasicMaterial({ color: 0x3a4148 });
+  const matTraj = new THREE.LineBasicMaterial({ color: 0x1c2227 });
   for (const p of m.pocos) {
     const cotas = p.unidades.flatMap((u) => [u.cota_topo, u.cota_base]);
     const topo = p.mesa ?? Math.max(...cotas, 0);
     const fundo = p.cota_fundo ?? Math.min(...cotas, topo - 10);
-    const lg = new THREE.BufferGeometry().setFromPoints([
-      new THREE.Vector3(X(p.x), topo - v.centro.cota, Z(p.y)), new THREE.Vector3(X(p.x), fundo - v.centro.cota, Z(p.y))]);
-    v.mundo.add(new THREE.Line(lg, matLinha));
+    const caminho = p.caminho && p.caminho.length > 1
+      ? p.caminho.map(([, x, y, c]) => new THREE.Vector3(X(x), c - v.centro.cota, Z(y)))
+      : [new THREE.Vector3(X(p.x), topo - v.centro.cota, Z(p.y)), new THREE.Vector3(X(p.x), fundo - v.centro.cota, Z(p.y))];
+    v.mundo.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(caminho), p.trajetoria ? matTraj : matLinha));
     const cab = new THREE.Mesh(geoCabeca, matCabeca);
     cab.userData = { tipo: "poco", poco: p };
     v.scene.add(cab);
@@ -188,7 +191,7 @@ function desenharPocosECaixa(m, g, X, Z) {
       const disco = new THREE.Mesh(geoTopo, new THREE.MeshLambertMaterial({ color: u.cor }));
       disco.userData = { tipo: "topo", poco: p, unidade: u };
       v.scene.add(disco);
-      v.marcas.push({ obj: disco, x: X(p.x), cota: u.cota_topo, z: Z(p.y) });
+      v.marcas.push({ obj: disco, x: X(u.x ?? p.x), cota: u.cota_topo, z: Z(u.y ?? p.y) });
       (v.topos[u.chave] = v.topos[u.chave] || []).push(disco);
     }
   }
@@ -228,7 +231,219 @@ function desenharPocosECaixa(m, g, X, Z) {
                                      new THREE.LineBasicMaterial({ color: 0x9aa3a8 })));
   v.cantoSW = { lat: m.origem.lat + (g.y0 / 6371) * 180 / Math.PI,
                 lon: m.origem.lon + (g.x0 / (6371 * Math.cos(m.origem.lat * Math.PI / 180))) * 180 / Math.PI };
+  v.trilhas = new THREE.Group();
+  v.mundo.add(v.trilhas);
+  desenharTrilhas();
+  aplicarDrape();
   aplicarExagero();
+}
+
+// ------------------------------------------------ trilhas ao longo dos poços
+function noCaminho(p, md) {
+  const c = p.caminho;
+  if (!c || !c.length) return [p.x, p.y, null];
+  if (md <= c[0][0]) return [c[0][1], c[0][2], c[0][3]];
+  for (let k = 1; k < c.length; k++) {
+    if (md <= c[k][0]) {
+      const t = (md - c[k - 1][0]) / ((c[k][0] - c[k - 1][0]) || 1);
+      return [0, 1, 2].map((j) => c[k - 1][j + 1] + t * (c[k][j + 1] - c[k - 1][j + 1]));
+    }
+  }
+  const u = c[c.length - 1];
+  return [u[1], u[2], u[3]];
+}
+
+function tubo(p, a, b, cor, raio, dados) {
+  const mds = [a, ...(p.caminho || []).map((q) => q[0]).filter((m) => m > a && m < b), b];
+  const pts = mds.map((m) => { const [x, y, c] = noCaminho(p, m); return new THREE.Vector3(v.X(x), c - v.centro.cota, v.Z(y)); });
+  if (pts.length < 2 || pts[0].distanceTo(pts[pts.length - 1]) < 1e-6) return;
+  const curva = new THREE.CurvePath();
+  for (let k = 1; k < pts.length; k++) curva.add(new THREE.LineCurve3(pts[k - 1], pts[k]));
+  const geo = new THREE.TubeGeometry(curva, Math.max(2, pts.length * 2), raio, 8, false);
+  const mesh = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ color: cor }));
+  mesh.userData = { tipo: "trilha", poco: p, a, b, ...dados };
+  v.trilhas.add(mesh);
+  v.alvosTrilha.push(mesh);
+}
+
+function desenharTrilhas() {
+  for (const o of [...v.trilhas.children]) { o.geometry.dispose(); o.material.dispose(); v.trilhas.remove(o); }
+  v.alvosTrilha = [];
+  const r = v.lado * 0.0045;
+  const m = v.modelo;
+  for (const p of m.pocos) {
+    if (v.trilha === "avaliacao") {
+      for (const [a, b, c] of p.classes || []) {
+        const cl = m.classes[c] || m.classes[String(c)];
+        tubo(p, a, b, cl.cor, r, { rotulo: cl.nome });
+      }
+    } else if (v.trilha === "indicios") {
+      for (const i of p.indicios || []) {
+        tubo(p, i.md_topo, i.md_base, CORES_FLUIDO[i.fluido] || "#898781", r, { rotulo: `indício de ${i.fluido}` });
+      }
+    }
+  }
+  desenharLegendaTrilha();
+}
+
+const CORES_FLUIDO = { "óleo": "#008300", "gás": "#e34948", "outro": "#898781" };
+
+function itensTrilha() {
+  const m = v.modelo;
+  if (v.trilha === "avaliacao") {
+    const usadas = new Set(m.pocos.flatMap((p) => (p.classes || []).map((c) => c[2])));
+    return Object.entries(m.classes).filter(([k]) => usadas.has(Number(k))).map(([, c]) => [c.cor, c.nome]);
+  }
+  if (v.trilha === "indicios") {
+    const usados = new Set(m.pocos.flatMap((p) => (p.indicios || []).map((i) => i.fluido)));
+    return [...usados].map((f) => [CORES_FLUIDO[f] || "#898781", `indício de ${f} (AGP)`]);
+  }
+  return [];
+}
+
+function desenharLegendaTrilha() {
+  if (!v.legTrilha) {
+    v.legTrilha = document.createElement("div");
+    v.legTrilha.className = "bl-leg-trilha";
+    v.renderer.domElement.parentElement.appendChild(v.legTrilha);
+  }
+  v.legTrilha.textContent = "";
+  const itens = itensTrilha();
+  v.legTrilha.hidden = !itens.length;
+  for (const [cor, nome] of itens) {
+    const li = document.createElement("div");
+    const i = document.createElement("i");
+    i.style.background = cor;
+    li.append(i, document.createTextNode(nome));
+    v.legTrilha.appendChild(li);
+  }
+}
+
+// ------------------------------------------------ propriedade no topo
+const RAMPA = ["#cde2fb", "#b7d3f6", "#9ec5f4", "#86b6ef", "#6da7ec", "#5598e7", "#3987e5", "#2a78d6",
+               "#256abf", "#1c5cab", "#184f95", "#104281", "#0d366b"];
+
+function corRampa(t) {
+  t = Math.min(1, Math.max(0, t));
+  const f = t * (RAMPA.length - 1), k = Math.min(RAMPA.length - 2, Math.floor(f));
+  const a = new THREE.Color(RAMPA[k]), b = new THREE.Color(RAMPA[k + 1]);
+  return a.lerp(b, f - k);
+}
+
+function fmtProp(valor, prop) {
+  if (valor == null) return "—";
+  if (prop === "ntg" || prop === "phi_media_pay" || prop === "sw_media_pay") return fmt(valor, 2);
+  return fmt(valor, 1) + " m";
+}
+
+function aplicarDrape() {
+  const m = v.modelo, g = m.grade;
+  // desfaz o anterior: superfície volta à cor da unidade, marcas somem
+  if (v.drapeAnterior) {
+    const s = m.superficies.find((x) => x.chave === v.drapeAnterior);
+    if (s) trocarSuperficie(s, null);
+  }
+  for (const o of v.marcasProp || []) { v.scene.remove(o); o.geometry.dispose(); o.material.dispose(); }
+  v.marcas = v.marcas.filter((mk) => !mk.prop);
+  v.marcasProp = [];
+  v.drapeAnterior = null;
+  if (v.escala) v.escala.hidden = true;
+  const d = v.drape;
+  aplicarOpacidade(d && d.chave);
+  if (!d || !d.chave || !m.propriedades || !m.propriedades[d.chave]) { desenhar(); return; }
+  const info = m.propriedades[d.chave], faixa = info.faixas[d.prop];
+  if (!faixa) { desenhar(); return; }
+  const [lo, hi] = faixa[0] === faixa[1] ? [faixa[0] - 1e-9, faixa[1] + 1e-9] : faixa;
+  const s = m.superficies.find((x) => x.chave === d.chave);
+  const grade = info.grades[d.prop];
+  if (s && s.z) trocarSuperficie(s, grade ? { grade, lo, hi } : null);
+  v.drapeAnterior = d.chave;
+  // esferas coloridas nos poços que têm o valor
+  const r = v.lado * 0.011;
+  const unidade = (m.legenda.find((u) => u.chave === d.chave) || {}).nome || d.chave;
+  for (const q of info.pocos) {
+    if (q[d.prop] == null) continue;
+    const esf = new THREE.Mesh(new THREE.SphereGeometry(r, 16, 12),
+                               new THREE.MeshLambertMaterial({ color: corRampa((q[d.prop] - lo) / (hi - lo)) }));
+    esf.userData = { tipo: "prop", poco: m.pocos.find((p) => p.id === q.id) || { id: q.id, unidades: [] },
+                     valor: q[d.prop], prop: d.prop, nomeProp: m.nomes_propriedades[d.prop], unidade,
+                     intervalo: q.intervalo };
+    v.scene.add(esf);
+    v.marcasProp.push(esf);
+    v.marcas.push({ obj: esf, x: v.X(q.x), cota: q.cota, z: v.Z(q.y), prop: true });
+  }
+  desenharEscala(`${m.nomes_propriedades[d.prop]} — ${unidade}`, lo, hi, d.prop, !grade);
+  aplicarExagero();
+}
+
+// Com uma propriedade no topo de uma unidade, as outras superfícies ficam translúcidas
+// (a escala é azul, e a Jandaíra também: sem isso, uma se confunde com a outra).
+function aplicarOpacidade(destaque) {
+  for (const [chave, m] of Object.entries(v.superficies)) {
+    const o = destaque && chave !== destaque ? Math.min(v.opacidade, 0.22) : v.opacidade;
+    m.material.opacity = o;
+    m.material.transparent = o < 1;
+    m.material.depthWrite = o >= 0.5;
+    m.material.needsUpdate = true;
+  }
+}
+
+function trocarSuperficie(s, drape) {
+  const antigo = v.superficies[s.chave];
+  if (!antigo) return;
+  const g = v.modelo.grade;
+  let geo;
+  if (drape) {
+    geo = geometriaGrade(s, g, v.X, v.Z);
+    const cores = new Float32Array(g.nx * g.ny * 3);
+    const neutro = new THREE.Color("#d5d3cc");
+    for (let j = 0; j < g.ny; j++) {
+      for (let i = 0; i < g.nx; i++) {
+        const val = drape.grade[j][i];
+        const c = val == null ? neutro : corRampa((val - drape.lo) / (drape.hi - drape.lo));
+        cores.set([c.r, c.g, c.b], (j * g.nx + i) * 3);
+      }
+    }
+    geo.setAttribute("color", new THREE.BufferAttribute(cores, 3));
+  } else {
+    geo = s.malha ? geometriaMalha(s.malha, v.X, v.Z) : geometriaGrade(s, g, v.X, v.Z);
+  }
+  geo.computeVertexNormals();
+  antigo.geometry.dispose();
+  antigo.geometry = geo;
+  antigo.material.vertexColors = !!drape;
+  antigo.material.color.set(drape ? "#ffffff" : s.cor);
+  antigo.material.needsUpdate = true;
+}
+
+function desenharEscala(titulo, lo, hi, prop, soPocos) {
+  if (!v.escala) {
+    v.escala = document.createElement("div");
+    v.escala.className = "bl-escala";
+    v.renderer.domElement.parentElement.appendChild(v.escala);
+  }
+  v.escala.hidden = false;
+  v.escala.textContent = "";
+  const t = document.createElement("div");
+  t.className = "bl-escala-titulo";
+  t.textContent = titulo;
+  const barra = document.createElement("div");
+  barra.className = "bl-escala-barra";
+  barra.style.background = `linear-gradient(to right, ${RAMPA.join(", ")})`;
+  const lim = document.createElement("div");
+  lim.className = "bl-escala-lim";
+  lim.innerHTML = "";
+  const a = document.createElement("span"), b = document.createElement("span");
+  a.textContent = fmtProp(lo, prop); b.textContent = fmtProp(hi, prop);
+  lim.append(a, b);
+  v.escala.append(t, barra, lim);
+  if (soPocos) {
+    const n = document.createElement("div");
+    n.className = "bl-escala-nota";
+    n.textContent = "menos de 3 poços avaliados: só nos poços";
+    v.escala.appendChild(n);
+  }
+  v.escalaInfo = { titulo, lo, hi, prop, soPocos };
 }
 
 function aplicarExagero() {
@@ -270,13 +485,15 @@ function desenhar() {
 }
 
 function vista(qual) {
-  const d = v.lado * 1.45, t = v.controls.target.set(0, 0, 0);
+  // enquadra a caixa inteira: o lado horizontal e a altura (com o exagero atual)
+  const altura = v.modelo ? (v.modelo.cota_max - v.modelo.cota_min) * v.exagero / 1000 : 0;
+  const d = Math.max(v.lado * 1.45, altura * 2.1), t = v.controls.target.set(0, 0, 0);
   const el = { obliqua: 35, cima: 89.9, sul: 6, oeste: 6 }[qual] ?? 35;
   const az = { obliqua: -35, cima: 0, sul: 0, oeste: -90 }[qual] ?? -35;   // graus a partir do sul
   const e = el * Math.PI / 180, a = az * Math.PI / 180;
   v.camera.position.set(t.x + d * Math.cos(e) * Math.sin(a), t.y + d * Math.sin(e), t.z + d * Math.cos(e) * Math.cos(a));
-  v.camera.near = v.lado / 1000;
-  v.camera.far = v.lado * 100;
+  v.camera.near = d / 2000;
+  v.camera.far = d * 100;
   v.camera.updateProjectionMatrix();
   v.controls.update();
   desenhar();
@@ -286,16 +503,22 @@ function passarMouse(ev) {
   const c = v.renderer.domElement, rc = c.getBoundingClientRect();
   const mouse = new THREE.Vector2(((ev.clientX - rc.left) / rc.width) * 2 - 1, -((ev.clientY - rc.top) / rc.height) * 2 + 1);
   v.raio.setFromCamera(mouse, v.camera);
-  const alvos = v.marcas.map((m) => m.obj).filter((o) => o.visible);
+  const alvos = v.marcas.map((m) => m.obj).filter((o) => o.visible).concat(v.alvosTrilha || []);
   const hit = v.raio.intersectObjects(alvos, false)[0];
   if (!hit) { v.dica.hidden = true; return; }
   const d = hit.object.userData, p = d.poco;
   const linhas = [p.id + (p.campo ? ` · ${p.campo}` : "")];
-  if (d.tipo === "topo") {
+  if (d.tipo === "trilha") {
+    linhas.push(`${d.rotulo}: ${fmt(d.a, 1)}–${fmt(d.b, 1)} m (prof. medida)`);
+  } else if (d.tipo === "prop") {
+    linhas.push(`${d.nomeProp} em ${d.unidade}: ${fmtProp(d.valor, d.prop)}` + (d.intervalo ? ` (intervalo "${d.intervalo}")` : ""));
+  } else if (d.tipo === "topo") {
     linhas.push(`${d.unidade.nome}: topo ${fmt(d.unidade.topo, 1)} m · cota ${fmt(d.unidade.cota_topo, 1)} m`);
   } else {
     if (p.mesa != null) linhas.push(`mesa rotativa ${fmt(p.mesa, 1)} m`);
     if (p.prof_final) linhas.push(`prof. final ${fmt(p.prof_final, 0)} m` + (p.desviado ? " · desviado" : ""));
+    if (p.trajetoria) linhas.push(`trajetória dos dados direcionais · afastamento ${fmt(p.trajetoria.afastamento_m, 0)} m`);
+    if (p.avaliacao) linhas.push(`avaliação: ${p.avaliacao}`);
     linhas.push(`${p.unidades.length} topo(s) no AGP`);
   }
   v.dica.textContent = linhas.join("\n");
@@ -362,6 +585,29 @@ function imagem(meta = {}) {
     g.fillStyle = "#1c2227"; g.fillText(u.nome, x + 17, y);
     x += 22 + g.measureText(u.nome).width + 14;
   }
+  const itens = itensTrilha();
+  if (itens.length) {
+    x = 14; y += 22;
+    g.font = "600 11px Segoe UI, sans-serif"; g.fillStyle = "#1c2227";
+    g.fillText(v.trilha === "avaliacao" ? "Ao longo dos poços (avaliação de formação)" : "Ao longo dos poços (AGP)", x, y);
+    y += 16; g.font = "11px Segoe UI, sans-serif";
+    for (const [cor, nome] of itens) {
+      g.fillStyle = cor; g.fillRect(x, y - 9, 12, 10);
+      g.fillStyle = "#1c2227"; g.fillText(nome, x + 17, y);
+      x += 22 + g.measureText(nome).width + 14;
+    }
+  }
+  if (v.escalaInfo && v.escala && !v.escala.hidden) {
+    const e = v.escalaInfo, bx = w - 230, by = h + 18;
+    g.font = "600 11px Segoe UI, sans-serif"; g.fillStyle = "#1c2227"; g.textAlign = "left";
+    g.fillText(e.titulo, bx, by);
+    const grad = g.createLinearGradient(bx, 0, bx + 200, 0);
+    RAMPA.forEach((c, k) => grad.addColorStop(k / (RAMPA.length - 1), c));
+    g.fillStyle = grad; g.fillRect(bx, by + 6, 200, 10);
+    g.font = "10.5px Segoe UI, sans-serif"; g.fillStyle = "#5f6b73";
+    g.fillText(fmtProp(e.lo, e.prop), bx, by + 30);
+    g.textAlign = "right"; g.fillText(fmtProp(e.hi, e.prop), bx + 200, by + 30); g.textAlign = "left";
+  }
   const m = v.modelo;
   g.fillStyle = "#5f6b73"; g.font = "10.5px Segoe UI, sans-serif";
   const notas = [
@@ -387,16 +633,15 @@ window.BlocoVisor = {
     v.opacidade = op.opacidade ?? 0.85;
     v.mostrarNomes = op.nomes !== false;
     v.mostrarCaixa = op.caixa !== false;
+    v.trilha = op.trilha || "nenhuma";
+    v.drape = op.drape || null;
+    v.drapeAnterior = null;
     montarCena(modelo);
     redimensionar();
     vista("obliqua");
   },
   exagero(n) { v.exagero = n; if (v.modelo) aplicarExagero(); },
-  opacidade(o) {
-    v.opacidade = o;
-    for (const m of Object.values(v.superficies)) { m.material.opacity = o; m.material.transparent = o < 1; m.material.needsUpdate = true; }
-    desenhar();
-  },
+  opacidade(o) { v.opacidade = o; aplicarOpacidade(v.drape && v.drape.chave); desenhar(); },
   unidade(chave, visivel) {
     if (v.superficies[chave]) v.superficies[chave].visible = visivel;
     for (const d of v.topos[chave] || []) d.visible = visivel;
@@ -406,8 +651,19 @@ window.BlocoVisor = {
   caixa(sim) { v.mostrarCaixa = sim; if (v.caixa) v.caixa.visible = sim; desenhar(); },
   vista,
   imagem,
+  vistaAtual() {
+    const visiveis = v.modelo.legenda.map((u) => u.chave).filter((k) =>
+      (v.superficies[k] ? v.superficies[k].visible : (v.topos[k] || []).some((o) => o.visible)));
+    return { azimute: v.controls.getAzimuthalAngle(), elevacao: Math.PI / 2 - v.controls.getPolarAngle(),
+             exagero: v.exagero, visiveis, trilha: v.trilha, drape: v.drape, opacidade: v.opacidade,
+             nomes: v.mostrarNomes };
+  },
+  trilha(modo) { v.trilha = modo; if (v.modelo) { desenharTrilhas(); desenhar(); } },
+  drape(chave, prop) { v.drape = chave ? { chave, prop } : null; if (v.modelo) aplicarDrape(); },
   estado() {
     return { superficies: Object.keys(v.superficies).length, pocos: v.modelo ? v.modelo.pocos.length : 0,
-             rotulos: v.rotulos.filter((r) => !r.el.hidden).length, exagero: v.exagero };
+             rotulos: v.rotulos.filter((r) => !r.el.hidden).length, exagero: v.exagero,
+             trilhas: (v.alvosTrilha || []).length, drape: v.drapeAnterior,
+             escala: v.escala && !v.escala.hidden ? v.escala.textContent : "" };
   },
 };

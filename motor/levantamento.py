@@ -27,6 +27,7 @@ import threading
 from collections import Counter
 
 from . import agp as magp
+from . import direcionais as mdi
 from . import ferramentas as mfe
 from . import formatos
 from .banco import Banco, agora
@@ -266,12 +267,13 @@ class Levantamento:
                  cliente: ClienteREATE | None = None, agp: bool = False,
                  pasta_agp: str | None = None, estratigrafia: dict | None = None,
                  esquemas: bool = False, pasta_projeto: str | None = None, tessdata: str | None = None,
-                 ferramentas: dict | None = None):
+                 ferramentas: dict | None = None, direcionais: bool = False):
         self.banco, self.bacia, self.categorias = banco, bacia, list(categorias)
         self.emitir, self.curvas, self.conferir_todos, self.familia = emitir, curvas, conferir_todos, familia
         self.agp, self.pasta_agp, self.estratigrafia = agp, pasta_agp, estratigrafia or {}
         self.esquemas, self.pasta_projeto, self.tessdata = esquemas, pasta_projeto, tessdata
         self.ferramentas = ferramentas
+        self.direcionais = direcionais
         self.cliente = cliente or ClienteREATE.da_bacia(bacia)
         self.cancelar = threading.Event()
         self.thread: threading.Thread | None = None
@@ -363,9 +365,22 @@ class Levantamento:
                 self.emitir({"tipo": "arquivo", "feito": k, "total": len(fila),
                              "texto": f"Conferindo arquivos pelo conteúdo: {a['nome']}"})
         n_agp = self._ler_agps(alvo) if self.agp else 0
+        n_dir = self._ler_direcionais(alvo) if self.direcionais and self.pasta_projeto else 0
         n_esq = self._ler_esquemas(alvo) if self.esquemas and self.ferramentas and self.pasta_projeto else 0
         return {"pocos": n_pocos, "arquivos_lidos": len(fila), "agps_lidos": n_agp, "esquemas_lidos": n_esq,
-                "resumo": resumo(self.banco, self.bacia)}
+                "direcionais_lidos": n_dir, "resumo": resumo(self.banco, self.bacia)}
+
+    def _ler_direcionais(self, alvo: list[str]) -> int:
+        """3b. Dados direcionais (~1–10 KB por poço): a trajetória, para o bloco 3D."""
+        fila = mdi.pendentes(self.banco, self.bacia, alvo)
+
+        def progresso(k, n, nome):
+            self._checar()
+            if k % 5 == 1 or k == n:
+                self.emitir({"tipo": "direcional", "feito": k - 1, "total": n,
+                             "texto": f"Lendo os dados direcionais: {nome}"})
+        return mdi.ler_do_portal(self.banco, self.cliente, self.bacia, fila, pasta_projeto=self.pasta_projeto,
+                                 progresso=progresso, cancelar=self.cancelar)
 
     def _ler_esquemas(self, alvo: list[str]) -> int:
         """4. Esquemas de ferramentas (opcional; ~200 KB e ~2 s de OCR cada): só os ainda não lidos."""
@@ -486,6 +501,7 @@ def resumo(banco: Banco, bacia: str) -> dict:
         "atualizado_em": max((p["classificado_em"] or p["listado_em"] or "") for p in pocos),
         **_resumo_agp(banco, bacia),
         **mfe.resumo(banco, bacia),
+        **mdi.resumo(banco, bacia),
     }
 
 

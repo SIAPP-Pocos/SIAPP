@@ -61,7 +61,7 @@ async function iniciarLevantamento() {
   const cats = [...document.querySelectorAll(".lv-cat:checked")].map((c) => c.value);
   const r = await chamar($("lv-iniciar"), "levantar_acervo", bacia, cats,
                          $("lv-curvas").checked, $("lv-todos").checked, $("lv-agp").checked,
-                         $("lv-esquemas").checked);
+                         $("lv-esquemas").checked, $("lv-direcionais").checked);
   if (!r.ok) return;
   lvAtivo = true;
   mostrarAtivo(true);
@@ -145,6 +145,17 @@ function desenharResumoLevantamento(r) {
     }
     box.appendChild(ta);
   }
+  if (r.direcionais_disponiveis) {
+    box.appendChild(el("h3", "", "Dados direcionais (trajetória)"));
+    const td = el("table");
+    for (const [rot, n] of [["Arquivos no portal", r.direcionais_disponiveis], ["lidos", r.direcionais_lidos],
+                            ["com trajetória", r.direcionais_com_trajetoria]]) {
+      const tr = el("tr");
+      tr.append(el("th", "", rot), el("td", "n", numero(n, 0)));
+      td.appendChild(tr);
+    }
+    box.appendChild(td);
+  }
   if (r.esquemas_disponiveis) {
     box.appendChild(el("h3", "", "Esquemas de ferramentas"));
     const te = el("table");
@@ -172,8 +183,8 @@ async function exportarLevantamento() {
 window.eventoLevantamento = function (ev) {
   if (ev.tipo === "etapa") {
     $("lv-texto").textContent = ev.texto;
-  } else if (["listagem", "arquivo", "agp", "esquema"].includes(ev.tipo)) {
-    const fase = { listagem: "1 · ", arquivo: "2 · ", agp: "3 · ", esquema: "4 · " }[ev.tipo];
+  } else if (["listagem", "arquivo", "agp", "direcional", "esquema"].includes(ev.tipo)) {
+    const fase = { listagem: "1 · ", arquivo: "2 · ", agp: "3 · ", direcional: "3 · ", esquema: "4 · " }[ev.tipo];
     $("lv-texto").textContent = `${fase}${ev.texto} (${numero(ev.feito, 0)} de ${numero(ev.total, 0)})`;
     $("lv-texto").title = ev.texto;
     $("lv-barra").style.width = ev.total ? (100 * ev.feito / ev.total).toFixed(1) + "%" : "0%";
@@ -184,6 +195,7 @@ window.eventoLevantamento = function (ev) {
     if (ev.tipo === "fim") {
       status(`Levantamento concluído: ${numero(ev.pocos, 0)} poço(s), ${numero(ev.arquivos_lidos, 0)} arquivo(s) conferidos pelo conteúdo` +
              (ev.agps_lidos ? `, ${numero(ev.agps_lidos, 0)} AGP(s) lidos` : "") +
+             (ev.direcionais_lidos ? `, ${numero(ev.direcionais_lidos, 0)} arquivo(s) de dados direcionais` : "") +
              (ev.esquemas_lidos ? `, ${numero(ev.esquemas_lidos, 0)} esquema(s) de ferramentas lidos.` : "."), "ok");
     } else if (ev.tipo === "cancelado") {
       status("Levantamento cancelado. O que já foi lido fica salvo; levante de novo para continuar.", "ok");
