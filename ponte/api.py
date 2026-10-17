@@ -20,6 +20,7 @@ from motor.downloads import FilaDownloads
 
 from . import base
 from .base import BaseAPI, ErroUsuario, mesma_pasta, resposta_segura
+from .bloco import BlocoAPI
 from .catalogo import CatalogoAPI
 from .comunidade import ComunidadeAPI
 from .documentos import DocumentosAPI
@@ -33,7 +34,8 @@ from .vocabulario import VocabularioAPI
 
 
 class API(BaseAPI, PocosAPI, CatalogoAPI, DocumentosAPI, VocabularioAPI, ComunidadeAPI,
-          FatosAPI, PerfisAPI, LevantamentoAPI, SecaoAPI, FerramentasAPI):
+          FatosAPI, PerfisAPI, LevantamentoAPI, SecaoAPI, FerramentasAPI,
+          BlocoAPI):
     def __init__(self):
         self._janela = None
         self._projeto = None

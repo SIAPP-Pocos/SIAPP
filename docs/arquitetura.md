@@ -10,7 +10,7 @@
 │                                                  │ eventoLevantamento(…)      │
 │  ponte/  API da janela, uma parte por aba (catalogo, pocos, documentos,       │
 │          vocabulario, fatos, perfis, comunidade, levantamento, secao,         │
-│          ferramentas) — valida,                                               │
+│          ferramentas, bloco) — valida,                                        │
 │          chama o motor, devolve dicionários; nunca deixa exceção chegar ao JS │
 └──────────────┬───────────────────────────────────────────────────────────────┘
                ▼
@@ -25,6 +25,7 @@
     agp.py          AGP da ANP: topos, lama, testes, litologia (tabelas agp, agp_unidades)
     secao.py        seção estratigráfica pelos topos do AGP → SVG (PNG/PDF pelo PyMuPDF)
     secao_classica.py  estilo clássico: padrões de rocha, carimbo, mapa de localização
+    bloco.py        bloco 3D: contorno convexo, Delaunay, superfícies de topo (só numpy) → janela com three.js
     ferramentas.py  esquemas de ferramentas: tipo da corrida, ferramentas, vínculo com os perfis (tabela esquemas)
                ▼
   ambiente_teste/  — pasta de projeto (contrato entre as partes)
@@ -84,6 +85,7 @@ cadastro e avisa se o arquivo estiver na pasta de outro poço.
 | Números só por transcrição conferida, nunca por regra global | Num teste real, 6 de 18 profundidades lidas por OCR estavam erradas |
 | Mesmo modelo de dados no banco local e na base comunitária | Exportar e importar viram consultas, não conversões |
 | Caminhos relativos sempre com "/" | A pasta de projeto funciona igual no Windows, Linux e macOS |
+| three.js copiado para `ui/vendor/three/` (módulo ES, carregado por *import map*) | O bloco 3D abre sem internet; a geometria é toda do motor, a janela só desenha |
 | Leaflet copiado para `ui/vendor/` | O mapa abre mesmo sem acesso a CDN; só o fundo do mapa precisa de internet |
 | Escrita atômica (`.tmp` + troca) em todo JSON | Interrupção nunca deixa arquivo pela metade |
 

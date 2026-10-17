@@ -271,6 +271,62 @@ def _normalizar(u: dict, nomes: dict) -> dict:
     return u
 
 
+def dados_poco(banco: Banco, pid: str, nomes: dict) -> dict | None:
+    """Cadastro, AGP e unidades de um poço (None se não tiver coordenadas). Usado pela
+    seção e pelo bloco 3D."""
+    cad = _cadastro(banco, pid)
+    agps = magp.do_poco(banco, pid)
+    g = agps[0] if agps else None
+    cab = g["dados"]["cabecalho"] if g else {}
+    lat = cad["lat"] if cad and cad.get("lat") is not None else cab.get("lat")
+    lon = cad["lon"] if cad and cad.get("lon") is not None else cab.get("lon")
+    if lat is None or lon is None:
+        return None
+    todas = [_normalizar(u, nomes) for u in magp.unidades_do_poco(banco, pid)
+             if not g or u["caminho"] == g["caminho"]]
+    return {"id": pid, "lat": float(lat), "lon": float(lon), "cad": cad, "agp": g, "cab": cab,
+            "lito": [u for u in todas if u["tip"] == "L"], "todas": todas}
+
+
+def coluna_poco(d: dict, niveis: tuple) -> dict:
+    """Mesa, pontos de controle (prof, cota), fundo do poço e unidades do nível pedido com
+    topo e base em cota — a coluna estratigráfica do poço segundo o AGP."""
+    mesa = _mesa(d["cab"], d["cad"], d["lito"])
+    ctrl = _controle(mesa, d["todas"])
+    prof_final = d["cab"].get("prof_final") or (d["cad"] or {}).get("prof_sondador")
+    cota_fundo = None
+    if prof_final:
+        cf = _md_para_cota(np.array([float(prof_final)]), mesa, ctrl)
+        cota_fundo = float(cf[0]) if cf is not None else None
+    uns = []
+    escolhidas = sorted([u for u in d["lito"] if u["nivel"] in niveis and u["topo"] is not None],
+                        key=lambda u: (u["topo"], u["ordem"]))
+    for k, u in enumerate(escolhidas):
+        ct = u["cota_topo"] if u["cota_topo"] is not None else (mesa - u["topo"] if mesa is not None else None)
+        if ct is None:
+            continue
+        base, cb = u["base"], u["cota_base"]
+        # leiaute novo: "N" depois da base = base não atingida (a base é o fundo do poço)
+        atingida = base is not None and (u.get("desc_base") or "") != "N"
+        if base is not None and cb is None and mesa is not None:
+            cb = mesa - base
+        if cb is None:      # sem base: até a próxima unidade, ou até o fundo do poço
+            prox = next((v for v in escolhidas[k + 1:] if v["topo"] > u["topo"]), None)
+            if prox is not None:
+                cb = prox["cota_topo"] if prox["cota_topo"] is not None else ct - (prox["topo"] - u["topo"])
+                base = prox["topo"]
+            elif cota_fundo is not None:
+                cb, base, atingida = cota_fundo, prof_final, False
+            else:
+                cb, base, atingida = ct, u["topo"], False
+        uns.append({"chave": u["sigla"].upper(), "sigla": u["sigla"], "nome": _rotulo_unidade(u),
+                    "nivel": u["nivel"], "topo": u["topo"], "base": base, "cota_topo": float(ct),
+                    "cota_base": float(cb), "base_atingida": atingida, "fonte": u["fonte"] or "",
+                    "data": u["data"] or "", "qualidade": magp.QUALIDADES.get(u["ql"] or "", ""),
+                    "metodo": u["metodo"] or ""})
+    return {"mesa": mesa, "ctrl": ctrl, "prof_final": prof_final, "cota_fundo": cota_fundo, "unidades": uns}
+
+
 def montar(banco: Banco, pocos: list[str], *, ordem: str = "linha", nivel: str = "formacoes",
            eixo: str = "cota", datum: str | None = None, espacamento: str = "proporcional",
            litologia: bool = True, gr: bool = True, gr_de=None, slots: dict | None = None,
@@ -291,24 +347,15 @@ def montar(banco: Banco, pocos: list[str], *, ordem: str = "linha", nivel: str =
 
     dados = {}
     for pid in pocos:
-        cad = _cadastro(banco, pid)
-        agps = magp.do_poco(banco, pid)
-        g = agps[0] if agps else None
-        cab = g["dados"]["cabecalho"] if g else {}
-        lat = (cad or {}).get("lat") if cad and cad.get("lat") is not None else cab.get("lat")
-        lon = (cad or {}).get("lon") if cad and cad.get("lon") is not None else cab.get("lon")
-        if lat is None or lon is None:
+        d = dados_poco(banco, pid, nomes)
+        if d is None:
             avisos.append(f"{pid}: sem coordenadas — fora da seção.")
             continue
-        todas = [_normalizar(u, nomes) for u in magp.unidades_do_poco(banco, pid)
-                 if not g or u["caminho"] == g["caminho"]]
-        lito = [u for u in todas if u["tip"] == "L"]
-        dados[pid] = {"id": pid, "lat": float(lat), "lon": float(lon), "cad": cad, "agp": g, "cab": cab,
-                      "lito": lito, "todas": todas}
-        if g is None:
+        dados[pid] = d
+        if d["agp"] is None:
             avisos.append(f"{pid}: sem AGP lido — a coluna fica vazia.")
-        elif g.get("confere") == 0:
-            avisos.append(f"{pid}: o AGP usado estava na pasta de {g['poco_pasta']} no portal.")
+        elif d["agp"].get("confere") == 0:
+            avisos.append(f"{pid}: o AGP usado estava na pasta de {d['agp']['poco_pasta']} no portal.")
 
     if len(dados) < 2:
         raise ErroSecao("Menos de dois poços com coordenadas.")
@@ -317,42 +364,12 @@ def montar(banco: Banco, pocos: list[str], *, ordem: str = "linha", nivel: str =
     saida_pocos = []
     for pid in geo["ordem"]:
         d = dados[pid]
-        mesa = _mesa(d["cab"], d["cad"], d["lito"])
-        ctrl = _controle(mesa, d["todas"])
+        col = coluna_poco(d, niveis)
+        mesa, ctrl, prof_final, cota_fundo, uns = (col["mesa"], col["ctrl"], col["prof_final"],
+                                                   col["cota_fundo"], col["unidades"])
         if ctrl[2]:
             avisos.append(f"{pid}: poço desviado (as cotas do AGP não são mesa − profundidade); "
                           "a curva GR usa os pontos do AGP para converter.")
-        prof_final = d["cab"].get("prof_final") or (d["cad"] or {}).get("prof_sondador")
-        cota_fundo = None
-        if prof_final:
-            cf = _md_para_cota(np.array([float(prof_final)]), mesa, ctrl)
-            cota_fundo = float(cf[0]) if cf is not None else None
-        uns = []
-        escolhidas = sorted([u for u in d["lito"] if u["nivel"] in niveis and u["topo"] is not None],
-                            key=lambda u: (u["topo"], u["ordem"]))
-        for k, u in enumerate(escolhidas):
-            ct = u["cota_topo"] if u["cota_topo"] is not None else (mesa - u["topo"] if mesa is not None else None)
-            if ct is None:
-                continue
-            base, cb = u["base"], u["cota_base"]
-            # leiaute novo: "N" depois da base = base não atingida (a base é o fundo do poço)
-            atingida = base is not None and (u.get("desc_base") or "") != "N"
-            if base is not None and cb is None and mesa is not None:
-                cb = mesa - base
-            if cb is None:      # sem base: até a próxima unidade, ou até o fundo do poço
-                prox = next((v for v in escolhidas[k + 1:] if v["topo"] > u["topo"]), None)
-                if prox is not None:
-                    cb = prox["cota_topo"] if prox["cota_topo"] is not None else ct - (prox["topo"] - u["topo"])
-                    base = prox["topo"]
-                elif cota_fundo is not None:
-                    cb, base, atingida = cota_fundo, prof_final, False
-                else:
-                    cb, base, atingida = ct, u["topo"], False
-            uns.append({"chave": u["sigla"].upper(), "sigla": u["sigla"], "nome": _rotulo_unidade(u),
-                        "nivel": u["nivel"], "topo": u["topo"], "base": base, "cota_topo": float(ct),
-                        "cota_base": float(cb), "base_atingida": atingida, "fonte": u["fonte"] or "",
-                        "data": u["data"] or "", "qualidade": magp.QUALIDADES.get(u["ql"] or "", ""),
-                        "metodo": u["metodo"] or ""})
         if not uns:
             avisos.append(f"{pid}: o AGP não tem {ROTULO_NIVEL[nivel]} com topo.")
         lit = []

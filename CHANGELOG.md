@@ -6,6 +6,25 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 
 ## [Não lançado]
 
+## [0.18.0] — 2026-10-17
+### Adicionado
+- **Aba Bloco 3D**: poços no espaço e superfícies de topo das unidades pelos topos do AGP.
+  - Poços de um campo (margem 0), em volta de um poço, todos da bacia (bloco regional) ou os
+    da aba Seção; poço muito longe dos demais fica de fora, com aviso.
+  - Superfícies por **interpolação linear** nos triângulos de Delaunay, só **dentro do
+    contorno convexo** dos poços que têm a unidade; margem opcional preenchida pelo poço mais
+    próximo; fora, nulo. **Área do contorno** pelo shoelace. Corte opcional por distância
+    ao poço mais próximo. Sem superfície com menos de 3 poços ou poços quase alinhados.
+  - Avisos de superfícies que se cruzam e de poços desviados (desenhados na vertical).
+  - Visor 3D (three.js 0.160, em `ui/vendor/three/`): exagero vertical, opacidade, unidades
+    liga/desliga, nomes, caixa com eixos (km e cota), norte, vistas prontas, dados do poço
+    ao passar o mouse.
+  - Registro em `execucoes/bloco_<data-hora>.json`, blocos anteriores, **PNG** com legenda e
+    carimbo, **CSV** dos topos e da grade das superfícies. `docs/bloco.md`.
+### Alterado
+- A coluna de cada poço (unidades em cota, mesa, fundo) saiu de `secao.montar` para
+  `secao.dados_poco` / `secao.coluna_poco`, usadas pela seção e pelo bloco.
+
 ## [0.17.0] — 2026-10-16
 ### Adicionado
 - **Esquemas de ferramentas**: o SIAPP diz o que é cada arquivo de perfil do poço —

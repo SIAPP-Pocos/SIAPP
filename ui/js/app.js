@@ -9,6 +9,7 @@ const AO_ABRIR_ABA = {
   mapa: () => carregarMapa(),
   perfis: () => carregarPerfis(),
   secao: () => carregarSecao(),
+  bloco: () => carregarBloco(),
   docs: () => carregarDocumentos(),
   comunidade: () => carregarComunidade(),
 };
@@ -108,6 +109,7 @@ async function iniciar() {
   ligarMapa();
   ligarPerfis();
   ligarSecao();
+  ligarBloco();
   ligarComunidade();
   ligar("ocr-cancelar", "onclick", async () => {
     await chamar($("ocr-cancelar"), "cancelar_processamento");

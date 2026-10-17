@@ -131,6 +131,27 @@ Precisa de internet. Comece por uma categoria pequena para ver o tempo.
 - [ ] Sem intervalo marcado, **Calcular** explica que precisa de um intervalo-alvo.
 - [ ] Repetir no `5PX__0011__RN_5PX__0011__RN.tif` (DLIS de 2020).
 
+## 0.18 — bloco 3D
+
+Antes: AGPs lidos (Cat. 1 da Potiguar basta).
+
+- [ ] **Bloco 3D** → Escolher *os poços de um campo* → `ESTREITO` → **Trazer os poços** (14) →
+      **Montar o bloco**. Aparecem os poços, as superfícies de Barreiras, Jandaíra, Açu, Alagamar
+      e Embasamento e o resumo "contorno dos poços 149,4 km²".
+- [ ] Girar com o mouse, aproximar com a roda; **De cima** mostra o mapa dos poços; a seta do
+      norte acompanha.
+- [ ] **Exagero vertical**: de 1× (real) a 60×. **Opacidade**: ver as superfícies de baixo.
+- [ ] Desmarcar *Formação Jandaíra* na lista: a superfície e os discos somem.
+- [ ] Passar o mouse num disco: poço, unidade, profundidade e cota do topo.
+- [ ] Avisos embaixo: Ponta do Mel em 1 poço (sem superfície); onde duas superfícies se cruzam.
+- [ ] **PNG**: `exportacoes\blocos\bloco_….png` com legenda e carimbo. **CSV**: topos e grade.
+- [ ] *Todos da bacia* → Potiguar, com "Esconder onde o poço mais próximo está a mais de 15 km":
+      o bloco regional (429 poços; o `1-BRSA-264-ES` fica de fora com aviso). Os nomes vêm
+      desligados (muitos poços).
+- [ ] *Em volta de um poço*: `1-BRSA-276-RN`, 10 km. *Os poços da aba Seção*: a lista da Seção.
+- [ ] Margem 1 km num campo: a superfície passa um pouco do contorno (valor do poço mais próximo).
+- [ ] **Blocos anteriores**: reabre sem recalcular.
+
 ## 0.17 — esquemas de ferramentas
 
 Antes: o levantamento da Potiguar já feito (Cat. 1 basta). Sem marcar nada novo.

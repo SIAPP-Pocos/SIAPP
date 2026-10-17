@@ -20,6 +20,7 @@
       <button class="aba" id="aba-docs" data-vista="docs" role="tab" aria-selected="false">Documentos</button>
       <button class="aba" id="aba-perfis" data-vista="perfis" role="tab" aria-selected="false">Perfis</button>
       <button class="aba" id="aba-secao" data-vista="secao" role="tab" aria-selected="false">Seção</button>
+      <button class="aba" id="aba-bloco" data-vista="bloco" role="tab" aria-selected="false">Bloco 3D</button>
       <button class="aba" id="aba-comunidade" data-vista="comunidade" role="tab" aria-selected="false">Comunidade</button>
     </nav>
     <span class="versao" id="versao">—</span>
@@ -655,6 +656,101 @@
     </section>
   </main>
 
+  <main class="grade bloco" id="vista-bloco" hidden>
+    <aside class="lateral">
+      <section class="etapa">
+        <h2>Poços do bloco <span class="contagem" id="bl-n">0</span></h2>
+        <p class="ajuda" id="bl-disponiveis">Poços com topos de formação no AGP (leia os AGPs no Levantamento do acervo, aba Mapa).</p>
+        <div class="filtros">
+          <label>Escolher
+            <select id="bl-modo">
+              <option value="campo">os poços de um campo</option>
+              <option value="raio">em volta de um poço</option>
+              <option value="todos">todos da bacia (bloco regional)</option>
+              <option value="secao">os poços da aba Seção</option>
+            </select></label>
+          <label id="bl-campo-box">Campo <select id="bl-campo"></select></label>
+          <div class="linha" id="bl-raio-box" hidden>
+            <label>Poço <input type="text" id="bl-centro" list="bl-lista-pocos" autocomplete="off"></label>
+            <label>Raio (km) <input type="text" id="bl-raio" value="10" inputmode="decimal"></label>
+          </div>
+          <label id="bl-bacia-box" hidden>Bacia <select id="bl-bacia"></select></label>
+        </div>
+        <div class="linha">
+          <button class="btn secundario" id="bl-selecionar">Trazer os poços</button>
+          <button class="btn secundario pequeno" id="bl-limpar">Limpar</button>
+        </div>
+        <form class="linha" id="bl-form-poco">
+          <input type="text" id="bl-poco" list="bl-lista-pocos" placeholder="mais um poço…" autocomplete="off">
+          <button class="btn secundario pequeno" type="submit">Adicionar</button>
+        </form>
+        <datalist id="bl-lista-pocos"></datalist>
+        <p class="ajuda bl-lista" id="bl-lista"></p>
+      </section>
+      <section class="etapa">
+        <h2>Superfícies</h2>
+        <div class="filtros">
+          <label>Unidades
+            <select id="bl-nivel">
+              <option value="formacoes">formações</option>
+              <option value="membros">membros e camadas</option>
+              <option value="grupos">grupos</option>
+            </select></label>
+          <label>Margem além do contorno dos poços (km) <input type="text" id="bl-margem" value="0" inputmode="decimal"></label>
+          <label>Esconder onde o poço mais próximo está a mais de (km)
+            <input type="text" id="bl-distmax" inputmode="decimal" placeholder="sem limite"></label>
+          <label>Resolução da grade (células no lado maior) <input type="text" id="bl-celulas" value="160" inputmode="numeric"></label>
+          <label>Título da figura <input type="text" id="bl-titulo" placeholder="opcional"></label>
+        </div>
+        <p class="ajuda">Interpolação linear entre os poços (triângulos), só dentro do contorno dos poços que
+          têm a unidade; na margem, o valor do poço mais próximo. Campo isolado: margem 0.</p>
+        <button class="btn" id="bl-montar">Montar o bloco</button>
+      </section>
+      <section class="etapa">
+        <h2>Blocos anteriores</h2>
+        <ul class="dic-lista" id="bl-historico"></ul>
+      </section>
+    </aside>
+    <section class="principal">
+      <div class="vazio" id="bl-vazio">
+        <p class="vazio-titulo">Bloco 3D</p>
+        <p>Os poços no espaço e as superfícies de topo das formações, a partir dos topos que a operadora registrou
+          no AGP. É <strong>contexto espacial</strong>: entre poços, a superfície é interpolação — o resultado
+          quantitativo continua sendo a seção e a avaliação. Cada bloco fica registrado em
+          <code>ambiente_teste\execucoes</code> com os poços e os parâmetros.</p>
+      </div>
+      <div id="bl-painel" hidden>
+        <div class="sec-barra">
+          <div class="linha">
+            <button class="btn secundario pequeno" data-vista3d="obliqua" title="Vista inclinada (padrão)">Oblíqua</button>
+            <button class="btn secundario pequeno" data-vista3d="cima" title="Vista de cima: mapa">De cima</button>
+            <button class="btn secundario pequeno" data-vista3d="sul" title="Olhando para o norte">Do sul</button>
+            <button class="btn secundario pequeno" data-vista3d="oeste" title="Olhando para o leste">Do oeste</button>
+          </div>
+          <div class="linha">
+            <button class="btn secundario pequeno" id="bl-png" title="A vista atual, em alta resolução">PNG</button>
+            <button class="btn secundario pequeno" id="bl-csv" title="Topos e grade das superfícies, para o Excel">CSV</button>
+            <button class="btn secundario pequeno" id="bl-pasta">Abrir a pasta</button>
+          </div>
+        </div>
+        <p class="ajuda resultado" id="bl-exportado"></p>
+        <div class="bl-visor-box">
+          <div class="bl-visor" id="bl-visor"></div>
+          <div class="bl-controles">
+            <label>Exagero vertical <input type="range" id="bl-exagero" min="1" max="60" step="1" value="10">
+              <span id="bl-exagero-v">10×</span></label>
+            <label>Opacidade <input type="range" id="bl-opacidade" min="0.2" max="1" step="0.05" value="0.85"></label>
+            <label class="opcao"><input type="checkbox" id="bl-nomes" checked> <span>Nomes dos poços</span></label>
+            <label class="opcao"><input type="checkbox" id="bl-caixa" checked> <span>Caixa e eixos</span></label>
+          </div>
+        </div>
+        <p class="ajuda" id="bl-resumo"></p>
+        <div class="bl-unidades" id="bl-unidades"></div>
+        <ul class="sec-avisos" id="bl-avisos"></ul>
+      </div>
+    </section>
+  </main>
+
   <main class="grade comunidade" id="vista-comunidade" hidden>
     <aside class="lateral">
       <section class="etapa">
@@ -747,8 +843,11 @@
   </div>
 
   <script src="vendor/leaflet/leaflet.js"></script>
+  <script type="importmap">{ "imports": { "three": "./vendor/three/three.module.min.js" } }</script>
+  <script type="module" src="js/bloco3d.js"></script>
   <script src="js/comum.js"></script>
   <script src="js/secao.js"></script>
+  <script src="js/bloco.js"></script>
   <script src="js/catalogo.js"></script>
   <script src="js/documentos.js"></script>
   <script src="js/fatos.js"></script>

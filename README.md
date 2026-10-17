@@ -2,13 +2,13 @@
 
 [![testes](https://github.com/SIAPP-Pocos/siapp/actions/workflows/testes.yml/badge.svg)](https://github.com/SIAPP-Pocos/siapp/actions/workflows/testes.yml)
 [![licença: AGPL-3.0](https://img.shields.io/badge/licen%C3%A7a-AGPL--3.0-blue)](LICENSE)
-![versão](https://img.shields.io/badge/vers%C3%A3o-0.17.0-informational)
+![versão](https://img.shields.io/badge/vers%C3%A3o-0.18.0-informational)
 
 Ferramenta aberta para transformar o acervo **público** de dados de poços da ANP
 (portal [REATE](https://reate.cprm.gov.br/anp/TERRESTRE), ANP/CPRM) em dados
 organizados, pesquisáveis e prontos para análise — sem software comercial.
 
-> **Estado:** em desenvolvimento ativo (v0.17). A interface e os formatos ainda
+> **Estado:** em desenvolvimento ativo (v0.18). A interface e os formatos ainda
 > podem mudar entre versões; a 1.0 sai no lançamento público.
 
 ---
@@ -32,6 +32,7 @@ que cada usuário receba os dados já tratados.
 | **Documentos** | Qualquer PDF, TIF (de várias páginas) ou imagem baixada abre na hora, com **visor ampliado** (zoom e arraste; perfil escaneado longo carrega em faixas). Texto embutido ou OCR local, busca sem acento e tolerante a erro de OCR, correção de palavras com um clique e **transcrição assistida**: caixa na imagem, sugestão do OCR, dado salvo com página e caixa como fonte |
 | **Perfis** | DLIS, LIS e LAS em metros, curvas classificadas por família, gráfico em trilhas, intervalo-alvo e topos marcados no perfil, exportação LAS 2.0 e CSV. **Avaliação de formação** no intervalo-alvo: Vsh (linear/Larionov), φ (densidade, densidade-nêutron, sônico), Sw (Archie/Simandoux), cortes, net pay, N/G, HPV e controle de qualidade, com cada cálculo registrado com seus parâmetros. Topos e litologia do AGP no gráfico; formações do AGP como intervalos candidatos |
 | **Seção** | **Seção estratigráfica** pelos topos de formação do AGP: até 20 poços, escolhidos um a um ou ao longo de uma linha; em cota ou nivelada num datum; litologia de calha e curva GR; avisos de saltos entre vizinhos; figura em dois estilos — **clássico** (padrões de rocha, carimbo, mapa de localização) e moderno — exportada em SVG, PNG 300 ppp, PDF e CSV |
+| **Bloco 3D** | Poços no espaço e **superfícies de topo** das formações pelos topos do AGP: por campo, em volta de um poço, a bacia inteira ou os poços da seção; interpolação linear só dentro do contorno dos poços (área calculada), margem opcional; visor 3D com exagero vertical, unidades liga/desliga, norte e eixos; exportação PNG e CSV. É contexto espacial, não resultado |
 | **Comunidade** | Exportar as próprias correções e transcrições como pacote assinado, importar pacotes de colegas com prévia de conflitos e atualizar a base comunitária ([SIAPP-dados](https://github.com/SIAPP-Pocos/SIAPP-dados)) |
 
 Tudo fica num **banco do projeto** (`ambiente_teste/projeto.sqlite`) com o mesmo modelo
@@ -70,11 +71,12 @@ motor/            toda a lógica, sem nenhuma dependência de interface
   avaliacao.py    Vsh, φ, Sw, net pay no intervalo-alvo
   agp.py          AGP da ANP: topos, lama, testes, litologia de calha
   secao.py        seção estratigráfica pelos topos do AGP
+  bloco.py        bloco 3D: contorno, triangulação e superfícies de topo pelos topos do AGP
   ferramentas.py  esquemas de ferramentas: tipo de cada corrida e ferramentas (nome + texto/OCR)
   comunidade.py   pacotes de contribuição e base comunitária
   projeto.py      pasta de projeto: configuração, procedência, escrita atômica
   registro.py     siapp.log
-ui/               HTML, CSS e JavaScript puros (ui/js/: um script por aba; ui/vendor/: Leaflet)
+ui/               HTML, CSS e JavaScript puros (ui/js/: um script por aba; ui/vendor/: Leaflet, three.js)
 recursos/         dicionário de domínio, famílias de curvas (editáveis) e modelo do OCR
 ```
 
@@ -83,7 +85,7 @@ SIAPP baixa e produz fica nela, em formatos abertos (JSON, SQLite, LAS, CSV), co
 histórico de cada ação em `siapp.json`. Detalhes em [`docs/arquitetura.md`](docs/arquitetura.md),
 [`docs/comunidade.md`](docs/comunidade.md), [`docs/perfis.md`](docs/perfis.md),
 [`docs/levantamento.md`](docs/levantamento.md), [`docs/avaliacao.md`](docs/avaliacao.md),
-[`docs/agp.md`](docs/agp.md), [`docs/secao.md`](docs/secao.md) e [`docs/ferramentas.md`](docs/ferramentas.md).
+[`docs/agp.md`](docs/agp.md), [`docs/secao.md`](docs/secao.md), [`docs/ferramentas.md`](docs/ferramentas.md) e [`docs/bloco.md`](docs/bloco.md).
 
 ## Dados e procedência
 
@@ -125,6 +127,7 @@ usado para PDF e OCR.
 | [PyMuPDF](https://pymupdf.readthedocs.io/) | PDF, imagem e OCR (motor Tesseract embutido) | AGPL-3.0 |
 | [NumPy](https://numpy.org/) | limpeza de imagem antes do OCR | BSD-3-Clause |
 | [Leaflet](https://leafletjs.com/) (em `ui/vendor/`) | mapa dos poços | BSD-2-Clause |
+| [three.js](https://threejs.org/) 0.160 (em `ui/vendor/three/`) | visor do bloco 3D | MIT |
 | [dlisio](https://github.com/equinor/dlisio) | leitura de DLIS e LIS | LGPL-3.0 |
 | [lasio](https://github.com/kinverarity1/lasio) | leitura e escrita de LAS | MIT |
 | [Tesseract `por.traineddata`](https://github.com/tesseract-ocr/tessdata_best) | modelo de português (baixado na 1ª vez) | Apache-2.0 |

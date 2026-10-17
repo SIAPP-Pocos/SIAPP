@@ -88,7 +88,7 @@ def navegador():
     from playwright.sync_api import sync_playwright
     with sync_playwright() as p:
         try:
-            b = p.chromium.launch()
+            b = p.chromium.launch(args=["--enable-unsafe-swiftshader"])   # WebGL do bloco 3D
         except Exception as e:  # Chromium não baixado
             pytest.skip(f"Chromium indisponível: {e}")
         yield b

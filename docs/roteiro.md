@@ -8,8 +8,11 @@ existe e a validação científica ficam **para o final**, antes do lançamento 
 - [x] **Esquema de ferramentas** (0.17): ler os PDFs da pasta "Esquema de Ferramentas",
       reconhecer as ferramentas da coluna e rotular os perfis do poço (passada principal,
       repetida, testador de formação, imagem, RMN…). Ver `docs/ferramentas.md`.
-- [ ] **Bloco 3D** (próximo): contexto espacial dos poços e topos (não é resultado
-      quantitativo; ver a Especificação Funcional).
+- [x] **Bloco 3D** (0.18): poços e superfícies de topo pelos topos do AGP, dentro do
+      contorno dos poços; visor 3D; PNG e CSV. Ver `docs/bloco.md`.
+- [ ] Bloco 3D, etapa 2 (a decidir): trajetória real dos poços desviados (Dados
+      Direcionais); zonas de pay e fluido nas trajetórias; propriedade (HPV) sobre o topo
+      (requisito 7.4 da Especificação); figura estática no estilo artigo.
 
 ## No final — melhorias do que já existe
 

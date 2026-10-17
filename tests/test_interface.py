@@ -449,3 +449,47 @@ def test_esquemas_de_ferramentas_na_ficha_e_na_aba_perfis(janela, monkeypatch, t
     texto = p.text_content("#pf-corrida")
     assert "Perfilagem convencional" in texto and "HILTB" in texto
     assert not janela.erros_js, janela.erros_js
+
+
+def test_aba_bloco_3d(janela, tmp_path):
+    from test_secao import poco
+    p = janela.page
+    abrir_projeto(janela)
+    b = janela.api._banco
+    for pid, la, lo in [("1-AA-1-RN", -5.00, -37.00), ("1-AA-2-RN", -5.00, -36.96), ("1-AA-3-RN", -5.04, -37.00),
+                        ("1-AA-4-RN", -5.04, -36.96), ("1-AA-5-RN", -5.02, -36.98)]:
+        leste = (lo + 37.00) * 111.0
+        poco(b, pid, la, lo, 50.0, [("F", "JANDAI", 20, 300 + 10 * leste), ("F", "ACU", 300 + 10 * leste, 700)],
+             prof_final=900)
+    p.click("#aba-bloco")
+    janela.esperar("document.getElementById('bl-disponiveis').textContent.includes('5 poço')")
+    assert p.input_value("#bl-campo") == "CAMPO TESTE"
+    p.click("#bl-selecionar")
+    janela.esperar("document.getElementById('bl-n').textContent === '5'")
+    p.fill("#bl-titulo", "Campo teste")
+    p.click("#bl-montar")
+    janela.esperar("!document.getElementById('bl-painel').hidden", 30)
+    janela.esperar("window.BlocoVisor && window.BlocoVisor.estado().superficies === 2", 30)
+    est = p.evaluate("window.BlocoVisor.estado()")
+    assert est["pocos"] == 5 and est["rotulos"] >= 5
+    assert "contorno dos poços 19,7 km²" in p.text_content("#bl-resumo")
+    assert "Formação Açu" in p.text_content("#bl-unidades")
+    # controles: exagero, desligar uma unidade, vista de cima
+    p.fill("#bl-exagero", "30")
+    p.dispatch_event("#bl-exagero", "input")
+    assert p.evaluate("window.BlocoVisor.estado().exagero") == 30
+    p.click("#bl-unidades input[data-chave='ACU']")
+    p.click("[data-vista3d='cima']")
+    p.click("#bl-png")
+    janela.esperar("document.getElementById('bl-exportado').textContent.includes('.png')", 30)
+    pngs = list((tmp_path / "ambiente_teste" / "exportacoes" / "blocos").glob("bloco_*.png"))
+    assert len(pngs) == 1 and pngs[0].read_bytes()[:4] == b"\x89PNG" and pngs[0].stat().st_size > 20000
+    p.click("#bl-csv")
+    janela.esperar("document.getElementById('bl-exportado').textContent.includes('_superficies.csv')")
+    # reabrir do histórico
+    janela.esperar("document.querySelectorAll('#bl-historico button').length === 1")
+    p.click("#bl-limpar")
+    p.click("#bl-historico button")
+    janela.esperar("document.getElementById('bl-n').textContent === '5'")
+    assert "reaberto" in janela.status()
+    assert not janela.erros_js, janela.erros_js
