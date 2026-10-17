@@ -6,6 +6,32 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 
 ## [Não lançado]
 
+## [0.23.0] — 2026-10-17
+### Adicionado
+- **Vários métodos de interpolação** (`motor/interpolacao.py`), um por campo — topos
+  (estrutura), espessuras e propriedades: **linear** (o de antes), **inverso da distância**,
+  **spline de placa fina** (suavidade 0–1 ou automática pela validação cruzada), **krigagem
+  ordinária** (variograma esférico/exponencial/gaussiano ajustado nos poços, alcance, pepita,
+  anisotropia) e **tendência + krigagem** (plano ou superfície de 2º grau + krigagem do
+  resíduo). Na janela, cada método e cada parâmetro com uma explicação curta e "bom para".
+- **Bloco fechado topo a topo**: cada limite interpolado direto dos poços, cortado para não
+  passar acima do de cima — o erro não se acumula como no empilhamento por espessuras (que
+  continua disponível). É o que faz spline e krigagem funcionarem no bloco fechado.
+- **Mapa de incerteza da krigagem**: o σ de cada topo para colorir a superfície.
+- **Comparar métodos**: a validação cruzada com seis combinações, tabela por unidade, o
+  sugerido e **Usar o melhor e montar de novo**; CSV e figura estilo artigo (símbolos, escala
+  log). Tirar um poço da spline/krigagem atualiza os coeficientes (Dubrule), sem refazer o sistema.
+- **Escala: reservatório ou bacia** — ponto de partida para poços, margem, grade e métodos
+  (reservatório: spline topo a topo; bacia: tendência + krigagem, 15 km, mapa de incerteza),
+  escolhido pela comparação no Estreito e na Potiguar. Guia por tipo de reservatório em `docs/bloco.md`.
+### Mudado
+- Espessuras por métodos lisos multiplicadas pela presença interpolada linear (zeros onde a
+  unidade falta); krigagem com menos de 8 poços vira linear, com aviso.
+- O registro do bloco guarda a interpolação e a escala; blocos anteriores reabrem como
+  linear por espessuras.
+### Corrigido
+- Bloco 3D: os campos dos outros modos de escolha (poço e raio, bacia) apareciam todos juntos.
+
 ## [0.22.0] — 2026-10-17
 ### Adicionado
 - **Saídas do bloco** (quadro "Saídas do bloco", embaixo do visor):

@@ -700,3 +700,78 @@ def test_bloco_saidas(janela, tmp_path):
     assert next(pasta.glob("*.glb")).read_bytes()[:4] == b"glTF"
     assert "informado" in next(pasta.glob("*_volumetria.csv")).read_text("utf-8-sig")
     assert not janela.erros_js, janela.erros_js
+
+
+def test_bloco_escala_interpolacao_e_comparacao(janela, tmp_path):
+    from test_secao import poco
+    p = janela.page
+    abrir_projeto(janela)
+    b = janela.api._banco
+    pos = [(-5.00, -37.00), (-5.00, -36.96), (-5.04, -37.00), (-5.04, -36.96), (-5.02, -36.98),
+           (-5.01, -36.99), (-5.03, -36.97), (-5.01, -36.97), (-5.03, -36.99)]
+    for k, (la, lo) in enumerate(pos):
+        leste = (lo + 37.00) * 111.0
+        poco(b, f"1-AA-{k + 1}-RN", la, lo, 50.0,
+             [("F", "JANDAI", 20, 300 + 10 * leste + 3 * k), ("F", "ACU", 300 + 10 * leste + 3 * k, 700)],
+             prof_final=900)
+    p.click("#aba-bloco")
+    janela.esperar("document.getElementById('bl-disponiveis').textContent.includes('9 poço')")
+    # escala: reservatório preenche o formulário (spline topo a topo, sem margem)
+    janela.esperar("document.getElementById('bl-m-estrutura').options.length === 5")
+    assert p.input_value("#bl-escala") == "reservatorio"
+    assert p.input_value("#bl-m-estrutura") == "spline" and p.input_value("#bl-empilhamento") == "topos"
+    assert "spline" in p.text_content("#bl-escala-ajuda")
+    assert "Spline" in p.text_content("#bl-metodo-ajuda") and "Bom para" in p.text_content("#bl-metodo-ajuda")
+    # bacia: tendência + krigagem, 15 km, regional; aparecem os parâmetros do variograma
+    p.select_option("#bl-escala", "bacia")
+    assert p.input_value("#bl-m-estrutura") == "tendencia" and p.input_value("#bl-distmax") == "15"
+    assert p.input_value("#bl-modo") == "todos"
+    assert p.locator("[data-param='grau']").get_attribute("hidden") is None
+    # mexer à mão: personalizada
+    p.select_option("#bl-escala", "reservatorio")
+    p.select_option("#bl-m-estrutura", "krigagem")
+    assert p.input_value("#bl-escala") == ""
+    assert "Krigagem" in p.text_content("#bl-metodo-ajuda")
+    assert p.locator("[data-param='grau']").get_attribute("hidden") is not None       # sem tendência
+    assert p.locator("[data-param='potencia']").get_attribute("hidden") is None       # propriedades por IDW
+    p.uncheck("#bl-suavidade-auto")
+    p.fill("#bl-suavidade", "0.3")
+    p.dispatch_event("#bl-suavidade", "input")
+    assert p.text_content("#bl-suavidade-v") in ("0,3", "0,30")
+    p.click("#bl-selecionar")
+    janela.esperar("document.getElementById('bl-n').textContent === '9'")
+    p.click("#bl-montar")
+    janela.esperar("window.BlocoVisor && window.BlocoVisor.estado().superficies === 2", 60)
+    assert "krigagem" in p.text_content("#bl-resumo")
+    reg = janela.api.bloco_abrir(p.evaluate("bl.ultimo"))["modelo"]["parametros"]["interpolacao"]
+    assert reg["estrutura"]["metodo"] == "krigagem" and reg["estrutura"]["suavidade"] == 0.3
+    # σ da krigagem para colorir o topo
+    opcoes = p.evaluate("[...document.getElementById('bl-drape-unidade').options].map(o => o.value)")
+    assert "ACU" in opcoes
+    p.select_option("#bl-drape-unidade", "ACU")
+    assert "sigma_m" in p.evaluate("[...document.getElementById('bl-drape-prop').options].map(o => o.value)")
+    # comparar os métodos
+    p.click("#bl-comparar")
+    janela.esperar("!document.getElementById('bl-cmp').hidden", 120)
+    assert "Errou menos" in p.text_content("#bl-cmp-resumo")
+    assert p.locator("#bl-cmp-tabela thead th").count() == 2 + 6
+    assert p.locator("#bl-cmp-tabela td.melhor").count() >= 2
+    for f in ("csv", "svg"):
+        p.click(f"[data-comparacao='{f}']")
+        janela.esperar(f"document.getElementById('bl-exportado').textContent.includes('_metodos.{f}')", 30)
+    pasta = tmp_path / "ambiente_teste" / "exportacoes" / "blocos"
+    assert next(pasta.glob("*_metodos.csv")).read_text("utf-8-sig").startswith("metodo;nome")
+    # usar o melhor e montar de novo: o formulário fica com o método sugerido e o bloco novo o usa
+    melhor = p.evaluate("bl.modelo.comparacao.candidatos.find(c => c.id === bl.modelo.comparacao.melhor)")
+    if not p.locator("#bl-cmp-usar").is_disabled():
+        antes = p.evaluate("bl.ultimo")
+        p.click("#bl-cmp-usar")
+        janela.esperar(f"bl.ultimo && bl.ultimo !== '{antes}'", 60)
+        assert p.input_value("#bl-m-estrutura") == melhor["interpolacao"]["estrutura"]["metodo"]
+        assert p.input_value("#bl-m-propriedades") == "idw"            # a comparação não mexe nas propriedades
+    # reabrir um bloco: o formulário volta com a interpolação dele
+    p.select_option("#bl-m-estrutura", "idw")
+    p.locator("#bl-historico button").last.click()
+    janela.esperar("document.getElementById('bl-m-estrutura').value === 'krigagem'", 30)
+    janela.esperar("!document.getElementById('bl-cmp').hidden", 30)
+    assert not janela.erros_js, janela.erros_js

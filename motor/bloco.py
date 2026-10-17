@@ -289,7 +289,8 @@ def selecionar(banco: Banco, *, modo: str, campo: str = "", poco: str = "", raio
 def montar(banco: Banco, pocos: list[str], *, nivel: str = "formacoes", margem_km: float = 0.0,
            celulas: int = CELULAS_PADRAO, dist_max_km: float | None = None, nomes: dict | None = None,
            slots: dict | None = None, usar_trajetorias: bool = True,
-           pasta_execucoes: str | None = None, base_cota: float | None = None) -> dict:
+           pasta_execucoes: str | None = None, base_cota: float | None = None,
+           interpolacao: dict | None = None, escala: str | None = None) -> dict:
     """Modelo do bloco (só dados; o desenho é da janela): as superfícies e, da mesma
     montagem, o bloco fechado (motor/bloco_solido.py), em `solido`."""
     pocos = list(dict.fromkeys(p for p in pocos if p))
@@ -303,6 +304,11 @@ def montar(banco: Banco, pocos: list[str], *, nivel: str = "formacoes", margem_k
     margem_km = max(0.0, float(margem_km or 0))
     nomes, slots = nomes or {}, slots or {}
     avisos: list[str] = []
+    from . import interpolacao as mint
+    try:
+        cfg = mint.configuracao(interpolacao)
+    except mint.ErroInterpolacao as e:
+        raise ErroBloco(str(e)) from e
 
     avaliacoes = avaliacoes_por_poco(pasta_execucoes) if pasta_execucoes else {}
     dados = []
@@ -451,12 +457,30 @@ def montar(banco: Banco, pocos: list[str], *, nivel: str = "formacoes", margem_k
         elif len(h) < 3 or largura_relativa(h) < FRACAO_COLINEAR:
             sup["aviso"] = (f"{item['nome']}: poços quase alinhados — a interpolação de lado não teria dado; "
                             "só os topos nos poços.")
+        elif cfg["estrutura"]["metodo"] != "linear":
+            # outro método: o valor dele dentro do contorno (+ margem); fora, nulo
+            aj = mint.ajustar(cfg["estrutura"], [(u["x"], u["y"], u["cota_topo"], p["id"]) for p, u, _ in trios])
+            zc = aj.valores(gx, gy)
+            ext = com_margem(h, margem_km)
+            z = np.where(dentro(ext, gx, gy), zc, np.nan)
+            if dist_max_km:
+                dmin, _ = distancia_mais_proximo(pts, gx, gy)
+                z[dmin > float(dist_max_km)] = np.nan
+            sup.update(z=z, area_km2=round(area_shoelace(h), 3), metodo=aj.descricao(),
+                       contorno=[[round(float(a), 4), round(float(b), 4)] for a, b in ext])
+            if hasattr(aj, "sigma"):
+                sg = aj.sigma(gx, gy)
+                sg[np.isnan(z)] = np.nan
+                sup["sigma"] = sg
+            for a_ in aj.avisos:
+                sup["aviso"] = f"{item['nome']}: {a_}."
         else:
             tris = delaunay(pts)
             z = interpolar_linear(pts, val, tris, gx, gy)
             dentro_h = dentro(h, gx, gy)
             z[~dentro_h] = np.nan
             ext = com_margem(h, margem_km)
+            sup["metodo"] = "linear"
             if margem_km > 0:                     # faixa da margem: vizinho mais próximo
                 faixa = dentro(ext, gx, gy) & ~dentro_h
                 _, k = distancia_mais_proximo(pts, gx, gy)
@@ -493,7 +517,15 @@ def montar(banco: Banco, pocos: list[str], *, nivel: str = "formacoes", margem_k
             s["cota_min"], s["cota_max"] = float(np.nanmin(zz)), float(np.nanmax(zz))
             s["z"] = [[None if math.isnan(v) else round(float(v), 2) for v in linha] for linha in zz]
 
-    propriedades = _propriedades(saida, avaliacoes, superficies, gx, gy)
+    propriedades = _propriedades(saida, avaliacoes, superficies, gx, gy, cfg["propriedades"])
+    # incerteza da krigagem do topo (σ, m): vira uma "propriedade" para colorir o topo
+    for sv in superficies:
+        sg = sv.pop("sigma", None)
+        if sg is None or np.isnan(sg).all():
+            continue
+        info = propriedades.setdefault(sv["chave"], {"pocos": [], "grades": {}, "faixas": {}})
+        info["grades"]["sigma_m"] = [[None if math.isnan(v) else round(float(v), 2) for v in linha] for linha in sg]
+        info["faixas"]["sigma_m"] = [float(np.nanmin(sg)), float(np.nanmax(sg))]
     if any(p["classes"] for p in saida):
         avisos.append("Trilhas de pay pela avaliação de formação mais recente de cada poço (aba Perfis); "
                       "\"pay com gás\" = pay dentro de um indício de gás do AGP.")
@@ -502,14 +534,16 @@ def montar(banco: Banco, pocos: list[str], *, nivel: str = "formacoes", margem_k
              [u["cota_topo"] for u in p["unidades"]]]
     modelo = {
         "versao": 3, "pocos": saida, "legenda": legenda, "superficies": superficies, "avisos": avisos,
-        "propriedades": propriedades, "nomes_propriedades": dict(PROPRIEDADES), "classes": CLASSES,
+        "propriedades": propriedades, "classes": CLASSES,
+        "nomes_propriedades": dict(PROPRIEDADES + [("sigma_m", "incerteza do topo (σ da krigagem, m)")]),
         "origem": {"lat": lat0, "lon": lon0},
         "contorno": [[round(float(a), 4), round(float(b), 4)] for a, b in hull],
         "area_km2": round(area, 3), "margem_km": margem_km,
         "grade": {"x0": float(lo[0]), "y0": float(lo[1]), "passo": passo, "nx": nx, "ny": ny},
         "cota_max": max(cotas) if cotas else 0.0, "cota_min": min(cotas) if cotas else -1000.0,
         "parametros": {"nivel": nivel, "margem_km": margem_km, "celulas": celulas, "dist_max_km": dist_max_km,
-                       "base_cota": base_cota, "pocos": [p["id"] for p in saida]},
+                       "base_cota": base_cota, "interpolacao": cfg, "escala": escala,
+                       "pocos": [p["id"] for p in saida]},
     }
     from . import bloco_solido
     modelo["solido"] = bloco_solido.montar(modelo, base_cota=base_cota)
@@ -606,9 +640,12 @@ def _intervalo_da_unidade(av: dict, u: dict) -> dict | None:
     return None
 
 
-def _propriedades(pocos: list[dict], avaliacoes: dict, superficies: list[dict], gx, gy) -> dict:
+def _propriedades(pocos: list[dict], avaliacoes: dict, superficies: list[dict], gx, gy,
+                  cfg_prop: dict | None = None) -> dict:
     """Por unidade: as propriedades da avaliação em cada poço e, com 3+ poços não alinhados,
-    a grade interpolada (linear, dentro do contorno desses poços e da superfície)."""
+    a grade interpolada (pelo método das propriedades; dentro do contorno desses poços e da
+    superfície)."""
+    from . import interpolacao as mint
     saida: dict = {}
     sups = {s["chave"]: s for s in superficies}
     for p in pocos:
@@ -636,7 +673,10 @@ def _propriedades(pocos: list[dict], avaliacoes: dict, superficies: list[dict], 
             h = contorno_convexo(pts)
             if len(h) < 3 or largura_relativa(h) < FRACAO_COLINEAR:
                 continue
-            z = interpolar_linear(pts, np.array(vals, float), delaunay(pts), gx, gy)
+            if cfg_prop and cfg_prop.get("metodo", "linear") != "linear":
+                z = mint.ajustar(cfg_prop, [(q["x"], q["y"], q[k], q["id"]) for q in com]).valores(gx, gy)
+            else:
+                z = interpolar_linear(pts, np.array(vals, float), delaunay(pts), gx, gy)
             z[~dentro(h, gx, gy)] = np.nan
             zs = np.array([[np.nan if v is None else v for v in linha] for linha in s["z"]], float)
             z[np.isnan(zs)] = np.nan

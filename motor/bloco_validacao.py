@@ -7,9 +7,9 @@ próximo*: é o que transforma o "contexto espacial" num número.
 
 Os dois modos são avaliados com as mesmas regras da montagem:
 
-- **bloco fechado**: o empilhamento por espessuras de motor/bloco_solido.py (referência +
-  espessuras, cortado no terreno e na base); fora do contorno dos poços com o dado, o valor
-  da borda — conta como **extrapolado**;
+- **bloco fechado**: o empilhamento de motor/bloco_solido.py — por espessuras (referência +
+  espessuras) ou topo a topo — cortado no terreno e na base; fora do contorno dos poços com o
+  dado, o valor da borda — conta como **extrapolado**;
 - **superfícies**: o topo da unidade interpolado direto entre os poços que a têm; só dentro
   do contorno (fora, o modo superfícies não desenha nada — conta como "fora").
 
@@ -32,6 +32,7 @@ import numpy as np
 
 from . import bloco as mbl
 from . import bloco_solido as mbs
+from . import interpolacao as mint
 from .banco import agora
 
 FAIXAS_KM = [(0.0, 1.0), (1.0, 2.0), (2.0, 5.0), (5.0, 10.0), (10.0, math.inf)]
@@ -43,158 +44,35 @@ class ErroValidacao(Exception):
     pass
 
 
-# ============================================================== interpolador por ponto
-class Interpolador:
-    """Interpolação linear nos triângulos de Delaunay de observações [(x, y, valor, poço,
-    …)], com o valor da borda do contorno fora dele (as regras de
-    bloco_solido.interpolar_grade), avaliada num ponto — com ou sem um poço."""
-
-    def __init__(self, obs: list):
-        self.obs = list(obs)
-        grupos: dict = {}
-        for i, o in enumerate(self.obs):
-            grupos.setdefault((round(float(o[0]), 6), round(float(o[1]), 6)), []).append(i)
-        self.membros = list(grupos.values())
-        self.pts = np.array([[self.obs[g[0]][0], self.obs[g[0]][1]] for g in self.membros], float).reshape(-1, 2)
-        self.val = np.array([np.mean([self.obs[i][2] for i in g]) for g in self.membros], float)
-        self.no_da_obs = {i: k for k, g in enumerate(self.membros) for i in g}
-        self.por_poco: dict = {}
-        for i, o in enumerate(self.obs):
-            self.por_poco.setdefault(o[3], []).append(i)
-        self._preparar()
-
-    def _preparar(self):
-        self._cache: dict = {}
-        m = len(self.pts)
-        self.hull = mbl.contorno_convexo(self.pts) if m else np.zeros((0, 2))
-        self.linear = m >= 3 and len(self.hull) >= 3 and mbl.largura_relativa(self.hull) >= mbl.FRACAO_COLINEAR
-        self.tris = mbl.delaunay(self.pts) if self.linear else np.zeros((0, 3), int)
-        self.incid: dict = {}
-        for t, tri in enumerate(self.tris):
-            for v in tri:
-                self.incid.setdefault(int(v), []).append(t)
-        chaves_h = {(round(float(a), 9), round(float(b), 9)) for a, b in self.hull}
-        self.no_hull = {k for k, (a, b) in enumerate(self.pts) if (round(float(a), 9), round(float(b), 9)) in chaves_h}
-
-    def __len__(self):
-        return len(self.obs)
-
-    # ---------------------------------------------------------------- avaliação
-    def valor(self, x: float, y: float, sem_poco=None) -> tuple[float | None, bool, float]:
-        """(valor, dentro do contorno dos dados, distância ao dado mais próximo em km)."""
-        if not len(self.pts):
-            return None, False, math.inf
-        val = self.val
-        tirar = self.por_poco.get(sem_poco, []) if sem_poco is not None else []
-        if not tirar:
-            return self._avaliar(x, y, self.pts, val, self.tris, self.hull, self.linear, range(len(self.pts)))
-        nos_vazios, val = [], val.copy()
-        for k in {self.no_da_obs[i] for i in tirar}:
-            resto = [i for i in self.membros[k] if i not in tirar]
-            if resto:
-                val[k] = float(np.mean([self.obs[i][2] for i in resto]))
-            else:
-                nos_vazios.append(k)
-        if not nos_vazios:
-            return self._avaliar(x, y, self.pts, val, self.tris, self.hull, self.linear, range(len(self.pts)))
-        vivos = [k for k in range(len(self.pts)) if k not in nos_vazios]
-        if not vivos:
-            return None, False, math.inf
-        if len(nos_vazios) > 1 or not self.linear:
-            return self._refeito(x, y, vivos, val)
-        r = nos_vazios[0]
-        est = self._sem_no(r)
-        if est is None:
-            return self._refeito(x, y, vivos, val)
-        pts_v, hull_v, manter, viz, tl = est
-        dist = float(np.min(np.hypot(pts_v[:, 0] - x, pts_v[:, 1] - y)))
-        dentro = bool(mbl.dentro(hull_v, np.array([x]), np.array([y]))[0])
-        v = _no_triangulo(x, y, self.pts, val, self.tris[manter])
-        if v is not None:
-            return v, True, dist
-        if dentro:
-            v = _no_triangulo(x, y, self.pts[viz], val[viz], tl)
-            if v is not None:
-                return v, True, dist
-            return self._refeito(x, y, vivos, val)                  # caso degenerado: refaz
-        return float(mbs._pela_borda(pts_v, val[vivos], hull_v, np.array([x]), np.array([y]))[0]), False, dist
-
-    def _sem_no(self, r: int):
-        """O que muda sem o nó r (guardado: o mesmo poço é consultado em vários pontos):
-        contorno, triângulos que ficam e a triangulação dos vizinhos (a estrela refeita).
-        None se sem ele os dados ficam alinhados ou com menos de 3 pontos."""
-        if r in self._cache:
-            return self._cache[r]
-        vivos = [k for k in range(len(self.pts)) if k != r]
-        pts_v = self.pts[vivos]
-        hull_v = mbl.contorno_convexo(pts_v) if r in self.no_hull else self.hull
-        if len(vivos) < 3 or len(hull_v) < 3 or (r in self.no_hull and
-                                                 mbl.largura_relativa(hull_v) < mbl.FRACAO_COLINEAR):
-            est = None
-        else:
-            estrela = self.incid.get(r, [])
-            manter = np.ones(len(self.tris), bool)
-            manter[estrela] = False
-            viz = sorted({int(u) for t in estrela for u in self.tris[t]} - {r})
-            est = (pts_v, hull_v, manter, viz, mbl.delaunay(self.pts[viz]))
-        self._cache[r] = est
-        return est
-
-    def _avaliar(self, x, y, pts, val, tris, hull, linear, nos):
-        nos = list(nos)
-        dist = float(np.min(np.hypot(pts[nos, 0] - x, pts[nos, 1] - y)))
-        if linear:
-            v = _no_triangulo(x, y, pts, val, tris)
-            if v is not None:
-                return v, True, dist
-            return float(mbs._pela_borda(pts[nos], val[nos], hull, np.array([x]), np.array([y]))[0]), False, dist
-        k = nos[int(np.argmin(np.hypot(pts[nos, 0] - x, pts[nos, 1] - y)))]
-        return float(val[k]), False, dist
-
-    def _refeito(self, x, y, vivos, val):
-        pts = self.pts[vivos]
-        hull = mbl.contorno_convexo(pts)
-        linear = len(pts) >= 3 and len(hull) >= 3 and mbl.largura_relativa(hull) >= mbl.FRACAO_COLINEAR
-        tris = mbl.delaunay(pts) if linear else np.zeros((0, 3), int)
-        return self._avaliar(x, y, pts, val[vivos], tris, hull, linear, range(len(pts)))
-
-
-def _no_triangulo(x, y, pts, val, tris) -> float | None:
-    """Valor linear no triângulo que contém (x, y), ou None."""
-    if len(tris) == 0:
-        return None
-    a, b, c = pts[tris[:, 0]], pts[tris[:, 1]], pts[tris[:, 2]]
-    det = (b[:, 1] - c[:, 1]) * (a[:, 0] - c[:, 0]) + (c[:, 0] - b[:, 0]) * (a[:, 1] - c[:, 1])
-    ok = np.abs(det) > 1e-15
-    det = np.where(ok, det, 1.0)
-    l1 = ((b[:, 1] - c[:, 1]) * (x - c[:, 0]) + (c[:, 0] - b[:, 0]) * (y - c[:, 1])) / det
-    l2 = ((c[:, 1] - a[:, 1]) * (x - c[:, 0]) + (a[:, 0] - c[:, 0]) * (y - c[:, 1])) / det
-    l3 = 1 - l1 - l2
-    dentro = ok & (l1 >= -1e-9) & (l2 >= -1e-9) & (l3 >= -1e-9)
-    idx = np.flatnonzero(dentro)
-    if not len(idx):
-        return None
-    t = idx[0]
-    return float(l1[t] * val[tris[t, 0]] + l2[t] * val[tris[t, 1]] + l3[t] * val[tris[t, 2]])
+# O interpolador linear por ponto (com "sem um poço") mora em motor/interpolacao.py, junto
+# com os outros métodos; o nome antigo fica para quem já o usa.
+Interpolador = mint.Linear
+_no_triangulo = mint.no_triangulo
 
 
 # ============================================================== empilhamento por ponto
 class Empilhamento:
     """O bloco fechado avaliado num ponto (sem grade), com as regras de bloco_solido."""
 
-    def __init__(self, modelo: dict):
+    def __init__(self, modelo: dict, interpolacao: dict | None = None):
         self.modelo = modelo
+        self.cfg = mint.configuracao(interpolacao if interpolacao is not None else
+                                     (modelo.get("parametros") or {}).get("interpolacao"))
         sol = modelo.get("solido") or {}
         self.ok = bool(sol.get("ok"))
         self.ob = mbs.observacoes(modelo)
         self.n = self.ob["n"]
         self.ref = self.ob["referencia"]
         self.base = sol.get("base")
-        self.f_ter = Interpolador(self.ob["terreno"])
-        self.f_ref = Interpolador(self.ob["lim"][self.ref]) if self.ref is not None else None
-        self.f_esp = [Interpolador(e) if e else None for e in self.ob["esp"]]
+        est, esp = self.cfg["estrutura"], self.cfg["espessura"]
+        self.f_ter = mint.Linear(self.ob["terreno"])
+        self.f_ref = mint.ajustar(est, self.ob["lim"][self.ref]) if self.ref is not None else None
+        self.f_esp = [mint.ajustar(esp, e, campo="espessura") if e else None for e in self.ob["esp"]]
         # superfícies: só os topos da própria unidade
-        self.f_sup = [Interpolador([o for o in L if o[4]]) for L in self.ob["lim"][:self.n]]
+        self.f_sup = [mint.ajustar(est, [o for o in L if o[4]]) for L in self.ob["lim"][:self.n]]
+        self.topos = self.cfg["empilhamento"] == "topos"
+        self.f_lim = [(mint.ajustar(est, L) if L else None) if k != self.ref else self.f_ref
+                      for k, L in enumerate(self.ob["lim"])] if self.topos else None
         chaves = [c["chave"] for c in sol.get("camadas", [])]
         self.com_cobertura = bool(chaves) and chaves[0] == mbs.CHAVE_COBERTURA
         self.com_abaixo = bool(chaves) and chaves[-1] == mbs.CHAVE_ABAIXO
@@ -215,16 +93,31 @@ class Empilhamento:
                 e, d, _ = f.valor(x, y, sem_poco)
                 if e is not None:
                     esp[k], dentro_esp[k] = max(0.0, e), d
-        for k in range(ref - 1, -1, -1):
-            lim[k] = lim[k + 1] + (esp[k] or 0.0)
-            interp[k] = interp[k + 1] and dentro_esp[k]
-        for k in range(ref, n):
-            if esp[k] is None:
-                for j in range(k + 1, n + 1):
-                    lim[j], interp[j] = self.base, False
-                break
-            lim[k + 1] = lim[k] - esp[k]
-            interp[k + 1] = interp[k] and dentro_esp[k]
+        if self.topos:
+            for k in range(n + 1):
+                f = self.f_lim[k]
+                if k != ref and f is not None and len(f):
+                    lim[k], interp[k], _ = f.valor(x, y, sem_poco)
+                if lim[k] is None and k > 0 and lim[k - 1] is not None:
+                    if esp[k - 1] is not None:
+                        lim[k], interp[k] = lim[k - 1] - esp[k - 1], interp[k - 1] and dentro_esp[k - 1]
+                    else:
+                        lim[k], interp[k] = self.base, False
+            for k in range(1, n + 1):
+                if lim[k] is not None and lim[k - 1] is not None:
+                    lim[k] = min(lim[k], lim[k - 1])
+            lim = [self.base if v is None else v for v in lim]
+        else:
+            for k in range(ref - 1, -1, -1):
+                lim[k] = lim[k + 1] + (esp[k] or 0.0)
+                interp[k] = interp[k + 1] and dentro_esp[k]
+            for k in range(ref, n):
+                if esp[k] is None:
+                    for j in range(k + 1, n + 1):
+                        lim[j], interp[j] = self.base, False
+                    break
+                lim[k + 1] = lim[k] - esp[k]
+                interp[k + 1] = interp[k] and dentro_esp[k]
         ter, _, _ = self.f_ter.valor(x, y, sem_poco)
         base = self.base if self.base is not None else -math.inf
         lim = [max(min(v, ter), base) for v in lim]
@@ -232,12 +125,13 @@ class Empilhamento:
 
 
 # ============================================================== validação cruzada
-def validar(modelo: dict) -> dict:
+def validar(modelo: dict, interpolacao: dict | None = None) -> dict:
     """Deixar um poço de fora, para cada poço: erro de cada topo previsto (bloco fechado e
-    superfícies) e da espessura de cada unidade."""
+    superfícies) e da espessura de cada unidade. `interpolacao`: outra configuração de
+    métodos (a comparação); sem ela, a do bloco."""
     if len(modelo.get("pocos", [])) < 4:
         raise ErroValidacao("A validação cruzada precisa de ao menos 4 poços.")
-    emp = Empilhamento(modelo)
+    emp = Empilhamento(modelo, interpolacao)
     if emp.ref is None:
         raise ErroValidacao("Sem topos utilizáveis para validar.")
     legenda = modelo["legenda"]
@@ -322,9 +216,65 @@ def validar(modelo: dict) -> dict:
     if poucos:
         avisos.append(f"Menos de 5 poços com a unidade (erro pouco representativo): {', '.join(poucos)}.")
     return {"versao": 1, "criado_em": agora(), "n_pocos": len({l["poco"] for l in linhas}),
+            "interpolacao": emp.cfg, "metodos": {"estrutura": emp.f_ref.descricao() if emp.f_ref else "",
+                                                "espessura": mint.nome(emp.cfg["espessura"])},
             "n_comparacoes": len(linhas), "linhas": linhas, "unidades": unidades, "global": glob,
             "faixas": faixas, "por_unidade_faixa": por_unidade, "avisos": avisos,
             "cores": {k: v["cor"] for k, v in nomes.items()}}
+
+
+# ============================================================== comparar métodos
+# Spline e krigagem só topo a topo: empilhadas por espessuras, o erro de uma referência lisa
+# se soma ao das espessuras (no regional: 22 m contra 16 m de mediana).
+CANDIDATOS = [
+    ("linear", "Linear, por espessuras", {"estrutura": "linear", "espessura": "linear", "empilhamento": "espessuras"}),
+    ("linear_topos", "Linear, topo a topo", {"estrutura": "linear", "espessura": "linear", "empilhamento": "topos"}),
+    ("idw", "Inverso da distância, topo a topo", {"estrutura": "idw", "espessura": "idw", "empilhamento": "topos"}),
+    ("spline", "Spline (automática), topo a topo", {"estrutura": "spline", "espessura": "spline", "empilhamento": "topos"}),
+    ("krigagem", "Krigagem, topo a topo", {"estrutura": "krigagem", "espessura": "krigagem", "empilhamento": "topos"}),
+    ("tendencia", "Tendência + krigagem, topo a topo", {"estrutura": "tendencia", "espessura": "krigagem",
+                                                        "empilhamento": "topos"}),
+]
+
+
+def comparar(modelo: dict, parametros: dict | None = None, candidatos: list | None = None,
+             progresso=None) -> dict:
+    """Validação cruzada com cada método: por unidade e no geral, a mediana e o erro de 68%
+    (bloco fechado e superfícies); sugere o melhor no geral (menor mediana no bloco fechado,
+    desempate pelo 68%) e mostra o melhor de cada unidade."""
+    candidatos = candidatos or CANDIDATOS
+    saida = []
+    for k, (ident, nome_c, cfg) in enumerate(candidatos):
+        if progresso:
+            progresso(k, len(candidatos), nome_c)
+        c = dict(cfg, parametros=parametros or {})
+        try:
+            v = validar(modelo, c)
+        except mint.ErroInterpolacao as e:
+            raise ErroValidacao(str(e)) from e
+        saida.append({"id": ident, "nome": nome_c, "interpolacao": v["interpolacao"], "metodos": v["metodos"],
+                      "global": {"fechado": v["global"]["fechado"], "superficie": v["global"]["superficie"]},
+                      "unidades": {u["chave"]: {"nome": u["nome"], "cor": u["cor"], "n": u["n"],
+                                                "fechado": {q: u["fechado"].get(q) for q in ("n", "mediana", "p68")},
+                                                "superficie": {q: u["superficie"].get(q) for q in ("n", "mediana", "p68")}}
+                                   for u in v["unidades"]},
+                      "faixas": [{q: f.get(q) for q in ("de", "ate", "n_fechado", "p68_fechado")} for f in v["faixas"]]})
+
+    def chave(c, campo="fechado", u=None):
+        g = c["unidades"][u][campo] if u else c["global"][campo]
+        return (g.get("mediana") if g.get("mediana") is not None else math.inf,
+                g.get("p68") if g.get("p68") is not None else math.inf)
+    # sem bloco fechado (camadas sem espessura), decide pelas superfícies
+    campo = "fechado" if any(c["global"]["fechado"].get("n") for c in saida) else "superficie"
+    melhor = min(saida, key=lambda c: chave(c, campo))["id"]
+    unidades = list(saida[0]["unidades"])
+    por_unidade = {u: min(saida, key=lambda c: chave(c, campo, u))["id"] for u in unidades
+                   if any(c["unidades"][u][campo].get("n") for c in saida)}
+    return {"versao": 1, "criado_em": agora(), "candidatos": saida, "melhor": melhor, "por_unidade": por_unidade,
+            "criterio": campo,
+            "melhor_superficie": min(saida, key=lambda c: chave(c, "superficie"))["id"],
+            "n_comparacoes": saida[0]["global"]["fechado"].get("n") or saida[0]["global"]["superficie"].get("n"),
+            "parametros": parametros or {}}
 
 
 def incerteza(validacao: dict | None, chave: str, dist_km: float) -> tuple[float | None, str]:
@@ -581,5 +531,146 @@ def figura(validacao: dict, *, titulo: str = "", autor: str = "", data: str = ""
              + (f" · {autor}" if autor else "") + (f" · {data}" if data else "")]
     for k, t in enumerate(notas):
         out.append(_t(70, y + 14 + 15 * k, t, 9.5, TINTA2))
+    out.append("</svg>")
+    return "".join(out)
+
+
+# ============================================================== comparação: CSV e figura
+COLUNAS_CSV_COMPARACAO = ["metodo", "nome", "unidade", "n", "mediana_fechado", "p68_fechado", "mediana_superficie",
+                          "p68_superficie", "melhor_da_unidade"]
+
+
+def linhas_csv_comparacao(cmp: dict) -> list[list]:
+    out = []
+    for c in cmp["candidatos"]:
+        g = c["global"]
+        out.append([c["id"], c["nome"], "(todas)", g["fechado"].get("n") or g["superficie"].get("n"),
+                    g["fechado"].get("mediana"), g["fechado"].get("p68"), g["superficie"].get("mediana"),
+                    g["superficie"].get("p68"), "sim" if c["id"] == cmp["melhor"] else ""])
+        for k, u in c["unidades"].items():
+            out.append([c["id"], c["nome"], u["nome"], u["n"], u["fechado"].get("mediana"), u["fechado"].get("p68"),
+                        u["superficie"].get("mediana"), u["superficie"].get("p68"),
+                        "sim" if cmp["por_unidade"].get(k) == c["id"] else ""])
+    return out
+
+
+# um símbolo por método (sem depender de cor): círculo, quadrado, triângulo, losango, triângulo
+# invertido, estrela; cheio = o melhor da linha
+_SIMBOLOS = ("circulo", "quadrado", "triangulo", "losango", "invertido", "cruz")
+
+
+def _simbolo(tipo: str, x: float, y: float, r: float, cheio: bool, cor: str) -> str:
+    preench = cor if cheio else "#ffffff"
+    a = f'fill="{preench}" stroke="{cor}" stroke-width="1"'
+    if tipo == "circulo":
+        return f'<circle cx="{x:.1f}" cy="{y:.1f}" r="{r:.1f}" {a}/>'
+    if tipo == "quadrado":
+        return f'<rect x="{x - r * 0.9:.1f}" y="{y - r * 0.9:.1f}" width="{r * 1.8:.1f}" height="{r * 1.8:.1f}" {a}/>'
+    if tipo == "cruz":
+        d = r * 0.95
+        return (f'<path d="M{x - d:.1f},{y - d:.1f} L{x + d:.1f},{y + d:.1f} M{x - d:.1f},{y + d:.1f} '
+                f'L{x + d:.1f},{y - d:.1f}" stroke="{cor}" stroke-width="{2.2 if cheio else 1.1}"/>')
+    pts = {"triangulo": [(0, -1.15), (1.05, 0.75), (-1.05, 0.75)],
+           "invertido": [(0, 1.15), (1.05, -0.75), (-1.05, -0.75)],
+           "losango": [(0, -1.25), (1.0, 0), (0, 1.25), (-1.0, 0)]}[tipo]
+    caminho = " ".join(f"{x + px * r:.1f},{y + py * r:.1f}" for px, py in pts)
+    return f'<polygon points="{caminho}" {a}/>'
+
+
+def figura_comparacao(cmp: dict, *, titulo: str = "", autor: str = "", data: str = "", versao: str = "",
+                      n_min: int = 3) -> str:
+    """Figura estilo artigo da comparação de métodos: mediana do |erro| por unidade (escala
+    log), um símbolo por método, o melhor de cada linha cheio; (a) bloco fechado, (b) superfícies."""
+    from .bloco_figura import FONTE, TINTA, TINTA2, GRADE, _t, _fmt
+    cand = cmp["candidatos"]
+    if not cand:
+        raise ErroValidacao("Nada para desenhar.")
+    chaves = [k for k, u in cand[0]["unidades"].items() if u["n"] >= n_min]
+    campos = [c for c in ("fechado", "superficie") if any(x["global"][c].get("n") for x in cand)]
+    linhas = [None] + chaves                              # None = todas as unidades
+    W = 1100
+    alt_l = 24
+    y0 = 90 if titulo else 64
+    painel_h = alt_l * len(linhas) + 20
+    H = y0 + painel_h + 60 + 22 * math.ceil(len(cand) / 2) + 60
+    vals = [v for x in cand for c in campos
+            for v in [x["global"][c].get("mediana")] + [x["unidades"][k][c].get("mediana") for k in chaves]
+            if v is not None and v > 0]
+    lo = 10 ** math.floor(math.log10(max(min(vals), 0.1))) if vals else 1
+    hi = 10 ** math.ceil(math.log10(max(vals))) if vals else 100
+    if hi <= lo:
+        hi = lo * 10
+    out = [f'<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}">'
+           f'<rect width="100%" height="100%" fill="#ffffff"/>']
+    if titulo:
+        out.append(_t(70, 34, titulo, 17, TINTA, peso="bold"))
+    rot_x0 = 70
+    paineis = [(250, 650), (690, 1060)] if len(campos) == 2 else [(250, 1060)]
+    nomes_campo = {"fechado": "bloco fechado", "superficie": "superfícies"}
+
+    def melhor_da_linha(campo, k):
+        def m(x):
+            g = x["unidades"][k][campo] if k else x["global"][campo]
+            return g.get("mediana") if g.get("mediana") is not None else math.inf
+        b = min(cand, key=m)
+        return b["id"] if m(b) < math.inf else None
+
+    for p, campo in enumerate(campos):
+        x0, x1 = paineis[p]
+        X = lambda v, x0=x0, x1=x1: x0 + (math.log10(v) - math.log10(lo)) / (math.log10(hi) - math.log10(lo)) * (x1 - x0)
+        ytop, ybot = y0, y0 + painel_h
+        d = lo
+        while d <= hi * 1.0001:
+            for m in (1, 2, 5):
+                t = d * m
+                if lo <= t <= hi * 1.0001:
+                    out.append(f'<line x1="{X(t):.1f}" y1="{ytop}" x2="{X(t):.1f}" y2="{ybot}" stroke="{GRADE}" '
+                               f'stroke-width="{0.5 if m == 1 else 0.25}"/>')
+                    out.append(_t(X(t), ybot + 15, _fmt(t, 1 if t < 1 else 0), 10, TINTA, "middle"))
+            d *= 10
+        out.append(f'<rect x="{x0}" y="{ytop}" width="{x1 - x0}" height="{ybot - ytop}" fill="none" stroke="{TINTA}" '
+                   f'stroke-width="0.9"/>')
+        out.append(_t((x0 + x1) / 2, ybot + 34, f"mediana do |erro| (m, escala log) — {nomes_campo[campo]}", 11,
+                      TINTA, "middle"))
+        out.append(_t(x0 + 6, ytop - 8, f"({'ab'[p]})", 12, TINTA, peso="bold"))
+        for i, k in enumerate(linhas):
+            y = ytop + 10 + alt_l * (i + 0.5)
+            if i == 1:
+                out.append(f'<line x1="{x0}" y1="{y - alt_l / 2:.1f}" x2="{x1}" y2="{y - alt_l / 2:.1f}" '
+                           f'stroke="{TINTA}" stroke-width="0.5"/>')
+            b = melhor_da_linha(campo, k)
+            for j, x in sorted(enumerate(cand), key=lambda jx: jx[1]["id"] == b):    # o melhor por cima
+                g = x["unidades"][k][campo] if k else x["global"][campo]
+                v = g.get("mediana")
+                if v is None or v <= 0:
+                    continue
+                dy = (j - (len(cand) - 1) / 2) * min(2.4, 12 / max(len(cand), 1))   # métodos empatados não se tapam
+                out.append(_simbolo(_SIMBOLOS[j % len(_SIMBOLOS)], X(min(max(v, lo), hi)), y + dy, 4.2,
+                                    x["id"] == b, TINTA))
+    for i, k in enumerate(linhas):
+        y = y0 + 10 + alt_l * (i + 0.5)
+        if k is None:
+            out.append(_t(rot_x0, y + 3.5, "todas as unidades", 10.5, TINTA, peso="bold"))
+        else:
+            u = cand[0]["unidades"][k]
+            out.append(f'<rect x="{rot_x0}" y="{y - 5:.1f}" width="10" height="10" fill="{u["cor"]}" stroke="{TINTA}" '
+                       f'stroke-width="0.4"/>')
+            out.append(_t(rot_x0 + 15, y + 3.5, f"{u['nome'][:24]} (n = {u['n']})", 10, TINTA))
+    # legenda: duas colunas
+    ly = y0 + painel_h + 62
+    for j, x in enumerate(cand):
+        cx, cy = 90 + (j % 2) * 500, ly + 22 * (j // 2)
+        out.append(_simbolo(_SIMBOLOS[j % len(_SIMBOLOS)], cx, cy - 4, 4.6, False, TINTA))
+        txt = x["nome"] + (" — sugerido" if x["id"] == cmp["melhor"] else "")
+        out.append(_t(cx + 12, cy, txt, 10, TINTA, peso="bold" if x["id"] == cmp["melhor"] else "normal"))
+        out.append(_t(cx + 12, cy + 11, x["metodos"].get("estrutura", "")[:90] if isinstance(x["metodos"].get("estrutura"), str)
+                      else "", 8.5, TINTA2))
+    yn = ly + 22 * math.ceil(len(cand) / 2) + 8
+    notas = [f"Validação cruzada (deixar um poço de fora) com cada método: {cmp.get('n_comparacoes') or '—'} topos. "
+             f"Símbolo cheio: o menor erro da linha. Unidades com menos de {n_min} topos ficam de fora.",
+             "Topos: AGP (ANP), interpretação da operadora. " + (f"SIAPP {versao}" if versao else "SIAPP")
+             + (f" · {autor}" if autor else "") + (f" · {data}" if data else "")]
+    for k, t in enumerate(notas):
+        out.append(_t(70, yn + 15 * k, t, 9.5, TINTA2))
     out.append("</svg>")
     return "".join(out)

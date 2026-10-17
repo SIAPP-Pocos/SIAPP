@@ -27,7 +27,7 @@ fica de fora, com aviso — na Potiguar, o AGP do `1-BRSA-264-ES` está na pasta
 |---|---|
 | Plano | lat/lon → km num plano local (equiretangular na latitude média; 111,2 km por grau de latitude) |
 | Contorno | contorno convexo dos poços que têm a unidade (cadeia monótona); **área pela fórmula do shoelace**, mostrada no resumo e na figura |
-| Dentro do contorno | **interpolação linear** nos triângulos de Delaunay dos poços (Bowyer–Watson) |
+| Dentro do contorno | **interpolação linear** nos triângulos de Delaunay dos poços (Bowyer–Watson); desde a 0.23, ou spline, IDW, krigagem, tendência + krigagem (ver [Interpolação e escala](#interpolação-e-escala-023)) |
 | Margem (opcional) | na faixa entre o contorno e o contorno + margem: valor do **poço mais próximo** |
 | Fora | nulo (NaN, de propósito): nada é desenhado nem exportado |
 | Distância máxima (opcional) | esconde a superfície onde o poço mais próximo com a unidade está além dela — útil no bloco regional |
@@ -119,8 +119,8 @@ grade pelo contorno).
 | Limite *k* | o topo da unidade *k* na ordem estratigráfica; o último é a base da última unidade |
 | Num poço | o limite *k* é observado se o poço chegou a uma unidade de índice ≥ *k*: é o topo da primeira delas. **Unidade ausente = espessura 0** (o poço passou pela posição dela) |
 | Espessura | limite *k* − limite *k*+1, quando os dois foram observados; poço que parou antes, ou base não atingida na última unidade: **desconhecida** (não entra como zero) |
-| Empilhamento | um **limite de referência** (o mais fundo observado em ≥ 90% dos poços) é interpolado direto; os de cima somam espessuras, os de baixo subtraem. Espessura ≥ 0: **as camadas nunca se cruzam**, e passam pelos topos do AGP nos poços |
-| Interpolação | linear nos triângulos de Delaunay dos poços com o dado; fora do contorno deles, o valor do ponto mais próximo da borda (linear entre os dois poços da aresta: contínuo) — **extrapolado, mais claro** |
+| Empilhamento | **por espessuras**: um **limite de referência** (o mais fundo observado em ≥ 90% dos poços) é interpolado direto; os de cima somam espessuras, os de baixo subtraem. Espessura ≥ 0: **as camadas nunca se cruzam**, e passam pelos topos do AGP nos poços. **Topo a topo** (0.23): cada limite interpolado direto dos poços e cortado para não passar acima do de cima (onde se cruzariam, a camada acunha); um limite sem nenhum poço sai da espessura de cima |
+| Interpolação | o método escolhido (linear por padrão até a 0.22) nos poços com o dado; fora do contorno deles, o valor do ponto mais próximo da borda (linear entre os dois poços da aresta: contínuo) — **extrapolado, mais claro**. Os métodos lisos, fora do contorno, ficam presos à faixa dos dados ± 10% |
 | Terreno | cota altimétrica do cadastro da ANP (0,0 = não informada); sem ela, a mesa rotativa menos a diferença mediana mesa − terreno dos outros poços (sem nenhum, 5 m). O que estiver acima é cortado |
 | Camadas cinza | *sem descrição no AGP*: entre o terreno e o primeiro topo (se passar de 5 m) e abaixo da base da última unidade, quando atingida |
 | Base | plana: abaixo do ponto mais fundo dos dados (folga de 5% do relevo), ou a cota pedida em **Base do bloco fechado**. A última unidade sem base atingida vai até ela |
@@ -147,6 +147,106 @@ poços), 14 camadas em ~7 s.
 - A **figura estilo artigo** e o **PNG** saem no modo da tela (com corte, camadas afastadas ou
   a parede). Na figura, com as camadas juntas, só a superfície exposta é desenhada, em pedaços
   que não se sobrepõem (o algoritmo do pintor não erra no topo).
+
+## Interpolação e escala (0.23)
+
+`motor/interpolacao.py`. Cada campo do bloco tem o seu método — **topos** (estrutura: as
+superfícies e o bloco fechado), **espessuras** e **propriedades** (φ, N/G, Sw sobre o topo) —,
+escolhidos no quadro **Interpolação** da montagem. Os textos de ajuda da janela vêm do
+próprio motor (uma fonte só).
+
+| Método | O que faz | Bom para |
+|---|---|---|
+| **Linear** (triângulos) | passa exatamente nos poços, nunca inventa alto ou baixo além dos dados; facetada | poucos poços, campos densos, controle de qualidade, rifte com falhas |
+| **Inverso da distância** (IDW) | média dos vizinhos pesada por 1/dᵖ; exata nos poços, "olhos de boi" | olhada rápida, propriedades; fraco para topo |
+| **Spline de placa fina** (mínima curvatura) | a superfície mais lisa pelos poços; com **suavidade**, aceita errar no poço para ficar lisa (filtra topo mal marcado) | estruturas contínuas, dobras suaves, leques |
+| **Krigagem ordinária** | correlação espacial medida nos poços (variograma: alcance, pepita, patamar; anisotropia); dá o **mapa de incerteza** (σ) | muitos poços (20+), sistemas com direção (fluvial, leque), bacia |
+| **Tendência + krigagem** | tira o mergulho regional (plano ou superfície de 2º grau) e kriga o resto | bacia com mergulho para o depocentro, carbonato de plataforma |
+
+| Parâmetro | Efeito |
+|---|---|
+| Suavidade (0–1, ou automática) | spline: λ = escala·10^(−5+5s); automática = a que menos erra deixando um poço de fora. Krigagem: fração de pepita (0,9·s); automática = a do variograma ajustado |
+| Potência, vizinhos | IDW: potência maior = cada poço domina em volta; vizinhos 0 = todos |
+| Variograma, alcance | esférico, exponencial ou gaussiano; automático = o melhor entre esférico e exponencial, ajustado por mínimos quadrados (pares/distância) até 15× o espaçamento típico dos poços |
+| Azimute, razão | anisotropia: direção de maior continuidade e alcance perpendicular ÷ alcance no azimute |
+| Grau | tendência: 1 = plano; 2 = superfície curva |
+
+Regras comuns:
+
+- **Espessuras com zeros**: spline, krigagem e IDW espalham um pouco de espessura entre poços
+  onde a unidade falta; a espessura do método é multiplicada pela **presença** interpolada
+  linear (onde ela é 0, a espessura é 0; a linha de acunhamento fica onde a presença vale ½).
+- **Krigagem com menos de 8 poços** com o dado: sem variograma que se sustente → linear, com aviso.
+- **Mapa de incerteza**: com krigagem ou tendência nos topos, o σ da krigagem de cada topo vira
+  uma "propriedade" em **Colorir o topo de … por incerteza do topo** — claro perto dos poços,
+  escuro longe.
+- **Validação cruzada com cada método**: tirar um poço da spline e da krigagem não refaz o
+  sistema — atualiza os coeficientes (`coef − coefᵢ/(M⁻¹)ᵢᵢ · M⁻¹[:, i]`, Dubrule 1983),
+  com os hiperparâmetros (λ, variograma) fixos; os testes conferem com o ajuste refeito do
+  zero. A tendência fica a de todos os poços.
+
+### Comparar métodos
+
+Botão **Comparar métodos** (num bloco montado): a validação cruzada com seis combinações —
+linear por espessuras, linear, IDW, spline, krigagem e tendência + krigagem topo a topo —, com
+os parâmetros avançados do bloco. Tabela por unidade (mediana / 68% do erro, o menor de cada
+unidade em negrito), o **sugerido** (menor mediana no bloco fechado; sem bloco fechado, nas
+superfícies) e **Usar o melhor e montar de novo** (troca topos, espessuras e empilhamento;
+as propriedades ficam). CSV e figura estilo artigo: mediana do erro por unidade em escala log,
+um símbolo por método (sem depender de cor), cheio = o menor erro da linha. Guardada no
+registro do bloco.
+
+Dois casos reais (mediana / 68% do erro, m; F = bloco fechado, S = superfícies):
+
+| Combinação | Estreito (14 poços) F | S | Potiguar Cat. 1 (≈430 poços) F | S |
+|---|---|---|---|---|
+| Linear, por espessuras | 14,8 / 21,3 | 15,2 / 19,9 | **15,4 / 30,6** | 14,5 / 26,2 |
+| Linear, topo a topo | 14,8 / 21,3 | 15,2 / 19,9 | 15,4 / 30,8 | 14,5 / 26,2 |
+| IDW, topo a topo | 23,9 / 32,2 | 14,5 / 18,3 | 21,2 / 41,8 | 19,8 / 37,2 |
+| Spline (automática), topo a topo | 10,9 / 19,1 | 17,9 / 23,7 | 16,2 / 32,0 | **14,4 / 26,5** |
+| Krigagem, topo a topo | 18,5 / 28,5 | **9,3 / 15,0** | 18,8 / 34,6 | 14,6 / 27,0 |
+| Tendência + krigagem, topo a topo | **9,3 / 18,4** | 16,6 / 23,6 | 18,6 / 34,4 | 14,4 / 26,4 |
+
+O que se aprendeu:
+
+- **Topo a topo** é o que faz os métodos lisos funcionarem no bloco fechado. Por espessuras,
+  o erro de uma referência lisa e o das espessuras se somam: spline por espessuras errou 22 m
+  na Potiguar, topo a topo 16 m. Com a linear, os dois empatam.
+- Num **campo** com poucos poços, os métodos lisos ganham (a linear facetada erra entre os
+  poços); no **regional** denso e falhado, a linear continua difícil de bater no bloco
+  fechado, e nas superfícies todos empatam perto de 14,5 m.
+- Diferenças de poucos metros estão dentro do ruído dos topos do AGP (a interpretação da
+  operadora) — por isso a comparação mostra o erro de 68% junto da mediana.
+
+### Escala: reservatório ou bacia (0.23)
+
+O seletor **Escala** preenche o formulário com um ponto de partida; tudo continua editável
+(mexer em qualquer campo vira "personalizada"). Fica registrada no bloco.
+
+| | Reservatório (um campo) | Bacia (regional) |
+|---|---|---|
+| Poços | os de um campo | todos da bacia |
+| Margem / corte por distância | 0 / sem | 0 / 15 km |
+| Grade | 160 células | 120 células |
+| Topos | spline (automática) | tendência (grau 1) + krigagem |
+| Espessuras | spline (com presença) | krigagem (com presença) |
+| Propriedades | IDW | krigagem |
+| Bloco fechado | topo a topo | topo a topo |
+
+Por quê: num campo, a spline topo a topo errou 26% menos que a linear no bloco fechado e
+funciona com 3 poços (a krigagem pede 8); na bacia, tendência + krigagem separa o mergulho
+regional da variação local, empata nas superfícies e dá o mapa de incerteza — mas no bloco
+fechado regional a linear ainda erra menos: rode **Comparar métodos**.
+
+Guia rápido por tipo de reservatório (ponto de partida, a comparação decide):
+
+| Reservatório | Topos | Espessuras | Por quê |
+|---|---|---|---|
+| Carbonato de plataforma (Jandaíra) | tendência + krigagem, ou spline | krigagem | camadas extensas, mergulho suave e contínuo |
+| Fluvial / canais (Açu) | krigagem com anisotropia na direção do aporte | krigagem anisotrópica, ou linear | corpos alongados; espessura muda rápido na transversal |
+| Leque / turbidito | spline ou krigagem anisotrópica | krigagem | geometria lobada e contínua |
+| Rifte com falhas (Pendência, Alagamar) | linear | linear | os métodos lisos "alisam" os rejeitos; o SIAPP ainda não modela falhas |
+| Poucos poços (< 8) | linear ou spline | linear | sem variograma; a linear não inventa |
 
 ## Validação cruzada (0.21)
 

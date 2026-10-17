@@ -40,6 +40,7 @@ import math
 import numpy as np
 
 from . import bloco as mbl
+from . import interpolacao as mint
 
 COR_COBERTURA = "#d9d6cf"
 CHAVE_COBERTURA = "_cobertura"
@@ -370,17 +371,42 @@ def montar(modelo: dict, *, base_cota: float | None = None) -> dict:
 
     # ---- empilhamento por espessuras
     lim = [None] * (n + 1)
-    lim[ref], _ = interpolar_grade(lim_pts[ref], lim_val[ref], g)
+    cfg = mint.configuracao((modelo.get("parametros") or {}).get("interpolacao"))
+    lim[ref], _, aj_ref = mint.grade(cfg["estrutura"], ob["lim"][ref], g)
+    metodos = {"estrutura": aj_ref.descricao(), "espessura": {}}
     esp = [None] * n
     for k in range(n):
         if esp_val[k]:
-            esp[k] = np.maximum(interpolar_grade(esp_pts[k], esp_val[k], g)[0], 0.0)
-    for k in range(ref - 1, -1, -1):
-        lim[k] = lim[k + 1] + (esp[k] if esp[k] is not None else 0.0)
-    for k in range(ref, n):
-        if esp[k] is None:
-            break
-        lim[k + 1] = lim[k] - esp[k]
+            z, _, aj = mint.grade(cfg["espessura"], ob["esp"][k], g, campo="espessura")
+            esp[k] = np.maximum(z, 0.0)
+            metodos["espessura"][legenda[k]["chave"]] = aj.descricao()
+            for a_ in aj.avisos:
+                avisos.append(f"Espessura de {legenda[k]['nome']}: {a_}.")
+    for a_ in aj_ref.avisos:
+        avisos.append(f"Referência ({legenda[ref]['nome']}): {a_}.")
+    if cfg["empilhamento"] == "topos":
+        # cada limite direto dos poços; o que não tem observação sai da espessura de cima
+        metodos["estrutura"] = {}
+        for k in range(n + 1):
+            if k == ref:
+                metodos["estrutura"][legenda[k]["chave"]] = aj_ref.descricao()
+                continue
+            if ob["lim"][k]:
+                lim[k], _, ajk = mint.grade(cfg["estrutura"], ob["lim"][k], g)
+                if k < n:
+                    metodos["estrutura"][legenda[k]["chave"]] = ajk.descricao()
+            elif k > 0 and lim[k - 1] is not None and esp[k - 1] is not None:
+                lim[k] = lim[k - 1] - esp[k - 1]
+        for k in range(1, n + 1):                       # não cruzar: corta no de cima
+            if lim[k] is not None and lim[k - 1] is not None:
+                lim[k] = np.minimum(lim[k], lim[k - 1])
+    else:
+        for k in range(ref - 1, -1, -1):
+            lim[k] = lim[k + 1] + (esp[k] if esp[k] is not None else 0.0)
+        for k in range(ref, n):
+            if esp[k] is None:
+                break
+            lim[k + 1] = lim[k] - esp[k]
 
     # ---- base plana
     fundos = [p["cota_fundo"] for p in pocos if p.get("cota_fundo") is not None]
@@ -459,7 +485,8 @@ def montar(modelo: dict, *, base_cota: float | None = None) -> dict:
         "limites": [[[round(float(v), 1) for v in linha] for linha in z] for z in limites],
         "base": base, "referencia": legenda[ref]["chave"], "contorno": [[round(float(a), 4), round(float(b), 4)]
                                                                        for a, b in poligono],
-        "area_km2": round(area_total, 3), "terreno": fonte,
+        "area_km2": round(area_total, 3), "terreno": fonte, "metodos": metodos,
+        "empilhamento": cfg["empilhamento"],
         "cota_topo_max": round(alto, 1),
     }
 

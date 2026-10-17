@@ -131,6 +131,28 @@ Precisa de internet. Comece por uma categoria pequena para ver o tempo.
 - [ ] Sem intervalo marcado, **Calcular** explica que precisa de um intervalo-alvo.
 - [ ] Repetir no `5PX__0011__RN_5PX__0011__RN.tif` (DLIS de 2020).
 
+## 0.23 — interpolação e escala
+
+- [ ] **Bloco 3D**: a **Escala** abre em "reservatório": o quadro **Interpolação** mostra spline nos topos e
+      nas espessuras, IDW nas propriedades, bloco fechado topo a topo; o texto embaixo explica o método.
+      Clique em cada método: a explicação muda ("Bom para: …").
+- [ ] Troque para **bacia**: escolha vira "todos da bacia", corte de 15 km, tendência + krigagem; em
+      **Parâmetros avançados** aparecem variograma, alcance, azimute, razão e grau (passe o mouse: o que cada
+      um faz). Mexa em qualquer campo: a escala vira "personalizada".
+- [ ] `ESTREITO`, escala reservatório → Montar: o resumo diz "por spline de placa fina"; **Bloco fechado**:
+      "topo a topo · spline de placa fina".
+- [ ] **Comparar métodos**: em segundos, a tabela com 6 colunas (mediana / 68%), negrito no menor de cada
+      unidade e o sugerido (no Estreito, tendência + krigagem ~9 m contra 15 m da linear). **Figura → PDF**:
+      um símbolo por método, cheio = o melhor da linha. **CSV**.
+- [ ] **Usar o melhor e montar de novo**: o formulário troca os métodos e o bloco é montado de novo.
+- [ ] Monte com tendência + krigagem (escala bacia, mas com os poços do campo) → **Colorir o topo de**
+      Jandaíra **por incerteza do topo**: claro nos poços, escuro longe (σ de ~3 a ~17 m).
+- [ ] Reabra um bloco em *Blocos anteriores*: a interpolação dele volta para o formulário; um bloco da 0.22
+      volta como linear por espessuras.
+- [ ] Bacia inteira (Potiguar): **Comparar métodos** leva ~3 min (a barra de status diz qual método está
+      rodando); o sugerido é a linear por espessuras (~15 m), a spline topo a topo fica perto (~16 m).
+- [ ] Modo de escolha "um campo": os campos de poço/raio e de bacia não aparecem.
+
 ## 0.22 — saídas do bloco
 
 Abra **Saídas do bloco** (embaixo do visor) num bloco do `ESTREITO`.

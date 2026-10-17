@@ -20,6 +20,9 @@ existe e a validação científica ficam **para o final**, antes do lançamento 
 - [x] **Saídas do bloco** (0.22): `.DATA`/`.GRDECL` no formato ECLIPSE (grade corner-point,
       uma região por formação, poços com a trajetória), para tNavigator e afins; mapas de topo
       e isópaca (XYZ, GeoTIFF) para o QGIS; volumetria preliminar por formação; modelo `.glb`.
+- [x] **Interpolação e escala** (0.23): linear, IDW, spline, krigagem, tendência + krigagem, um método
+      por campo, com explicação; bloco fechado topo a topo; mapa de incerteza; comparação dos métodos
+      pela validação cruzada (tabela, figura, "usar o melhor"); escala reservatório ou bacia.
 - [ ] **Gasodutos e blocos exploratórios** (com o Ruan): camadas do IBGE/EPE/ANP, distância
       do bloco exploratório ao gasoduto mais próximo, para a eficiência econômica de injetar CO₂.
 

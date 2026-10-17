@@ -18,6 +18,7 @@ from motor import bloco_solido as mbs
 from motor import bloco_validacao as mbv
 from motor import bloco_volumetria as mbvol
 from motor import direcionais as mdi
+from motor import interpolacao as mint
 from motor import reate
 from motor import secao as msc
 
@@ -54,7 +55,13 @@ class BlocoAPI:
                 "GROUP BY bacia ORDER BY 2 DESC")]
         return {"bacias": bacias, "campos": mbl.campos(self._banco),
                 "pocos": [{"id": p["id"], "campo": p["campo"], "n_unidades": p["n_unidades"]} for p in pocos],
-                "total": len(pocos)}
+                "total": len(pocos), "interpolacao": self._info_interpolacao()}
+
+    @staticmethod
+    def _info_interpolacao() -> dict:
+        """Textos e pontos de partida da interpolação (uma fonte só: motor/interpolacao.py)."""
+        return {"metodos": mint.INFO, "parametros": mint.PARAMETROS_INFO, "escalas": mint.ESCALAS,
+                "padrao": mint.PADRAO, "min_krigagem": mint.MIN_KRIGAGEM}
 
     @resposta_segura
     def bloco_selecionar(self, modo: str, campo: str = "", poco: str = "", raio_km=5.0, bacia: str = ""):
@@ -96,7 +103,9 @@ class BlocoAPI:
                 celulas=int(self._num(op.get("celulas"), mbl.CELULAS_PADRAO)),
                 dist_max_km=self._num(op.get("dist_max")),
                 nomes=magp.ler_estratigrafia(CAMINHO_ESTRATIGRAFIA), slots=msc.ler_slots(CAMINHO_ESTRATIGRAFIA),
-                pasta_execucoes=self._projeto.pasta_de("execucoes"), base_cota=self._num(op.get("base")))
+                pasta_execucoes=self._projeto.pasta_de("execucoes"), base_cota=self._num(op.get("base")),
+                interpolacao=op.get("interpolacao") or None,
+                escala=op.get("escala") if op.get("escala") in mint.ESCALAS else None)
         except mbl.ErroBloco as e:
             raise ErroUsuario(str(e)) from e
         modelo["titulo"] = (op.get("titulo") or "").strip()
@@ -164,6 +173,55 @@ class BlocoAPI:
                                 mediana_fechado=val["global"]["fechado"].get("mediana"),
                                 mediana_superficie=val["global"]["superficie"].get("mediana"))
         return {"validacao": val}
+
+    @resposta_segura
+    def bloco_comparar(self, ident: str, parametros: dict | None = None):
+        """Validação cruzada com cada método de interpolação; guardada no registro do bloco."""
+        self._exigir_projeto()
+        ident = self._ident_bloco(ident)
+        reg = self._registro_bloco(ident)
+        if parametros is None:      # os parâmetros avançados do bloco (variograma, IDW…); a suavidade fica automática
+            est = ((reg.get("parametros") or {}).get("interpolacao") or {}).get("estrutura") or {}
+            parametros = {k: est[k] for k in ("potencia", "vizinhos", "modelo", "alcance_km", "azimute", "razao", "grau")
+                          if est.get(k) is not None}
+        try:
+            cmp = mbv.comparar(reg, parametros=parametros or None,
+                               progresso=lambda k, n, nome: self._status(f"Comparando os métodos: {k + 1} de {n} — {nome}…"))
+        except (mbv.ErroValidacao, mint.ErroInterpolacao) as e:
+            raise ErroUsuario(str(e)) from e
+        mbl.atualizar(self._projeto.pasta_de("execucoes"), ident, comparacao=cmp)
+        m = next(c for c in cmp["candidatos"] if c["id"] == cmp["melhor"])
+        self._projeto.registrar("comparou_metodos", execucao=ident, melhor=cmp["melhor"],
+                                mediana=m["global"][cmp["criterio"]].get("mediana"))
+        return {"comparacao": cmp}
+
+    @resposta_segura
+    def bloco_exportar_comparacao(self, ident: str, formato: str = "csv"):
+        self._exigir_projeto()
+        ident = self._ident_bloco(ident)
+        reg = self._registro_bloco(ident)
+        cmp = reg.get("comparacao")
+        if not cmp:
+            raise ErroUsuario("Compare os métodos deste bloco primeiro.")
+        pasta = os.path.join(self._projeto.pasta, PASTA_EXPORTACAO)
+        os.makedirs(pasta, exist_ok=True)
+        if formato == "csv":
+            saida = os.path.join(pasta, f"{ident}_metodos.csv")
+            with open(saida, "w", newline="", encoding="utf-8-sig") as f:
+                w = csv.writer(f, delimiter=";")
+                w.writerow(mbv.COLUNAS_CSV_COMPARACAO)
+                for linha in mbv.linhas_csv_comparacao(cmp):
+                    w.writerow(["" if v is None else str(v).replace(".", ",") if isinstance(v, float) else v
+                                for v in linha])
+        elif formato in ("svg", "pdf", "png"):
+            from motor import __version__
+            svg = mbv.figura_comparacao(cmp, titulo=(reg.get("titulo") or "").strip() or "Comparação dos métodos de interpolação",
+                                        autor=self._autor(), data=datetime.now().strftime("%d/%m/%Y"), versao=__version__)
+            saida = mbf.exportar(svg, os.path.join(pasta, f"{ident}_metodos.{formato}"), formato)
+        else:
+            raise ErroUsuario(f"Formato desconhecido: {formato}")
+        self._projeto.registrar("exportou_bloco", execucao=ident, formato=f"metodos_{formato}")
+        return {"arquivo": os.path.relpath(saida, self._projeto.pasta).replace(os.sep, "/")}
 
     def _ponto(self, reg: dict, ponto: dict) -> tuple[float, float]:
         if ponto.get("x") is not None and ponto.get("y") is not None:

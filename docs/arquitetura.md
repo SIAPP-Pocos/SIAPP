@@ -26,8 +26,9 @@
     secao.py        seção estratigráfica pelos topos do AGP → SVG (PNG/PDF pelo PyMuPDF)
     secao_classica.py  estilo clássico: padrões de rocha, carimbo, mapa de localização
     bloco.py        bloco 3D: contorno convexo, Delaunay, superfícies de topo (só numpy) → janela com three.js
-    bloco_solido.py bloco fechado: limites das camadas em grade (espessuras), malha do contorno, perfil A–A′
-    bloco_validacao.py deixar um poço de fora (interpolador por ponto que refaz só a estrela) e prognóstico
+    bloco_solido.py bloco fechado: limites das camadas em grade (topo a topo ou espessuras), malha do contorno, perfil A–A′
+    interpolacao.py linear, IDW, spline, krigagem, tendência + krigagem; variograma; "sem um poço" de cada um; escalas
+    bloco_validacao.py deixar um poço de fora, comparação dos métodos (tabela, figura) e prognóstico
     bloco_mapas.py  grade UTM regular → GeoTIFF (escrito à mão, chaves GeoTIFF do EPSG) e XYZ
     bloco_eclipse.py deck ECLIPSE: GRDECL corner-point em UTM, FIPNUM, PORO/NTG, poços; o resto em .inc provisórios
     bloco_volumetria.py rocha × N/G × φ × (1 − Sw) por formação, cada parâmetro com a origem

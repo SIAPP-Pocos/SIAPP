@@ -689,8 +689,15 @@
         <p class="ajuda bl-lista" id="bl-lista"></p>
       </section>
       <section class="etapa">
-        <h2>Superfícies</h2>
+        <h2>Superfícies e interpolação</h2>
         <div class="filtros">
+          <label>Escala
+            <select id="bl-escala">
+              <option value="reservatorio">reservatório (um campo)</option>
+              <option value="bacia">bacia (regional)</option>
+              <option value="">personalizada</option>
+            </select></label>
+          <p class="ajuda" id="bl-escala-ajuda"></p>
           <label>Unidades
             <select id="bl-nivel">
               <option value="formacoes">formações</option>
@@ -704,9 +711,43 @@
           <label>Base do bloco fechado (cota, m) <input type="text" id="bl-base" inputmode="decimal" placeholder="automática (abaixo do poço mais fundo)"></label>
           <label>Título da figura <input type="text" id="bl-titulo" placeholder="opcional"></label>
         </div>
-        <p class="ajuda">Interpolação linear entre os poços (triângulos), só dentro do contorno dos poços que
-          têm a unidade; na margem, o valor do poço mais próximo. Campo isolado: margem 0. A mesma montagem faz
-          o bloco fechado (camadas empilhadas por espessura, do terreno à base).</p>
+        <fieldset class="bl-interp" id="bl-interp">
+          <legend>Interpolação</legend>
+          <label>Topos (estrutura) <select id="bl-m-estrutura" data-campo="estrutura"></select></label>
+          <label>Espessuras <select id="bl-m-espessura" data-campo="espessura"></select></label>
+          <label>Propriedades (φ, N/G, Sw) <select id="bl-m-propriedades" data-campo="propriedades"></select></label>
+          <label>Bloco fechado
+            <select id="bl-empilhamento">
+              <option value="topos">topo a topo</option>
+              <option value="espessuras">por espessuras (um topo + isópacas)</option>
+            </select></label>
+          <div class="bl-suavidade">
+            <label>Suavidade <input type="range" id="bl-suavidade" min="0" max="1" step="0.05" value="0" disabled>
+              <span id="bl-suavidade-v">auto</span></label>
+            <label class="opcao"><input type="checkbox" id="bl-suavidade-auto" checked> <span>automática</span></label>
+          </div>
+          <p class="ajuda bl-metodo-ajuda" id="bl-metodo-ajuda"></p>
+          <details class="bl-avancado">
+            <summary>Parâmetros avançados</summary>
+            <label data-param="potencia">Potência (IDW) <input type="text" id="bl-p-potencia" class="curto" inputmode="decimal" value="2"></label>
+            <label data-param="vizinhos">Vizinhos (IDW) <input type="text" id="bl-p-vizinhos" class="curto" inputmode="numeric" value="12"></label>
+            <label data-param="modelo">Variograma
+              <select id="bl-p-modelo">
+                <option value="auto">automático</option><option value="esferico">esférico</option>
+                <option value="exponencial">exponencial</option><option value="gaussiano">gaussiano</option>
+              </select></label>
+            <label data-param="alcance_km">Alcance (km) <input type="text" id="bl-p-alcance_km" class="curto" inputmode="decimal" placeholder="ajustado"></label>
+            <label data-param="azimute">Azimute (°) <input type="text" id="bl-p-azimute" class="curto" inputmode="decimal" value="0"></label>
+            <label data-param="razao">Razão de anisotropia <input type="text" id="bl-p-razao" class="curto" inputmode="decimal" value="1"></label>
+            <label data-param="grau">Grau da tendência
+              <select id="bl-p-grau"><option value="1">1 (plano)</option><option value="2">2 (curva)</option></select></label>
+            <p class="ajuda" id="bl-param-ajuda">Passe o mouse num parâmetro para ver o que ele faz.</p>
+          </details>
+        </fieldset>
+        <p class="ajuda">Fora do contorno dos poços que têm a unidade, o valor da borda; os métodos lisos ficam
+          presos à faixa dos dados. Campo isolado: margem 0. A mesma montagem faz o bloco fechado, do terreno
+          à base. Na dúvida, monte e use <strong>Comparar métodos</strong>: a validação cruzada diz qual erra menos
+          nos seus poços.</p>
         <div class="linha">
           <button class="btn" id="bl-montar">Montar o bloco</button>
           <button class="btn secundario" id="bl-direcionais" title="Baixa os dados direcionais que faltam (~5 KB por poço)">Ler as trajetórias</button>
@@ -753,6 +794,8 @@
             <span class="ajuda">Quanto o bloco erra:</span>
             <button class="btn secundario pequeno" id="bl-validar"
                     title="Tira cada poço, refaz o bloco sem ele e compara os topos previstos com os do AGP">Deixar um poço de fora</button>
+            <button class="btn secundario pequeno" id="bl-comparar"
+                    title="A mesma validação com cada método de interpolação: qual erra menos nestes poços">Comparar métodos</button>
             <span class="ajuda">· Prognóstico num ponto:</span>
             <button class="btn secundario pequeno" id="bl-prog-clique" aria-pressed="false"
                     title="Clique num ponto do bloco para ver a coluna prevista ali">Clicar no bloco</button>
@@ -801,6 +844,23 @@
           </div>
           <table class="bl-tabela" id="bl-prog-tabela"></table>
           <p class="ajuda" id="bl-prog-notas"></p>
+        </section>
+        <section class="bl-quadro" id="bl-cmp" hidden>
+          <div class="bl-quadro-cab">
+            <h3>Comparação dos métodos de interpolação</h3>
+            <span>
+              <button class="btn pequeno" id="bl-cmp-usar">Usar o melhor e montar de novo</button>
+              <button class="btn secundario pequeno" data-comparacao="csv">CSV</button>
+              <span class="ajuda">Figura:</span>
+              <button class="btn secundario pequeno" data-comparacao="svg">SVG</button>
+              <button class="btn secundario pequeno" data-comparacao="pdf">PDF</button>
+              <button class="btn secundario pequeno" data-comparacao="png">PNG</button>
+            </span>
+          </div>
+          <p id="bl-cmp-resumo"></p>
+          <div class="bl-rolar"><table class="bl-tabela" id="bl-cmp-tabela"></table></div>
+          <p class="ajuda">Mediana do erro / 68% dos erros até (m), deixando cada poço de fora. Em negrito, o menor
+            erro de cada unidade. Diferenças de poucos metros entre métodos estão dentro do ruído dos topos do AGP.</p>
         </section>
         <section class="bl-quadro" id="bl-val" hidden>
           <div class="bl-quadro-cab">

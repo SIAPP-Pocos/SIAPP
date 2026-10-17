@@ -34,6 +34,7 @@ async function carregarBloco() {
       sb.appendChild(o);
     }
     if (atualB) sb.value = atualB;
+    if (r.interpolacao) prepararInterpolacao(r.interpolacao);
     $("bl-disponiveis").textContent = r.total
       ? `${numero(r.total, 0)} poço(s) com topos de formação no AGP e coordenadas no cadastro.`
       : "Nenhum poço com topos ainda: leia os AGPs no Levantamento do acervo (aba Mapa).";
@@ -87,7 +88,126 @@ function desenharListaBloco() {
 
 function opcoesBloco() {
   return { nivel: $("bl-nivel").value, margem: $("bl-margem").value, dist_max: $("bl-distmax").value,
-           celulas: $("bl-celulas").value, titulo: $("bl-titulo").value, base: $("bl-base").value };
+           celulas: $("bl-celulas").value, titulo: $("bl-titulo").value, base: $("bl-base").value,
+           escala: $("bl-escala").value, interpolacao: lerInterpolacao() };
+}
+
+// ---------------------------------------------------------------- interpolação e escala
+// Os textos (métodos, parâmetros, escalas) vêm do motor (motor/interpolacao.py), pela ponte.
+const CAMPOS_INTERP = ["estrutura", "espessura", "propriedades"];
+const PARAMS_INTERP = ["potencia", "vizinhos", "modelo", "alcance_km", "azimute", "razao", "grau"];
+const blI = { info: null, aplicado: false, campoAjuda: "estrutura" };
+
+function prepararInterpolacao(info) {
+  blI.info = info;
+  for (const campo of CAMPOS_INTERP) {
+    const sel = $(`bl-m-${campo}`), atual = sel.value;
+    limpar(sel);
+    for (const m of info.metodos) {
+      const o = document.createElement("option");
+      o.value = m.id; o.textContent = m.nome;
+      sel.appendChild(o);
+    }
+    sel.value = atual || "linear";
+  }
+  for (const lab of document.querySelectorAll("#bl-interp [data-param]")) {
+    lab.title = info.parametros[lab.dataset.param] || "";
+  }
+  $("bl-empilhamento").title = info.parametros.empilhamento || "";
+  $("bl-suavidade").title = info.parametros.suavidade || "";
+  if (!blI.aplicado) {                    // a escala só preenche o formulário uma vez (depois, é do usuário)
+    blI.aplicado = true;
+    aplicarEscala($("bl-escala").value);
+  }
+  atualizarInterpolacao();
+}
+
+function aplicarEscala(id) {
+  const e = blI.info && blI.info.escalas[id];
+  $("bl-escala-ajuda").textContent = e ? e.resumo
+    : "Cada opção à sua escolha. A escala só preenche o formulário: tudo continua editável.";
+  if (!e) return;
+  if ($("bl-modo").value !== "secao") { $("bl-modo").value = e.selecao; trocarModoBloco(); }
+  $("bl-margem").value = String(e.margem_km ?? 0).replace(".", ",");
+  $("bl-celulas").value = e.celulas;
+  $("bl-distmax").value = e.dist_max_km ? String(e.dist_max_km).replace(".", ",") : "";
+  aplicarInterpolacao(e.interpolacao, true);
+}
+
+const metodoDe = (v) => (typeof v === "string" ? v : (v && v.metodo) || "linear");
+const decimal = (v) => (v == null ? "" : String(v).replace(".", ","));
+
+// cfg: {estrutura, espessura, propriedades, empilhamento} (texto ou {metodo, parâmetros}); campos ausentes ficam
+function aplicarInterpolacao(cfg, padraoNoResto = false) {
+  if (!cfg) return;
+  for (const campo of CAMPOS_INTERP) if (cfg[campo]) $(`bl-m-${campo}`).value = metodoDe(cfg[campo]);
+  if (cfg.empilhamento) $("bl-empilhamento").value = cfg.empilhamento;
+  const base = (blI.info && blI.info.padrao) || {};
+  const est = typeof cfg.estrutura === "object" && cfg.estrutura ? cfg.estrutura : {};
+  const p = padraoNoResto ? { ...base, ...est } : est;
+  if ("suavidade" in p || padraoNoResto) {
+    const auto = p.suavidade == null;
+    $("bl-suavidade-auto").checked = auto;
+    if (!auto) $("bl-suavidade").value = p.suavidade;
+  }
+  for (const k of PARAMS_INTERP) {
+    if (!(k in p)) continue;
+    const campo = $(`bl-p-${k}`);
+    campo.value = campo.tagName === "SELECT" ? String(p[k] ?? "") : decimal(p[k]);
+  }
+  atualizarInterpolacao();
+}
+
+function lerInterpolacao() {
+  const cfg = { empilhamento: $("bl-empilhamento").value, parametros: {} };
+  for (const campo of CAMPOS_INTERP) cfg[campo] = { metodo: $(`bl-m-${campo}`).value };
+  cfg.parametros.suavidade = $("bl-suavidade-auto").checked ? null : Number($("bl-suavidade").value);
+  for (const k of PARAMS_INTERP) {
+    const v = $(`bl-p-${k}`).value.trim();
+    if (v !== "") cfg.parametros[k] = v.replace(",", ".");
+  }
+  return cfg;
+}
+
+// mostra só os parâmetros dos métodos escolhidos e explica o método do campo em foco
+function atualizarInterpolacao() {
+  const usados = new Set(CAMPOS_INTERP.map((c) => $(`bl-m-${c}`).value));
+  const tem = (...ms) => ms.some((m) => usados.has(m));
+  const vis = { potencia: tem("idw"), vizinhos: tem("idw"), modelo: tem("krigagem", "tendencia"),
+                alcance_km: tem("krigagem", "tendencia"), azimute: tem("krigagem", "tendencia"),
+                razao: tem("krigagem", "tendencia"), grau: tem("tendencia") };
+  for (const lab of document.querySelectorAll("#bl-interp [data-param]")) lab.hidden = !vis[lab.dataset.param];
+  const liso = tem("spline", "krigagem", "tendencia");
+  $("bl-suavidade-auto").disabled = !liso;
+  $("bl-suavidade").disabled = !liso || $("bl-suavidade-auto").checked;
+  $("bl-suavidade-v").textContent = !liso ? "—" : $("bl-suavidade-auto").checked ? "auto"
+    : numero(Number($("bl-suavidade").value), 2);
+  const p = $("bl-metodo-ajuda");
+  limpar(p);
+  const info = blI.info && blI.info.metodos.find((m) => m.id === $(`bl-m-${blI.campoAjuda}`).value);
+  if (info) {
+    const rot = { estrutura: "Topos", espessura: "Espessuras", propriedades: "Propriedades" }[blI.campoAjuda];
+    p.append(el("strong", "", `${rot} — ${info.nome}. `), document.createTextNode(info.resumo + " "),
+             el("em", "", `Bom para: ${info.quando}.`));
+  }
+}
+
+function interpolacaoMudou() {
+  $("bl-escala").value = "";                // mexeu à mão: personalizada
+  $("bl-escala-ajuda").textContent = "Cada opção à sua escolha. A escala só preenche o formulário: tudo continua editável.";
+  atualizarInterpolacao();
+}
+
+function nomeMetodo(id) {
+  const m = blI.info && blI.info.metodos.find((x) => x.id === id);
+  return m ? m.nome.replace(/ \(.*\)$/, "").toLowerCase() : id;
+}
+
+function textoMetodos(p) {
+  const c = p && p.interpolacao;
+  if (!c) return "linear";
+  const e = metodoDe(c.estrutura), s = metodoDe(c.espessura);
+  return e === s ? nomeMetodo(e) : `topos por ${nomeMetodo(e)}, espessuras por ${nomeMetodo(s)}`;
 }
 
 async function montarBloco() {
@@ -134,6 +254,7 @@ function mostrarBloco(r) {
     $(id).title = temSolido ? $(id).dataset.titulo : "O prognóstico usa o bloco fechado, que este bloco não tem.";
   }
   mostrarValidacao(m.validacao || null);
+  mostrarComparacao(m.comparacao || null);
   prepararSaidas(temSolido);
   // exagero inicial: o relevo das superfícies ocupa ~1/4 da largura do bloco
   const g = m.grade, lado = Math.max(g.nx, g.ny) * g.passo;
@@ -324,6 +445,87 @@ async function validarBloco() {
          `${numero(g.mediana, 0)} m.`, "ok");
 }
 
+async function compararMetodos() {
+  if (!bl.ultimo) return;
+  status("Comparando os métodos: a validação cruzada com cada um (no bloco regional, alguns minutos)…", "trab");
+  const r = await chamar($("bl-comparar"), "bloco_comparar", bl.ultimo);
+  if (!r.ok) return;
+  bl.modelo.comparacao = r.comparacao;
+  mostrarComparacao(r.comparacao);
+  const c = r.comparacao, b = c.candidatos.find((x) => x.id === c.melhor);
+  status(`Métodos comparados: o que menos errou foi ${b.nome} (metade dos erros até ` +
+         `${numero(b.global[c.criterio].mediana, 0)} m).`, "ok");
+}
+
+function mostrarComparacao(c) {
+  $("bl-cmp").hidden = !c;
+  if (!c) return;
+  const crit = c.criterio || "fechado", nomeCrit = crit === "fechado" ? "no bloco fechado" : "nas superfícies";
+  const cand = c.candidatos, b = cand.find((x) => x.id === c.melhor);
+  const atual = bl.modelo && bl.modelo.parametros && bl.modelo.parametros.interpolacao;
+  const igual = (x) => atual && ["estrutura", "espessura"].every((k) => metodoDe(atual[k]) === metodoDe(x.interpolacao[k])) &&
+    (atual.empilhamento || "espessuras") === x.interpolacao.empilhamento;
+  let txt = `Com cada método, ${c.n_comparacoes} topos previstos sem o próprio poço. Errou menos ${nomeCrit}: ` +
+            `${b.nome} — metade dos erros até ${numero(b.global[crit].mediana, 1)} m, 68% até ` +
+            `${numero(b.global[crit].p68, 1)} m.`;
+  if (crit === "fechado" && c.melhor_superficie && c.melhor_superficie !== c.melhor) {
+    const s = cand.find((x) => x.id === c.melhor_superficie);
+    txt += ` Só nas superfícies, o melhor foi ${s.nome} (${numero(s.global.superficie.mediana, 1)} m).`;
+  }
+  txt += igual(b) ? " É o que este bloco já usa." : "";
+  $("bl-cmp-resumo").textContent = txt;
+  $("bl-cmp-usar").disabled = !!igual(b);
+  const t = limpar($("bl-cmp-tabela"));
+  const cab = document.createElement("thead");
+  t.appendChild(cab);
+  // "Krigagem, topo a topo" → método em cima, empilhamento embaixo (a tabela cabe na largura)
+  const cabMetodo = (x) => {
+    const [m, ...resto] = x.nome.split(", ");
+    return { nos: [document.createTextNode(m), el("small", "", resto.join(", "))], cls: x.id === c.melhor ? "melhor" : "" };
+  };
+  linhaTabela(cab, ["unidade", "n", ...cand.map(cabMetodo)], true);
+  const corpo = document.createElement("tbody");
+  t.appendChild(corpo);
+  const celula = (g) => (g && g.mediana != null ? `${m1(g.mediana)} / ${m1(g.p68)}` : "—");
+  const melhorDe = (f) => {
+    let id = null, v = Infinity;
+    for (const x of cand) { const g = f(x); if (g && g.mediana != null && g.mediana < v) { v = g.mediana; id = x.id; } }
+    return id;
+  };
+  const linha = (rotulo, n, f) => {
+    const m = melhorDe(f);
+    linhaTabela(corpo, [rotulo, n, ...cand.map((x) => ({ nos: [document.createTextNode(celula(f(x)))],
+                                                          cls: x.id === m ? "melhor" : "" }))]);
+  };
+  linha({ nos: [el("strong", "", `todas (${nomeCrit.replace("no ", "").replace("nas ", "")})`)] },
+        String(b.global[crit].n || ""), (x) => x.global[crit]);
+  if (crit === "fechado") linha("todas (superfícies)", String(b.global.superficie.n || ""), (x) => x.global.superficie);
+  for (const [k, u] of Object.entries(cand[0].unidades)) {
+    if (!u.n) continue;
+    linha(chipUnidade(u.nome, u.cor), String(u.n), (x) => x.unidades[k][crit]);
+  }
+}
+
+function usarMelhorMetodo() {
+  const c = bl.modelo && bl.modelo.comparacao;
+  if (!c) return;
+  const b = c.candidatos.find((x) => x.id === c.melhor);
+  // as propriedades ficam como estão (a comparação é dos topos)
+  aplicarInterpolacao({ estrutura: b.interpolacao.estrutura, espessura: b.interpolacao.espessura,
+                        empilhamento: b.interpolacao.empilhamento });
+  $("bl-escala").value = "";
+  montarBloco();
+}
+
+async function exportarComparacao(botao) {
+  if (!bl.ultimo) return;
+  const r = await chamar(botao, "bloco_exportar_comparacao", bl.ultimo, botao.dataset.comparacao);
+  if (r.ok) {
+    $("bl-exportado").textContent = `Salvo em ambiente_teste/${r.arquivo}`;
+    status(`Comparação exportada: ${r.arquivo}`, "ok");
+  }
+}
+
 function linhaTabela(tabela, textos, cabecalho = false) {
   const tr = document.createElement("tr");
   for (const t of textos) {
@@ -492,14 +694,16 @@ function resumoBloco(m) {
     $("bl-resumo").textContent = `Bloco fechado: ${m.pocos.length} poço(s) · ${numero(s.area_km2, 1)} km²` +
       (m.margem_km ? ` (contorno + margem de ${numero(m.margem_km, 1)} km)` : " (contorno dos poços)") +
       ` · ${s.camadas.length} camada(s) · do terreno (até ${numero(s.cota_topo_max, 0)} m) à base plana em ` +
-      `${numero(s.base, 0)} m · empilhadas por espessura a partir do topo de ` +
-      `${(m.legenda.find((u) => u.chave === s.referencia) || {}).nome || s.referencia} · mais claro = extrapolado`;
+      `${numero(s.base, 0)} m · ` + (s.empilhamento === "topos" ? "topo a topo"
+        : `empilhadas por espessura a partir do topo de ${(m.legenda.find((u) => u.chave === s.referencia) || {}).nome || s.referencia}`) +
+      ` · ${textoMetodos(m.parametros)} · mais claro = extrapolado`;
     return;
   }
   const sups = m.superficies.filter((x) => x.z);
   $("bl-resumo").textContent = `${m.pocos.length} poço(s) · contorno dos poços ${numero(m.area_km2, 1)} km²` +
     (m.margem_km ? ` (+ margem de ${numero(m.margem_km, 1)} km)` : "") +
-    ` · ${sups.length} superfície(s) interpolada(s) · grade de ${numero(m.grade.passo * 1000, 0)} m`;
+    ` · ${sups.length} superfície(s) interpolada(s) por ${nomeMetodo(metodoDe((m.parametros.interpolacao || {}).estrutura))}` +
+    ` · grade de ${numero(m.grade.passo * 1000, 0)} m`;
 }
 
 function paredeBloco() {
@@ -525,18 +729,30 @@ function preencherDrapeBloco(m) {
     if (!props[u.chave]) continue;
     const o = document.createElement("option");
     o.value = u.chave;
-    o.textContent = `${u.nome} (${props[u.chave].pocos.length} poço(s) avaliado(s))`;
+    const nAv = props[u.chave].pocos.length;
+    o.textContent = nAv ? `${u.nome} (${nAv} poço(s) avaliado(s))` : `${u.nome} (incerteza da krigagem)`;
     su.appendChild(o);
   }
   su.disabled = su.options.length === 1;
   su.title = su.disabled ? "Nenhuma unidade com avaliação de formação nos poços deste bloco (aba Perfis)." : "";
-  const sp = limpar($("bl-drape-prop"));
+  propsDrapeBloco();
+}
+
+// só as propriedades que a unidade escolhida tem (φ, N/G… da avaliação; σ da krigagem)
+function propsDrapeBloco() {
+  const m = bl.modelo;
+  if (!m) return;
+  const sp = $("bl-drape-prop"), atual = sp.value;
+  limpar(sp);
+  const info = (m.propriedades || {})[$("bl-drape-unidade").value];
   for (const [k, nome] of Object.entries(m.nomes_propriedades || {})) {
+    if (info && !(info.faixas || {})[k]) continue;
     const o = document.createElement("option");
     o.value = k; o.textContent = nome;
     sp.appendChild(o);
   }
-  sp.disabled = su.disabled;
+  if ([...sp.options].some((o) => o.value === atual)) sp.value = atual;
+  sp.disabled = $("bl-drape-unidade").disabled;
 }
 
 function drapeEscolhido() {
@@ -610,6 +826,12 @@ async function abrirBlocoAnterior(ident) {
   $("bl-distmax").value = p.dist_max_km ? String(p.dist_max_km).replace(".", ",") : "";
   if (p.celulas) $("bl-celulas").value = p.celulas;
   $("bl-base").value = p.base_cota != null ? String(p.base_cota).replace(".", ",") : "";
+  // blocos de antes da 0.23: linear, por espessuras
+  aplicarInterpolacao(p.interpolacao || { estrutura: "linear", espessura: "linear", propriedades: "linear",
+                                          empilhamento: "espessuras" }, true);
+  $("bl-escala").value = p.escala || "";
+  $("bl-escala-ajuda").textContent = (blI.info && blI.info.escalas[p.escala] || {}).resumo ||
+    "Cada opção à sua escolha. A escala só preenche o formulário: tudo continua editável.";
   desenharListaBloco();
   mostrarBloco(r);
   status(`Bloco ${ident} reaberto (sem recalcular).`, "ok");
@@ -678,7 +900,7 @@ function ligarBloco() {
     const d = drapeEscolhido();
     if (window.BlocoVisor) window.BlocoVisor.drape(d && d.chave, d && d.prop);
   };
-  ligar("bl-drape-unidade", "onchange", drape);
+  ligar("bl-drape-unidade", "onchange", () => { propsDrapeBloco(); drape(); });
   ligar("bl-drape-prop", "onchange", drape);
   ligar("bl-nomes", "onchange", () => window.BlocoVisor && window.BlocoVisor.nomes($("bl-nomes").checked));
   ligar("bl-caixa", "onchange", () => window.BlocoVisor && window.BlocoVisor.caixa($("bl-caixa").checked));
@@ -689,6 +911,23 @@ function ligarBloco() {
   ligar("bl-afastar", "oninput", () => window.BlocoVisor && window.BlocoVisor.afastar(Number($("bl-afastar").value)));
   ligar("bl-parede", "onchange", paredeBloco);
   ligar("bl-validar", "onclick", validarBloco);
+  ligar("bl-comparar", "onclick", compararMetodos);
+  ligar("bl-cmp-usar", "onclick", usarMelhorMetodo);
+  for (const b of document.querySelectorAll("[data-comparacao]")) b.onclick = () => exportarComparacao(b);
+  ligar("bl-escala", "onchange", () => aplicarEscala($("bl-escala").value));
+  for (const campo of CAMPOS_INTERP) {
+    const sel = $(`bl-m-${campo}`);
+    sel.addEventListener("change", () => { blI.campoAjuda = campo; interpolacaoMudou(); });
+    sel.addEventListener("focus", () => { blI.campoAjuda = campo; atualizarInterpolacao(); });
+  }
+  ligar("bl-empilhamento", "onchange", interpolacaoMudou);
+  ligar("bl-suavidade", "oninput", interpolacaoMudou);
+  ligar("bl-suavidade-auto", "onchange", interpolacaoMudou);
+  for (const k of PARAMS_INTERP) ligar(`bl-p-${k}`, "onchange", interpolacaoMudou);
+  for (const lab of document.querySelectorAll("#bl-interp [data-param]")) {
+    lab.addEventListener("mouseenter", () => { $("bl-param-ajuda").textContent = lab.title; });
+  }
+  for (const id of ["bl-margem", "bl-celulas", "bl-distmax"]) ligar(id, "onchange", interpolacaoMudou);
   ligar("bl-saidas", "ontoggle", () => { if ($("bl-saidas").open) carregarSaidas(); });
   ligar("bl-mapas", "onclick", exportarMapas);
   ligar("bl-ecl", "onclick", exportarEcl);
