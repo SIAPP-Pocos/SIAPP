@@ -1,6 +1,6 @@
 # Bloco 3D
 
-Os poços no espaço e as **superfícies de topo** das unidades, a partir dos topos que a
+Os poços no espaço, as **superfícies de topo** das unidades e o **bloco fechado** (0.20), a partir dos topos que a
 operadora registrou no AGP. Código: `motor/bloco.py` (modelo) e `ui/js/bloco3d.js`
 (visor, com [three.js](https://threejs.org/) em `ui/vendor/three/`, licença MIT).
 
@@ -105,3 +105,45 @@ ligadas, trilha, propriedade) em **projeção ortográfica**, pelo algoritmo do 
 sombreamento por face, fonte serifada, moldura, legenda, escala de cor, seta do norte e as
 notas de método e fonte. SVG (editável), PDF (vetorial) e PNG 300 ppp em
 `exportacoes/blocos/<id>_figura.*`.
+
+## Bloco fechado (0.20)
+
+`motor/bloco_solido.py`. A mesma montagem faz os dois modos — **Superfícies** e **Bloco
+fechado** —, trocados pelos botões em cima do visor, sem montar de novo. O bloco fechado é o
+volume inteiro dentro do contorno convexo dos poços (mais a margem), do **terreno** a uma
+**base plana**, fatiado nas unidades, com **paredes retas** (a malha recorta as células da
+grade pelo contorno).
+
+| Passo | Regra |
+|---|---|
+| Limite *k* | o topo da unidade *k* na ordem estratigráfica; o último é a base da última unidade |
+| Num poço | o limite *k* é observado se o poço chegou a uma unidade de índice ≥ *k*: é o topo da primeira delas. **Unidade ausente = espessura 0** (o poço passou pela posição dela) |
+| Espessura | limite *k* − limite *k*+1, quando os dois foram observados; poço que parou antes, ou base não atingida na última unidade: **desconhecida** (não entra como zero) |
+| Empilhamento | um **limite de referência** (o mais fundo observado em ≥ 90% dos poços) é interpolado direto; os de cima somam espessuras, os de baixo subtraem. Espessura ≥ 0: **as camadas nunca se cruzam**, e passam pelos topos do AGP nos poços |
+| Interpolação | linear nos triângulos de Delaunay dos poços com o dado; fora do contorno deles, o valor do ponto mais próximo da borda (linear entre os dois poços da aresta: contínuo) — **extrapolado, mais claro** |
+| Terreno | cota altimétrica do cadastro da ANP (0,0 = não informada); sem ela, a mesa rotativa menos a diferença mediana mesa − terreno dos outros poços (sem nenhum, 5 m). O que estiver acima é cortado |
+| Camadas cinza | *sem descrição no AGP*: entre o terreno e o primeiro topo (se passar de 5 m) e abaixo da base da última unidade, quando atingida |
+| Base | plana: abaixo do ponto mais fundo dos dados (folga de 5% do relevo), ou a cota pedida em **Base do bloco fechado**. A última unidade sem base atingida vai até ela |
+
+Por camada, a lista mostra área, espessura máxima, **volume de rocha** (km³, pela malha:
+área × espessura média de cada triângulo) e a fração extrapolada. Na Potiguar (Cat. 1, 429
+poços), 14 camadas em ~7 s.
+
+> O volume é da camada inteira entre os limites interpolados — não é volume de reservatório
+> nem de óleo. Onde há poucos poços, a espessura vem do poço mais próximo da borda.
+
+### No visor
+
+- **Opaco de saída** (a opacidade é guardada por modo).
+- **Corte**: tira um quadrante (sudoeste, sudeste, nordeste, noroeste); **O–L** e **S–N**
+  movem o canto. As tampas do corte mostram as camadas por dentro; os poços no quadrante
+  tirado aparecem inteiros.
+- **Afastar as camadas**: separa as camadas na vertical para ver o topo de cada uma (os poços
+  somem: não casariam com nenhuma).
+- **Seção A–A′ (poços da aba Seção)**: parede vertical pela linha dos poços da aba Seção (na
+  ordem de lá), prolongada até a borda do bloco; o bloco fica translúcido.
+- Passar o mouse numa camada: nome, cota, espessura máxima e se ali é interpolado ou
+  extrapolado.
+- A **figura estilo artigo** e o **PNG** saem no modo da tela (com corte, camadas afastadas ou
+  a parede). Na figura, com as camadas juntas, só a superfície exposta é desenhada, em pedaços
+  que não se sobrepõem (o algoritmo do pintor não erra no topo).

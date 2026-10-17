@@ -1,3 +1,3 @@
 """Motor do SIAPP: toda a lógica, sem nenhuma dependência de interface."""
 
-__version__ = "0.19.0"
+__version__ = "0.20.0"

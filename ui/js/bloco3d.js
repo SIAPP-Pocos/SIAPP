@@ -1,8 +1,10 @@
 // SIAPP — visor 3D do bloco (three.js, em ui/vendor/three). O modelo vem pronto do motor
-// (motor/bloco.py): poços em km num plano local e superfícies de topo numa grade.
+// (motor/bloco.py): poços em km num plano local, superfícies de topo numa grade e o bloco
+// fechado (motor/bloco_solido.py: limites das camadas na mesma grade).
 // Eixos da cena: X = leste (km), Z = −norte (km), Y = cota (m) × exagero / 1000.
 import * as THREE from "three";
 import { OrbitControls } from "../vendor/three/OrbitControls.js";
+import * as geo from "./bloco_geo.js";
 
 const v = {
   renderer: null, scene: null, camera: null, controls: null, caixa: null, modelo: null,
@@ -13,7 +15,14 @@ const v = {
   topos: {},            // chave → [Mesh]
   exagero: 10, opacidade: 0.85, mostrarNomes: true, mostrarCaixa: true,
   centro: { x: 0, y: 0, cota: 0 }, lado: 1, overlay: null, norte: null, dica: null, raio: null,
+  modo: "superficies",  // ou "fechado"
+  camadas: {},          // bloco fechado: chave → {grupo, corpo, k}
+  visivel: {},          // chave → a unidade está ligada
+  corte: { ativo: false, quadrante: "SW", fx: 0.5, fy: 0.5 },
+  afastar: 0,           // 0–1: camadas afastadas na vertical
+  parede: null,         // seção A–A′: {linha: [[x, y]], pocos: [ids]}
 };
+const ESP_MIN = 0.5;    // m: camada mais fina que isso não é desenhada (acunhamento)
 
 function cenaDeY(cota) { return (cota - v.centro.cota) * v.exagero / 1000; }
 
@@ -25,6 +34,7 @@ function limparCena() {
   });
   while (v.scene.children.length) v.scene.remove(v.scene.children[0]);
   v.marcas = []; v.rotulos = []; v.superficies = {}; v.topos = {}; v.marcasProp = []; v.alvosTrilha = [];
+  v.camadas = {}; v.sm = null;
   if (v.overlay) v.overlay.textContent = "";
 }
 
@@ -53,6 +63,7 @@ function iniciar(container) {
   v.renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
   v.renderer.setPixelRatio(window.devicePixelRatio || 1);
   v.renderer.setClearColor(0xffffff, 1);
+  v.renderer.localClippingEnabled = true;
   container.appendChild(v.renderer.domElement);
   v.overlay = document.createElement("div");
   v.overlay.className = "bl-overlay";
@@ -94,8 +105,11 @@ function redimensionar() {
 function montarCena(m) {
   limparCena();
   const g = m.grade;
+  const sol = m.solido && m.solido.ok ? m.solido : null;
+  v.cotaMax = Math.max(m.cota_max, sol ? sol.cota_topo_max : -Infinity);
+  v.cotaMin = Math.min(m.cota_min, sol ? sol.base : Infinity);
   v.centro = { x: g.x0 + (g.nx - 1) * g.passo / 2, y: g.y0 + (g.ny - 1) * g.passo / 2,
-               cota: (m.cota_max + m.cota_min) / 2 };
+               cota: (v.cotaMax + v.cotaMin) / 2 };
   v.lado = Math.max((g.nx - 1) * g.passo, (g.ny - 1) * g.passo, 0.5);
   const X = (x) => x - v.centro.x, Z = (y) => -(y - v.centro.y);
   v.X = X; v.Z = Z;
@@ -120,7 +134,9 @@ function montarCena(m) {
     v.mundo.add(mesh);
     v.superficies[s.chave] = mesh;
   }
+  montarSolido(m);
   desenharPocosECaixa(m, g, X, Z);
+  aplicarModo();
 }
 
 // Triângulos entre os poços (sem margem): a interpolação linear exata, borda reta no contorno.
@@ -174,6 +190,8 @@ function desenharPocosECaixa(m, g, X, Z) {
   const matCabeca = new THREE.MeshLambertMaterial({ color: 0x1c2227 });
   const matLinha = new THREE.LineBasicMaterial({ color: 0x3a4148 });
   const matTraj = new THREE.LineBasicMaterial({ color: 0x1c2227 });
+  v.gPocos = new THREE.Group();
+  v.mundo.add(v.gPocos);
   for (const p of m.pocos) {
     const cotas = p.unidades.flatMap((u) => [u.cota_topo, u.cota_base]);
     const topo = p.mesa ?? Math.max(...cotas, 0);
@@ -181,7 +199,7 @@ function desenharPocosECaixa(m, g, X, Z) {
     const caminho = p.caminho && p.caminho.length > 1
       ? p.caminho.map(([, x, y, c]) => new THREE.Vector3(X(x), c - v.centro.cota, Z(y)))
       : [new THREE.Vector3(X(p.x), topo - v.centro.cota, Z(p.y)), new THREE.Vector3(X(p.x), fundo - v.centro.cota, Z(p.y))];
-    v.mundo.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(caminho), p.trajetoria ? matTraj : matLinha));
+    v.gPocos.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(caminho), p.trajetoria ? matTraj : matLinha));
     const cab = new THREE.Mesh(geoCabeca, matCabeca);
     cab.userData = { tipo: "poco", poco: p };
     v.scene.add(cab);
@@ -191,7 +209,7 @@ function desenharPocosECaixa(m, g, X, Z) {
       const disco = new THREE.Mesh(geoTopo, new THREE.MeshLambertMaterial({ color: u.cor }));
       disco.userData = { tipo: "topo", poco: p, unidade: u };
       v.scene.add(disco);
-      v.marcas.push({ obj: disco, x: X(u.x ?? p.x), cota: u.cota_topo, z: Z(u.y ?? p.y) });
+      v.marcas.push({ obj: disco, x: X(u.x ?? p.x), cota: u.cota_topo, z: Z(u.y ?? p.y), chave: u.chave });
       (v.topos[u.chave] = v.topos[u.chave] || []).push(disco);
     }
   }
@@ -201,8 +219,8 @@ function desenharPocosECaixa(m, g, X, Z) {
   v.mundo.add(v.caixa);
   const x0 = X(g.x0), x1 = X(g.x0 + (g.nx - 1) * g.passo);
   const z0 = Z(g.y0), z1 = Z(g.y0 + (g.ny - 1) * g.passo);        // z0 = sul (frente), z1 = norte
-  const passoC = passoBonito(m.cota_max - m.cota_min || 100);
-  const c0 = Math.floor(m.cota_min / passoC) * passoC, c1 = Math.ceil(m.cota_max / passoC) * passoC;
+  const passoC = passoBonito(v.cotaMax - v.cotaMin || 100);
+  const c0 = Math.floor(v.cotaMin / passoC) * passoC, c1 = Math.ceil(v.cotaMax / passoC) * passoC;
   const y0 = c0 - v.centro.cota, y1 = c1 - v.centro.cota;
   const pts = [];
   const seg = (a, b) => pts.push(new THREE.Vector3(...a), new THREE.Vector3(...b));
@@ -236,6 +254,239 @@ function desenharPocosECaixa(m, g, X, Z) {
   desenharTrilhas();
   aplicarDrape();
   aplicarExagero();
+}
+
+// ------------------------------------------------ bloco fechado
+// Cada camada é uma casca fechada: topo (limite k), fundo (limite k+1) e as paredes ao longo
+// do contorno. Onde a camada é extrapolada (fora do contorno dos poços com o dado), a cor
+// fica mais clara. O corte tira um quadrante (planos de recorte) e fecha a ferida com
+// tampas; a seção A–A′ é uma parede ao longo dos poços da aba Seção.
+function clarear(cor, controlado) {
+  return controlado ? new THREE.Color(cor) : new THREE.Color(cor).lerp(new THREE.Color(0xffffff), 0.55);
+}
+
+// dentro do contorno dos poços com a espessura da camada (borda conta, com folga de 1 m)
+function controlado(c, x, y) {
+  if (!c.controle) return false;
+  if (!c._planos) c._planos = geo.semiplanos(c.controle);
+  return geo.dentro(c._planos, x, y, 1e-3);
+}
+
+function montarSolido(m) {
+  const s = m.solido;
+  v.solido = new THREE.Group();
+  v.mundo.add(v.solido);
+  if (!s || !s.ok) return;
+  const g = m.grade;
+  const malha = geo.malhaContorno(g, s.contorno);
+  const borda = geo.borda(g, s.contorno);
+  const val = (pts) => s.limites.map((z) => pts.map(([x, y]) => geo.bilinear(z, g, x, y)));
+  v.sm = { malha, borda, planos: geo.semiplanos(s.contorno), limM: val(malha.pts), limB: val(borda),
+           xs: s.contorno.map((q) => q[0]), ys: s.contorno.map((q) => q[1]) };
+  v.planosCorte = [new THREE.Plane(new THREE.Vector3(1, 0, 0), 1e9), new THREE.Plane(new THREE.Vector3(0, 0, -1), 1e9)];
+  s.camadas.forEach((c, k) => {
+    const grupo = new THREE.Group();
+    const corpo = new THREE.Mesh(geometriaCamada(k, c), new THREE.MeshLambertMaterial({
+      vertexColors: true, side: THREE.DoubleSide, clippingPlanes: v.planosCorte, clipIntersection: true,
+      polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 + k }));
+    corpo.userData = { tipo: "camada", camada: c };
+    grupo.add(corpo);
+    v.solido.add(grupo);
+    v.camadas[c.chave] = { grupo, corpo, k, camada: c };
+  });
+  desenharTampas();
+  desenharParede();
+}
+
+// Recorta um polígono de vértices [x, y, topo, fundo] onde a espessura passa de ESP_MIN
+// (linha de acunhamento suave, em vez da escada das células).
+function recortarEspessura(pol) {
+  const f = (p) => p[2] - p[3] - ESP_MIN, out = [];
+  for (let i = 0; i < pol.length; i++) {
+    const P = pol[i], Q = pol[(i + 1) % pol.length], fp = f(P), fq = f(Q);
+    if (fp >= 0) out.push(P);
+    if ((fp >= 0) !== (fq >= 0)) { const t = fp / (fp - fq); out.push(P.map((a, j) => a + t * (Q[j] - a))); }
+  }
+  return out;
+}
+
+function geometriaCamada(k, c) {
+  const { malha, borda, limM, limB } = v.sm;
+  const T = limM[k], B = limM[k + 1];
+  const pos = [], cor = [], idx = [];
+  const vert = (x, y, cota) => {
+    pos.push(v.X(x), cota - v.centro.cota, v.Z(y));
+    const c3 = clarear(c.cor, controlado(c, x, y));
+    cor.push(c3.r, c3.g, c3.b);
+    return pos.length / 3 - 1;
+  };
+  const n = malha.pts.length;
+  malha.pts.forEach(([x, y], i) => vert(x, y, T[i]));
+  malha.pts.forEach(([x, y], i) => vert(x, y, B[i]));
+  for (const [a, b, d] of malha.tris) {
+    const ea = T[a] - B[a], eb = T[b] - B[b], ed = T[d] - B[d];
+    if (Math.max(ea, eb, ed) < ESP_MIN) continue;
+    if (Math.min(ea, eb, ed) >= ESP_MIN) { idx.push(a, b, d, n + a, n + d, n + b); continue; }
+    const r = recortarEspessura([a, b, d].map((i) => [malha.pts[i][0], malha.pts[i][1], T[i], B[i]]));
+    if (r.length < 3) continue;
+    const tops = r.map((p) => vert(p[0], p[1], p[2])), fundos = r.map((p) => vert(p[0], p[1], p[3]));
+    for (let j = 1; j < r.length - 1; j++) idx.push(tops[0], tops[j], tops[j + 1], fundos[0], fundos[j + 1], fundos[j]);
+  }
+  const Tb = limB[k], Bb = limB[k + 1];
+  for (let i = 0; i < borda.length - 1; i++) {
+    let P = [borda[i][0], borda[i][1], Tb[i], Bb[i]], Q = [borda[i + 1][0], borda[i + 1][1], Tb[i + 1], Bb[i + 1]];
+    const fp = P[2] - P[3] - ESP_MIN, fq = Q[2] - Q[3] - ESP_MIN;
+    if (fp < 0 && fq < 0) continue;
+    if (fp < 0 || fq < 0) {          // acunha no meio do trecho: só a parte com espessura
+      const t = fp / (fp - fq), M = P.map((a, j) => a + t * (Q[j] - a));
+      if (fp < 0) P = M; else Q = M;
+    }
+    const a = vert(P[0], P[1], P[2]), b = vert(Q[0], Q[1], Q[2]);
+    const d = vert(Q[0], Q[1], Q[3]), e = vert(P[0], P[1], P[3]);
+    idx.push(a, e, d, a, d, b);
+  }
+  const gg = new THREE.BufferGeometry();
+  gg.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+  gg.setAttribute("color", new THREE.Float32BufferAttribute(cor, 3));
+  gg.setIndex(idx);
+  gg.computeVertexNormals();
+  return gg;
+}
+
+// Parede vertical ao longo de uma linha: uma faixa por camada (geometria por camada, para
+// afastar junto). Devolve {chave: BufferGeometry}.
+function paredes(linha) {
+  const m = v.modelo, s = m.solido, g = m.grade;
+  const { pts } = geo.amostrarLinha(linha, g.passo / 2, v.sm.planos);
+  const out = {};
+  if (pts.length < 2) return out;
+  const lims = s.limites.map((z) => pts.map(([x, y]) => geo.bilinear(z, g, x, y)));
+  s.camadas.forEach((c, k) => {
+    const pos = [], cor = [], idx = [];
+    for (let i = 0; i < pts.length; i++) {
+      const c3 = clarear(c.cor, controlado(c, pts[i][0], pts[i][1]));
+      for (const cota of [lims[k][i], lims[k + 1][i]]) {
+        pos.push(v.X(pts[i][0]), cota - v.centro.cota, v.Z(pts[i][1]));
+        cor.push(c3.r, c3.g, c3.b);
+      }
+      if (i && Math.max(lims[k][i] - lims[k + 1][i], lims[k][i - 1] - lims[k + 1][i - 1]) >= ESP_MIN) {
+        const a = 2 * (i - 1), b = a + 1, d = a + 2, e = a + 3;
+        idx.push(a, b, e, a, e, d);
+      }
+    }
+    if (!idx.length) return;
+    const gg = new THREE.BufferGeometry();
+    gg.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+    gg.setAttribute("color", new THREE.Float32BufferAttribute(cor, 3));
+    gg.setIndex(idx);
+    gg.computeVertexNormals();
+    out[c.chave] = gg;
+  });
+  return out;
+}
+
+function trocarExtra(nome, geos, opcoes = {}) {
+  for (const [chave, cam] of Object.entries(v.camadas)) {
+    if (cam[nome]) { cam.grupo.remove(cam[nome]); cam[nome].geometry.dispose(); cam[nome].material.dispose(); cam[nome] = null; }
+    const gg = geos && geos[chave];
+    if (!gg) continue;
+    const mesh = new THREE.Mesh(gg, new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide, ...opcoes }));
+    mesh.userData = { tipo: "camada", camada: cam.camada, parede: nome === "parede" };
+    cam.grupo.add(mesh);
+    cam[nome] = mesh;
+  }
+}
+
+// x, y (km) do canto do corte e as duas linhas das tampas, conforme o quadrante tirado.
+function geometriaCorte() {
+  const { xs, ys } = v.sm, c = v.corte;
+  const xmin = Math.min(...xs), xmax = Math.max(...xs), ymin = Math.min(...ys), ymax = Math.max(...ys);
+  const cx = xmin + c.fx * (xmax - xmin), cy = ymin + c.fy * (ymax - ymin);
+  const oeste = c.quadrante.includes("W"), sul = c.quadrante.includes("S");
+  return { cx, cy, oeste, sul,
+           linhas: [[[cx, sul ? ymin - 1 : cy], [cx, sul ? cy : ymax + 1]],
+                    [[oeste ? xmin - 1 : cx, cy], [oeste ? cx : xmax + 1, cy]]] };
+}
+
+function desenharTampas() {
+  if (!v.sm) return;
+  const [px, pz] = v.planosCorte;
+  if (!v.corte.ativo) {
+    px.constant = 1e9; pz.constant = 1e9;
+    trocarExtra("tampa", null);
+    desenhar();
+    return;
+  }
+  const k = geometriaCorte();
+  // o lado negativo de cada plano é recortado; com clipIntersection, só onde os dois são
+  // negativos (o quadrante)
+  const X = v.X(k.cx), Z = v.Z(k.cy);
+  if (k.oeste) px.set(new THREE.Vector3(1, 0, 0), -X); else px.set(new THREE.Vector3(-1, 0, 0), X);
+  if (k.sul) pz.set(new THREE.Vector3(0, 0, -1), Z); else pz.set(new THREE.Vector3(0, 0, 1), -Z);
+  const geos = {};
+  for (const linha of k.linhas) {
+    for (const [ch, gg] of Object.entries(paredes(linha))) (geos[ch] = geos[ch] || []).push(gg);
+  }
+  const unidas = {};
+  for (const [ch, lista] of Object.entries(geos)) unidas[ch] = lista.length === 1 ? lista[0] : unir(lista);
+  trocarExtra("tampa", unidas);
+  desenhar();
+}
+
+function unir(lista) {
+  const pos = [], cor = [], idx = [];
+  for (const gg of lista) {
+    const base = pos.length / 3;
+    pos.push(...gg.getAttribute("position").array);
+    cor.push(...gg.getAttribute("color").array);
+    idx.push(...Array.from(gg.getIndex().array, (i) => i + base));
+    gg.dispose();
+  }
+  const out = new THREE.BufferGeometry();
+  out.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+  out.setAttribute("color", new THREE.Float32BufferAttribute(cor, 3));
+  out.setIndex(idx);
+  out.computeVertexNormals();
+  return out;
+}
+
+function desenharParede() {
+  v.rotulos = v.rotulos.filter((r) => { if (r.tipo === "secao") { r.el.remove(); return false; } return true; });
+  if (!v.sm) return;
+  if (!v.parede || v.parede.linha.length < 2) { trocarExtra("parede", null); aplicarOpacidade(); return; }
+  const linha = geo.prolongar(v.parede.linha, v.modelo.solido.contorno);
+  trocarExtra("parede", paredes(linha), { polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 });
+  const topo = v.cotaMax + (v.cotaMax - v.cotaMin) * 0.04;
+  rotulo("A", v.X(linha[0][0]), topo, v.Z(linha[0][1]), "secao");
+  rotulo("A′", v.X(linha[linha.length - 1][0]), topo, v.Z(linha[linha.length - 1][1]), "secao");
+  aplicarOpacidade();
+}
+
+function aplicarAfastar() {
+  const s = v.modelo && v.modelo.solido;
+  if (!s || !s.ok) return;
+  const passo = v.afastar * (s.cota_topo_max - s.base) * 0.6 / Math.max(1, s.camadas.length);
+  for (const cam of Object.values(v.camadas)) cam.grupo.position.y = -cam.k * passo;
+  aplicarVisibilidade();
+  desenhar();
+}
+
+function aplicarModo() {
+  const fechado = v.modo === "fechado" && v.sm;
+  for (const [ch, mesh] of Object.entries(v.superficies)) mesh.visible = !fechado && v.visivel[ch] !== false;
+  if (v.solido) v.solido.visible = !!fechado;
+  aplicarVisibilidade();
+  aplicarOpacidade(v.drape && v.drape.chave);
+  desenhar();
+}
+
+// Poços, topos e trilhas: escondidos com as camadas afastadas (não casariam com nenhuma).
+function aplicarVisibilidade() {
+  const afastado = v.modo === "fechado" && v.sm && v.afastar > 0;
+  if (v.gPocos) v.gPocos.visible = !afastado;
+  if (v.trilhas) v.trilhas.visible = !afastado;
+  for (const mk of v.marcas) mk.obj.visible = !afastado && (mk.chave == null || v.visivel[mk.chave] !== false);
+  for (const [ch, cam] of Object.entries(v.camadas)) cam.grupo.visible = v.visivel[ch] !== false;
 }
 
 // ------------------------------------------------ trilhas ao longo dos poços
@@ -379,12 +630,22 @@ function aplicarDrape() {
 // Com uma propriedade no topo de uma unidade, as outras superfícies ficam translúcidas
 // (a escala é azul, e a Jandaíra também: sem isso, uma se confunde com a outra).
 function aplicarOpacidade(destaque) {
+  const por = (mat, o) => {
+    mat.opacity = o;
+    mat.transparent = o < 1;
+    mat.depthWrite = o >= 0.5;
+    mat.needsUpdate = true;
+  };
   for (const [chave, m] of Object.entries(v.superficies)) {
-    const o = destaque && chave !== destaque ? Math.min(v.opacidade, 0.22) : v.opacidade;
-    m.material.opacity = o;
-    m.material.transparent = o < 1;
-    m.material.depthWrite = o >= 0.5;
-    m.material.needsUpdate = true;
+    por(m.material, destaque && chave !== destaque ? Math.min(v.opacidade, 0.22) : v.opacidade);
+  }
+  // bloco fechado: com a seção A–A′, o bloco fica translúcido e a parede, opaca
+  const comParede = !!(v.parede && v.parede.linha.length >= 2);
+  for (const cam of Object.values(v.camadas)) {
+    const o = comParede ? Math.min(v.opacidade, 0.1) : v.opacidade;
+    por(cam.corpo.material, o);
+    if (cam.tampa) por(cam.tampa.material, o);
+    if (cam.parede) por(cam.parede.material, 1);
   }
 }
 
@@ -460,7 +721,9 @@ function projetar(x, cota, z, w, h) {
 function atualizarRotulos() {
   const c = v.renderer.domElement, w = c.clientWidth, h = c.clientHeight;
   for (const r of v.rotulos) {
-    const oculto = (r.tipo === "poco" && !v.mostrarNomes) || (r.tipo !== "poco" && !v.mostrarCaixa);
+    const oculto = r.tipo === "secao" ? v.modo !== "fechado"
+      : (r.tipo === "poco" && (!v.mostrarNomes || (v.modo === "fechado" && v.afastar > 0))) ||
+        (r.tipo !== "poco" && !v.mostrarCaixa);
     const p = projetar(r.x, r.cota, r.z, w, h);
     r.el.hidden = oculto || !p.visivel;
     r.el.style.transform = `translate(${p.x.toFixed(1)}px, ${p.y.toFixed(1)}px)`;
@@ -486,7 +749,7 @@ function desenhar() {
 
 function vista(qual) {
   // enquadra a caixa inteira: o lado horizontal e a altura (com o exagero atual)
-  const altura = v.modelo ? (v.modelo.cota_max - v.modelo.cota_min) * v.exagero / 1000 : 0;
+  const altura = v.modelo ? (v.cotaMax - v.cotaMin) * v.exagero / 1000 : 0;
   const d = Math.max(v.lado * 1.45, altura * 2.1), t = v.controls.target.set(0, 0, 0);
   const el = { obliqua: 35, cima: 89.9, sul: 6, oeste: 6 }[qual] ?? 35;
   const az = { obliqua: -35, cima: 0, sul: 0, oeste: -90 }[qual] ?? -35;   // graus a partir do sul
@@ -503,10 +766,26 @@ function passarMouse(ev) {
   const c = v.renderer.domElement, rc = c.getBoundingClientRect();
   const mouse = new THREE.Vector2(((ev.clientX - rc.left) / rc.width) * 2 - 1, -((ev.clientY - rc.top) / rc.height) * 2 + 1);
   v.raio.setFromCamera(mouse, v.camera);
-  const alvos = v.marcas.map((m) => m.obj).filter((o) => o.visible).concat(v.alvosTrilha || []);
-  const hit = v.raio.intersectObjects(alvos, false)[0];
+  let alvos = v.marcas.map((m) => m.obj).filter((o) => o.visible).concat(v.alvosTrilha || []);
+  if (v.modo === "fechado") {
+    for (const cam of Object.values(v.camadas)) {
+      if (!cam.grupo.visible) continue;
+      for (const o of [cam.corpo, cam.tampa, cam.parede]) if (o && o.material.opacity >= 0.5) alvos.push(o);
+    }
+  }
+  // o raio também acerta a parte da camada tirada pelo corte (o recorte é só no desenho)
+  const hit = v.raio.intersectObjects(alvos, false).find((h) => h.object.userData.tipo !== "camada" ||
+    h.object !== v.camadas[h.object.userData.camada.chave].corpo || !noCorte(h.point));
   if (!hit) { v.dica.hidden = true; return; }
   const d = hit.object.userData, p = d.poco;
+  if (d.tipo === "camada") {
+    const linhasC = dicaCamada(d.camada, hit.point, hit.object.parent.position.y);
+    v.dica.textContent = linhasC.join("\n");
+    v.dica.style.left = (ev.clientX - rc.left + 12) + "px";
+    v.dica.style.top = (ev.clientY - rc.top + 12) + "px";
+    v.dica.hidden = false;
+    return;
+  }
   const linhas = [p.id + (p.campo ? ` · ${p.campo}` : "")];
   if (d.tipo === "trilha") {
     linhas.push(`${d.rotulo}: ${fmt(d.a, 1)}–${fmt(d.b, 1)} m (prof. medida)`);
@@ -525,6 +804,23 @@ function passarMouse(ev) {
   v.dica.style.left = (ev.clientX - rc.left + 12) + "px";
   v.dica.style.top = (ev.clientY - rc.top + 12) + "px";
   v.dica.hidden = false;
+}
+
+// O ponto (da cena) está no quadrante tirado pelo corte? (o raio pega a parte invisível)
+function noCorte(pt) {
+  if (!v.corte.ativo || !v.sm) return false;
+  const k = geometriaCorte();
+  const x = pt.x + v.centro.x, y = v.centro.y - pt.z;
+  return (k.oeste ? x < k.cx - 1e-6 : x > k.cx + 1e-6) && (k.sul ? y < k.cy - 1e-6 : y > k.cy + 1e-6);
+}
+
+function dicaCamada(c, pt, deslocY) {
+  const x = pt.x + v.centro.x, y = v.centro.y - pt.z;
+  const cota = pt.y / (v.exagero / 1000) - deslocY + v.centro.cota;
+  const linhas = [c.nome, `cota ≈ ${fmt(cota, 0)} m · espessura máx. ${fmt(c.espessura_max_m, 0)} m`];
+  linhas.push(controlado(c, x, y) ? `entre os ${c.n_espessuras} poço(s) com a espessura medida`
+                                  : "extrapolada (fora do contorno dos poços com o dado): valor da borda mais próxima");
+  return linhas;
 }
 
 // Imagem para exportar: a vista atual em ~2,5× a resolução, com rótulos, norte, legenda e carimbo.
@@ -574,11 +870,13 @@ function imagem(meta = {}) {
   let x = 14, y = h + 22;
   g.textAlign = "left";
   g.font = "600 11px Segoe UI, sans-serif"; g.fillStyle = "#1c2227";
-  g.fillText("Topos das unidades (AGP)", x, y);
+  const fechado = v.modo === "fechado" && v.sm;
+  g.fillText(fechado ? "Bloco fechado: unidades (AGP) · mais claro = extrapolado" : "Topos das unidades (AGP)", x, y);
   y += 16;
   g.font = "11px Segoe UI, sans-serif";
-  for (const u of v.modelo.legenda) {
-    const vis = (v.topos[u.chave] || []).some((o) => o.visible);
+  const itensLeg = fechado ? v.modelo.solido.camadas : v.modelo.legenda;
+  for (const u of itensLeg) {
+    const vis = fechado ? v.visivel[u.chave] !== false : (v.topos[u.chave] || []).some((o) => o.visible);
     if (!vis) continue;
     if (x > w - 160) { x = 14; y += 16; }
     g.fillStyle = u.cor; g.fillRect(x, y - 9, 12, 10);
@@ -613,7 +911,10 @@ function imagem(meta = {}) {
   const notas = [
     `${m.pocos.length} poços · contorno dos poços ${fmt(m.area_km2, 1)} km² · exagero vertical ${v.exagero}× · ` +
       `canto SW das distâncias: ${fmt(v.cantoSW.lat, 4)}°, ${fmt(v.cantoSW.lon, 4)}°`,
-    "Contexto espacial: entre os poços, superfícies interpoladas (linear, só dentro do contorno dos poços que têm a unidade).",
+    fechado
+      ? `Contexto espacial: camadas empilhadas por espessura (linear entre os poços; fora deles, o poço mais próximo), ` +
+        `do terreno à base plana em ${fmt(m.solido.base, 0)} m.`
+      : "Contexto espacial: entre os poços, superfícies interpoladas (linear, só dentro do contorno dos poços que têm a unidade).",
     `Topos: AGP (ANP), interpretação da operadora · ${meta.versao ? "SIAPP " + meta.versao : "SIAPP"}` +
       (meta.autor ? ` · ${meta.autor}` : "") + ` · ${new Date().toLocaleDateString("pt-BR")}`,
   ];
@@ -636,34 +937,62 @@ window.BlocoVisor = {
     v.trilha = op.trilha || "nenhuma";
     v.drape = op.drape || null;
     v.drapeAnterior = null;
+    v.modo = op.modo || "superficies";
+    v.corte = { ativo: false, quadrante: "SW", fx: 0.5, fy: 0.5, ...(op.corte || {}) };
+    v.afastar = op.afastar || 0;
+    v.parede = null;
+    v.visivel = {};
     montarCena(modelo);
+    if (v.afastar) aplicarAfastar();
     redimensionar();
     vista("obliqua");
   },
   exagero(n) { v.exagero = n; if (v.modelo) aplicarExagero(); },
   opacidade(o) { v.opacidade = o; aplicarOpacidade(v.drape && v.drape.chave); desenhar(); },
   unidade(chave, visivel) {
-    if (v.superficies[chave]) v.superficies[chave].visible = visivel;
-    for (const d of v.topos[chave] || []) d.visible = visivel;
+    v.visivel[chave] = visivel;
+    if (v.superficies[chave]) v.superficies[chave].visible = visivel && v.modo !== "fechado";
+    aplicarVisibilidade();
     desenhar();
+  },
+  // "superficies" ou "fechado" (false se o modelo não tem bloco fechado)
+  modo(qual) {
+    v.modo = qual;
+    if (v.modelo) aplicarModo();
+    return !!v.sm;
+  },
+  corte(op) { Object.assign(v.corte, op); if (v.sm) desenharTampas(); },
+  afastar(f) { v.afastar = f; aplicarAfastar(); },
+  // seção A–A′: ids dos poços (na ordem da seção); devolve quantos estão no bloco
+  parede(ids) {
+    const pocos = (ids || []).map((id) => v.modelo.pocos.find((p) => p.id === id)).filter(Boolean);
+    v.parede = pocos.length >= 2 ? { linha: pocos.map((p) => [p.x, p.y]), pocos: pocos.map((p) => p.id) } : null;
+    desenharParede();
+    desenhar();
+    return pocos.length;
   },
   nomes(sim) { v.mostrarNomes = sim; desenhar(); },
   caixa(sim) { v.mostrarCaixa = sim; if (v.caixa) v.caixa.visible = sim; desenhar(); },
   vista,
   imagem,
   vistaAtual() {
-    const visiveis = v.modelo.legenda.map((u) => u.chave).filter((k) =>
-      (v.superficies[k] ? v.superficies[k].visible : (v.topos[k] || []).some((o) => o.visible)));
+    const visiveis = v.modelo.legenda.map((u) => u.chave).filter((k) => v.visivel[k] !== false);
     return { azimute: v.controls.getAzimuthalAngle(), elevacao: Math.PI / 2 - v.controls.getPolarAngle(),
              exagero: v.exagero, visiveis, trilha: v.trilha, drape: v.drape, opacidade: v.opacidade,
-             nomes: v.mostrarNomes };
+             nomes: v.mostrarNomes, modo: v.modo,
+             camadas: Object.keys(v.camadas).filter((k) => v.visivel[k] !== false),
+             corte: v.corte.ativo ? { ...v.corte } : null, afastar: v.afastar,
+             parede: v.parede ? v.parede.pocos : null };
   },
   trilha(modo) { v.trilha = modo; if (v.modelo) { desenharTrilhas(); desenhar(); } },
   drape(chave, prop) { v.drape = chave ? { chave, prop } : null; if (v.modelo) aplicarDrape(); },
   estado() {
     return { superficies: Object.keys(v.superficies).length, pocos: v.modelo ? v.modelo.pocos.length : 0,
              rotulos: v.rotulos.filter((r) => !r.el.hidden).length, exagero: v.exagero,
-             trilhas: (v.alvosTrilha || []).length, drape: v.drapeAnterior,
+             trilhas: (v.alvosTrilha || []).length, drape: v.drapeAnterior, modo: v.modo,
+             camadas: Object.keys(v.camadas).length,
+             tampas: Object.values(v.camadas).filter((c) => c.tampa).length,
+             paredes: Object.values(v.camadas).filter((c) => c.parede).length,
              escala: v.escala && !v.escala.hidden ? v.escala.textContent : "" };
   },
 };

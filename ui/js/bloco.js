@@ -2,7 +2,9 @@
 // O desenho 3D é do js/bloco3d.js (three.js), que se registra em window.BlocoVisor.
 "use strict";
 
-const bl = { pocos: [], ultimo: null, modelo: null, isolado: false };
+// opacidade guardada por modo: o bloco fechado fica opaco de saída (translúcido, as camadas se embaralham)
+const bl = { pocos: [], ultimo: null, modelo: null, isolado: false, modo: "superficies",
+             opacidade: { superficies: 0.85, fechado: 1 } };
 
 async function carregarBloco() {
   if (!projetoAberto) return;
@@ -85,7 +87,7 @@ function desenharListaBloco() {
 
 function opcoesBloco() {
   return { nivel: $("bl-nivel").value, margem: $("bl-margem").value, dist_max: $("bl-distmax").value,
-           celulas: $("bl-celulas").value, titulo: $("bl-titulo").value };
+           celulas: $("bl-celulas").value, titulo: $("bl-titulo").value, base: $("bl-base").value };
 }
 
 async function montarBloco() {
@@ -107,13 +109,21 @@ function mostrarBloco(r) {
   $("bl-painel").hidden = false;
   $("bl-exportado").textContent = "";
   const m = r.modelo;
-  const sups = m.superficies.filter((s) => s.z);
-  $("bl-resumo").textContent = `${m.pocos.length} poço(s) · contorno dos poços ${numero(m.area_km2, 1)} km²` +
-    (m.margem_km ? ` (+ margem de ${numero(m.margem_km, 1)} km)` : "") +
-    ` · ${sups.length} superfície(s) interpolada(s) · grade de ${numero(m.grade.passo * 1000, 0)} m`;
+  limpar($("bl-unidades"));          // bloco novo: todas as unidades ligadas
+  resumoBloco(m);
+  desenharUnidadesBloco(m);
+  const temSolido = !!(m.solido && m.solido.ok);
   const ul = limpar($("bl-avisos"));
   for (const a of m.avisos || []) ul.appendChild(el("li", "", a));
-  desenharUnidadesBloco(m);
+  for (const a of (m.solido && m.solido.avisos) || []) ul.appendChild(el("li", "", `Bloco fechado: ${a}`));
+  const bf = document.querySelector("[data-modo3d='fechado']");
+  bf.disabled = !temSolido;
+  bf.title = temSolido ? "O volume inteiro, do terreno à base, fatiado nas unidades"
+    : "Sem bloco fechado para estes poços (veja os avisos).";
+  if (!temSolido) bl.modo = "superficies";
+  $("bl-corte").checked = false;
+  $("bl-afastar").value = "0";
+  $("bl-parede").checked = false;
   // exagero inicial: o relevo das superfícies ocupa ~1/4 da largura do bloco
   const g = m.grade, lado = Math.max(g.nx, g.ny) * g.passo;
   // pela faixa das superfícies (não pelo fundo dos poços, que pode ir muito abaixo)
@@ -137,7 +147,75 @@ function mostrarBloco(r) {
   $("bl-trilha").value = temPay ? "avaliacao" : temInd ? "indicios" : "nenhuma";
   window.BlocoVisor.mostrar($("bl-visor"), m, { exagero: ex, opacidade: Number($("bl-opacidade").value),
                                                nomes: $("bl-nomes").checked, caixa: $("bl-caixa").checked,
-                                               trilha: $("bl-trilha").value, drape: drapeEscolhido() });
+                                               trilha: $("bl-trilha").value, drape: drapeEscolhido(),
+                                               modo: bl.modo, corte: opcoesCorte() });
+  trocarModo3d(bl.modo);
+}
+
+function opcoesCorte() {
+  for (const id of ["bl-corte-quad", "bl-corte-x", "bl-corte-y"]) $(id).disabled = !$("bl-corte").checked;
+  return { ativo: $("bl-corte").checked, quadrante: $("bl-corte-quad").value,
+           fx: Number($("bl-corte-x").value), fy: Number($("bl-corte-y").value) };
+}
+
+// Superfícies ⇄ bloco fechado: os dois vêm da mesma montagem
+function trocarModo3d(modo) {
+  const m = bl.modelo;
+  if (modo === "fechado" && !(m && m.solido && m.solido.ok)) modo = "superficies";
+  if (modo !== bl.modo) {
+    bl.opacidade[bl.modo] = Number($("bl-opacidade").value);
+    $("bl-opacidade").value = String(bl.opacidade[modo]);
+  }
+  bl.modo = modo;
+  for (const b of document.querySelectorAll("[data-modo3d]")) {
+    const sim = b.dataset.modo3d === modo;
+    b.classList.toggle("ativo", sim);
+    b.setAttribute("aria-pressed", String(sim));
+  }
+  const fechado = modo === "fechado";
+  $("bl-fechado-ctl").hidden = !fechado;
+  // a propriedade no topo é do modo superfícies
+  for (const id of ["bl-drape-unidade", "bl-drape-prop"]) $(id).closest("label").hidden = fechado;
+  if (fechado && $("bl-drape-unidade").value) {
+    $("bl-drape-unidade").value = "";
+    if (window.BlocoVisor) window.BlocoVisor.drape(null);
+  }
+  if (!m) return;
+  if (window.BlocoVisor) {
+    window.BlocoVisor.opacidade(Number($("bl-opacidade").value));
+    window.BlocoVisor.modo(modo);
+  }
+  resumoBloco(m);
+  desenharUnidadesBloco(m);
+}
+
+function resumoBloco(m) {
+  const s = m.solido;
+  if (bl.modo === "fechado" && s && s.ok) {
+    $("bl-resumo").textContent = `Bloco fechado: ${m.pocos.length} poço(s) · ${numero(s.area_km2, 1)} km²` +
+      (m.margem_km ? ` (contorno + margem de ${numero(m.margem_km, 1)} km)` : " (contorno dos poços)") +
+      ` · ${s.camadas.length} camada(s) · do terreno (até ${numero(s.cota_topo_max, 0)} m) à base plana em ` +
+      `${numero(s.base, 0)} m · empilhadas por espessura a partir do topo de ` +
+      `${(m.legenda.find((u) => u.chave === s.referencia) || {}).nome || s.referencia} · mais claro = extrapolado`;
+    return;
+  }
+  const sups = m.superficies.filter((x) => x.z);
+  $("bl-resumo").textContent = `${m.pocos.length} poço(s) · contorno dos poços ${numero(m.area_km2, 1)} km²` +
+    (m.margem_km ? ` (+ margem de ${numero(m.margem_km, 1)} km)` : "") +
+    ` · ${sups.length} superfície(s) interpolada(s) · grade de ${numero(m.grade.passo * 1000, 0)} m`;
+}
+
+function paredeBloco() {
+  if (!window.BlocoVisor) return;
+  if (!$("bl-parede").checked) { window.BlocoVisor.parede(null); return; }
+  const n = window.BlocoVisor.parede(sec.pocos || []);
+  if (n < 2) {
+    $("bl-parede").checked = false;
+    status((sec.pocos || []).length
+      ? "Menos de dois poços da aba Seção estão neste bloco." : "A lista da aba Seção está vazia.", "erro");
+  } else {
+    status(`Seção A–A′ por ${n} poço(s) da aba Seção, prolongada até a borda do bloco.`, "ok");
+  }
 }
 
 function preencherDrapeBloco(m) {
@@ -170,12 +248,31 @@ function drapeEscolhido() {
 
 function desenharUnidadesBloco(m) {
   const box = limpar($("bl-unidades"));
+  const desligadas = new Set([...document.querySelectorAll("#bl-unidades input:not(:checked)")].map((c) => c.dataset.chave));
+  if (bl.modo === "fechado" && m.solido && m.solido.ok) {
+    for (const c of m.solido.camadas) {
+      const lab = el("label", "bl-unidade");
+      const cb = document.createElement("input");
+      cb.type = "checkbox";
+      cb.checked = !desligadas.has(c.chave);
+      cb.dataset.chave = c.chave;
+      cb.onchange = () => window.BlocoVisor && window.BlocoVisor.unidade(c.chave, cb.checked);
+      const cor = el("i", "bl-cor");
+      cor.style.background = c.cor;
+      const extra = c.fracao_extrapolada > 0.005 ? ` · ${numero(c.fracao_extrapolada * 100, 0)}% extrapolada` : "";
+      const info = el("small", "", `${numero(c.area_km2, 1)} km² · espessura máx. ${numero(c.espessura_max_m, 0)} m · ` +
+        `${numero(c.volume_km3, c.volume_km3 < 1 ? 3 : 1)} km³` + (c.chave.startsWith("_") ? "" : ` · ${c.n_espessuras} poço(s)`) + extra);
+      lab.append(cb, cor, el("span", "", c.nome), info);
+      box.appendChild(lab);
+    }
+    return;
+  }
   for (const u of m.legenda) {
     const s = m.superficies.find((x) => x.chave === u.chave);
     const lab = el("label", "bl-unidade");
     const cb = document.createElement("input");
     cb.type = "checkbox";
-    cb.checked = true;
+    cb.checked = !desligadas.has(u.chave);
     cb.dataset.chave = u.chave;
     cb.onchange = () => window.BlocoVisor && window.BlocoVisor.unidade(u.chave, cb.checked);
     const cor = el("i", "bl-cor");
@@ -215,6 +312,7 @@ async function abrirBlocoAnterior(ident) {
   $("bl-margem").value = String(p.margem_km ?? 0).replace(".", ",");
   $("bl-distmax").value = p.dist_max_km ? String(p.dist_max_km).replace(".", ",") : "";
   if (p.celulas) $("bl-celulas").value = p.celulas;
+  $("bl-base").value = p.base_cota != null ? String(p.base_cota).replace(".", ",") : "";
   desenharListaBloco();
   mostrarBloco(r);
   status(`Bloco ${ident} reaberto (sem recalcular).`, "ok");
@@ -287,6 +385,12 @@ function ligarBloco() {
   ligar("bl-drape-prop", "onchange", drape);
   ligar("bl-nomes", "onchange", () => window.BlocoVisor && window.BlocoVisor.nomes($("bl-nomes").checked));
   ligar("bl-caixa", "onchange", () => window.BlocoVisor && window.BlocoVisor.caixa($("bl-caixa").checked));
+  for (const b of document.querySelectorAll("[data-modo3d]")) b.onclick = () => trocarModo3d(b.dataset.modo3d);
+  const corte = () => window.BlocoVisor && window.BlocoVisor.corte(opcoesCorte());
+  for (const id of ["bl-corte", "bl-corte-quad"]) ligar(id, "onchange", corte);
+  for (const id of ["bl-corte-x", "bl-corte-y"]) ligar(id, "oninput", corte);
+  ligar("bl-afastar", "oninput", () => window.BlocoVisor && window.BlocoVisor.afastar(Number($("bl-afastar").value)));
+  ligar("bl-parede", "onchange", paredeBloco);
   for (const b of document.querySelectorAll("[data-vista3d]")) {
     b.onclick = () => window.BlocoVisor && window.BlocoVisor.vista(b.dataset.vista3d);
   }

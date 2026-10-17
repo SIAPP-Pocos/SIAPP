@@ -2,13 +2,13 @@
 
 [![testes](https://github.com/SIAPP-Pocos/siapp/actions/workflows/testes.yml/badge.svg)](https://github.com/SIAPP-Pocos/siapp/actions/workflows/testes.yml)
 [![licença: AGPL-3.0](https://img.shields.io/badge/licen%C3%A7a-AGPL--3.0-blue)](LICENSE)
-![versão](https://img.shields.io/badge/vers%C3%A3o-0.19.0-informational)
+![versão](https://img.shields.io/badge/vers%C3%A3o-0.20.0-informational)
 
 Ferramenta aberta para transformar o acervo **público** de dados de poços da ANP
 (portal [REATE](https://reate.cprm.gov.br/anp/TERRESTRE), ANP/CPRM) em dados
 organizados, pesquisáveis e prontos para análise — sem software comercial.
 
-> **Estado:** em desenvolvimento ativo (v0.19). A interface e os formatos ainda
+> **Estado:** em desenvolvimento ativo (v0.20). A interface e os formatos ainda
 > podem mudar entre versões; a 1.0 sai no lançamento público.
 
 ---
@@ -32,7 +32,7 @@ que cada usuário receba os dados já tratados.
 | **Documentos** | Qualquer PDF, TIF (de várias páginas) ou imagem baixada abre na hora, com **visor ampliado** (zoom e arraste; perfil escaneado longo carrega em faixas). Texto embutido ou OCR local, busca sem acento e tolerante a erro de OCR, correção de palavras com um clique e **transcrição assistida**: caixa na imagem, sugestão do OCR, dado salvo com página e caixa como fonte |
 | **Perfis** | DLIS, LIS e LAS em metros, curvas classificadas por família, gráfico em trilhas, intervalo-alvo e topos marcados no perfil, exportação LAS 2.0 e CSV. **Avaliação de formação** no intervalo-alvo: Vsh (linear/Larionov), φ (densidade, densidade-nêutron, sônico), Sw (Archie/Simandoux), cortes, net pay, N/G, HPV e controle de qualidade, com cada cálculo registrado com seus parâmetros. Topos e litologia do AGP no gráfico; formações do AGP como intervalos candidatos |
 | **Seção** | **Seção estratigráfica** pelos topos de formação do AGP: até 20 poços, escolhidos um a um ou ao longo de uma linha; em cota ou nivelada num datum; litologia de calha e curva GR; avisos de saltos entre vizinhos; figura em dois estilos — **clássico** (padrões de rocha, carimbo, mapa de localização) e moderno — exportada em SVG, PNG 300 ppp, PDF e CSV |
-| **Bloco 3D** | Poços no espaço e **superfícies de topo** das formações pelos topos do AGP: por campo, em volta de um poço, a bacia inteira ou os poços da seção; interpolação linear só dentro do contorno dos poços (área calculada), margem opcional; visor 3D com exagero vertical, unidades liga/desliga, norte e eixos; **trajetória real** dos poços desviados (dados direcionais); **pay da avaliação** ou indícios do AGP ao longo dos poços; **HPV, net pay, N/G, φ ou Sw** no topo da unidade; **figura estilo artigo** (SVG, PDF, PNG 300 ppp) e CSV. É contexto espacial, não resultado |
+| **Bloco 3D** | Poços no espaço e **superfícies de topo** das formações pelos topos do AGP: por campo, em volta de um poço, a bacia inteira ou os poços da seção; interpolação linear só dentro do contorno dos poços (área calculada), margem opcional; visor 3D com exagero vertical, unidades liga/desliga, norte e eixos; **trajetória real** dos poços desviados (dados direcionais); **pay da avaliação** ou indícios do AGP ao longo dos poços; **HPV, net pay, N/G, φ ou Sw** no topo da unidade; **bloco fechado** (do terreno a uma base plana, camadas empilhadas por espessura, com corte, seção A–A′ e camadas afastadas); **figura estilo artigo** (SVG, PDF, PNG 300 ppp) e CSV. É contexto espacial, não resultado |
 | **Comunidade** | Exportar as próprias correções e transcrições como pacote assinado, importar pacotes de colegas com prévia de conflitos e atualizar a base comunitária ([SIAPP-dados](https://github.com/SIAPP-Pocos/SIAPP-dados)) |
 
 Tudo fica num **banco do projeto** (`ambiente_teste/projeto.sqlite`) com o mesmo modelo
@@ -72,6 +72,7 @@ motor/            toda a lógica, sem nenhuma dependência de interface
   agp.py          AGP da ANP: topos, lama, testes, litologia de calha
   secao.py        seção estratigráfica pelos topos do AGP
   bloco.py        bloco 3D: contorno, triangulação e superfícies de topo pelos topos do AGP
+  bloco_solido.py bloco fechado: camadas empilhadas por espessura, do terreno à base plana
   bloco_figura.py figura do bloco no estilo artigo (projeção ortográfica, SVG/PDF/PNG)
   direcionais.py  dados direcionais: trajetória do poço (curvatura mínima)
   ferramentas.py  esquemas de ferramentas: tipo de cada corrida e ferramentas (nome + texto/OCR)

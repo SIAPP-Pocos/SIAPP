@@ -88,7 +88,7 @@ class BlocoAPI:
                 celulas=int(self._num(op.get("celulas"), mbl.CELULAS_PADRAO)),
                 dist_max_km=self._num(op.get("dist_max")),
                 nomes=magp.ler_estratigrafia(CAMINHO_ESTRATIGRAFIA), slots=msc.ler_slots(CAMINHO_ESTRATIGRAFIA),
-                pasta_execucoes=self._projeto.pasta_de("execucoes"))
+                pasta_execucoes=self._projeto.pasta_de("execucoes"), base_cota=self._num(op.get("base")))
         except mbl.ErroBloco as e:
             raise ErroUsuario(str(e)) from e
         modelo["titulo"] = (op.get("titulo") or "").strip()
@@ -143,13 +143,16 @@ class BlocoAPI:
                 drape={"chave": dr.get("chave"), "prop": dr.get("prop")} if dr and dr.get("chave") else None,
                 titulo=(vi.get("titulo") or reg.get("titulo") or "").strip(), autor=self._autor(),
                 data=datetime.now().strftime("%d/%m/%Y"), nomes=vi.get("nomes", True) is not False,
-                opacidade=float(vi.get("opacidade", 0.7)))
+                opacidade=float(vi.get("opacidade", 0.7)), modo=vi.get("modo") or "superficies",
+                camadas=vi.get("camadas"), corte=vi.get("corte") or None, afastar=float(vi.get("afastar") or 0),
+                parede=vi.get("parede") or None)
         except mbf.ErroFigura as e:
             raise ErroUsuario(str(e)) from e
         saida = os.path.join(self._projeto.pasta, PASTA_EXPORTACAO, f"{ident}_figura.{formato}")
         mbf.exportar(svg, saida, formato)
         self._projeto.registrar("exportou_bloco", execucao=ident, formato=f"figura_{formato}",
-                                vista={k: vi.get(k) for k in ("azimute", "elevacao", "exagero", "trilha", "drape")})
+                                vista={k: vi.get(k) for k in ("azimute", "elevacao", "exagero", "trilha", "drape",
+                                                                     "modo", "corte", "afastar", "parede")})
         return {"arquivo": os.path.relpath(saida, self._projeto.pasta).replace(os.sep, "/")}
 
     @resposta_segura

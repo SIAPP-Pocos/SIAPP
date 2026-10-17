@@ -288,8 +288,9 @@ def selecionar(banco: Banco, *, modo: str, campo: str = "", poco: str = "", raio
 def montar(banco: Banco, pocos: list[str], *, nivel: str = "formacoes", margem_km: float = 0.0,
            celulas: int = CELULAS_PADRAO, dist_max_km: float | None = None, nomes: dict | None = None,
            slots: dict | None = None, usar_trajetorias: bool = True,
-           pasta_execucoes: str | None = None) -> dict:
-    """Modelo do bloco (só dados; o desenho é da janela)."""
+           pasta_execucoes: str | None = None, base_cota: float | None = None) -> dict:
+    """Modelo do bloco (só dados; o desenho é da janela): as superfícies e, da mesma
+    montagem, o bloco fechado (motor/bloco_solido.py), em `solido`."""
     pocos = list(dict.fromkeys(p for p in pocos if p))
     if len(pocos) < 3:
         raise ErroBloco("Escolha ao menos três poços.")
@@ -333,6 +334,8 @@ def montar(banco: Banco, pocos: list[str], *, nivel: str = "formacoes", margem_k
                                             (d["cad"] or {}).get("reclassificacao")])).upper()
         p = {"id": d["id"], "lat": d["lat"], "lon": d["lon"], "x": round(float(xi), 4), "y": round(float(yi), 4),
              "mesa": col["mesa"], "prof_final": col["prof_final"], "cota_fundo": col["cota_fundo"],
+             # cota altimétrica 0,0 no cadastro = não informada (poços antigos em terra)
+             "terreno": (d["cad"] or {}).get("cota_altimetrica") or None,
              "desviado": col["ctrl"][2], "campo": (d["cad"] or {}).get("campo") or "",
              "classe": msc._classe_poco(classe_txt), "trajetoria": None,
              "unidades": [{k: u[k] for k in ("chave", "nome", "topo", "base", "cota_topo", "cota_base",
@@ -477,8 +480,8 @@ def montar(banco: Banco, pocos: list[str], *, nivel: str = "formacoes", margem_k
     cotas = [v for p in saida for v in ([p["mesa"]] if p["mesa"] is not None else []) +
              ([p["cota_fundo"]] if p["cota_fundo"] is not None else []) +
              [u["cota_topo"] for u in p["unidades"]]]
-    return {
-        "versao": 2, "pocos": saida, "legenda": legenda, "superficies": superficies, "avisos": avisos,
+    modelo = {
+        "versao": 3, "pocos": saida, "legenda": legenda, "superficies": superficies, "avisos": avisos,
         "propriedades": propriedades, "nomes_propriedades": dict(PROPRIEDADES), "classes": CLASSES,
         "origem": {"lat": lat0, "lon": lon0},
         "contorno": [[round(float(a), 4), round(float(b), 4)] for a, b in hull],
@@ -486,8 +489,11 @@ def montar(banco: Banco, pocos: list[str], *, nivel: str = "formacoes", margem_k
         "grade": {"x0": float(lo[0]), "y0": float(lo[1]), "passo": passo, "nx": nx, "ny": ny},
         "cota_max": max(cotas) if cotas else 0.0, "cota_min": min(cotas) if cotas else -1000.0,
         "parametros": {"nivel": nivel, "margem_km": margem_km, "celulas": celulas, "dist_max_km": dist_max_km,
-                       "pocos": [p["id"] for p in saida]},
+                       "base_cota": base_cota, "pocos": [p["id"] for p in saida]},
     }
+    from . import bloco_solido
+    modelo["solido"] = bloco_solido.montar(modelo, base_cota=base_cota)
+    return modelo
 
 
 

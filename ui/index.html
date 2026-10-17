@@ -701,10 +701,12 @@
           <label>Esconder onde o poço mais próximo está a mais de (km)
             <input type="text" id="bl-distmax" inputmode="decimal" placeholder="sem limite"></label>
           <label>Resolução da grade (células no lado maior) <input type="text" id="bl-celulas" value="160" inputmode="numeric"></label>
+          <label>Base do bloco fechado (cota, m) <input type="text" id="bl-base" inputmode="decimal" placeholder="automática (abaixo do poço mais fundo)"></label>
           <label>Título da figura <input type="text" id="bl-titulo" placeholder="opcional"></label>
         </div>
         <p class="ajuda">Interpolação linear entre os poços (triângulos), só dentro do contorno dos poços que
-          têm a unidade; na margem, o valor do poço mais próximo. Campo isolado: margem 0.</p>
+          têm a unidade; na margem, o valor do poço mais próximo. Campo isolado: margem 0. A mesma montagem faz
+          o bloco fechado (camadas empilhadas por espessura, do terreno à base).</p>
         <div class="linha">
           <button class="btn" id="bl-montar">Montar o bloco</button>
           <button class="btn secundario" id="bl-direcionais" title="Baixa os dados direcionais que faltam (~5 KB por poço)">Ler as trajetórias</button>
@@ -726,6 +728,12 @@
       <div id="bl-painel" hidden>
         <div class="sec-barra">
           <div class="linha">
+            <span class="bl-modos" role="group" aria-label="Modo do bloco">
+              <button class="btn secundario pequeno ativo" data-modo3d="superficies" aria-pressed="true"
+                      title="Superfícies de topo, só onde há poços com a unidade">Superfícies</button>
+              <button class="btn secundario pequeno" data-modo3d="fechado" aria-pressed="false"
+                      title="O volume inteiro, do terreno à base, fatiado nas unidades">Bloco fechado</button>
+            </span>
             <button class="btn secundario pequeno" data-vista3d="obliqua" title="Vista inclinada (padrão)">Oblíqua</button>
             <button class="btn secundario pequeno" data-vista3d="cima" title="Vista de cima: mapa">De cima</button>
             <button class="btn secundario pequeno" data-vista3d="sul" title="Olhando para o norte">Do sul</button>
@@ -759,6 +767,17 @@
             <label>por <select id="bl-drape-prop"></select></label>
             <label class="opcao"><input type="checkbox" id="bl-nomes" checked> <span>Nomes dos poços</span></label>
             <label class="opcao"><input type="checkbox" id="bl-caixa" checked> <span>Caixa e eixos</span></label>
+            <span class="bl-fechado-ctl" id="bl-fechado-ctl" hidden>
+              <label class="opcao"><input type="checkbox" id="bl-corte"> <span>Corte</span></label>
+              <label>tirando o quadrante <select id="bl-corte-quad">
+                <option value="SW">sudoeste</option><option value="SE">sudeste</option>
+                <option value="NE">nordeste</option><option value="NW">noroeste</option></select></label>
+              <label>O–L <input type="range" id="bl-corte-x" min="0.05" max="0.95" step="0.01" value="0.5"></label>
+              <label>S–N <input type="range" id="bl-corte-y" min="0.05" max="0.95" step="0.01" value="0.5"></label>
+              <label>Afastar as camadas <input type="range" id="bl-afastar" min="0" max="1" step="0.02" value="0"></label>
+              <label class="opcao" title="Parede vertical ao longo dos poços da aba Seção, na ordem de lá">
+                <input type="checkbox" id="bl-parede"> <span>Seção A–A′ (poços da aba Seção)</span></label>
+            </span>
           </div>
         </div>
         <p class="ajuda" id="bl-resumo"></p>

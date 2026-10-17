@@ -6,6 +6,30 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 
 ## [Não lançado]
 
+## [0.20.0] — 2026-10-17
+### Adicionado
+- **Bloco fechado** (`motor/bloco_solido.py`): da mesma montagem do bloco, o volume inteiro
+  — contorno convexo dos poços (+ margem), do **terreno** a uma **base plana** — fatiado nas
+  unidades, com **paredes retas**. Os dois modos (*Superfícies* e *Bloco fechado*) trocam
+  num clique, sem montar de novo.
+  - Camadas **empilhadas por espessura** (isópacas): unidade ausente num poço que passou pela
+    posição dela = espessura 0; poço que parou antes = desconhecida. Um limite de referência
+    é interpolado direto e os outros somam/subtraem espessuras ≥ 0 — **as camadas nunca se
+    cruzam** e passam pelos topos do AGP nos poços.
+  - Terreno pela cota altimétrica do cadastro (0,0 = não informada → mesa rotativa menos a
+    diferença mediana dos outros poços); camada cinza entre o terreno e o primeiro topo do AGP
+    e abaixo da última unidade com base atingida. Base automática (abaixo do poço mais fundo)
+    ou a cota pedida.
+  - **Fora do contorno dos poços com a espessura, mais claro** (extrapolado: valor da borda
+    mais próxima, contínuo). Por camada: área, espessura máxima, volume (km³) e % extrapolada.
+  - **Corte**: tira um quadrante (sudoeste, sudeste, nordeste ou noroeste), com controles
+    O–L e S–N; o corte é fechado por tampas com as camadas.
+  - **Seção A–A′** como parede ao longo dos poços da aba Seção, prolongada até a borda; o
+    bloco fica translúcido.
+  - **Camadas afastadas** na vertical.
+  - **Figura estilo artigo** do bloco fechado (com corte, camadas afastadas ou parede A–A′).
+- Campo "Base do bloco fechado" nas opções do bloco.
+
 ## [0.19.0] — 2026-10-17
 ### Adicionado
 - **Dados direcionais** (`motor/direcionais.py`): leitor dos 5 leiautes da pasta "Dados

@@ -131,6 +131,23 @@ Precisa de internet. Comece por uma categoria pequena para ver o tempo.
 - [ ] Sem intervalo marcado, **Calcular** explica que precisa de um intervalo-alvo.
 - [ ] Repetir no `5PX__0011__RN_5PX__0011__RN.tif` (DLIS de 2020).
 
+## 0.20 — bloco fechado
+
+- [ ] **Bloco 3D** → `ESTREITO` → Montar → botão **Bloco fechado**: um bloco opaco com paredes retas,
+      Barreiras (laranja) no topo, Jandaíra aflorando perto do 1-SS-1-RN e do 1-RP-3-RN, embaixo Açu,
+      Alagamar e Embasamento até a base em −610 m. O resumo diz a base e a referência.
+- [ ] A lista de unidades mostra área, espessura máxima, volume (km³) e % extrapolada.
+- [ ] **Corte** → o quadrante sudoeste some e as tampas mostram as camadas por dentro; troque o quadrante
+      e mova **O–L** e **S–N**.
+- [ ] **Afastar as camadas**: as camadas se separam; os poços somem. Volte a zero.
+- [ ] Na aba Seção, ponha 3 poços do Estreito; volte e marque **Seção A–A′**: parede pelos poços, de borda
+      a borda, com A e A′; o bloco fica translúcido.
+- [ ] Com margem de 2 km: a faixa da margem aparece **mais clara** (extrapolada).
+- [ ] **Base do bloco fechado** = −1000 → Montar: o Embasamento vai até −1000 m.
+- [ ] **Figura → PDF** no modo bloco fechado, com corte: as tampas e os poços no quadrante tirado.
+- [ ] **Superfícies** volta ao modo anterior (opacidade 0,85), sem montar de novo.
+- [ ] Um bloco montado na 0.19 (em Blocos anteriores) abre só no modo Superfícies.
+
 ## 0.19 — bloco 3D, etapa 2
 
 Antes: levantar a Potiguar de novo (Cat. 1 basta) com **Ler os dados direcionais** marcado

@@ -13,6 +13,10 @@ existe e a validação científica ficam **para o final**, antes do lançamento 
 - [x] Bloco 3D, etapa 2 (0.19): trajetória real dos poços desviados (Dados Direcionais);
       pay e indícios ao longo dos poços; HPV/net pay/N/G/φ/Sw sobre o topo (requisito 7.4);
       figura estática no estilo artigo.
+- [x] **Bloco fechado** (0.20): o volume do terreno a uma base plana, camadas por espessura,
+      corte, seção A–A′, camadas afastadas; figura dos dois modos.
+- [ ] **Exportar para simuladores** (0.21): `.DATA`/`.GRDECL` no formato ECLIPSE (grade
+      corner-point, uma região por formação, poços com a trajetória), para tNavigator e afins.
 
 ## No final — melhorias do que já existe
 

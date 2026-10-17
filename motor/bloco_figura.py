@@ -22,6 +22,7 @@ from html import escape
 import numpy as np
 
 from . import __version__
+from . import bloco_solido as mbs
 
 FONTE = "Times New Roman, Times, Liberation Serif, DejaVu Serif, serif"
 TINTA, TINTA2, GRADE = "#1c2227", "#5f6b73", "#9aa3a8"
@@ -95,10 +96,17 @@ class _Camera:
 def desenhar(modelo: dict, *, azimute: float = -0.61, elevacao: float = 0.61, exagero: float = 10,
              visiveis: list[str] | None = None, trilha: str = "nenhuma", drape: dict | None = None,
              titulo: str = "", autor: str = "", data: str = "", nomes: bool = True,
-             opacidade: float = 0.7) -> str:
-    """SVG da vista. `azimute` e `elevacao` em radianos (os do visor)."""
+             opacidade: float = 0.7, modo: str = "superficies", camadas: list[str] | None = None,
+             corte: dict | None = None, afastar: float = 0.0, parede: list[str] | None = None) -> str:
+    """SVG da vista. `azimute` e `elevacao` em radianos (os do visor). `modo` "fechado": o
+    bloco fechado, com `camadas` ligadas, `corte` ({quadrante, fx, fy}), camadas afastadas
+    (`afastar`, 0–1) e a parede da seção A–A′ pelos poços `parede`."""
     m = modelo
     g = m["grade"]
+    sol = m.get("solido") or {}
+    fechado = modo == "fechado" and sol.get("ok")
+    if modo == "fechado" and not fechado:
+        raise ErroFigura("Este bloco não tem bloco fechado (monte de novo nesta versão).")
     visiveis = set(visiveis) if visiveis is not None else {u["chave"] for u in m["legenda"]}
     cam = _Camera(azimute, elevacao)
     luz = np.array([-0.45, 0.55, 0.7])
@@ -117,7 +125,21 @@ def desenhar(modelo: dict, *, azimute: float = -0.61, elevacao: float = 0.61, ex
     faixa = (prop.get("faixas") or {}).get(drape.get("prop")) if drape else None
     if faixa and faixa[0] == faixa[1]:
         faixa = [faixa[0] - 1e-9, faixa[1] + 1e-9]
-    for s in m["superficies"]:
+    linha_parede = None
+    if fechado:
+        if parede:
+            por_id = {p["id"]: p for p in m["pocos"]}
+            pts_p = [[por_id[i]["x"], por_id[i]["y"]] for i in parede if i in por_id]
+            linha_parede = mbs.prolongar(pts_p, sol["contorno"]) if len(pts_p) >= 2 else None
+        camadas = set(camadas) if camadas is not None else {c["chave"] for c in sol["camadas"]}
+        prims += _prims_fechado(m, cam, W, luz, camadas=camadas, corte=corte, afastar=afastar,
+                                parede=linha_parede, opacidade=max(opacidade, 0.9) if not parede else opacidade)
+        k_corte = geometria_corte(sol, corte) if corte else None
+        if linha_parede:
+            topo_l = sol["cota_topo_max"] + 0.04 * (sol["cota_topo_max"] - sol["base"])
+            for (xl, yl), letra in ((linha_parede[0], "A"), (linha_parede[-1], "A′")):
+                prims.append((1e6, ("letra", cam.proj(W(xl, yl, topo_l)), letra)))
+    for s in ([] if fechado else m["superficies"]):
         if not s.get("z") or s["chave"] not in visiveis:
             continue
         base_cor = _hex(s["cor"])
@@ -173,9 +195,25 @@ def desenhar(modelo: dict, *, azimute: float = -0.61, elevacao: float = 0.61, ex
 
     # ---------------------------------------------------------- poços
     classes = m.get("classes", {})
+    # bloco fechado: o poço só aparece onde não está dentro do bloco (acima do terreno, no
+    # quadrante do corte ou com a parede); com as camadas afastadas, nenhum (como no visor)
+    terreno = np.asarray(sol["limites"][0], float) if fechado else None
+
+    def visivel_no_bloco(x, y, cota):
+        if not fechado:
+            return True
+        if afastar:
+            return False
+        if parede or _no_corte(k_corte, x, y):
+            return True
+        return cota >= float(mbs.bilinear(terreno, g, x, y)) - 1
     for p in m["pocos"]:
         cam_p = p.get("caminho") or []
+        if fechado and afastar:
+            continue
         for (md1, x1, y1, c1), (md2, x2, y2, c2) in zip(cam_p, cam_p[1:]):
+            if not visivel_no_bloco((x1 + x2) / 2, (y1 + y2) / 2, (c1 + c2) / 2):
+                continue
             a, b = cam.proj(W(x1, y1, c1)), cam.proj(W(x2, y2, c2))
             prims.append(((a[2] + b[2]) / 2, ("linha", a, b, TINTA, 0.9)))
         trechos = []
@@ -189,10 +227,12 @@ def desenhar(modelo: dict, *, azimute: float = -0.61, elevacao: float = 0.61, ex
             mds = [t0] + [q[0] for q in cam_p if t0 < q[0] < t1] + [t1]
             pts = [_no_caminho(p, md) for md in mds]
             for (xa, ya, ca), (xb, yb, cb) in zip(pts, pts[1:]):
+                if not visivel_no_bloco((xa + xb) / 2, (ya + yb) / 2, (ca + cb) / 2):
+                    continue
                 a, b = cam.proj(W(xa, ya, ca)), cam.proj(W(xb, yb, cb))
                 prims.append(((a[2] + b[2]) / 2 + 1e-4, ("linha", a, b, cor, 3.6)))
         for u in p["unidades"]:
-            if u["chave"] in visiveis:
+            if u["chave"] in visiveis and visivel_no_bloco(u.get("x", p["x"]), u.get("y", p["y"]), u["cota_topo"]):
                 q = cam.proj(W(u.get("x", p["x"]), u.get("y", p["y"]), u["cota_topo"]))
                 prims.append((q[2] + 2e-4, ("disco", q, u["cor"], 3.2)))
         topo = p["mesa"] if p["mesa"] is not None else (cam_p[0][3] if cam_p else 0)
@@ -209,8 +249,10 @@ def desenhar(modelo: dict, *, azimute: float = -0.61, elevacao: float = 0.61, ex
     # ---------------------------------------------------------- caixa
     x0, x1 = g["x0"], g["x0"] + (g["nx"] - 1) * g["passo"]
     y0, y1 = g["y0"], g["y0"] + (g["ny"] - 1) * g["passo"]
-    pc = _passo(m["cota_max"] - m["cota_min"] or 100)
-    c0, c1 = math.floor(m["cota_min"] / pc) * pc, math.ceil(m["cota_max"] / pc) * pc
+    cmax = max(m["cota_max"], sol["cota_topo_max"]) if sol.get("ok") else m["cota_max"]
+    cmin = min(m["cota_min"], sol["base"]) if sol.get("ok") else m["cota_min"]
+    pc = _passo(cmax - cmin or 100)
+    c0, c1 = math.floor(cmin / pc) * pc, math.ceil(cmax / pc) * pc
     cantos = {(i, j, k): W(xx, yy, cc) for i, xx in enumerate((x0, x1)) for j, yy in enumerate((y0, y1))
               for k, cc in enumerate((c0, c1))}
     arestas = [((0, 0, k), (1, 0, k)) for k in (0, 1)] + [((0, 1, k), (1, 1, k)) for k in (0, 1)] + \
@@ -261,6 +303,9 @@ def desenhar(modelo: dict, *, azimute: float = -0.61, elevacao: float = 0.61, ex
             X, Y = T(pr[1][0], pr[1][1])
             corpo.append(f'<ellipse cx="{X:.1f}" cy="{Y:.1f}" rx="{pr[3] * 1.3:.1f}" ry="{pr[3] * 0.7:.1f}" '
                          f'fill="{pr[2]}" stroke="{TINTA}" stroke-width="0.4"/>')
+        elif tipo == "letra":
+            X, Y = T(pr[1][0], pr[1][1])
+            rotulos.append(_t(X, Y, pr[2], 13, TINTA, "middle", "bold"))
         elif tipo == "cabeca":
             X, Y = T(pr[1][0], pr[1][1])
             corpo.append(f'<circle cx="{X:.1f}" cy="{Y:.1f}" r="2.6" fill="{TINTA}"/>')
@@ -309,16 +354,21 @@ def desenhar(modelo: dict, *, azimute: float = -0.61, elevacao: float = 0.61, ex
 
     # legenda (moldura), à direita
     lx, ly = 850, 70
-    leg = [_t(lx, ly, "Topo das unidades (AGP)", 11, TINTA, peso="bold")]
+    leg = [_t(lx, ly, "Bloco fechado (AGP)" if fechado else "Topo das unidades (AGP)", 11, TINTA, peso="bold")]
     ly += 18
-    for u in m["legenda"]:
-        if u["chave"] not in visiveis:
+    for u in (sol["camadas"] if fechado else m["legenda"]):
+        if u["chave"] not in (camadas if fechado else visiveis):
             continue
         leg.append(f'<rect x="{lx}" y="{ly - 9}" width="14" height="10" fill="{u["cor"]}" stroke="{TINTA}" '
                    f'stroke-width="0.4"/>')
         leg.append(_t(lx + 20, ly, u["nome"], 10.5))
         ly += 16
-    if trilha in ("avaliacao", "indicios"):
+    if fechado:
+        leg.append(f'<rect x="{lx}" y="{ly - 9}" width="14" height="10" fill="{_cor(_clarear(_hex("#7a7a7a"), False))}" '
+                   f'stroke="{TINTA}" stroke-width="0.4"/>')
+        leg.append(_t(lx + 20, ly, "mais claro: extrapolado", 10.5, TINTA2, estilo="italic"))
+        ly += 16
+    if trilha in ("avaliacao", "indicios") and not (fechado and afastar):
         ly += 8
         leg.append(_t(lx, ly, "Nos poços" + (" (avaliação)" if trilha == "avaliacao" else " (AGP)"), 11, TINTA,
                       peso="bold"))
@@ -361,6 +411,10 @@ def desenhar(modelo: dict, *, azimute: float = -0.61, elevacao: float = 0.61, ex
     notas = [
         f"{len(m['pocos'])} poços · contorno dos poços {_fmt(m['area_km2'], 1)} km² · exagero vertical {_fmt(exagero)}× · "
         f"projeção ortográfica · distâncias a partir do canto SW ({_fmt(lat_sw, 4)}°, {_fmt(lon_sw, 4)}°)",
+        (f"Contexto espacial: camadas empilhadas por espessura (linear entre os poços; fora do contorno deles, valor da "
+         f"borda mais próxima, mais claro), do terreno à base plana em {_fmt(sol['base'])} m."
+         + (" Seção A–A′: " + " – ".join(parede) + "." if fechado and parede else "")
+         + (" Camadas afastadas na vertical." if fechado and afastar else "")) if fechado else
         "Contexto espacial: entre os poços, superfícies interpoladas (linear nos triângulos de Delaunay, só dentro do "
         "contorno dos poços que têm a unidade).",
         "Topos: AGP (ANP), interpretação da operadora." + (" Trilhas: avaliação de formação mais recente de cada poço "
@@ -376,6 +430,211 @@ def desenhar(modelo: dict, *, azimute: float = -0.61, elevacao: float = 0.61, ex
             f'viewBox="0 0 {LARGURA} {ALTURA}"><rect width="100%" height="100%" fill="#ffffff"/>'
             + tit + moldura + "".join(corpo) + "".join(eixos) + "".join(rotulos) + norte + leg_box + "".join(leg)
             + "".join(notas_svg) + "</svg>")
+
+
+# ================================================================ bloco fechado
+def _clarear(rgb, controlado: bool):
+    return rgb if controlado else rgb + 0.55 * (255 - rgb)
+
+
+def _recortar_espessura(pol):
+    """Polígono de vértices [x, y, topo, fundo] recortado onde a espessura < ESPESSURA_MIN_M."""
+    f = [p[2] - p[3] - mbs.ESPESSURA_MIN_M for p in pol]
+    out = []
+    for i in range(len(pol)):
+        P, Q, fp, fq = pol[i], pol[(i + 1) % len(pol)], f[i], f[(i + 1) % len(pol)]
+        if fp >= 0:
+            out.append(P)
+        if (fp >= 0) != (fq >= 0):
+            t = fp / (fp - fq)
+            out.append([a + t * (b - a) for a, b in zip(P, Q)])
+    return out
+
+
+def _recortar_por(pol, j: int, lado: int):
+    """Parte do polígono (vértices com atributos) onde o atributo j (uma espessura) está
+    acima de ESPESSURA_MIN_M (lado +1) ou abaixo (lado −1); atributos interpolados."""
+    f = [lado * (p[j] - mbs.ESPESSURA_MIN_M) for p in pol]
+    out = []
+    for i in range(len(pol)):
+        P, Q, fp, fq = pol[i], pol[(i + 1) % len(pol)], f[i], f[(i + 1) % len(pol)]
+        if fp >= 0:
+            out.append(P)
+        if (fp >= 0) != (fq >= 0):
+            t = fp / (fp - fq)
+            out.append([a + t * (b - a) for a, b in zip(P, Q)])
+    return out
+
+
+def geometria_corte(solido: dict, corte: dict) -> dict:
+    """Canto do corte (x, y em km), lados tirados e as linhas das tampas (como no visor)."""
+    pol = np.asarray(solido["contorno"], float)
+    (xmin, ymin), (xmax, ymax) = pol.min(0), pol.max(0)
+    cx = xmin + float(corte.get("fx", 0.5)) * (xmax - xmin)
+    cy = ymin + float(corte.get("fy", 0.5)) * (ymax - ymin)
+    q = str(corte.get("quadrante", "SW")).upper()
+    oeste, sul = "W" in q, "S" in q
+    sx, sy = (1 if oeste else -1), (1 if sul else -1)
+    return {"cx": cx, "cy": cy, "oeste": oeste, "sul": sul,
+            # o que fica: o outro lado em x, ou o mesmo lado em x e o outro em y
+            "pedacos": [[(sx, 0.0, -sx * cx)], [(-sx, 0.0, sx * cx), (0.0, sy, -sy * cy)]],
+            "linhas": [[[cx, ymin - 1 if sul else cy], [cx, cy if sul else ymax + 1]],
+                       [[xmin - 1 if oeste else cx, cy], [cx if oeste else xmax + 1, cy]]],
+            "normais": [(-sx, 0.0), (0.0, -sy)]}
+
+
+def _no_corte(k: dict | None, x: float, y: float) -> bool:
+    if not k:
+        return False
+    return ((x < k["cx"]) if k["oeste"] else (x > k["cx"])) and ((y < k["cy"]) if k["sul"] else (y > k["cy"]))
+
+
+def _prims_fechado(m: dict, cam, W, luz, *, camadas: set, corte: dict | None, afastar: float,
+                   parede: list | None, opacidade: float) -> list:
+    s, g = m["solido"], m["grade"]
+    lims = [np.asarray(z, float) for z in s["limites"]]
+    pol = s["contorno"]
+    lado = max((g["nx"] - 1) * g["passo"], (g["ny"] - 1) * g["passo"])
+    gc = dict(g)
+    gc["passo"] = max(g["passo"], lado / MAX_CELULAS_FIG)
+    gc["nx"] = int(math.ceil((g["nx"] - 1) * g["passo"] / gc["passo"])) + 1
+    gc["ny"] = int(math.ceil((g["ny"] - 1) * g["passo"] / gc["passo"])) + 1
+    k_corte = geometria_corte(s, corte) if corte else None
+    pedacos = k_corte["pedacos"] if k_corte else [[]]
+    malhas = [mbs.malha_contorno(gc, pol, extra=p) for p in pedacos]
+    n_cam = len(s["camadas"])
+    passo_af = float(afastar or 0) * (s["cota_topo_max"] - s["base"]) * 0.6 / max(1, n_cam)
+    com_parede = bool(parede)
+    op_bloco = min(opacidade, 0.12) if com_parede else opacidade
+    prims = []
+
+    def face(pts3, rgb, op, normal=None):
+        if normal is None:
+            n = np.cross(pts3[1] - pts3[0], pts3[2] - pts3[0])
+            nn = np.linalg.norm(n)
+            if nn == 0:
+                return
+            n = n / nn
+            if n @ cam.d < 0:
+                n = -n
+        else:
+            n = normal
+        luzf = 0.55 + 0.45 * max(0.0, float(n @ luz))
+        q = [cam.proj(p) for p in pts3]
+        # face vertical (paredes, tampas): pelo vértice mais longe, para sair antes do topo
+        # vizinho — a face da frente de um prisma convexo nunca cobre o topo, nem é coberta
+        prof = min(c[2] for c in q) if normal is not None or abs(n[2]) < 1e-6 else sum(c[2] for c in q) / len(q)
+        prims.append((prof, ("poly", " ".join(f"{x:.2f},{y:.2f}" for x, y, _ in q), _cor(rgb * luzf), op)))
+
+    # vértices da malha: topo/fundo de cada limite
+    vals = []
+    for mal in malhas:
+        xs, ys = mal["pts"][:, 0], mal["pts"][:, 1]
+        vals.append([mbs.bilinear(z, g, xs, ys) for z in lims])
+    ligadas = [k for k, c in enumerate(s["camadas"]) if c["chave"] in camadas]
+    if not passo_af:
+        # camadas juntas: só a superfície exposta, em pedaços que não se sobrepõem (cada
+        # triângulo é dividido pelas linhas de acunhamento das camadas ligadas, de cima para
+        # baixo) — o algoritmo do pintor não tem o que errar no topo
+        for mal, vv in zip(malhas, vals):
+            for a, b, c in mal["tris"]:
+                resto = [[mal["pts"][i][0], mal["pts"][i][1]] + [vv[k][i] - vv[k + 1][i] for k in ligadas]
+                         + [vv[k][i] for k in ligadas] for i in (a, b, c)]
+                for n_, k in enumerate(ligadas):
+                    if len(resto) < 3:
+                        break
+                    peca = _recortar_por(resto, 2 + n_, +1)
+                    resto = _recortar_por(resto, 2 + n_, -1)
+                    if len(peca) < 3:
+                        continue
+                    cam_ = s["camadas"][k]
+                    cx_, cy_ = np.mean([p[0] for p in peca]), np.mean([p[1] for p in peca])
+                    rgb = _clarear(_hex(cam_["cor"]), bool(mbs.controlado(cam_["controle"], cx_, cy_)))
+                    face([W(p[0], p[1], p[2 + len(ligadas) + n_]) for p in peca], rgb, op_bloco)
+    for k, cam_ in enumerate(s["camadas"]):
+        if cam_["chave"] not in camadas:
+            continue
+        rgb0 = _hex(cam_["cor"])
+        dz = -k * passo_af
+        # topo de cada camada (só com as camadas afastadas; juntas, foi feito acima)
+        for mal, vv in zip(malhas if passo_af else [], vals):
+            T, B = vv[k], vv[k + 1]
+            for a, b, c in mal["tris"]:
+                e = [T[i] - B[i] for i in (a, b, c)]
+                if max(e) < mbs.ESPESSURA_MIN_M:
+                    continue
+                poli = [[mal["pts"][i][0], mal["pts"][i][1], T[i], B[i]] for i in (a, b, c)]
+                if min(e) < mbs.ESPESSURA_MIN_M:
+                    poli = _recortar_espessura(poli)
+                if len(poli) < 3:
+                    continue
+                cx_, cy_ = np.mean([p[0] for p in poli]), np.mean([p[1] for p in poli])
+                rgb = _clarear(rgb0, bool(mbs.controlado(cam_["controle"], cx_, cy_)))
+                face([W(p[0], p[1], p[2] + dz) for p in poli], rgb, op_bloco, normal=None)
+        # paredes ao longo do contorno, viradas para a câmera
+        borda = _borda_com_corte(gc, pol, k_corte)
+        Tb = mbs.bilinear(lims[k], g, borda[:, 0], borda[:, 1])
+        Bb = mbs.bilinear(lims[k + 1], g, borda[:, 0], borda[:, 1])
+        for i in range(len(borda) - 1):
+            P = [borda[i][0], borda[i][1], Tb[i], Bb[i]]
+            Q = [borda[i + 1][0], borda[i + 1][1], Tb[i + 1], Bb[i + 1]]
+            if _no_corte(k_corte, (P[0] + Q[0]) / 2, (P[1] + Q[1]) / 2):
+                continue
+            dx, dy = Q[0] - P[0], Q[1] - P[1]
+            L = math.hypot(dx, dy)
+            if L == 0:
+                continue
+            n = np.array([dy / L, -dx / L, 0.0])           # para fora (contorno anti-horário)
+            if n @ cam.d <= 0:
+                continue
+            fp, fq = P[2] - P[3] - mbs.ESPESSURA_MIN_M, Q[2] - Q[3] - mbs.ESPESSURA_MIN_M
+            if fp < 0 and fq < 0:
+                continue
+            if fp < 0 or fq < 0:
+                t = fp / (fp - fq)
+                M = [a + t * (b - a) for a, b in zip(P, Q)]
+                P, Q = (M, Q) if fp < 0 else (P, M)
+            rgb = _clarear(rgb0, bool(mbs.controlado(cam_["controle"], (P[0] + Q[0]) / 2, (P[1] + Q[1]) / 2)))
+            face([W(P[0], P[1], P[2] + dz), W(Q[0], Q[1], Q[2] + dz), W(Q[0], Q[1], Q[3] + dz),
+                  W(P[0], P[1], P[3] + dz)], rgb, op_bloco, normal=n)
+        # tampas do corte
+        if k_corte:
+            for linha, (nx_, ny_) in zip(k_corte["linhas"], k_corte["normais"]):
+                n = np.array([nx_, ny_, 0.0])
+                if n @ cam.d <= 0:
+                    continue
+                _faixa(s, g, linha, k, cam_, rgb0, dz, W, face, gc["passo"] / 2, op_bloco, n)
+        # parede da seção A–A′ (opaca, as duas faces)
+        if com_parede:
+            _faixa(s, g, parede, k, cam_, rgb0, dz, W, face, gc["passo"] / 2, 1.0, None)
+    return prims
+
+
+def _faixa(s, g, linha, k, cam_, rgb0, dz, W, face, passo, op, normal):
+    pf = mbs.perfil(s, g, linha, passo_km=passo)
+    xy, T, B = pf["xy"], pf["limites"][k] if pf["xy"] else [], pf["limites"][k + 1] if pf["xy"] else []
+    for i in range(1, len(xy)):
+        if max(T[i] - B[i], T[i - 1] - B[i - 1]) < mbs.ESPESSURA_MIN_M:
+            continue
+        (xa, ya), (xb, yb) = xy[i - 1], xy[i]
+        rgb = _clarear(rgb0, bool(mbs.controlado(cam_["controle"], (xa + xb) / 2, (ya + yb) / 2)))
+        face([W(xa, ya, T[i - 1] + dz), W(xb, yb, T[i] + dz), W(xb, yb, B[i] + dz), W(xa, ya, B[i - 1] + dz)],
+             rgb, op, normal=normal)
+
+
+def _borda_com_corte(gc, pol, k_corte) -> np.ndarray:
+    """Pontos da borda, com os pontos onde ela cruza as linhas do corte (para a parede parar ali)."""
+    b = mbs.borda(gc, pol)
+    if not k_corte:
+        return b
+    out = [b[0]]
+    for p, q in zip(b[:-1], b[1:]):
+        ts = []
+        for e, v in ((0, k_corte["cx"]), (1, k_corte["cy"])):
+            if (p[e] - v) * (q[e] - v) < 0:
+                ts.append((v - p[e]) / (q[e] - p[e]))
+        out += [p + t * (q - p) for t in sorted(ts)] + [q]
+    return np.array(out)
 
 
 def _no_caminho(p: dict, md: float):

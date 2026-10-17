@@ -540,3 +540,63 @@ def test_bloco_3d_trilhas_propriedade_e_figura(janela, tmp_path):
     svg = next((tmp_path / "ambiente_teste" / "exportacoes" / "blocos").glob("*_figura.svg")).read_text("utf-8")
     assert "N/G" in svg and "Formação Açu" in svg
     assert not janela.erros_js, janela.erros_js
+
+
+def test_bloco_fechado_corte_camadas_e_secao(janela, tmp_path):
+    from test_secao import poco
+    p = janela.page
+    abrir_projeto(janela)
+    b = janela.api._banco
+    for pid, la, lo in [("1-AA-1-RN", -5.00, -37.00), ("1-AA-2-RN", -5.00, -36.96), ("1-AA-3-RN", -5.04, -37.00),
+                        ("1-AA-4-RN", -5.04, -36.96), ("1-AA-5-RN", -5.02, -36.98)]:
+        leste = (lo + 37.00) * 111.0
+        un = [("F", "JANDAI", 20, 300 + 10 * leste), ("F", "ACU", 300 + 10 * leste, 700)]
+        if pid != "1-AA-4-RN":
+            un.append(("F", "ALAGAM", 700, 850))
+        poco(b, pid, la, lo, 50.0, un, prof_final=900)
+    p.click("#aba-bloco")
+    janela.esperar("document.getElementById('bl-disponiveis').textContent.includes('5 poço')")
+    p.click("#bl-selecionar")
+    janela.esperar("document.getElementById('bl-n').textContent === '5'")
+    p.fill("#bl-base", "-1000")
+    p.click("#bl-montar")
+    janela.esperar("window.BlocoVisor && window.BlocoVisor.estado().superficies === 3", 30)
+    assert p.locator("#bl-fechado-ctl").is_hidden()
+    # mesmo modelo, outro modo: o bloco fechado
+    p.click("[data-modo3d='fechado']")
+    janela.esperar("window.BlocoVisor.estado().modo === 'fechado'")
+    est = p.evaluate("window.BlocoVisor.estado()")
+    assert est["camadas"] >= 3
+    assert p.locator("#bl-fechado-ctl").is_visible() and p.locator("#bl-drape-unidade").is_hidden()
+    assert "base plana em -1.000 m" in p.text_content("#bl-resumo")
+    assert "km³" in p.text_content("#bl-unidades") and "sem descrição no AGP" in p.text_content("#bl-unidades")
+    assert p.input_value("#bl-opacidade") == "1"                      # opaco de saída
+    # corte: tampas em todas as camadas
+    p.check("#bl-corte")
+    janela.esperar("window.BlocoVisor.estado().tampas >= 3")
+    p.select_option("#bl-corte-quad", "NE")
+    p.fill("#bl-corte-x", "0.3")
+    p.dispatch_event("#bl-corte-x", "input")
+    janela.esperar("window.BlocoVisor.estado().tampas >= 3")
+    # camadas afastadas: poços somem
+    p.fill("#bl-afastar", "0.5")
+    p.dispatch_event("#bl-afastar", "input")
+    assert p.evaluate("window.BlocoVisor.vistaAtual().afastar") == 0.5
+    # seção A–A′ pelos poços da aba Seção
+    p.evaluate("sec.pocos = ['1-AA-1-RN', '1-AA-5-RN', '1-AA-4-RN']")
+    p.check("#bl-parede")
+    janela.esperar("window.BlocoVisor.estado().paredes >= 3")
+    assert "Seção A–A′ por 3 poço(s)" in janela.status()
+    p.click("#bl-unidades input[data-chave='ALAGAM']")
+    assert "ALAGAM" not in p.evaluate("window.BlocoVisor.vistaAtual().camadas")
+    p.click("[data-figura='svg']")
+    janela.esperar("document.getElementById('bl-exportado').textContent.includes('_figura.svg')", 30)
+    svg = next((tmp_path / "ambiente_teste" / "exportacoes" / "blocos").glob("*_figura.svg")).read_text("utf-8")
+    assert "Bloco fechado (AGP)" in svg and "Seção A–A′" in svg
+    p.click("#bl-png")
+    janela.esperar("document.getElementById('bl-exportado').textContent.includes('.png')", 30)
+    # de volta às superfícies
+    p.click("[data-modo3d='superficies']")
+    janela.esperar("window.BlocoVisor.estado().modo === 'superficies'")
+    assert p.input_value("#bl-opacidade") == "0.85"
+    assert not janela.erros_js, janela.erros_js
