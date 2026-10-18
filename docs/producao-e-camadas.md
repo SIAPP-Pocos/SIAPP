@@ -61,6 +61,29 @@ no QGIS). `sig\camadas.json` registra a origem, a data, o número de feições e
 O leitor de shapefile é do SIAPP (ponto, multiponto, linha e polígono com buracos; codificação
 do `.cpg` ou do byte de idioma do `.dbf`) — sem GDAL.
 
-Fora desta versão, de propósito: desenhar as camadas no mapa, distância campo–gasoduto,
-depleção. Unidades de conservação (ICMBio) e terras indígenas (FUNAI) não estão na BC250 2025;
+## No mapa e diante de um campo (0.25)
+
+- **Mostrar no mapa**: as camadas baixadas ligam e desligam no mapa (cor por tipo; clique
+  para os atributos).
+- **Campo e infraestrutura**: escolha o campo e **Medir as distâncias**. O polígono é o da ANP
+  (vértices guardados ao baixar a produção); sem ele, o da camada "Campos de produção"; sem
+  ela, o contorno convexo dos poços do cadastro — o quadro diz qual. Para cada camada
+  baixada, a feição mais próxima, a distância e os atributos que importam (diâmetro e
+  transportadora do gasoduto, capacidade da UPGN, estágio do projeto de H₂, combustível da
+  termelétrica). "No campo" = a feição toca ou atravessa o polígono.
+- Como mede: projeção azimutal equidistante centrada no campo (exata para distâncias a partir
+  do centro) para achar o par de pontos mais próximo; a distância informada é a geodésica
+  (haversine, esfera de 6.371 km) entre esses dois pontos.
+- **Depleção**: óleo e gás produzidos ÷ in place pelo sumário do PD (data do BAR). Se a
+  produção mensal baixada começa no mês seguinte à data do PD, soma o que veio depois e
+  mostra a fração atualizada como **estimativa** (o in place é o do PD; não se recalcula).
+  Com um buraco na série, não soma.
+
+Guamaré, com os dados reais (camadas da EPE e da ANP, vértices e PD 2023): o Gasfor
+(Guamaré–Pecém, 12") e dutos de escoamento atravessam o campo, a UPGN da 3R Potiguar fica a
+2,7 km, o city gate e a termelétrica Vale do Açu a 43 km; óleo produzido 10,1% do in place,
+gás 42,2% (BAR/2021).
+
+Ainda fora, de propósito: custo do duto (R$/km), capacidade de injeção e o indicador
+econômico — dependem de parâmetros a combinar. Unidades de conservação (ICMBio) e terras indígenas (FUNAI) não estão na BC250 2025;
 podem entrar depois como restrição ambiental.

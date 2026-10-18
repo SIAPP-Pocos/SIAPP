@@ -131,6 +131,15 @@ Precisa de internet. Comece por uma categoria pequena para ver o tempo.
 - [ ] Sem intervalo marcado, **Calcular** explica que precisa de um intervalo-alvo.
 - [ ] Repetir no `5PX__0011__RN_5PX__0011__RN.tif` (DLIS de 2020).
 
+## 0.25 — camadas no mapa e campo × infraestrutura
+
+- [ ] **Mapa** → em "Camadas geográficas", depois de baixar, aparece **Mostrar no mapa**: marque gasodutos de
+      transporte, dutos de escoamento, UPGNs e campos de produção. Clique num gasoduto: diâmetro, transportadora.
+- [ ] **Campo e infraestrutura** → `GUAMARÉ` (com a produção baixada no Bloco 3D) → **Medir as distâncias**: polígono
+      "ANP — vértices"; Gasfor e escoamento "no campo", UPGN a ~2,7 km, city gate e termelétrica a ~43 km; depleção
+      do PD: óleo 10,1%, gás 42,2%. No mapa, o campo em amarelo e linhas tracejadas até cada feição. **CSV**.
+- [ ] Um campo sem produção baixada: usa a camada Campos de produção (ou os poços) e avisa que falta o PD.
+
 ## 0.24 — produção da ANP, camadas e um campo num clique
 
 - [ ] **Bloco 3D** → Escolher "os poços de um campo" → troque o **Campo** para `ESTREITO`: os poços vêm sozinhos.

@@ -6,6 +6,21 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 
 ## [Não lançado]
 
+## [0.25.0] — 2026-10-18
+### Adicionado
+- **Camadas no mapa** (aba Mapa, "Mostrar no mapa"): cada camada baixada liga e desliga no
+  mapa, com cor por tipo (gasoduto de transporte em vermelho, escoamento em laranja tracejado,
+  hidrogênio verde em verde, campos em azul…) e os atributos ao clicar. Funciona mesmo sem o
+  cadastro de poços.
+- **Campo e infraestrutura** (`motor/viabilidade.py`, aba Mapa): para um campo, a distância do
+  polígono da ANP até o gasoduto de transporte, o duto de escoamento, a UPGN, o city gate, o
+  projeto de hidrogênio, a termelétrica (fonte de CO₂), o porto e a cidade mais próximos
+  ("no campo" quando a feição atravessa o campo), com linhas tracejadas no mapa; e a
+  **depleção** pelo sumário do PD (óleo e gás produzidos ÷ in place), atualizada com a
+  produção mensal da ANP quando a série baixada começa logo depois da data do PD. CSV.
+  Distância geodésica entre os pontos mais próximos (projeção azimutal equidistante centrada
+  no campo para achá-los).
+
 ## [0.24.1] — 2026-10-17
 ### Adicionado
 - Camada **Hidrogênio verde: unidades e projetos** (EPE, mapa de projetos de hidrogênio, edição

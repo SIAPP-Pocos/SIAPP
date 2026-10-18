@@ -37,6 +37,7 @@
     bloco_figura.py figura estática do bloco (SVG → PDF/PNG pelo PyMuPDF)
     producao.py     produção da ANP por campo (por poço, por zona, PD) → producao_poco, producao_zona, campos_anp
     camadas.py      camadas geográficas: EPE (ArcGIS REST), ANP (zip), IBGE BC250 (Range) → sig/*.geojson
+    viabilidade.py  campo × infraestrutura: polígono do campo, distância à feição mais próxima de cada camada, depleção
     direcionais.py  dados direcionais: 5 leiautes, curvatura mínima (tabela direcionais)
     ferramentas.py  esquemas de ferramentas: tipo da corrida, ferramentas, vínculo com os perfis (tabela esquemas)
                ▼

@@ -259,6 +259,22 @@
           <button class="btn secundario pequeno" id="cm-pasta">Abrir a pasta</button>
         </div>
         <ul class="sec-avisos" id="cm-erros"></ul>
+        <div class="cm-mapa" id="cm-mapa"></div>
+      </section>
+      <section class="etapa" id="vb-etapa">
+        <h2>Campo e infraestrutura</h2>
+        <p class="ajuda">Distância do campo (polígono da ANP) até o gasoduto, o duto de escoamento, a UPGN, o projeto
+          de hidrogênio, a termelétrica (fonte de CO₂) e o porto mais próximos, e quanto do volume in place já foi
+          produzido (sumário do Plano de Desenvolvimento). Usa as camadas baixadas acima e a produção baixada na aba
+          Bloco 3D. Custos e capacidade de injeção vêm na próxima etapa.</p>
+        <div class="filtros">
+          <label>Campo <input type="text" id="vb-campo" list="pr-lista-campos" autocomplete="off" placeholder="ex.: GUAMARÉ"></label>
+        </div>
+        <div class="linha">
+          <button class="btn secundario" id="vb-medir">Medir as distâncias</button>
+          <button class="btn secundario pequeno" id="vb-csv" hidden>CSV</button>
+        </div>
+        <div class="pr-resumo" id="vb-resultado"></div>
       </section>
       <section class="etapa">
         <h2>Pastas do REATE</h2>

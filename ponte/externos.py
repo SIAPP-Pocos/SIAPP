@@ -8,6 +8,7 @@ from datetime import date
 
 from motor import camadas as mca
 from motor import producao as mpr
+from motor import viabilidade as mvi
 
 from .base import ErroUsuario, resposta_segura
 from .comunidade import _abrir_no_sistema
@@ -123,3 +124,60 @@ class ExternosAPI:
         self._exigir_projeto()
         _abrir_no_sistema(self._projeto.pasta_de(mca.PASTA_SIG))
         return {}
+
+    @resposta_segura
+    def sig_camada(self, ident: str):
+        """Uma camada guardada em sig/ (GeoJSON), para desenhar no mapa."""
+        self._exigir_projeto()
+        reg = mca.indice(self._projeto.pasta)["camadas"].get(str(ident))
+        if not reg:
+            raise ErroUsuario("Camada não baixada ainda.")
+        caminho = os.path.join(self._projeto.pasta, reg["arquivo"])
+        import json
+        with open(caminho, encoding="utf-8") as f:
+            return {"camada": reg, "geojson": json.load(f)}
+
+    # ------------------------------------------------------------ campo × infraestrutura
+    @resposta_segura
+    def viabilidade_relatorio(self, campo: str):
+        self._exigir_projeto()
+        campo = (campo or "").strip()
+        if not campo:
+            raise ErroUsuario("Escolha o campo.")
+        try:
+            rel = mvi.relatorio(self._banco, self._projeto.pasta, campo)
+        except mvi.ErroViabilidade as e:
+            raise ErroUsuario(str(e)) from e
+        self._projeto.registrar("mediu_distancias", campo=campo,
+                                camadas=sum(1 for d in rel["distancias"] if d.get("distancia_km") is not None))
+        return {"relatorio": rel}
+
+    @resposta_segura
+    def viabilidade_csv(self, campo: str):
+        self._exigir_projeto()
+        try:
+            rel = mvi.relatorio(self._banco, self._projeto.pasta, (campo or "").strip())
+        except mvi.ErroViabilidade as e:
+            raise ErroUsuario(str(e)) from e
+        pasta = os.path.join(self._projeto.pasta, PASTA_EXPORTACAO)
+        os.makedirs(pasta, exist_ok=True)
+        saida = os.path.join(pasta, f"distancias_{mpr.chave_campo(campo).replace(' ', '_').lower()}.csv")
+        with open(saida, "w", newline="", encoding="utf-8-sig") as f:
+            w = csv.writer(f, delimiter=";")
+            w.writerow(["# campo", campo, "polígono", rel["fonte_poligono"]])
+            w.writerow(mvi.COLUNAS_CSV)
+            for linha in mvi.linhas_csv(rel):
+                w.writerow(["" if v is None else str(v).replace(".", ",") if isinstance(v, float) else v for v in linha])
+            dep = rel["deplecao"]
+            if dep:
+                w.writerow([])
+                w.writerow(["# depleção (sumário do PD)", dep.get("fonte"), dep.get("data_pd")])
+                w.writerow(["fluido", "in_place_milhoes_m3", "produzido_pd_milhoes_m3", "fracao_pd",
+                            "produzido_depois_milhoes_m3", "ate", "fracao_atual_estimada"])
+                for nome in ("oleo", "gas"):
+                    d = dep.get(nome)
+                    if d:
+                        w.writerow([nome] + [("" if d.get(k) is None else str(d.get(k)).replace(".", ","))
+                                             for k in ("in_place_milhoes_m3", "produzido_pd_milhoes_m3", "fracao_pd",
+                                                       "produzido_depois_milhoes_m3", "ate", "fracao_atual_estimada")])
+        return {"arquivo": os.path.relpath(saida, self._projeto.pasta).replace(os.sep, "/")}

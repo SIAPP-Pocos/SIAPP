@@ -822,3 +822,38 @@ def test_campo_um_clique_producao_e_camadas(janela, tmp_path, monkeypatch):
     assert p.locator("#cm-erros li").count() >= 1 and "Blocos" in p.text_content("#cm-erros")
     assert (tmp_path / "ambiente_teste" / "sig" / "camadas.json").exists()
     assert not janela.erros_js, janela.erros_js
+
+
+def test_camadas_no_mapa_e_distancias_do_campo(janela, tmp_path, monkeypatch):
+    import requests
+    from externos_util import SessaoFalsa
+    falsa = SessaoFalsa()
+    monkeypatch.setattr(requests, "Session", lambda: falsa)
+    p = janela.page
+    abrir_projeto(janela)
+    from motor import producao as mpr
+    mpr.baixar(janela.api._banco, janela.api._projeto.pasta, "Campo Teste", sessao=falsa)
+    p.click("#aba-mapa")
+    janela.esperar("document.querySelectorAll('#cm-lista input').length > 10", 30)
+    for cb in p.locator("#cm-lista input").all():
+        cb.uncheck()
+    for ident in ("epe_gasodutos_transporte", "anp_campos_producao", "ibge_dutos", "epe_h2_projetos"):
+        p.check(f"#cm-lista input[value='{ident}']")
+    p.click("#cm-baixar")
+    janela.esperar("document.querySelectorAll('#cm-mapa input').length === 4", 60)
+    # liga uma camada no mapa: os traços aparecem
+    p.check("#cm-mapa input[data-camada='ibge_dutos']")
+    janela.esperar("sig.camadas.ibge_dutos && mapa.hasLayer(sig.camadas.ibge_dutos)", 30)
+    assert p.evaluate("sig.camadas.ibge_dutos.getLayers().length") == 2
+    p.uncheck("#cm-mapa input[data-camada='ibge_dutos']")
+    janela.esperar("!sig.camadas.ibge_dutos", 30)
+    # campo × infraestrutura
+    p.fill("#vb-campo", "CAMPO TESTE")
+    p.click("#vb-medir")
+    janela.esperar("document.getElementById('vb-resultado').textContent.includes('Gasoduto de transporte')", 30)
+    texto = p.text_content("#vb-resultado")
+    assert "ANP — vértices" in texto and "Depleção" in texto and "10,1%" in texto
+    assert "Sem a camada" in texto and "Porto" in texto
+    p.click("#vb-csv")
+    janela.esperar("document.getElementById('status').textContent.includes('distancias_campo_teste.csv')", 30)
+    assert not janela.erros_js, janela.erros_js

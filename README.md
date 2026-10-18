@@ -2,13 +2,13 @@
 
 [![testes](https://github.com/SIAPP-Pocos/siapp/actions/workflows/testes.yml/badge.svg)](https://github.com/SIAPP-Pocos/siapp/actions/workflows/testes.yml)
 [![licença: AGPL-3.0](https://img.shields.io/badge/licen%C3%A7a-AGPL--3.0-blue)](LICENSE)
-![versão](https://img.shields.io/badge/vers%C3%A3o-0.24.1-informational)
+![versão](https://img.shields.io/badge/vers%C3%A3o-0.25.0-informational)
 
 Ferramenta aberta para transformar o acervo **público** de dados de poços da ANP
 (portal [REATE](https://reate.cprm.gov.br/anp/TERRESTRE), ANP/CPRM) em dados
 organizados, pesquisáveis e prontos para análise — sem software comercial.
 
-> **Estado:** em desenvolvimento ativo (v0.24). A interface e os formatos ainda
+> **Estado:** em desenvolvimento ativo (v0.25). A interface e os formatos ainda
 > podem mudar entre versões; a 1.0 sai no lançamento público.
 
 ---
@@ -28,7 +28,7 @@ que cada usuário receba os dados já tratados.
 |---|---|
 | **Início** | O que é cada pasta e sufixo do REATE, qual arquivo baixar para cada finalidade, limites do OCR e os números do projeto |
 | **Catálogo** | Categorias e poços de qualquer uma das 24 bacias terrestres do REATE, em tempo real; árvore de pastas e arquivos de cada poço; download em segundo plano com retomada e registro de procedência |
-| **Mapa** | Cadastro oficial de poços da ANP (dados abertos) no mapa, com filtros, e a **ficha do poço**: cadastro, pastas no REATE, arquivos baixados, curvas e dados transcritos. **Levantamento do acervo**: para uma bacia inteira, quais poços têm perfil digital, só imagem ou nada — pelo conteúdo dos arquivos, lendo 1 KB de cada (o `.tif` do REATE costuma ser LIS de fita), com lista de curvas opcional e exportação CSV. Lê o **AGP** da ANP (topos de formação, lama, testes, litologia de calha) de cada poço que o tiver. **Esquemas de ferramentas**: o que é cada arquivo de perfil do poço (perfilagem convencional, teste de formação a cabo, imagem, RMN, cimentação…), pelo nome e pela leitura do PDF (texto ou OCR), com as ferramentas reconhecidas **Camadas geográficas** de fontes oficiais (gasodutos de transporte e escoamento e termelétricas da EPE, **unidades e projetos de hidrogênio verde**, campos e blocos exploratórios da ANP, dutos, portos e cidades do IBGE), guardadas para o QGIS |
+| **Mapa** | Cadastro oficial de poços da ANP (dados abertos) no mapa, com filtros, e a **ficha do poço**: cadastro, pastas no REATE, arquivos baixados, curvas e dados transcritos. **Levantamento do acervo**: para uma bacia inteira, quais poços têm perfil digital, só imagem ou nada — pelo conteúdo dos arquivos, lendo 1 KB de cada (o `.tif` do REATE costuma ser LIS de fita), com lista de curvas opcional e exportação CSV. Lê o **AGP** da ANP (topos de formação, lama, testes, litologia de calha) de cada poço que o tiver. **Esquemas de ferramentas**: o que é cada arquivo de perfil do poço (perfilagem convencional, teste de formação a cabo, imagem, RMN, cimentação…), pelo nome e pela leitura do PDF (texto ou OCR), com as ferramentas reconhecidas **Camadas geográficas** de fontes oficiais (gasodutos de transporte e escoamento e termelétricas da EPE, **unidades e projetos de hidrogênio verde**, campos e blocos exploratórios da ANP, dutos, portos e cidades do IBGE), guardadas para o QGIS e **desenhadas no mapa**; **campo × infraestrutura**: distância do campo ao gasoduto, à UPGN, ao projeto de H₂ e à fonte de CO₂ mais próximos, e a depleção pelo Plano de Desenvolvimento |
 | **Documentos** | Qualquer PDF, TIF (de várias páginas) ou imagem baixada abre na hora, com **visor ampliado** (zoom e arraste; perfil escaneado longo carrega em faixas). Texto embutido ou OCR local, busca sem acento e tolerante a erro de OCR, correção de palavras com um clique e **transcrição assistida**: caixa na imagem, sugestão do OCR, dado salvo com página e caixa como fonte |
 | **Perfis** | DLIS, LIS e LAS em metros, curvas classificadas por família, gráfico em trilhas, intervalo-alvo e topos marcados no perfil, exportação LAS 2.0 e CSV. **Avaliação de formação** no intervalo-alvo: Vsh (linear/Larionov), φ (densidade, densidade-nêutron, sônico), Sw (Archie/Simandoux), cortes, net pay, N/G, HPV e controle de qualidade, com cada cálculo registrado com seus parâmetros. Topos e litologia do AGP no gráfico; formações do AGP como intervalos candidatos |
 | **Seção** | **Seção estratigráfica** pelos topos de formação do AGP: até 20 poços, escolhidos um a um ou ao longo de uma linha; em cota ou nivelada num datum; litologia de calha e curva GR; avisos de saltos entre vizinhos; figura em dois estilos — **clássico** (padrões de rocha, carimbo, mapa de localização) e moderno — exportada em SVG, PNG 300 ppp, PDF e CSV |
@@ -76,6 +76,7 @@ motor/            toda a lógica, sem nenhuma dependência de interface
   interpolacao.py linear, IDW, spline, krigagem, tendência + krigagem; variograma; tirar um poço
   producao.py     produção da ANP por campo: por poço, por zona, ficha, polígono, sumário do PD
   camadas.py      camadas geográficas (EPE, ANP, IBGE BC250 por Range); leitor de shapefile
+  viabilidade.py  campo × infraestrutura: polígono, distâncias geodésicas, depleção
   bloco_validacao.py validação cruzada (deixar um poço de fora) e prognóstico num ponto
   bloco_mapas.py  mapas de topo e isópaca: GeoTIFF e XYZ em SIRGAS 2000 / UTM
   bloco_eclipse.py deck ECLIPSE (.DATA + .GRDECL) do bloco fechado para simuladores

@@ -26,6 +26,10 @@ existe e a validação científica ficam **para o final**, antes do lançamento 
 - [x] **Dados de fora do REATE** (0.24): produção da ANP por campo (por poço, por zona, sumário do PD,
       polígono); camadas da EPE, ANP e IBGE (gasodutos, campos, blocos…) guardadas em `sig/`; um clique
       monta o bloco de um campo.
+- [x] **Camadas no mapa e campo × infraestrutura** (0.25): distâncias do campo ao gasoduto, UPGN, H₂, fonte
+      de CO₂; depleção pelo PD.
+- [ ] **Viabilidade econômica** (com o Ruan): custo do duto por km e diâmetro, capacidade de injeção pelo espaço
+      poroso liberado (Np·Bo + Wp − Wi + gás livre·Bg), indicador investimento ÷ capacidade.
 - [ ] **Gasodutos e blocos exploratórios** (com o Ruan): camadas do IBGE/EPE/ANP, distância
       do bloco exploratório ao gasoduto mais próximo, para a eficiência econômica de injetar CO₂.
 

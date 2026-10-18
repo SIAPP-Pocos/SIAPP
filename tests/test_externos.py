@@ -3,6 +3,7 @@ arquivos sintéticos nos formatos reais (nenhum arquivo original da ANP/IBGE/EPE
 import json
 import os
 
+import numpy as np
 import pytest
 
 from motor import camadas as mca
@@ -200,3 +201,86 @@ def test_hidrogenio_verde_edicao_mais_recente_sem_paginacao(tmp_path):
     salvo = json.load(open(tmp_path / "sig" / "epe" / "epe_h2_projetos.geojson", encoding="utf-8"))
     assert "sem_coordenadas" not in salvo and len(salvo["features"]) == 2
     assert mca.POR_ID["epe_h2_projetos"]["padrao"] is True
+
+
+# ------------------------------------------------------------------ campo × infraestrutura
+def _sig_falso(pasta, camadas_geo):
+    """Grava camadas em sig/ como o baixar faria (índice + GeoJSON)."""
+    for ident, feats in camadas_geo.items():
+        item = mca.POR_ID[ident]
+        mca._guardar(str(pasta), item, {"type": "FeatureCollection", "features": feats}, "teste")
+
+
+def _f(geo, **props):
+    return {"type": "Feature", "geometry": geo, "properties": props}
+
+
+def test_distancias_do_campo_a_infraestrutura(tmp_path):
+    from motor import viabilidade as mvi
+    poli = mvi._fechar([[0.0, 0.0], [0.0, 0.05], [-0.05, 0.05], [-0.05, 0.0]])
+    _sig_falso(tmp_path, {
+        # a 0,1° ao sul da borda sul (-0,05): 11,1 km
+        "epe_gasodutos_transporte": [_f({"type": "LineString", "coordinates": [[-1, -0.15], [1, -0.15]]},
+                                        Nome_Dut_1="Nordestão", Diam_Pol_x="12"),
+                                     _f({"type": "LineString", "coordinates": [[-1, -3], [1, -3]]}, Nome_Dut_1="Longe")],
+        # atravessa o campo
+        "epe_dutos_escoamento": [_f({"type": "MultiLineString", "coordinates": [[[0.02, 1], [0.02, -1]]]}, DUTO_ID="D1")],
+        # ponto dentro e ponto fora (0,2° a leste da borda leste em lat -0,025: 22,2 km)
+        "epe_upgn": [_f({"type": "Point", "coordinates": [0.25, -0.025]}, Nome="UPGN X")],
+        "epe_h2_projetos": [_f({"type": "Point", "coordinates": [0.01, -0.01]}, Nome="Piloto", Capacidade=10)],
+    })
+    d = {x["id"]: x for x in mvi.distancias(str(tmp_path), poli)}
+    assert d["epe_gasodutos_transporte"]["distancia_km"] == pytest.approx(11.12, abs=0.05)
+    assert d["epe_gasodutos_transporte"]["feicao"] == {"Nome_Dut_1": "Nordestão", "Diam_Pol_x": "12"}
+    assert d["epe_dutos_escoamento"]["toca_o_campo"] and d["epe_dutos_escoamento"]["distancia_km"] == 0
+    assert d["epe_upgn"]["distancia_km"] == pytest.approx(22.24, abs=0.05)
+    assert d["epe_upgn"]["ponto_campo"][1] == pytest.approx(0.05, abs=1e-6)
+    assert d["epe_h2_projetos"]["toca_o_campo"]
+    assert d["ibge_portos"]["baixada"] is False
+    rel = {"distancias": list(d.values())}
+    assert len(mvi.linhas_csv(rel)) == 4
+
+
+def test_poligono_do_campo_e_deplecao(tmp_path):
+    from motor import viabilidade as mvi
+    b = Banco(str(tmp_path / "p.sqlite"))
+    with pytest.raises(mvi.ErroViabilidade):
+        mvi.poligono_campo(b, str(tmp_path), "Campo Teste")
+    # 1) contorno dos poços do cadastro
+    with b.conexao() as c:
+        for k, (la, lo) in enumerate([(-5.0, -37.0), (-5.0, -36.9), (-5.1, -36.95), (-5.05, -36.95)]):
+            c.execute("INSERT INTO pocos (id, lat, lon, campo) VALUES (?, ?, ?, 'CAMPO TESTE')", (f"P{k}", la, lo))
+    p, fonte = mvi.poligono_campo(b, str(tmp_path), "campo teste")
+    assert "poços" in fonte and len(p) == 4 and p[0] == p[-1]
+    # 2) a camada Campos de produção da ANP vence o contorno
+    _sig_falso(tmp_path, {"anp_campos_producao": [_f({"type": "Polygon", "coordinates": [[[-37, -5], [-36.8, -5], [-36.8, -5.2], [-37, -5]]]},
+                                                     NOM_CAMPO="CAMPO TESTE")]})
+    assert "Campos de produção" in mvi.poligono_campo(b, str(tmp_path), "Campo Teste")[1]
+    # 3) com a produção baixada: vértices da ANP e depleção do PD, atualizada pela produção mensal
+    mpr.baixar(b, str(tmp_path), "Campo Teste", sessao=SessaoFalsa())
+    rel = mvi.relatorio(b, str(tmp_path), "Campo Teste")
+    assert rel["fonte_poligono"].startswith("ANP — vértices") and len(rel["poligono"]) == 4
+    dep = rel["deplecao"]
+    assert dep["data_pd"] == "31/12/2021" and dep["fonte"] == "BAR/2021"
+    assert dep["oleo"]["fracao_pd"] == pytest.approx(1.40 / 13.80, abs=1e-4)
+    assert dep["gas"]["fracao_pd"] == pytest.approx(251.72 / 596.38, abs=1e-4)
+    # a série mensal baixada não começa em 01/2022 (só 2026): nada de somar um buraco
+    assert "fracao_atual_estimada" not in dep["oleo"]
+    with b.conexao() as c:
+        c.execute("INSERT INTO producao_poco (campo, poco_anp, periodo, instalacao, oleo_m3, gas_assoc_mil_m3) "
+                  "VALUES ('CAMPO TESTE', '1-AA-1-RN', '2022-01', '', 10000, 500)")
+    dep = mvi.deplecao(b, "Campo Teste")
+    extra = (10000 + 186.18 + 36.08 + 180) / 1e6
+    assert dep["oleo"]["produzido_depois_milhoes_m3"] == pytest.approx(extra, abs=1e-4)
+    assert dep["oleo"]["fracao_atual_estimada"] == pytest.approx((1.40 + extra) / 13.80, abs=1e-4)
+    assert dep["oleo"]["ate"] == "2026-06"
+
+
+def test_plano_azimutal_bate_com_a_geodesica():
+    from motor import viabilidade as mvi
+    pl = mvi.Plano(-5.17, -36.45)
+    for la, lo in [(-3.55, -38.82), (-8.4, -34.97), (-5.2, -36.4)]:
+        x, y = pl.xy(la, lo)
+        assert float(np.hypot(x, y)) == pytest.approx(mvi.haversine_km(-5.17, -36.45, la, lo), rel=1e-9)
+        a, b2 = pl.latlon(x, y)
+        assert float(a) == pytest.approx(la, abs=1e-9) and float(b2) == pytest.approx(lo, abs=1e-9)
