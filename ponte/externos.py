@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import csv
+import json
 import os
-from datetime import date
+from datetime import date, datetime
 
 from motor import camadas as mca
 from motor import economia as mec
@@ -281,4 +282,70 @@ class ExternosAPI:
                         w.writerow([nome] + [("" if d.get(k) is None else str(d.get(k)).replace(".", ","))
                                              for k in ("in_place_milhoes_m3", "produzido_pd_milhoes_m3", "fracao_pd",
                                                        "produzido_depois_milhoes_m3", "ate", "fracao_atual_estimada")])
+        return {"arquivo": os.path.relpath(saida, self._projeto.pasta).replace(os.sep, "/")}
+
+    # ------------------------------------------------------------ áreas em lote (blocos × infraestrutura)
+    @resposta_segura
+    def areas_opcoes(self):
+        idx = mca.indice(self._projeto.pasta)["camadas"] if self._projeto is not None else {}
+        return {"areas": [{"id": a[0], "rotulo": a[1], "baixada": a[0] in idx} for a in mvi.AREAS],
+                "alvos": [{"id": a[0], "rotulo": a[1], "baixada": a[0] in idx} for a in mvi.ALVOS]}
+
+    @resposta_segura
+    def areas_distancias(self, ident_areas: str, ident_alvo: str, parametros: dict | None = None):
+        """Cada bloco exploratório (ou campo) contra a feição mais próxima da camada escolhida, com o
+        custo do duto; a execução fica gravada em execucoes/viabilidade/."""
+        self._exigir_projeto()
+        self._cancela_externos = False
+        try:
+            r = mvi.distancias_areas(self._projeto.pasta, str(ident_areas), str(ident_alvo), progresso=self._status,
+                                     cancelar=self._cancelar_externos)
+            custos = mec.custos_duto(parametros or {}, [l.get("distancia_km") for l in r["linhas"]])
+        except (mvi.ErroViabilidade, mec.ErroEconomia) as e:
+            raise ErroUsuario(str(e)) from e
+        for l, (L, c) in zip(r["linhas"], custos["linhas"]):
+            l["comprimento_km"], l["custo_r"] = L, c
+        r.update(custo=custos["custo"], memoria=custos["memoria"], formulas=custos["formulas"],
+                 parametros=custos["parametros"], quando=datetime.now().isoformat(timespec="seconds"))
+        pasta = os.path.join(self._projeto.pasta, "execucoes", "viabilidade")
+        os.makedirs(pasta, exist_ok=True)
+        nome = f"{r['quando'].replace(':', '').replace('-', '').replace('T', '-')}_areas_{ident_areas}_{ident_alvo}.json"
+        with open(os.path.join(pasta, nome), "w", encoding="utf-8") as f:
+            json.dump(r, f, ensure_ascii=False, indent=1, default=float)
+        r["arquivo"] = f"execucoes/viabilidade/{nome}"
+        self._ultimo_areas = r
+        self._projeto.registrar("mediu_areas", areas=ident_areas, alvo=ident_alvo, n=len(r["linhas"]), memoria=r["arquivo"])
+        return {"resultado": r}
+
+    @resposta_segura
+    def areas_csv(self):
+        self._exigir_projeto()
+        r = getattr(self, "_ultimo_areas", None)
+        if not r:
+            raise ErroUsuario("Meça as áreas primeiro.")
+        pasta = os.path.join(self._projeto.pasta, PASTA_EXPORTACAO)
+        os.makedirs(pasta, exist_ok=True)
+        saida = os.path.join(pasta, f"distancias_{r['areas']}_{r['alvo']}.csv")
+        fmt = lambda v: "" if v is None else str(v).replace(".", ",") if isinstance(v, float) else v  # noqa: E731
+        attrs = sorted({k for l in r["linhas"] for k in l["atributos"]})
+        with open(saida, "w", newline="", encoding="utf-8-sig") as f:
+            w = csv.writer(f, delimiter=";")
+            w.writerow(["# áreas", r["rotulo_areas"], r.get("fonte_areas") or ""])
+            w.writerow(["# até", r["rotulo_alvo"], r.get("fonte_alvo") or ""])
+            w.writerow(["# distância", "geodésica entre os pontos mais próximos (0 = toca ou atravessa a área)"])
+            for k, fm in r["formulas"].items():
+                w.writerow(["# fórmula", fm])
+            for e in r["memoria"]["entradas"]:
+                w.writerow(["# entrada", e["simbolo"], fmt(e["valor"]), e["unidade"], e["fonte"]])
+            for ps in r["memoria"]["passos"]:
+                w.writerow(["# passo", f"{ps['resultado_simbolo']} = {ps['equacao']}", ps["substituida"],
+                            fmt(ps["resultado"]), ps["unidade"]])
+            w.writerow(["nome", *attrs, "distancia_km", "toca", "comprimento_km", "custo_r", "lat_area", "lon_area",
+                        "lat_feicao", "lon_feicao", "feicao"])
+            for l in sorted(r["linhas"], key=lambda x: (x.get("distancia_km") is None, x.get("distancia_km") or 0)):
+                pa, pf = l.get("ponto_area") or ["", ""], l.get("ponto_feicao") or ["", ""]
+                w.writerow([l["nome"], *[fmt(l["atributos"].get(k)) for k in attrs], fmt(l.get("distancia_km")),
+                            "sim" if l.get("toca") else "não", fmt(l.get("comprimento_km")), fmt(l.get("custo_r")),
+                            fmt(pa[0]), fmt(pa[1]), fmt(pf[0]), fmt(pf[1]),
+                            "; ".join(f"{k}={v}" for k, v in (l.get("feicao") or {}).items())])
         return {"arquivo": os.path.relpath(saida, self._projeto.pasta).replace(os.sep, "/")}

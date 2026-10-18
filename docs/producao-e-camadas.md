@@ -138,6 +138,40 @@ polegada·km) × diâmetro × fator do fluido.
 
 É triagem para comparar campos e rotas: pressão e injetividade só a simulação responde.
 
+## Bo, Rs e Bg por correlação (0.28)
+
+Quando Bo, Rs ou Bg não são informados, o SIAPP os estima nas condições do reservatório (P e T
+informados ou pela profundidade), a menos que "Estimar o que faltar" esteja em "não":
+
+| Grandeza | Correlação | Pede | Faixa original |
+|---|---|---|---|
+| Rs (scf/STB → m³/m³) | Standing (1947): `gg · ((Ppsia/18,2 + 1,4) · 10^(0,0125·API − 0,00091·TF))^1,2048` | API, densidade do gás, P, T | 16,5–63,8 °API; 100–258 °F |
+| Bo | Standing (1947): `0,9759 + 0,00012 · (Rs_scf·(gg/go)^0,5 + 1,25·TF)^1,2` | o mesmo | idem |
+| Tpc, Ppc | Sutton (1985), pela densidade do gás | densidade do gás | gás natural |
+| Z | Papay (1968): `1 − 3,52·Ppr/10^(0,9813·Tpr) + 0,274·Ppr²/10^(0,8157·Tpr)` | Tpr, Ppr | Tpr 1,2–3; Ppr até ~8 |
+| Bg | `Z·(T + 273,15)/P · Pp/(Tp + 273,15)` (condição padrão da ANP) | Z, P, T | — |
+
+- Rs é o da pressão de bolha igual à pressão inicial (óleo saturado); sem o API, Rs fica 0 (todo o
+  gás conta como livre) e Bo fica faltando.
+- A densidade do gás, quando não informada, é a constante `gg_padrao` = 0,65.
+- Cada correlação é uma equação da lista (pode ser trocada) e aparece na memória com as conversões
+  de unidade; caso fora da faixa original gera aviso.
+
+## Blocos e campos × infraestrutura (0.28)
+
+O estudo do PIBIC em lote: para **cada** bloco exploratório (ou campo de produção) da camada da
+ANP, a distância até a feição mais próxima da camada escolhida e o custo do duto até ela.
+
+- Distância: a mesma do campo (pontos mais próximos na projeção azimutal centrada na área;
+  geodésica entre eles; 0 quando a feição toca ou atravessa a área). Os anéis internos (buracos)
+  dos polígonos não são considerados.
+- Custo: `L = dist × f_tracado` e `custo = L × custo_km`, com o custo por km e os parâmetros do
+  quadro da viabilidade (ou os padrões, se ele ainda não foi aberto).
+- Desempenho: busca por caixa que se expande e poda dos segmentos pelo limite inferior
+  (distância a um extremo − comprimento do segmento); os 274 blocos contra o gasoduto em ~8 s.
+- Saídas: legenda por faixa, tabela das 40 mais próximas (com filtro), mapa colorido, CSV com
+  todas as áreas e o JSON da medição em `execucoes\viabilidade\`.
+
 ## Auditoria: memória de cálculo, constantes e equações (0.27)
 
 **Memória de cálculo.** Cada "Calcular a viabilidade" grava em `execucoes\viabilidade\` um

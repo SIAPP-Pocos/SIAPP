@@ -151,8 +151,9 @@ def test_simples_custo_e_indicador_com_memoria(tmp_path):
     g = av["linhas"][0]
     assert g["comprimento_km"] == pytest.approx(12) and g["custo_r"] == pytest.approx(12 * custo_km)
     assert g["indicadores"]["simples"] == pytest.approx(12 * custo_km / (NP + GP / 1000))
-    assert g["indicadores"]["poroso"] is None and av["metodos"]["poroso"]["falta"] == ["Bo", "Bg"]
-    assert av["metodos"]["molecula"]["falta"][:2] == ["Bo", "Bg"]
+    falta = ["Bo (ou o grau API, para estimar)", "Bg (ou profundidade ou P e T, para estimar)"]
+    assert g["indicadores"]["poroso"] is None and av["metodos"]["poroso"]["falta"] == falta
+    assert av["metodos"]["molecula"]["falta"] == falta + ["profundidade ou P e T"]
     assert av["linhas"][1]["origem_tipica"] and not g["origem_tipica"]
     assert av["linhas"][2]["custo_r"] == 0 and any("No campo" in a for a in av["avisos"])
     # memória: equação, números substituídos, resultado e fonte de cada entrada
@@ -257,3 +258,55 @@ def test_memoria_salva_em_json_html_e_csv(tmp_path):
     linhas = mec.linhas_csv_memoria(av)
     assert ["# entradas"] in linhas and any(l[:2] == ["simples", "Espaço — método simples (PIBIC)"] for l in linhas)
     assert len(mec.linhas_csv(av)) == 3
+
+
+# ------------------------------------------------------------------ correlações PVT
+def _standing(P, T, api, gg):
+    """Conta à mão, independente do motor: Standing (Rs, Bo) e Sutton + Papay (Bg)."""
+    psia, tf = P * 14.5038, T * 1.8 + 32
+    rs_scf = gg * ((psia / 18.2 + 1.4) * 10 ** (0.0125 * api - 0.00091 * tf)) ** 1.2048
+    go = 141.5 / (131.5 + api)
+    bo = 0.9759 + 0.00012 * (rs_scf * (gg / go) ** 0.5 + 1.25 * tf) ** 1.2
+    tpc = (169.2 + 349.5 * gg - 74 * gg ** 2) / 1.8
+    ppc = (756.8 - 131 * gg - 3.6 * gg ** 2) / 14.5038
+    tpr, ppr = (T + 273.15) / tpc, P / ppc
+    z = 1 - 3.52 * ppr / 10 ** (0.9813 * tpr) + 0.274 * ppr ** 2 / 10 ** (0.8157 * tpr)
+    bg = z * (T + 273.15) / P * 1.01325 / 293.15
+    return rs_scf * 0.178108, bo, bg, z
+
+
+def test_bo_rs_bg_estimados_por_correlacao(tmp_path):
+    b = _banco(tmp_path)
+    av = mec.avaliar(b, "Campo Teste", DIST, {"pressao_bar": 61, "temperatura_c": 43, "api": 30})
+    rs, bo, bg, z = _standing(61, 43, 30, 0.65)
+    assert (rs, bo) == (pytest.approx(27.8, abs=0.5), pytest.approx(1.075, abs=0.005))   # ordem de grandeza
+    assert bg == pytest.approx(0.0159, abs=0.0005) and z == pytest.approx(0.888, abs=0.005)
+    v = {e["simbolo"]: e["valor"] for e in av["memoria"]["entradas"]}
+    pas = {s["resultado_simbolo"]: s["resultado"] for s in av["memoria"]["passos"] if s["id"] != "nota"}
+    assert pas["Rs"] == pytest.approx(rs) and pas["Bo"] == pytest.approx(bo) and pas["Bg"] == pytest.approx(bg)
+    assert v["gg"] == 0.65 and v["API"] == 30
+    poroso = av["metodos"]["poroso"]
+    assert poroso["estimados"] == ["Rs (Standing)", "Bo (Standing)", "Bg (Sutton + Papay)"]
+    assert poroso["valor"] == pytest.approx(NP * bo + max(0, GP - NP * rs) * bg)
+    assert any("Estimados por correlação" in a for a in av["avisos"])
+    assert any(s["metodo"] == "pvt" and s["id"] == "z_gas" for s in av["memoria"]["passos"])
+    # sem estimar: falta Bo e Bg
+    av = mec.avaliar(b, "Campo Teste", DIST, {"pressao_bar": 61, "temperatura_c": 43, "api": 30, "estimar_pvt": "nao"})
+    assert av["metodos"]["poroso"]["falta"] == ["Bo", "Bg"]
+    # Rs informado entra convertido no Bo; Bo informado não é estimado
+    av = mec.avaliar(b, "Campo Teste", DIST, {"pressao_bar": 61, "temperatura_c": 43, "api": 30, "rs": 20, "bo": 1.1})
+    assert av["metodos"]["poroso"]["estimados"] == ["Bg (Sutton + Papay)"]
+    # fora da faixa de Standing: aviso
+    av = mec.avaliar(b, "Campo Teste", DIST, {"pressao_bar": 61, "temperatura_c": 43, "api": 12})
+    assert any("Standing fora da faixa" in a for a in av["avisos"])
+
+
+def test_campo_de_gas_so_precisa_de_bg(tmp_path):
+    b = Banco(str(tmp_path / "p.sqlite"))
+    mpr.guardar_campo(b, "Campo Teste", ficha={"nome": "CAMPO TESTE", "inicio_producao": "2010"},
+                      pd={"fonte": "BAR", "acumulada": {"data": "31/12/2021", "gas_total_milhoes_m3": 500.0}})
+    av = mec.avaliar(b, "Campo Teste", DIST, {"pressao_bar": 150, "temperatura_c": 70, "densidade_gas": 0.6,
+                                               "fluido": "h2"})
+    _, _, bg, _ = _standing(150, 70, 30, 0.6)
+    assert av["metodos"]["poroso"]["valor"] == pytest.approx(500e6 * bg)
+    assert av["metodos"]["poroso"]["estimados"] == ["Bg (Sutton + Papay)"] and av["metodos"]["molecula"]["valor"] > 0

@@ -33,10 +33,11 @@ existe e a validação científica ficam **para o final**, antes do lançamento 
 - [x] **Viabilidade auditável** (0.27): memória de cálculo de cada execução (entradas com fonte, equação,
       números substituídos, resultado) em JSON e HTML; constantes com padrão e fonte; equações trocáveis por
       alternativas prontas ou por fórmula do usuário.
-- [ ] Viabilidade — próximos refinamentos (com o Ruan): Bo/Bg por campo de fonte pública, diâmetro pela vazão,
+- [ ] Viabilidade — próximos refinamentos (com o Ruan): API e densidade do gás por campo de fonte pública, diâmetro pela vazão,
       correção do custo pela inflação (IPCA/INCC), restrições ambientais (UCs, terras indígenas).
-- [ ] **Gasodutos e blocos exploratórios** (com o Ruan): camadas do IBGE/EPE/ANP, distância
-      do bloco exploratório ao gasoduto mais próximo, para a eficiência econômica de injetar CO₂.
+- [x] **Gasodutos e blocos exploratórios** (0.28): distância de cada bloco exploratório (ou campo) à feição mais
+      próxima da camada escolhida e o custo do duto; mapa colorido por distância; CSV com fórmulas e entradas.
+- [x] **Bo, Rs e Bg estimados por correlação** (0.28): Standing (pede o API) e Sutton + Papay, com aviso de faixa.
 
 ## No final — melhorias do que já existe
 

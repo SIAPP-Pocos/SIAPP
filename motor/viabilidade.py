@@ -334,3 +334,210 @@ def linhas_csv(rel: dict) -> list[list]:
                     *d["ponto_campo"], *d["ponto_feicao"],
                     "; ".join(f"{k}={v}" for k, v in d["feicao"].items())])
     return out
+
+
+# ====================================================================== áreas em lote
+# blocos exploratórios ou campos inteiros contra uma camada (ex.: a distância de cada bloco ao
+# gasoduto mais próximo — o estudo do PIBIC)
+AREAS = [
+    ("anp_blocos_exploratorios", "Blocos exploratórios", "NOM_BLOCO",
+     ["NOM_BACIA", "OPERADOR_C", "AMBIENTE", "RODADA", "AREA_TOTAL"]),
+    ("anp_campos_producao", "Campos de produção", "NOM_CAMPO",
+     ["NOM_BACIA", "OPERADOR_C", "Localizaca", "FLUIDO_PRI", "ETAPA"]),
+]
+
+
+def _indice_alvo(g: dict) -> dict:
+    """Todos os segmentos e pontos de uma camada, em lon/lat, com a feição de cada um."""
+    sa, sb, sf, pt, pf = [], [], [], [], []
+    for i, feat in enumerate(g.get("features", [])):
+        geo = feat.get("geometry")
+        if not geo:
+            continue
+        pontos, linhas = _partes(geo)
+        for p in pontos:
+            pt.append(p[:2])
+            pf.append(i)
+        for linha in linhas:
+            L = np.asarray(linha, float)[:, :2]
+            if len(L) == 1:
+                pt.append(L[0])
+                pf.append(i)
+            elif len(L) > 1:
+                sa.append(L[:-1])
+                sb.append(L[1:])
+                sf.append(np.full(len(L) - 1, i))
+    vazio = np.zeros((0, 2))
+    return {"sa": np.vstack(sa) if sa else vazio, "sb": np.vstack(sb) if sb else vazio,
+            "sf": np.concatenate(sf) if sf else np.zeros(0, int),
+            "pt": np.asarray(pt, float).reshape(-1, 2), "pf": np.asarray(pf, int)}
+
+
+def _pt_segs(px, py, ax, ay, bx, by):
+    """Distância de cada ponto (k) a cada segmento (s): matrizes k×s, e o ponto mais próximo."""
+    dx, dy = (bx - ax)[None, :], (by - ay)[None, :]
+    l2 = dx * dx + dy * dy
+    t = ((px[:, None] - ax[None, :]) * dx + (py[:, None] - ay[None, :]) * dy) / np.where(l2 > 0, l2, 1)
+    t = np.clip(np.where(l2 > 0, t, 0), 0, 1)
+    qx, qy = ax[None, :] + t * dx, ay[None, :] + t * dy
+    return np.hypot(px[:, None] - qx, py[:, None] - qy), qx, qy
+
+
+def _menor(px, py, ax, ay, bx, by, bloco=200000):
+    """(d, i_ponto, j_segmento, qx, qy) do par mais próximo, em pedaços para não estourar a memória."""
+    melhor = None
+    passo = max(1, bloco // max(1, len(ax)))
+    for k0 in range(0, len(px), passo):
+        d, qx, qy = _pt_segs(px[k0:k0 + passo], py[k0:k0 + passo], ax, ay, bx, by)
+        i, j = np.unravel_index(int(np.argmin(d)), d.shape)
+        if melhor is None or d[i, j] < melhor[0]:
+            melhor = (float(d[i, j]), k0 + i, j, float(qx[i, j]), float(qy[i, j]))
+    return melhor
+
+
+def distancia_area(aneis: list[np.ndarray], alvo: dict, margem0: float = 0.5):
+    """Menor distância entre os polígonos (anéis externos, lon/lat fechados) e a camada-alvo.
+    Devolve (km, (lat, lon) na área, (lat, lon) na feição, índice da feição, toca) ou None."""
+    todos = np.vstack(aneis)
+    lo0, la0 = float(todos[:, 0].mean()), float(todos[:, 1].mean())
+    mn, mx = todos.min(axis=0), todos.max(axis=0)
+    plano = Plano(la0, lo0)
+    sa, sb, pt = alvo["sa"], alvo["sb"], alvo["pt"]
+    if not len(sa) and not len(pt):
+        return None
+    coslat = max(0.2, math.cos(math.radians(max(abs(mn[1]), abs(mx[1])))))
+    margem = margem0
+    while True:
+        lo_min, la_min, lo_max, la_max = mn[0] - margem, mn[1] - margem, mx[0] + margem, mx[1] + margem
+        cs = np.zeros(len(sa), bool)
+        if len(sa):
+            cs = ((np.maximum(sa[:, 0], sb[:, 0]) >= lo_min) & (np.minimum(sa[:, 0], sb[:, 0]) <= lo_max) &
+                  (np.maximum(sa[:, 1], sb[:, 1]) >= la_min) & (np.minimum(sa[:, 1], sb[:, 1]) <= la_max))
+        cp = np.zeros(len(pt), bool)
+        if len(pt):
+            cp = ((pt[:, 0] >= lo_min) & (pt[:, 0] <= lo_max) & (pt[:, 1] >= la_min) & (pt[:, 1] <= la_max))
+        if not cs.any() and not cp.any():
+            if margem > 400:
+                return None
+            margem *= 4
+            continue
+        r = _distancia_area_candidatos(aneis, plano, alvo, np.nonzero(cs)[0], np.nonzero(cp)[0])
+        km = r[0]
+        precisa = km / (111.2 * coslat) * 1.05      # margem (graus) que garante o mais próximo
+        if precisa <= margem or margem > 400:
+            return r
+        margem = precisa
+
+
+def _distancia_area_candidatos(aneis, plano, alvo, js, ks):
+    sa, sb, pt = alvo["sa"][js], alvo["sb"][js], alvo["pt"][ks]
+    if len(sa):
+        ax, ay = plano.xy(sa[:, 1], sa[:, 0])
+        bx, by = plano.xy(sb[:, 1], sb[:, 0])
+    if len(pt):
+        qx_, qy_ = plano.xy(pt[:, 1], pt[:, 0])
+    melhor = None                                    # (d, (x,y) área, (x,y) feição, índice da feição)
+    for anel in aneis:
+        rx, ry = plano.xy(anel[:, 1], anel[:, 0])
+        ex0, ey0, ex1, ey1 = rx[:-1], ry[:-1], rx[1:], ry[1:]
+        # toca: ponto ou vértice dentro, ou segmento cruzando a borda
+        if len(pt):
+            den = _dentro(qx_, qy_, rx, ry)
+            if den.any():
+                k = int(np.argmax(den))
+                return (0.0, plano.latlon(qx_[k], qy_[k]), plano.latlon(qx_[k], qy_[k]), int(alvo["pf"][ks[k]]), True)
+        if len(sa):
+            den = _dentro(ax, ay, rx, ry)
+            if den.any():
+                k = int(np.argmax(den))
+                return (0.0, plano.latlon(ax[k], ay[k]), plano.latlon(ax[k], ay[k]), int(alvo["sf"][js[k]]), True)
+            # poda: a distância de um segmento é ≥ (distância a um extremo − comprimento); só ficam
+            # os segmentos cujo limite inferior não passa do melhor par vértice–extremo
+            vx, vy = rx[:-1], ry[:-1]
+            lb = np.full(len(ax), np.inf)
+            ub = np.inf
+            passo = max(1, 2000000 // max(1, len(vx)))
+            for j0 in range(0, len(ax), passo):
+                sl = slice(j0, j0 + passo)
+                da = np.hypot(vx[:, None] - ax[None, sl], vy[:, None] - ay[None, sl]).min(axis=0)
+                db = np.hypot(vx[:, None] - bx[None, sl], vy[:, None] - by[None, sl]).min(axis=0)
+                ub = min(ub, float(da.min()), float(db.min()))
+                lb[sl] = np.minimum(da, db) - np.hypot(bx[sl] - ax[sl], by[sl] - ay[sl])
+            ks_ = np.nonzero(lb <= ub + 1e-9)[0]
+            cax, cay, cbx, cby = ax[ks_], ay[ks_], bx[ks_], by[ks_]
+            c = _cruzam((ex0, ey0), (ex1, ey1), (cax, cay), (cbx, cby))
+            if c.any():
+                i, j = np.argwhere(c)[0]
+                p = plano.latlon(ex0[i], ey0[i])
+                return (0.0, p, p, int(alvo["sf"][js[ks_[j]]]), True)
+            # vértices da área → segmentos; extremos dos segmentos → bordas da área
+            r = _menor(vx, vy, cax, cay, cbx, cby)
+            if melhor is None or r[0] < melhor[0]:
+                melhor = (r[0], (vx[r[1]], vy[r[1]]), (r[3], r[4]), int(alvo["sf"][js[ks_[r[2]]]]))
+            for X, Y in ((cax, cay), (cbx, cby)):
+                r = _menor(X, Y, ex0, ey0, ex1, ey1)
+                if r[0] < melhor[0]:
+                    melhor = (r[0], (r[3], r[4]), (X[r[1]], Y[r[1]]), int(alvo["sf"][js[ks_[r[1]]]]))
+        if len(pt):
+            r = _menor(qx_, qy_, ex0, ey0, ex1, ey1)
+            if melhor is None or r[0] < melhor[0]:
+                melhor = (r[0], (r[3], r[4]), (qx_[r[1]], qy_[r[1]]), int(alvo["pf"][ks[r[1]]]))
+    d, pa, pf_, fi = melhor
+    la_a, lo_a = plano.latlon(*pa)
+    la_f, lo_f = plano.latlon(*pf_)
+    km = haversine_km(float(la_a), float(lo_a), float(la_f), float(lo_f))
+    return (km, (float(la_a), float(lo_a)), (float(la_f), float(lo_f)), fi, False)
+
+
+def _aneis_externos(geo) -> list[np.ndarray]:
+    if geo["type"] == "Polygon":
+        return [np.asarray(geo["coordinates"][0], float)[:, :2]]
+    if geo["type"] == "MultiPolygon":
+        return [np.asarray(p[0], float)[:, :2] for p in geo["coordinates"]]
+    return []
+
+
+def distancias_areas(pasta_projeto: str, ident_areas: str, ident_alvo: str, progresso=None,
+                     cancelar=None) -> dict:
+    """Cada área (bloco exploratório ou campo) contra a feição mais próxima da camada-alvo."""
+    idx = mca.indice(pasta_projeto)["camadas"]
+    area_info = next((a for a in AREAS if a[0] == ident_areas), None)
+    alvo_info = next((a for a in ALVOS if a[0] == ident_alvo), None)
+    if area_info is None or alvo_info is None:
+        raise ErroViabilidade("Camada de áreas ou de infraestrutura desconhecida.")
+    for ident, nome in ((ident_areas, area_info[1]), (ident_alvo, alvo_info[1])):
+        if ident not in idx:
+            raise ErroViabilidade(f"Baixe antes a camada {nome} (quadro Camadas geográficas).")
+    with open(os.path.join(pasta_projeto, idx[ident_areas]["arquivo"]), encoding="utf-8") as f:
+        ga = json.load(f)
+    with open(os.path.join(pasta_projeto, idx[ident_alvo]["arquivo"]), encoding="utf-8") as f:
+        gt = json.load(f)
+    alvo = _indice_alvo(gt)
+    _, rot_areas, campo_nome, campos_area = area_info
+    linhas = []
+    feats = ga.get("features", [])
+    for i, feat in enumerate(feats):
+        if cancelar and cancelar():
+            break
+        if progresso and i % 25 == 0:
+            progresso(f"{rot_areas}: {i} de {len(feats)}…")
+        geo = feat.get("geometry")
+        aneis = _aneis_externos(geo) if geo else []
+        aneis = [a for a in aneis if len(a) >= 4]
+        if not aneis:
+            continue
+        r = distancia_area(aneis, alvo)
+        props = feat.get("properties") or {}
+        base = {"indice": i, "nome": str(props.get(campo_nome) or f"#{i}"),
+                "atributos": {k: props.get(k) for k in campos_area if props.get(k) not in (None, "", " ")}}
+        if r is None:
+            linhas.append({**base, "distancia_km": None})
+            continue
+        km, pa, pf_, fi, toca = r
+        pt = (gt["features"][fi].get("properties") or {})
+        linhas.append({**base, "distancia_km": round(0.0 if toca else km, 3), "toca": toca,
+                       "ponto_area": [round(pa[0], 6), round(pa[1], 6)], "ponto_feicao": [round(pf_[0], 6), round(pf_[1], 6)],
+                       "feicao": {k: pt.get(k) for k in alvo_info[2] if pt.get(k) not in (None, "", " ")}})
+    return {"areas": ident_areas, "rotulo_areas": rot_areas, "alvo": ident_alvo, "rotulo_alvo": alvo_info[1],
+            "fonte_areas": idx[ident_areas].get("origem") or idx[ident_areas].get("fonte"),
+            "fonte_alvo": idx[ident_alvo].get("origem") or idx[ident_alvo].get("fonte"), "linhas": linhas}

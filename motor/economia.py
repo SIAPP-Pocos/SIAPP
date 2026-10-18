@@ -77,6 +77,8 @@ CONSTANTES = {
     "p_padrao": _c(1.01325, "bar", "Pressão da condição padrão", "ANP: 1 atm", (0.5, 2), "Gerais"),
     "t_padrao": _c(20.0, "°C", "Temperatura da condição padrão", "ANP: 20 °C", (0, 30), "Gerais"),
     "pci_h2": _c(33.33, "kWh/kg", "PCI do H₂", "120 MJ/kg (poder calorífico inferior)", (30, 40), "Gerais"),
+    "gg_padrao": _c(0.65, "—", "Densidade relativa do gás (ar = 1), quando não informada",
+                    "valor típico de gás natural; informe a do campo", (0.55, 1.8), "Gerais"),
     "f_co2": _c(1.20, "—", "Fator de custo do duto — CO₂",
                 "estimativa do SIAPP: CO₂ em fase densa (~150 bar contra ~100 do gás) pede ~50% mais aço; a "
                 "tubulação é ~45% do CAPEX no PIG 2024 → ≈ +20%", (0.5, 3), "Fatores de custo"),
@@ -114,21 +116,22 @@ PADROES = {
     "fator_tracado": 1.0, "fluido": "co2", "bo": None, "bg": None, "rs": None,
     "profundidade_m": None, "pressao_bar": None, "temperatura_c": None, "densidade_kg_m3": None,
     "t_superficie_c": 25.0, "gradiente_t_c_km": 30.0, "gradiente_p_bar_m": 0.1,
-    "eficiencia": 1.0, "colchao": 0.5,
+    "eficiencia": 1.0, "colchao": 0.5, "api": None, "densidade_gas": None, "estimar_pvt": "sim",
 }
 LIMITES = {
     "custo_mil_pol_km": (0, 100000), "custo_fixo_km": (0, 1e6), "diametro_pol": (1, 60), "fator_tracado": (1, 3),
     "bo": (0.8, 5), "bg": (0.0001, 0.5), "rs": (0, 5000),
     "profundidade_m": (50, 8000), "pressao_bar": (1, 1500), "temperatura_c": (0, 250), "densidade_kg_m3": (0.01, 2000),
     "t_superficie_c": (-10, 50), "gradiente_t_c_km": (5, 80), "gradiente_p_bar_m": (0.05, 0.3),
-    "eficiencia": (0.01, 1), "colchao": (0, 0.95),
+    "eficiencia": (0.01, 1), "colchao": (0, 0.95), "api": (5, 70), "densidade_gas": (0.55, 1.8),
 }
 ROTULOS = {"custo_mil_pol_km": "Custo (R$ mil por polegada·km)", "custo_fixo_km": "Parcela fixa (R$ mil por km)",
            "diametro_pol": "Diâmetro (pol)", "fator_tracado": "Fator de traçado", "bo": "Bo", "bg": "Bg", "rs": "Rs",
            "profundidade_m": "Profundidade (m)", "pressao_bar": "Pressão (bar)", "temperatura_c": "Temperatura (°C)",
            "densidade_kg_m3": "Densidade (kg/m³)", "t_superficie_c": "Temperatura na superfície (°C)",
            "gradiente_t_c_km": "Gradiente de temperatura (°C/km)", "gradiente_p_bar_m": "Gradiente de pressão (bar/m)",
-           "eficiencia": "Eficiência", "colchao": "Gás de colchão (fração)"}
+           "eficiencia": "Eficiência", "colchao": "Gás de colchão (fração)", "api": "Grau API do óleo",
+           "densidade_gas": "Densidade relativa do gás"}
 
 # ====================================================================== símbolos e equações
 SIMBOLOS = {
@@ -204,7 +207,40 @@ SIMBOLOS.update({"Vp": ("volume útil na condição padrão", "m³"), "E": ("ene
                  "ind": ("indicador", "R$ por unidade"),
                  "Tc": ("temperatura crítica do fluido", "K"), "Pc": ("pressão crítica do fluido", "bar"),
                  "w": ("fator acêntrico ω do fluido", "—"), "M": ("massa molar do fluido", "g/mol"),
-                 "Z_RA": ("Z de Rackett do fluido (Peneloux)", "—")})
+                 "Z_RA": ("Z de Rackett do fluido (Peneloux)", "—"),
+                 "API": ("grau API do óleo", "°API"), "gg": ("densidade relativa do gás (ar = 1)", "—"),
+                 "go": ("densidade relativa do óleo (água = 1)", "—"), "Ppsia": ("pressão do reservatório", "psia"),
+                 "TF": ("temperatura do reservatório", "°F"), "Rs_scf": ("razão de solubilidade", "scf/STB"),
+                 "Tpc": ("temperatura pseudocrítica do gás", "K"), "Ppc": ("pressão pseudocrítica do gás", "bar"),
+                 "Tpr": ("temperatura pseudorreduzida do gás", "—"), "Ppr": ("pressão pseudorreduzida do gás", "—"),
+                 "Zg": ("fator de compressibilidade do gás do reservatório", "—"),
+                 "p_padrao": ("pressão da condição padrão", "bar"), "t_padrao": ("temperatura da condição padrão", "°C")})
+
+_ST = "Standing (1947), correlação para óleos da Califórnia; faixa original: 16,5–63,8 °API, 100–258 °F. "
+EQUACOES.update({
+    "p_psia": _e("Pressão em psia", "Ppsia", "psia", "P * 14.5038", "Conversão de bar para psia (as correlações "
+                 "são em unidades de campo)."),
+    "t_f": _e("Temperatura em °F", "TF", "°F", "T * 1.8 + 32", "Conversão de °C para °F."),
+    "go": _e("Densidade relativa do óleo", "go", "—", "141.5 / (131.5 + API)", "Definição do grau API."),
+    "rs_scf": _e("Razão de solubilidade (Standing)", "Rs_scf", "scf/STB",
+                 "gg * ((Ppsia / 18.2 + 1.4) * 10 ^ (0.0125 * API - 0.00091 * TF)) ^ 1.2048",
+                 _ST + "Supõe o óleo saturado na pressão inicial do reservatório (Rs na pressão de bolha = P)."),
+    "rs": _e("Razão de solubilidade em m³/m³", "Rs", "m³/m³", "Rs_scf * 0.178108",
+             "1 scf/STB = 0,178108 m³/m³."),
+    "bo": _e("Fator volume-formação do óleo (Standing)", "Bo", "m³/m³",
+             "0.9759 + 0.00012 * (Rs_scf * (gg / go) ^ 0.5 + 1.25 * TF) ^ 1.2", _ST + "Bo na pressão de bolha."),
+    "tpc": _e("Temperatura pseudocrítica do gás (Sutton)", "Tpc", "K", "(169.2 + 349.5 * gg - 74 * gg ^ 2) / 1.8",
+              "Sutton (1985), gás natural pela densidade relativa; a fórmula original dá °R (÷ 1,8 → K)."),
+    "ppc": _e("Pressão pseudocrítica do gás (Sutton)", "Ppc", "bar", "(756.8 - 131 * gg - 3.6 * gg ^ 2) / 14.5038",
+              "Sutton (1985); a fórmula original dá psia (÷ 14,5038 → bar)."),
+    "tpr": _e("Temperatura pseudorreduzida", "Tpr", "—", "(T + 273.15) / Tpc", "Temperatura absoluta ÷ pseudocrítica."),
+    "ppr": _e("Pressão pseudorreduzida", "Ppr", "—", "P / Ppc", "Pressão ÷ pseudocrítica."),
+    "z_gas": _e("Fator de compressibilidade do gás (Papay)", "Zg", "—",
+                "1 - 3.52 * Ppr / 10 ^ (0.9813 * Tpr) + 0.274 * Ppr ^ 2 / 10 ^ (0.8157 * Tpr)",
+                "Papay (1968): forma explícita do gráfico de Standing-Katz; boa para Tpr entre 1,2 e 3 e Ppr até ~8."),
+    "bg": _e("Fator volume-formação do gás", "Bg", "m³/m³", "Zg * (T + 273.15) / P * p_padrao / (t_padrao + 273.15)",
+             "Volume no reservatório ÷ volume na condição padrão: Bg = Z·T·Pp ÷ (P·Tp)."),
+})
 
 # ====================================================================== leitor seguro de fórmulas
 _FUNCOES = {"min": min, "max": max, "abs": abs, "sqrt": math.sqrt, "exp": math.exp, "ln": math.log,
@@ -397,7 +433,7 @@ def parametros(dados: dict | None) -> dict:
     for k, v in dados.items():
         if k not in PADROES:
             continue
-        if k in ("fonte_custo", "fluido"):
+        if k in ("fonte_custo", "fluido", "estimar_pvt"):
             p[k] = str(v) if v else PADROES[k]
             continue
         x = _num(v)
@@ -410,6 +446,8 @@ def parametros(dados: dict | None) -> dict:
         p[k] = x
     if p["fluido"] not in FLUIDOS:
         raise ErroEconomia(f"Fluido desconhecido: {p['fluido']}.")
+    if p["estimar_pvt"] not in ("sim", "nao"):
+        raise ErroEconomia("Estimar Bo, Rs e Bg: use sim ou nao.")
     fonte = next((f for f in FONTES_CUSTO if f["id"] == p["fonte_custo"]), None)
     if fonte is None and p["fonte_custo"] != "manual":
         raise ErroEconomia(f"Referência de custo desconhecida: {p['fonte_custo']}.")
@@ -613,10 +651,53 @@ def _arquivos_producao(banco: Banco, campo: str) -> list[str]:
 
 # ====================================================================== avaliação
 ROTULO_FALTA = {"Bo": "Bo", "Bg": "Bg", "prof": "profundidade ou P e T", "V": "espaço poroso"}
+ROTULO_FALTA_EST = {"Bo": "Bo (ou o grau API, para estimar)", "Bg": "Bg (ou profundidade ou P e T, para estimar)"}
 
 
 def _informado(p: dict, k: str) -> str:
     return "informado pelo usuário" if p.get(k) != PADROES.get(k) else "padrão do SIAPP"
+
+
+def _custo_por_km(mem: "Memoria", p: dict):
+    """Entradas e passo do custo do duto por km (comum ao campo e às áreas em lote)."""
+    fl = p["fluido"]
+    ref = next((f for f in FONTES_CUSTO if f["id"] == p["fonte_custo"]), None)
+    G = "Custo do duto"
+    mem.entrada("custo_pol_km", p["custo_mil_pol_km"],
+                f"{ref['rotulo']}, data-base {ref['data_base']}" if ref else "informado pelo usuário", G)
+    mem.entrada("custo_fixo_km", p["custo_fixo_km"], _informado(p, "custo_fixo_km"), G)
+    mem.entrada("D", p["diametro_pol"], _informado(p, "diametro_pol"), G)
+    mem.entrada("f_fluido", constante(p, f"f_{fl}"), f"constante f_{fl}: " + _fonte_const(p, f"f_{fl}"), G)
+    mem.entrada("f_tracado", p["fator_tracado"], _informado(p, "fator_tracado"), G)
+    return mem.calcular("custo_km", "custo"), ref
+
+
+def _resumo_custo(p: dict, custo_km: float, ref) -> dict:
+    fl = p["fluido"]
+    return {"r_por_km": custo_km, "fator_fluido": constante(p, f"f_{fl}"),
+            "motivo_fator": CONSTANTES[f"f_{fl}"]["fonte"], "r_mil_pol_km": p["custo_mil_pol_km"],
+            "diametro_pol": p["diametro_pol"], "referencia": ref["rotulo"] if ref else "informado pelo usuário",
+            "data_base": ref["data_base"] if ref else None}
+
+
+def custos_duto(dados: dict | None, distancias_km: list) -> dict:
+    """Custo do duto para uma lista de distâncias (áreas em lote), com a memória do custo por km."""
+    p = parametros(dados)
+    mem = Memoria(p["equacoes"])
+    custo_km, ref = _custo_por_km(mem, p)
+    linhas = []
+    for d in distancias_km:
+        if d is None:
+            linhas.append((None, None))
+            continue
+        lixo: list = []
+        L = mem.calcular("comprimento", "linha", {"dist": d}, guardar=False, destino=lixo)
+        c = mem.calcular("custo_duto", "linha", {"dist": d, "L": L}, guardar=False, destino=lixo)
+        linhas.append((L, c))
+    return {"parametros": p, "custo": _resumo_custo(p, custo_km, ref), "linhas": linhas,
+            "memoria": {"entradas": mem.entradas, "passos": mem.passos},
+            "formulas": {k: f"{EQUACOES[k]['resultado']} = {p['equacoes'].get(k) or EQUACOES[k]['padrao']}"
+                         for k in ("custo_km", "comprimento", "custo_duto")}}
 
 
 def avaliar(banco: Banco, campo: str, distancias: list[dict], dados: dict | None) -> dict:
@@ -628,15 +709,7 @@ def avaliar(banco: Banco, campo: str, distancias: list[dict], dados: dict | None
     mem = Memoria(p["equacoes"])
     avisos: list[str] = []
     # ------------------------------------------------ custo do duto
-    ref = next((f for f in FONTES_CUSTO if f["id"] == p["fonte_custo"]), None)
-    G = "Custo do duto"
-    mem.entrada("custo_pol_km", p["custo_mil_pol_km"],
-                f"{ref['rotulo']}, data-base {ref['data_base']}" if ref else "informado pelo usuário", G)
-    mem.entrada("custo_fixo_km", p["custo_fixo_km"], _informado(p, "custo_fixo_km"), G)
-    mem.entrada("D", p["diametro_pol"], _informado(p, "diametro_pol"), G)
-    mem.entrada("f_fluido", constante(p, f"f_{fl}"), f"constante f_{fl}: " + _fonte_const(p, f"f_{fl}"), G)
-    mem.entrada("f_tracado", p["fator_tracado"], _informado(p, "fator_tracado"), G)
-    custo_km = mem.calcular("custo_km", "custo")
+    custo_km, ref = _custo_por_km(mem, p)
     # ------------------------------------------------ produção acumulada
     ac = acumulados(banco, campo)
     avisos += ac["avisos"]
@@ -658,44 +731,7 @@ def avaliar(banco: Banco, campo: str, distancias: list[dict], dados: dict | None
         metodos["simples"] = {"valor": None, "falta": [ROTULO_FALTA.get(n, n) for n in f.args[0]]}
     metodos["simples"].update(metodo="simples", rotulo="Simples (PIBIC): volume produzido", unidade="m³ de óleo equivalente",
                               formula=p["equacoes"].get("espaco_simples") or EQUACOES["espaco_simples"]["padrao"])
-    # ------------------------------------------------ 2. espaço poroso
-    G = "Dados do reservatório"
-    np_, gp, gi = mem.valores["Np"], mem.valores["Gp"], mem.valores["Gi"]
-    if p["bo"] is not None:
-        mem.entrada("Bo", p["bo"], "informado pelo usuário", G)
-    else:
-        mem.entrada("Bo", 0.0 if np_ == 0 else None,
-                    "sem óleo produzido: não se aplica (0)" if np_ == 0 else "não informado", G)
-    if p["bg"] is not None:
-        mem.entrada("Bg", p["bg"], "informado pelo usuário", G)
-    else:
-        sem_gas = gp == 0 and gi == 0
-        mem.entrada("Bg", 0.0 if sem_gas else None, "sem gás produzido nem injetado: não se aplica (0)" if sem_gas
-                    else "não informado", G)
-    if p["rs"] is not None:
-        mem.entrada("Rs", p["rs"], "informado pelo usuário", G)
-    else:
-        mem.entrada("Rs", 0.0, "não informado — usado 0: todo o gás produzido conta como gás livre", G)
-        if np_ > 0 and gp > 0:
-            avisos.append("Sem Rs: todo o gás produzido conta como gás livre no reservatório (superestima num campo de "
-                          "óleo). Informe a razão de solubilidade inicial.")
-    mem.entrada("Bw", constante(p, "bw"), _fonte_const(p, "bw"), "Constantes")
-    falta_poroso: list[str] = []
-    try:
-        mem.calcular("gas_livre", "poroso")
-        V = mem.calcular("espaco_poroso", "poroso")
-        if V <= 0:
-            avisos.append("A injeção já repôs todo o volume produzido: não sobra espaço pelo método do espaço poroso.")
-            mem.valores["V"] = 0.0
-        metodos["poroso"] = {"valor": max(V, 0.0)}
-        avisos.append("Espaço poroso sem influxo de aquífero (We): com aquífero ativo o espaço disponível é menor.")
-    except Falta as f:
-        falta_poroso = [ROTULO_FALTA.get(n, n) for n in f.args[0]]
-        metodos["poroso"] = {"valor": None, "falta": falta_poroso}
-        mem.valores["V"] = None
-    metodos["poroso"].update(metodo="poroso", rotulo="Espaço poroso liberado (voidage)", unidade="m³ de reservatório",
-                             formula=p["equacoes"].get("espaco_poroso") or EQUACOES["espaco_poroso"]["padrao"])
-    # ------------------------------------------------ 3. pela molécula
+    # ------------------------------------------------ condições do reservatório (molécula e correlações)
     G = "Condições do reservatório"
     cond: dict = {}
     falta_pt: list[str] = []
@@ -724,13 +760,96 @@ def avaliar(banco: Banco, campo: str, distancias: list[dict], dados: dict | None
         for s, v, fonte in extras:
             mem.entrada(s, v, fonte, G)
         try:
-            cond[rot] = mem.calcular(eq, "molecula")
+            cond[rot] = mem.calcular(eq, "condicoes")
             cond["origem_" + ("pressao" if simb == "P" else "temperatura")] = \
                 ("hidrostática pela profundidade" if simb == "P" else "gradiente geotérmico pela profundidade")
         except Falta:
             mem.valores[simb] = None
             if "profundidade ou P e T" not in falta_pt:
                 falta_pt.append("profundidade ou P e T")
+    # ------------------------------------------------ 2. espaço poroso (Bo, Rs, Bg informados ou estimados)
+    G = "Dados do reservatório"
+    np_, gp, gi = mem.valores["Np"], mem.valores["Gp"], mem.valores["Gi"]
+    estimar = p["estimar_pvt"] == "sim"
+    tem_pt = mem.valores.get("P") is not None and mem.valores.get("T") is not None
+    precisa = {"Bo": p["bo"] is None and np_ > 0, "Rs": p["rs"] is None and np_ > 0 and gp > 0,
+               "Bg": p["bg"] is None and (gp > 0 or gi > 0)}
+    estimados: list[str] = []
+    rotulos_falta = ROTULO_FALTA_EST if estimar else ROTULO_FALTA
+    if estimar and tem_pt and any(precisa.values()):
+        GF = "Dados dos fluidos (para as correlações)"
+        mem.entrada("gg", p["densidade_gas"] if p["densidade_gas"] is not None else constante(p, "gg_padrao"),
+                    "informada pelo usuário" if p["densidade_gas"] is not None
+                    else "constante gg_padrao: " + _fonte_const(p, "gg_padrao"), GF)
+        mem.entrada("API", p["api"], "informado pelo usuário" if p["api"] is not None else "não informado", GF)
+        mem.calcular("p_psia", "pvt")
+        mem.calcular("t_f", "pvt")
+    tem_api = estimar and tem_pt and p["api"] is not None
+    # Rs
+    if p["rs"] is not None:
+        mem.entrada("Rs", p["rs"], "informado pelo usuário", G)
+    elif precisa["Rs"] and tem_api:
+        mem.calcular("rs_scf", "pvt")
+        mem.calcular("rs", "pvt")
+        estimados.append("Rs (Standing)")
+    else:
+        mem.entrada("Rs", 0.0, "não informado — usado 0: todo o gás produzido conta como gás livre", G)
+        if np_ > 0 and gp > 0:
+            avisos.append("Sem Rs: todo o gás produzido conta como gás livre no reservatório (superestima num campo de "
+                          "óleo). Informe a razão de solubilidade inicial ou o grau API para estimá-la.")
+    # Bo
+    if p["bo"] is not None:
+        mem.entrada("Bo", p["bo"], "informado pelo usuário", G)
+    elif np_ == 0:
+        mem.entrada("Bo", 0.0, "sem óleo produzido: não se aplica (0)", G)
+    elif tem_api:
+        if "Rs_scf" not in mem.valores:
+            mem.entrada("Rs_scf", mem.valores["Rs"] / 0.178108, "Rs (m³/m³) ÷ 0,178108", "Dados dos fluidos (para as correlações)")
+        mem.calcular("go", "pvt")
+        mem.calcular("bo", "pvt")
+        estimados.append("Bo (Standing)")
+    else:
+        mem.entrada("Bo", None, "não informado" + (" (informe o grau API para estimar)" if estimar else ""), G)
+    # Bg
+    if p["bg"] is not None:
+        mem.entrada("Bg", p["bg"], "informado pelo usuário", G)
+    elif not precisa["Bg"]:
+        mem.entrada("Bg", 0.0, "sem gás produzido nem injetado: não se aplica (0)", G)
+    elif estimar and tem_pt:
+        mem.entrada("p_padrao", constante(p, "p_padrao"), _fonte_const(p, "p_padrao"), "Constantes")
+        mem.entrada("t_padrao", constante(p, "t_padrao"), _fonte_const(p, "t_padrao"), "Constantes")
+        for eq in ("tpc", "ppc", "tpr", "ppr", "z_gas", "bg"):
+            mem.calcular(eq, "pvt")
+        estimados.append("Bg (Sutton + Papay)")
+    else:
+        mem.entrada("Bg", None, "não informado", G)
+    if estimados:
+        avisos.append("Estimados por correlação, nas condições do reservatório: " + ", ".join(estimados)
+                      + ". Confira com dados do campo (análise PVT) quando houver.")
+        v = mem.valores
+        if "Bo (Standing)" in estimados or "Rs (Standing)" in estimados:
+            if not 16.5 <= v["API"] <= 63.8 or not 100 <= v["TF"] <= 258:
+                avisos.append(f"Standing fora da faixa original (16,5–63,8 °API e 100–258 °F): API {fmt(v['API'])}, "
+                              f"{fmt(v['TF'])} °F.")
+        if "Bg (Sutton + Papay)" in estimados and (not 1.2 <= v["Tpr"] <= 3 or v["Ppr"] > 8):
+            avisos.append(f"Papay fora da faixa recomendada (Tpr 1,2–3; Ppr até 8): Tpr {fmt(v['Tpr'])}, Ppr {fmt(v['Ppr'])}.")
+    mem.entrada("Bw", constante(p, "bw"), _fonte_const(p, "bw"), "Constantes")
+    falta_poroso: list[str] = []
+    try:
+        mem.calcular("gas_livre", "poroso")
+        V = mem.calcular("espaco_poroso", "poroso")
+        if V <= 0:
+            avisos.append("A injeção já repôs todo o volume produzido: não sobra espaço pelo método do espaço poroso.")
+            mem.valores["V"] = 0.0
+        metodos["poroso"] = {"valor": max(V, 0.0)}
+        avisos.append("Espaço poroso sem influxo de aquífero (We): com aquífero ativo o espaço disponível é menor.")
+    except Falta as f:
+        falta_poroso = [rotulos_falta.get(n, ROTULO_FALTA.get(n, n)) for n in f.args[0]]
+        metodos["poroso"] = {"valor": None, "falta": falta_poroso}
+        mem.valores["V"] = None
+    metodos["poroso"].update(metodo="poroso", rotulo="Espaço poroso liberado (voidage)", unidade="m³ de reservatório",
+                             formula=p["equacoes"].get("espaco_poroso") or EQUACOES["espaco_poroso"]["padrao"],
+                             estimados=estimados)
     G = "Fluido"
     mem.entrada("ef", p["eficiencia"], _informado(p, "eficiencia"), G)
     if FLUIDOS[fl]["armazenado"]:
@@ -823,11 +942,7 @@ def avaliar(banco: Banco, campo: str, distancias: list[dict], dados: dict | None
             "constantes_alteradas": [{"id": k, "rotulo": CONSTANTES[k]["rotulo"], "valor": v,
                                       "padrao": CONSTANTES[k]["valor"]} for k, v in p["constantes"].items()]}
     return {"campo": campo, "parametros": p,
-            "custo": {"r_por_km": custo_km, "fator_fluido": constante(p, f"f_{fl}"),
-                      "motivo_fator": CONSTANTES[f"f_{fl}"]["fonte"], "r_mil_pol_km": p["custo_mil_pol_km"],
-                      "diametro_pol": p["diametro_pol"],
-                      "referencia": ref["rotulo"] if ref else "informado pelo usuário",
-                      "data_base": ref["data_base"] if ref else None},
+            "custo": _resumo_custo(p, custo_km, ref),
             "acumulados": {k: v for k, v in ac.items() if k != "avisos"}, "metodos": metodos, "linhas": linhas,
             "avisos": avisos,
             "unidades_indicador": {"simples": "R$/m³ oe", "poroso": "R$/m³ res", "molecula": "R$/t"},
@@ -928,7 +1043,8 @@ def memoria_html(av: dict) -> str:
     # passos
     out.append("<h2>2. Passo a passo</h2>")
     nomes_m = {"custo": "Custo do duto por km", "simples": "Método simples (PIBIC)", "poroso": "Espaço poroso",
-               "molecula": "Pela molécula"}
+               "molecula": "Pela molécula", "condicoes": "Condições do reservatório",
+               "pvt": "Propriedades dos fluidos (correlações)"}
     atual = None
     for s in m["passos"]:
         if s["metodo"] != atual:

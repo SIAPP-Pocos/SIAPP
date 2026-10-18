@@ -134,6 +134,7 @@ async function carregarCamadas() {
   desenharCamadas();
   desenharListaMapaCamadas();
   if (!$("vb-campo").value && $("pr-campo").value) $("vb-campo").value = $("pr-campo").value;
+  carregarAreas();
 }
 
 function desenharCamadas() {
@@ -170,6 +171,7 @@ async function baixarCamadas() {
   for (const cb of $("cm-lista").querySelectorAll("input")) cb.checked = false;
   desenharCamadas();
   desenharListaMapaCamadas();
+  carregarAreas();
   const ul = limpar($("cm-erros"));
   for (const e of r.erros) ul.appendChild(el("li", "", `${e.nome || e.id}: ${e.erro}`));
   status(`${r.feitos.length} camada(s) guardada(s) em ambiente_teste/sig` +
@@ -196,6 +198,12 @@ function ligarExternos() {
   ligar("vb-custo", "oninput", () => { $("vb-fonte-custo").value = "manual"; ajudaCustoVb(); });
   ligar("vb-diametro", "oninput", ajudaCustoVb);
   ligar("vb-fluido", "onchange", ajudaCustoVb);
+  ligar("ba-medir", "onclick", medirAreas);
+  ligar("ba-csv", "onclick", async () => {
+    const r = await chamar($("ba-csv"), "areas_csv");
+    if (r.ok) status(`Salvo em ambiente_teste/${r.arquivo}`, "ok");
+  });
+  ligar("ba-filtro", "oninput", () => ba.resultado && desenharAreas(ba.resultado));
   ligar("vb-eq-padrao", "onclick", () => preencherParametrosVb({ ...lerParametrosVb(), constantes: {}, equacoes: {} }));
   ligar("vb-mem-abrir", "onclick", () => vbEco.memoria && chamar($("vb-mem-abrir"), "viabilidade_abrir_memoria", vbEco.memoria.html));
 }
@@ -627,7 +635,7 @@ async function exportarEconomia() {
 
 // memória de cálculo na tela (a mesma que vai para o HTML e o JSON em execucoes/viabilidade)
 const NOMES_METODO = { custo: "Custo do duto por km", simples: "Método simples (PIBIC)", poroso: "Espaço poroso",
-  molecula: "Pela molécula" };
+  molecula: "Pela molécula", condicoes: "Condições do reservatório", pvt: "Propriedades dos fluidos (correlações)" };
 
 function passoMemoria(s, curto) {
   const d = el("div", "passo");
@@ -687,4 +695,116 @@ function desenharMemoria(av, arquivos) {
     for (const s of l.memoria) det.appendChild(passoMemoria(s, true));
     box.appendChild(det);
   }
+}
+
+// ---------------------------------------------------------------- blocos e campos × infraestrutura (0.28)
+const ba = { resultado: null, camada: null };
+const CLASSES_DIST = [[0, "toca ou atravessa", "#1a7f37"], [10, "até 10 km", "#4caf50"], [50, "10–50 km", "#c9b800"],
+  [100, "50–100 km", "#e67e22"], [Infinity, "mais de 100 km", "#c0392b"]];
+
+function classeDist(km) {
+  if (km == null) return null;
+  if (km === 0) return CLASSES_DIST[0];
+  return CLASSES_DIST.slice(1).find(([lim]) => km <= lim);
+}
+
+async function carregarAreas() {
+  if (!projetoAberto) return;
+  const r = await chamar(null, "areas_opcoes");
+  if (!r.ok) return;
+  for (const [id, lista, padrao] of [["ba-areas", r.areas, "anp_blocos_exploratorios"],
+    ["ba-alvo", r.alvos, "epe_gasodutos_transporte"]]) {
+    const sel = $(id), atual = sel.value;
+    limpar(sel);
+    for (const a of lista) {
+      const o = el("option", "", a.baixada ? a.rotulo : `${a.rotulo} (baixe acima)`);
+      o.value = a.id;
+      o.disabled = !a.baixada;
+      sel.appendChild(o);
+    }
+    const ok = (v) => lista.some((a) => a.id === v && a.baixada);
+    sel.value = ok(atual) ? atual : ok(padrao) ? padrao : (lista.find((a) => a.baixada) || {}).id || "";
+  }
+}
+
+async function medirAreas() {
+  const areas = $("ba-areas").value, alvo = $("ba-alvo").value;
+  if (!areas || !alvo) { status("Baixe a camada de áreas e a de infraestrutura no quadro Camadas geográficas.", "erro"); return; }
+  const parametros = vbEco.opcoes ? lerParametrosVb() : {};
+  status("Medindo as distâncias de todas as áreas…", "trab");
+  const r = await chamar($("ba-medir"), "areas_distancias", areas, alvo, parametros);
+  if (!r.ok) return;
+  ba.resultado = r.resultado;
+  $("ba-csv").hidden = false;
+  $("ba-filtro-caixa").hidden = false;
+  desenharAreas(r.resultado);
+  await desenharAreasNoMapa(r.resultado);
+  status(`${r.resultado.linhas.length} áreas medidas até ${r.resultado.rotulo_alvo}.`, "ok");
+}
+
+function desenharAreas(res) {
+  const box = limpar($("ba-resultado"));
+  const c = res.custo;
+  box.appendChild(el("p", "ajuda", `${res.rotulo_areas} até ${res.rotulo_alvo}. Duto: R$ ${numero(c.r_por_km / 1e6, 2)} ` +
+    `milhões por km (${c.referencia}${c.data_base ? ", " + c.data_base : ""}; ${numero(c.diametro_pol, 1)}″, ` +
+    `×${numero(c.fator_fluido, 2)} pelo fluido). ${res.formulas.comprimento}; ${res.formulas.custo_duto}.`));
+  const cont = CLASSES_DIST.map(() => 0);
+  for (const l of res.linhas) {
+    const k = classeDist(l.distancia_km);
+    if (k) cont[CLASSES_DIST.indexOf(k)]++;
+  }
+  const leg = el("p", "ajuda");
+  CLASSES_DIST.forEach(([, rot, cor], i) => {
+    const sp = el("span", "cm-amostra ponto");
+    sp.style.borderColor = cor;
+    sp.style.background = cor;
+    leg.append(sp, document.createTextNode(` ${rot}: ${cont[i]}  `));
+  });
+  box.appendChild(leg);
+  const filtro = $("ba-filtro").value.trim().toLowerCase();
+  const casa = (l) => !filtro || [l.nome, ...Object.values(l.atributos || {})].join(" ").toLowerCase().includes(filtro);
+  const lista = res.linhas.filter((l) => l.distancia_km != null && casa(l))
+    .sort((a, b) => a.distancia_km - b.distancia_km);
+  const t = document.createElement("table");
+  t.className = "vb-ind";
+  const cab = document.createElement("tr");
+  for (const h of ["Área", "km", "Duto R$ mi"]) cab.appendChild(el("th", "", h));
+  t.appendChild(cab);
+  for (const l of lista.slice(0, 40)) {
+    const tr = document.createElement("tr");
+    const th = el("th", "", l.nome);
+    const a = l.atributos || {};
+    th.appendChild(el("span", "vb-sub", [a.NOM_BACIA, a.OPERADOR_C, Object.values(l.feicao || {})[0]].filter(Boolean).join(" · ")));
+    th.style.cursor = "pointer";
+    th.onclick = () => { if (mapa && l.ponto_area) mapa.setView(l.ponto_area, 9); };
+    tr.append(th, el("td", "vb-km", l.toca ? "toca" : numero(l.distancia_km, l.distancia_km < 10 ? 1 : 0)),
+      el("td", "", numero(l.custo_r / 1e6, l.custo_r < 1e7 ? 2 : 0)));
+    t.appendChild(tr);
+  }
+  box.appendChild(t);
+  box.appendChild(el("p", "ajuda", `${lista.length} área(s)${filtro ? " no filtro" : ""}; a tabela mostra as 40 mais ` +
+    `próximas (clique no nome para ir até ela). O CSV traz todas, com as fórmulas e as entradas. Gravado em ` +
+    `ambiente_teste/${res.arquivo}.`));
+}
+
+async function desenharAreasNoMapa(res) {
+  if (!mapa) return;
+  const r = await chamar(null, "sig_camada", res.areas);
+  if (!r.ok) return;
+  if (ba.camada) mapa.removeLayer(ba.camada);
+  const porIndice = new Map(res.linhas.map((l) => [l.indice, l]));
+  const pos = new Map(r.geojson.features.map((f, k) => [f, k]));
+  ba.camada = L.geoJSON(r.geojson, {
+    style: (f) => {
+      const l = porIndice.get(pos.get(f)), k = l ? classeDist(l.distancia_km) : null;
+      return { color: k ? k[2] : "#999", weight: 1, fillColor: k ? k[2] : "#999", fillOpacity: 0.35 };
+    },
+    onEachFeature: (f, camada) => {
+      const l = porIndice.get(pos.get(f));
+      if (l) camada.bindTooltip(`${l.nome}: ${l.toca ? "toca ou atravessa" : numero(l.distancia_km, 1) + " km"}` +
+        ` até ${res.rotulo_alvo} · R$ ${numero(l.custo_r / 1e6, 1)} mi`);
+    },
+  }).addTo(mapa);
+  $("mapa-vazio").hidden = true;
+  mapa.fitBounds(ba.camada.getBounds().pad(0.05));
 }

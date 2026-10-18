@@ -6,6 +6,24 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 
 ## [Não lançado]
 
+## [0.28.0] — 2026-10-18
+### Adicionado
+- **Bo, Rs e Bg estimados por correlação** quando não informados (pode desligar): Rs e Bo por
+  Standing (1947), a partir do grau API, da densidade do gás e de P e T do reservatório; Bg pelo Z
+  de Papay (1968) com as pseudocríticas de Sutton (1985). Cada correlação é um passo da memória de
+  cálculo (com as conversões de unidade à vista) e pode ser trocada como qualquer equação. Aviso
+  quando o caso sai da faixa original da correlação. Campo de gás precisa só de Bg, que sai da
+  profundidade dos poços e da densidade do gás (padrão 0,65, constante editável).
+- **Blocos e campos × infraestrutura** (aba Mapa): para cada bloco exploratório (ou campo de
+  produção), a distância geodésica até a feição mais próxima da camada escolhida (gasoduto de
+  transporte por padrão) e o custo do duto pelos parâmetros da viabilidade. Mapa colorido por
+  classe de distância (toca, até 10, 10–50, 50–100, mais de 100 km), tabela das 40 mais próximas
+  com filtro, CSV com todas, as fórmulas e as entradas; cada medição gravada em
+  `execucoes\viabilidade\`. Os 274 blocos contra o gasoduto: ~8 s.
+### Alterado
+- Na memória de cálculo, as condições do reservatório (P, T) vêm antes do espaço poroso, porque
+  as correlações dependem delas.
+
 ## [0.27.0] — 2026-10-18
 ### Adicionado
 - **Memória de cálculo** da viabilidade econômica: cada execução grava em

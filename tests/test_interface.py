@@ -862,7 +862,7 @@ def test_camadas_no_mapa_e_distancias_do_campo(janela, tmp_path, monkeypatch):
     p.click("#vb-avaliar")
     janela.esperar("document.getElementById('vb-eco-resultado').textContent.includes('Custo do duto')", 30)
     t = p.text_content("#vb-eco-resultado")
-    assert "Simples (PIBIC)" in t and "m³ de óleo equivalente" in t and "falta: Bo, Bg" in t
+    assert "Simples (PIBIC)" in t and "m³ de óleo equivalente" in t and "falta: Bo (ou o grau API" in t
     assert "Gasoduto de transporte" in t and "R$/m³ oe" in t and "Plano de Desenvolvimento" in t
     # com Bo, Bg, Rs, P e T: os três métodos
     p.click("summary:has-text('Espaço poroso')")
@@ -908,4 +908,17 @@ def test_camadas_no_mapa_e_distancias_do_campo(janela, tmp_path, monkeypatch):
     p.click("#vb-medir")
     janela.esperar("document.querySelector(\"[data-vb='bo']\").value === '1,2'", 30)
     assert p.input_value("#vb-fluido") == "h2"
+    # blocos e campos × infraestrutura: os campos de produção contra o gasoduto
+    janela.esperar("[...document.querySelectorAll('#ba-areas option')].some(o => o.value === 'anp_campos_producao' && !o.disabled)", 30)
+    p.select_option("#ba-areas", "anp_campos_producao")
+    assert p.input_value("#ba-alvo") == "epe_gasodutos_transporte"
+    p.click("#ba-medir")
+    janela.esperar("document.getElementById('ba-resultado').textContent.includes('Campos de produção até Gasoduto')", 60)
+    texto = p.text_content("#ba-resultado")
+    assert "CAMPO TESTE" in texto and "execucoes/viabilidade/" in texto and "R$" in texto
+    janela.esperar("ba.camada && mapa.hasLayer(ba.camada)", 30)
+    p.fill("#ba-filtro", "nada-assim")
+    assert "0 área(s) no filtro" in p.text_content("#ba-resultado")
+    p.click("#ba-csv")
+    janela.esperar("document.getElementById('status').textContent.includes('distancias_anp_campos_producao')", 30)
     assert not janela.erros_js, janela.erros_js

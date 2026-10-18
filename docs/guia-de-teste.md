@@ -131,6 +131,19 @@ Precisa de internet. Comece por uma categoria pequena para ver o tempo.
 - [ ] Sem intervalo marcado, **Calcular** explica que precisa de um intervalo-alvo.
 - [ ] Repetir no `5PX__0011__RN_5PX__0011__RN.tif` (DLIS de 2020).
 
+## 0.28 — Bo, Rs e Bg por correlação; blocos × gasoduto
+
+- [ ] `GUAMARÉ`, sem Bo/Bg/Rs, com o **Grau API** do óleo preenchido (em "Espaço poroso") → Calcular: o espaço
+      poroso tem valor e os avisos dizem "Estimados por correlação: Rs (Standing), Bo (Standing), Bg (Sutton +
+      Papay)". Na memória, o bloco "Propriedades dos fluidos (correlações)" com cada conta (psia, °F, Rs, Bo, Tpc,
+      Ppc, Z, Bg). Sem o API: só o Bg é estimado e falta "Bo (ou o grau API, para estimar)".
+- [ ] "Estimar o que faltar" = não: volta a pedir Bo e Bg.
+- [ ] **Blocos e campos × infraestrutura**: com Blocos exploratórios e Gasodutos de transporte baixados →
+      **Medir todas** (alguns segundos): legenda com quantos blocos em cada faixa, tabela dos mais próximos (POT-T
+      cruzados pelo Gasfor aparecem como "toca"), blocos coloridos no mapa. Filtre por `Potiguar`. Clique num nome:
+      o mapa vai até ele. **CSV**: todas as áreas, com as fórmulas e as entradas do custo no cabeçalho.
+- [ ] Troque Áreas para Campos de produção e Até para Dutos de escoamento: mede de novo.
+
 ## 0.27 — memória de cálculo, constantes e equações editáveis
 
 - [ ] `GUAMARÉ` → **Calcular a viabilidade**: aparece **Memória de cálculo — passo a passo**. Abra: cada dado de

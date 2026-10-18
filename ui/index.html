@@ -294,8 +294,17 @@
           </div>
           <p class="ajuda" id="vb-custo-ajuda"></p>
           <details class="vb-avancado">
-            <summary>Espaço poroso — Bo, Bg, Rs do campo</summary>
+            <summary>Espaço poroso — Bo, Bg, Rs do campo (ou estimados)</summary>
+            <p class="ajuda">Vazios, o SIAPP estima nas condições do reservatório: Rs e Bo por Standing (pede o grau API),
+              Bg por Sutton + Papay (pela densidade do gás). As contas ficam na memória de cálculo.</p>
             <div class="filtros vb-form">
+              <label title="Usado para estimar Rs e Bo (Standing) quando não informados">Grau API do óleo
+                <input type="text" class="curto" inputmode="decimal" data-vb="api"></label>
+              <label title="Ar = 1. Vazio: 0,65 (constante gg_padrao). Usada para Bg (Sutton + Papay) e Rs/Bo (Standing)">Densidade do gás
+                <input type="text" class="curto" inputmode="decimal" data-vb="densidade_gas" placeholder="0,65"></label>
+              <label>Estimar o que faltar
+                <select data-vb="estimar_pvt"><option value="sim">sim, por correlação</option>
+                  <option value="nao">não</option></select></label>
               <label title="Fator volume-formação do óleo (m³ no reservatório por m³ na superfície), típico 1,05–1,5">Bo (m³/m³)
                 <input type="text" class="curto" inputmode="decimal" data-vb="bo"></label>
               <label title="Fator volume-formação do gás (m³ no reservatório por m³ padrão), típico 0,003–0,02">Bg (m³/m³)
@@ -349,6 +358,24 @@
             <div class="vb-mem" id="vb-memoria"></div>
           </details>
         </fieldset>
+      </section>
+      <section class="etapa" id="ba-etapa">
+        <h2>Blocos e campos × infraestrutura</h2>
+        <p class="ajuda">Para cada bloco exploratório (ou campo de produção), a distância até a feição mais próxima da
+          camada escolhida e o custo do duto — com os parâmetros de custo da viabilidade acima (ou os padrões). No mapa,
+          as áreas ficam coloridas pela distância. Cada medição fica gravada em <code>execucoes\viabilidade</code>.</p>
+        <div class="filtros">
+          <label>Áreas <select id="ba-areas"></select></label>
+          <label>Até <select id="ba-alvo"></select></label>
+        </div>
+        <div class="linha">
+          <button class="btn secundario" id="ba-medir">Medir todas</button>
+          <button class="btn secundario pequeno" id="ba-csv" hidden>CSV</button>
+        </div>
+        <div class="filtros" id="ba-filtro-caixa" hidden>
+          <label>Filtrar (nome, bacia, operador…) <input type="text" id="ba-filtro" placeholder="ex.: Potiguar"></label>
+        </div>
+        <div class="pr-resumo" id="ba-resultado"></div>
       </section>
       <section class="etapa">
         <h2>Pastas do REATE</h2>

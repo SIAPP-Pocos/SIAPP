@@ -284,3 +284,52 @@ def test_plano_azimutal_bate_com_a_geodesica():
         assert float(np.hypot(x, y)) == pytest.approx(mvi.haversine_km(-5.17, -36.45, la, lo), rel=1e-9)
         a, b2 = pl.latlon(x, y)
         assert float(a) == pytest.approx(la, abs=1e-9) and float(b2) == pytest.approx(lo, abs=1e-9)
+
+
+def test_areas_em_lote_contra_o_gasoduto(tmp_path):
+    from motor import viabilidade as mvi
+    q = lambda lo, la, d: {"type": "Polygon", "coordinates": [[[lo, la], [lo + d, la], [lo + d, la + d], [lo, la + d], [lo, la]]]}  # noqa: E731
+    _sig_falso(tmp_path, {
+        "anp_blocos_exploratorios": [
+            _f(q(-1.0, 0.1, 0.2), NOM_BLOCO="ATRAVESSA", NOM_BACIA="Teste"),        # o duto em lat 0,2 cruza
+            _f(q(-1.0, 0.3, 0.1), NOM_BLOCO="LONGE", NOM_BACIA="Teste"),            # borda sul a 0,1° do duto
+            _f({"type": "MultiPolygon", "coordinates": [q(4.0, -1.0, 2.0)["coordinates"]]},
+               NOM_BLOCO="CONTEM", OPERADOR_C="X"),                                # o trecho curto fica dentro
+            _f(None, NOM_BLOCO="SEM GEOMETRIA")],
+        "epe_gasodutos_transporte": [
+            _f({"type": "LineString", "coordinates": [[-2, 0.2], [2, 0.2]]}, Nome_Dut_1="Tronco"),
+            _f({"type": "LineString", "coordinates": [[4.5, -0.5], [5.0, -0.4]]}, Nome_Dut_1="Ramal")]})
+    r = mvi.distancias_areas(str(tmp_path), "anp_blocos_exploratorios", "epe_gasodutos_transporte")
+    d = {l["nome"]: l for l in r["linhas"]}
+    assert set(d) == {"ATRAVESSA", "LONGE", "CONTEM"}
+    assert d["ATRAVESSA"]["toca"] and d["ATRAVESSA"]["distancia_km"] == 0
+    assert d["LONGE"]["distancia_km"] == pytest.approx(11.12, abs=0.05) and not d["LONGE"]["toca"]
+    assert d["LONGE"]["feicao"] == {"Nome_Dut_1": "Tronco"}
+    assert d["CONTEM"]["toca"] and d["CONTEM"]["feicao"]["Nome_Dut_1"] == "Ramal"
+    assert d["CONTEM"]["atributos"] == {"OPERADOR_C": "X"}
+    with pytest.raises(mvi.ErroViabilidade):
+        mvi.distancias_areas(str(tmp_path), "anp_campos_producao", "epe_gasodutos_transporte")
+
+
+def test_distancia_area_bate_com_forca_bruta():
+    """Polígono irregular contra uma linha sinuosa: o mínimo bate com amostragem densa."""
+    from motor import viabilidade as mvi
+    rng = np.random.default_rng(7)
+    ang = np.sort(rng.uniform(0, 2 * np.pi, 25))
+    rad = rng.uniform(0.2, 0.5, 25)
+    anel = np.c_[-37 + rad * np.cos(ang), -5 + rad * np.sin(ang)]
+    anel = np.vstack([anel, anel[:1]])
+    xs = np.linspace(-36.0, -35.0, 40)
+    linha = np.c_[xs, -4.6 + 0.3 * np.sin(xs * 7)]
+    alvo = mvi._indice_alvo({"features": [_f({"type": "LineString", "coordinates": linha.tolist()})]})
+    km, pa, pf, fi, toca = mvi.distancia_area([anel], alvo)
+    # força bruta: bordas e linha amostradas a cada ~100 m
+    def densa(P):
+        out = []
+        for a, b in zip(P[:-1], P[1:]):
+            n = max(2, int(np.hypot(*(b - a)) / 0.001))
+            out.append(np.linspace(a, b, n))
+        return np.vstack(out)
+    A, B = densa(anel), densa(linha)
+    bruto = min(mvi.haversine_km(a[1], a[0], b[1], b[0]) for a in A[::3] for b in B[::3])
+    assert not toca and km == pytest.approx(bruto, abs=0.5) and km <= bruto + 1e-6
