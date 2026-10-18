@@ -150,7 +150,8 @@ function desenharCamadas() {
       lab.title = c.desc;
       const b = c.baixada;
       lab.append(cb, el("span", "", c.nome),
-                 el("small", b ? "ok" : "", b ? `baixada em ${(b.baixado_em || "").slice(0, 10)} · ${numero(b.feicoes, 0)} feições`
+                 el("small", b ? "ok" : "", b ? `baixada em ${(b.baixado_em || "").slice(0, 10)} · ${numero(b.feicoes, 0)} feições` +
+                                                   (b.sem_coordenadas ? ` (${b.sem_coordenadas} sem coordenadas na fonte)` : "")
                                                : c.desc));
       box.appendChild(lab);
     }

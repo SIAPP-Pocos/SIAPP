@@ -200,8 +200,31 @@ class SessaoFalsa:
         self.epe = {55: [{"type": "Feature", "geometry": {"type": "LineString", "coordinates": [[-37, -5], [-36.9, -5.1]]},
                           "properties": {"Nome_Dut_1": f"Trecho {i}", "Diam_Pol_x": "14", "OBJECTID": i,
                                          "Shape.STLength()": 0.1}} for i in range(1500)]}
+        self.h2 = [{"type": "Feature", "id": 0, "geometry": {"type": "Point", "coordinates": [-38.8178, -3.5554]},
+                    "properties": {"FID": 0, "Id": 2, "Nome": "Fortescue", "Capacidade": 305505, "Finalidade": "H2V",
+                                   "Estagio": "Pré-contrato", "Local": "Porto de Pecém-CE", "valor": 6000}},
+                   {"type": "Feature", "id": 1, "geometry": {"type": "Point", "coordinates": [-38.8354, -3.5788]},
+                    "properties": {"FID": 1, "Id": 13, "Nome": "EDP", "Capacidade": 2000, "Finalidade": "H2V",
+                                   "Estagio": "P&D", "Local": "Porto de Pecém-CE", "valor": 42}},
+                   {"type": "Feature", "id": 2, "geometry": {"type": "Point", "coordinates": []},
+                    "properties": {"FID": 2, "Id": 0, "Nome": "AES", "Capacidade": 800000, "Finalidade": "NH3V",
+                                   "Estagio": "Pré-contrato", "Local": "Porto de Pecém-CE", "valor": 2000}}]
 
     def _get(self, url, params=None, headers=None):
+        if url == mca.EPE_REST + "SEE":                 # lista de serviços: duas edições do mapa de H₂
+            return Resposta(200, json.dumps({"services": [
+                {"name": "SEE/H2_PROJETOS_202404", "type": "MapServer"},
+                {"name": "SEE/H2_PROJETOS_202410", "type": "MapServer"},
+                {"name": "SEE/H2_PROJETOS_BIO", "type": "MapServer"}, {"name": "SEE/Tot_H2", "type": "MapServer"}]}).encode())
+        if url == mca.EPE_REST + "SEE/H2_PROJETOS_202410/MapServer/0/query":
+            # como o serviço real: não pagina; consulta pelos ids; uma feição sem coordenadas
+            if "resultOffset" in params:
+                return Resposta(200, b'{"error":{"code":400,"message":"Pagination is not supported.","details":[]}}')
+            if params.get("returnIdsOnly"):
+                return Resposta(200, json.dumps({"objectIdFieldName": "FID", "objectIds": list(range(len(self.h2)))}).encode())
+            ids = [int(i) for i in params["objectIds"].split(",")]
+            return Resposta(200, json.dumps({"type": "FeatureCollection",
+                                             "features": [self.h2[i] for i in ids]}).encode())
         if url.startswith(mca.EPE_SERVICO):
             camada = int(url[len(mca.EPE_SERVICO):].split("/")[0])
             feats = self.epe.get(camada, [])

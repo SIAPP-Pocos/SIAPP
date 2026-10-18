@@ -51,6 +51,7 @@ Guamaré") e monta o bloco. O campo da produção acompanha o campo do bloco.
 | Fonte | Camadas | Observação |
 |---|---|---|
 | **EPE** — WebMap (serviço ArcGIS) | gasodutos de transporte (diâmetro, pressão, transportadora), dutos de escoamento da produção (relação de dutos da ANP: diâmetro, fluido, origem e destino), gasodutos de distribuição, UPGNs, estações de compressão, city gates, terminais de GNL, termelétricas fósseis | a melhor fonte para a distância ao gasoduto; baixada em páginas de 1.000 feições |
+| **EPE** — mapa de projetos de hidrogênio (0.24.1) | **unidades e projetos de hidrogênio verde e amônia**: nome, capacidade (t/ano), finalidade, estágio (piloto, P&D, MoU, pré-contrato), local, investimento (R$ milhões) | o SIAPP pega a edição mais recente do serviço `SEE/H2_PROJETOS_AAAAMM` (out/2024: 31 registros, 2 sem coordenadas na fonte). É a fonte que a própria página de hidrogênio da ANP indica. São sobretudo **projetos** — as unidades em operação ainda são pilotos (EDP em Pecém, Unifei, USP) |
 | **ANP** — dados georreferenciados | campos de produção, blocos exploratórios sob contrato | shapefiles pequenos (0,3–0,5 MB) |
 | **IBGE** — BC250 (versão mais recente) | dutos, termelétricas, linhas de transmissão, subestações, portos, cidades, estados, ferrovias, rodovias | o zip nacional tem ~800 MB: o SIAPP lê o índice e baixa **só** as camadas marcadas (HTTP Range). Os dutos do IBGE são poucos (111 trechos, sem o Nordestão nem o Gasfor) |
 

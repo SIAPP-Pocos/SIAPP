@@ -148,6 +148,8 @@ Precisa de internet. Comece por uma categoria pequena para ver o tempo.
       · N feições". **Abrir a pasta** → `sig\epe\epe_gasodutos_transporte.geojson`; no **QGIS**, arraste o
       GeoJSON e o shapefile de `sig\anp\anp_campos_producao\` — caem no lugar (SIRGAS 2000). Nordestão e Gasfor
       aparecem saindo de Guamaré.
+- [ ] (0.24.1) **Hidrogênio verde: unidades e projetos** já vem marcada: baixada, diz "29 feições (2 sem coordenadas
+      na fonte)"; no QGIS, os pontos se concentram em Pecém (CE), Suape (PE), Açu (RJ) e Rio Grande (RS).
 
 ## 0.23 — interpolação e escala
 

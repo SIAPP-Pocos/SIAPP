@@ -6,6 +6,16 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 
 ## [Não lançado]
 
+## [0.24.1] — 2026-10-17
+### Adicionado
+- Camada **Hidrogênio verde: unidades e projetos** (EPE, mapa de projetos de hidrogênio, edição
+  mais recente publicada — out/2024): plantas piloto, P&D e projetos de H₂ verde e amônia
+  (Pecém, Suape, Açu, Camaçari…) com capacidade (t/ano), finalidade, estágio e investimento.
+  Marcada por padrão no quadro "Camadas geográficas".
+### Corrigido
+- Camadas da EPE de serviços que não paginam: consulta pelos ids, em lotes; feições sem
+  coordenadas na fonte ficam de fora e são contadas.
+
 ## [0.24.0] — 2026-10-17
 ### Adicionado
 - **Produção do campo pela ANP** (`motor/producao.py`, quadro "Produção do campo (ANP)" na aba

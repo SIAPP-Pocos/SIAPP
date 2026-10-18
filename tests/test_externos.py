@@ -184,3 +184,19 @@ def test_zip_sem_range_da_erro_claro():
     with pytest.raises(mca.ErroCamadas, match="pedaço"):
         mca.ZipRemoto(s.zip_ibge_url, s)
     assert zipar({"a": b"1"})[:2] == b"PK"
+
+
+def test_hidrogenio_verde_edicao_mais_recente_sem_paginacao(tmp_path):
+    s = SessaoFalsa()
+    assert mca.servico_epe("SEE/H2_PROJETOS_*", s).endswith("SEE/H2_PROJETOS_202410/MapServer/")
+    g = mca.epe_feicoes(0, s, servico=mca.servico_epe("SEE/H2_PROJETOS_*", s))
+    assert len(g["features"]) == 2 and g["sem_coordenadas"] == 1                 # a AES veio sem coordenadas
+    p = g["features"][0]["properties"]
+    assert p == {"Id": 2, "Nome": "Fortescue", "Capacidade": 305505, "Finalidade": "H2V", "Estagio": "Pré-contrato",
+                 "Local": "Porto de Pecém-CE", "valor": 6000}
+    r = mca.baixar(str(tmp_path), ["epe_h2_projetos"], sessao=s)
+    reg = r["feitos"][0]
+    assert reg["feicoes"] == 2 and reg["sem_coordenadas"] == 1 and "H2_PROJETOS_202410" in reg["origem"]
+    salvo = json.load(open(tmp_path / "sig" / "epe" / "epe_h2_projetos.geojson", encoding="utf-8"))
+    assert "sem_coordenadas" not in salvo and len(salvo["features"]) == 2
+    assert mca.POR_ID["epe_h2_projetos"]["padrao"] is True

@@ -38,6 +38,8 @@ EPE_SERVICO = "https://gisepeprd2.epe.gov.br/arcgis/rest/services/WMS_Webmap_EPE
 ANP_GEO = ("https://www.gov.br/anp/pt-br/centrais-de-conteudo/dados-abertos/arquivos/"
            "arquivos-dados-georreferenciados-das-bacias-sedimentares-brasileiras/")
 EPE_PAGINA = 1000
+EPE_REST = "https://gisepeprd2.epe.gov.br/arcgis/rest/services/"
+EPE_LOTE_IDS = 500
 
 # id, fonte, onde, nome, tipo, padrão (marcada), descrição
 CATALOGO = [
@@ -58,6 +60,11 @@ CATALOGO = [
      "padrao": False, "desc": "Terminais de regaseificação"},
     {"id": "epe_termeletricas_fosseis", "fonte": "EPE", "camada": 20, "nome": "Termelétricas fósseis (existentes)",
      "tipo": "ponto", "padrao": True, "desc": "Fontes estacionárias de CO₂: potência, combustível, proprietário"},
+    # EPE — hidrogênio de baixo carbono (mapa de projetos; o SIAPP usa a edição mais recente publicada)
+    {"id": "epe_h2_projetos", "fonte": "EPE", "servico": "SEE/H2_PROJETOS_*", "camada": 0,
+     "nome": "Hidrogênio verde: unidades e projetos", "tipo": "ponto", "padrao": True,
+     "desc": "Plantas piloto, P&D e projetos de H₂ verde e amônia (Pecém, Suape, Açu…): capacidade (t/ano), "
+             "finalidade, estágio (piloto, MoU, pré-contrato), investimento (R$ milhões)"},
     # ANP
     {"id": "anp_campos_producao", "fonte": "ANP", "arquivo": "campos-producao.zip", "nome": "Campos de produção",
      "tipo": "poligono", "padrao": True, "desc": "Polígonos dos campos: operador, fluido principal, etapa, início da produção"},
@@ -285,18 +292,62 @@ def ultimo_zip_bc250(sessao, timeout: float = 60) -> str:
 
 
 # ====================================================================== EPE (ArcGIS REST)
-def epe_feicoes(camada: int, sessao, timeout: float = 120, progresso=None) -> dict:
-    """Todas as feições de uma camada do WebMap da EPE, em páginas (GeoJSON, EPSG 4674)."""
+def servico_epe(padrao: str, sessao, timeout: float = 60) -> str:
+    """URL do MapServer da EPE. "SEE/H2_PROJETOS_*" = a edição mais recente (sufixo AAAAMM)."""
+    if "*" not in padrao:
+        return f"{EPE_REST}{padrao}/MapServer/"
+    pasta, nome = padrao.split("/", 1)
+    r = sessao.get(f"{EPE_REST}{pasta}", timeout=(30, timeout), headers=AGENTE, params={"f": "json"})
+    if r.status_code != 200:
+        raise ErroCamadas(f"A EPE respondeu HTTP {r.status_code} ao listar os serviços.")
+    prefixo = f"{pasta}/{nome.rstrip('*')}"
+    edicoes = sorted(s["name"] for s in r.json().get("services", [])
+                     if s.get("type") == "MapServer" and re.fullmatch(re.escape(prefixo) + r"\d{6}", s.get("name", "")))
+    if not edicoes:
+        raise ErroCamadas(f"Não achei o serviço {padrao} na EPE.")
+    return f"{EPE_REST}{edicoes[-1]}/MapServer/"
+
+
+def _consulta_epe(url: str, sessao, timeout: float, params: dict) -> dict:
+    r = sessao.get(url, timeout=(30, timeout), headers=AGENTE, params=params)
+    if r.status_code != 200:
+        raise ErroCamadas(f"A EPE respondeu HTTP {r.status_code}.")
+    return r.json()
+
+
+def _tem_coordenadas(geo) -> bool:
+    def ok(c):
+        if isinstance(c, (int, float)):
+            return c == c and abs(c) != float("inf")
+        return bool(c) and all(ok(k) for k in c)
+    return bool(geo) and ok(geo.get("coordinates"))
+
+
+def epe_feicoes(camada: int, sessao, timeout: float = 120, progresso=None, servico: str = EPE_SERVICO) -> dict:
+    """Todas as feições de uma camada do WebMap da EPE (GeoJSON, EPSG 4674): em páginas, ou —
+    nos serviços que não paginam — pelos ids, em lotes. Feição sem coordenadas fica de fora (contada)."""
+    url = f"{servico}{camada}/query"
+    base = {"outFields": "*", "outSR": 4674, "f": "geojson"}
     feats, inicio = [], 0
     while True:
-        r = sessao.get(f"{EPE_SERVICO}{camada}/query", timeout=(30, timeout), headers=AGENTE,
-                       params={"where": "1=1", "outFields": "*", "outSR": 4674, "f": "geojson",
-                               "resultOffset": inicio, "resultRecordCount": EPE_PAGINA})
-        if r.status_code != 200:
-            raise ErroCamadas(f"A EPE respondeu HTTP {r.status_code}.")
-        g = r.json()
+        g = _consulta_epe(url, sessao, timeout, {**base, "where": "1=1", "resultOffset": inicio,
+                                                  "resultRecordCount": EPE_PAGINA})
         if "error" in g:
-            raise ErroCamadas(f"A EPE recusou a consulta: {g['error'].get('message')}")
+            if "pagination" not in str(g["error"].get("message", "")).lower():
+                raise ErroCamadas(f"A EPE recusou a consulta: {g['error'].get('message')}")
+            ids = _consulta_epe(url, sessao, timeout, {"where": "1=1", "returnIdsOnly": "true", "f": "json"})
+            if "error" in ids:
+                raise ErroCamadas(f"A EPE recusou a consulta: {ids['error'].get('message')}")
+            lista = sorted(ids.get("objectIds") or [])
+            feats = []
+            for i in range(0, len(lista), EPE_LOTE_IDS):
+                g2 = _consulta_epe(url, sessao, timeout, {**base, "objectIds": ",".join(map(str, lista[i:i + EPE_LOTE_IDS]))})
+                if "error" in g2:
+                    raise ErroCamadas(f"A EPE recusou a consulta: {g2['error'].get('message')}")
+                feats += g2.get("features") or []
+                if progresso:
+                    progresso(len(feats))
+            break
         lote = g.get("features") or []
         feats += lote
         mais = g.get("exceededTransferLimit") or (g.get("properties") or {}).get("exceededTransferLimit")
@@ -305,10 +356,12 @@ def epe_feicoes(camada: int, sessao, timeout: float = 120, progresso=None) -> di
         if not lote or not mais:
             break
         inicio += len(lote)
-    for f in feats:                                       # tira campos internos do ArcGIS
-        f["properties"] = {k: v for k, v in (f.get("properties") or {}).items()
-                           if not k.startswith("Shape") and not k.startswith("OBJECTID")}
-    return {"type": "FeatureCollection", "features": feats}
+    validas = [f for f in feats if _tem_coordenadas(f.get("geometry"))]
+    for f in validas:                                     # tira campos internos do ArcGIS
+        f.pop("id", None)
+        f["properties"] = {k: (v.strip() if isinstance(v, str) else v) for k, v in (f.get("properties") or {}).items()
+                           if not k.startswith("Shape") and not k.startswith("OBJECTID") and k != "FID"}
+    return {"type": "FeatureCollection", "features": validas, "sem_coordenadas": len(feats) - len(validas)}
 
 
 # ====================================================================== baixar e guardar
@@ -332,6 +385,7 @@ def indice(pasta_projeto: str) -> dict:
 def _guardar(pasta_projeto: str, item: dict, geojson: dict, origem: str, arquivos: dict | None = None) -> dict:
     base = os.path.join(pasta_projeto, PASTA_SIG, item["fonte"].lower())
     caminho = os.path.join(base, item["id"] + ".geojson")
+    sem = geojson.pop("sem_coordenadas", 0)
     _salvar_json(caminho, geojson)
     if arquivos:                                          # o shapefile original, para o QGIS
         pasta = os.path.join(base, item["id"])
@@ -341,7 +395,7 @@ def _guardar(pasta_projeto: str, item: dict, geojson: dict, origem: str, arquivo
                 f.write(dados)
     campos = sorted({k for f in geojson["features"][:200] for k in (f.get("properties") or {})})
     reg = {"id": item["id"], "nome": item["nome"], "fonte": item["fonte"], "tipo": item["tipo"],
-           "origem": origem, "baixado_em": agora(), "feicoes": len(geojson["features"]),
+           "origem": origem, "baixado_em": agora(), "feicoes": len(geojson["features"]), "sem_coordenadas": sem,
            "caixa": caixa(geojson), "campos": campos,
            "arquivo": os.path.relpath(caminho, pasta_projeto).replace(os.sep, "/"),
            "bytes": os.path.getsize(caminho)}
@@ -370,9 +424,10 @@ def baixar(pasta_projeto: str, ids: list[str], *, sessao=None, progresso=None, c
         prog(f"Camada {k} de {len(pedidos)}: {item['nome']} ({item['fonte']})…")
         try:
             if item["fonte"] == "EPE":
-                g = epe_feicoes(item["camada"], sessao,
+                servico = servico_epe(item["servico"], sessao) if item.get("servico") else EPE_SERVICO
+                g = epe_feicoes(item["camada"], sessao, servico=servico,
                                 progresso=lambda n: prog(f"Camada {k} de {len(pedidos)}: {item['nome']} — {n} feições"))
-                feitos.append(_guardar(pasta_projeto, item, g, f"{EPE_SERVICO}{item['camada']}"))
+                feitos.append(_guardar(pasta_projeto, item, g, f"{servico}{item['camada']}"))
             elif item["fonte"] == "ANP":
                 url = ANP_GEO + item["arquivo"]
                 r = sessao.get(url, timeout=(30, 300), headers=AGENTE)
@@ -416,6 +471,8 @@ def catalogo_com_estado(pasta_projeto: str | None) -> list[dict]:
 
 def url_fonte(item: dict) -> str:
     if item["fonte"] == "EPE":
+        if item.get("servico"):
+            return f"{EPE_REST}{item['servico'].replace('*', '')}"
         return urljoin(EPE_SERVICO, str(item["camada"]))
     if item["fonte"] == "ANP":
         return ANP_GEO + item["arquivo"]
