@@ -775,3 +775,50 @@ def test_bloco_escala_interpolacao_e_comparacao(janela, tmp_path):
     janela.esperar("document.getElementById('bl-m-estrutura').value === 'krigagem'", 30)
     janela.esperar("!document.getElementById('bl-cmp').hidden", 30)
     assert not janela.erros_js, janela.erros_js
+
+
+def test_campo_um_clique_producao_e_camadas(janela, tmp_path, monkeypatch):
+    import requests
+    from externos_util import SessaoFalsa
+    from test_secao import poco
+    falsa = SessaoFalsa()
+    monkeypatch.setattr(requests, "Session", lambda: falsa)
+    p = janela.page
+    abrir_projeto(janela)
+    b = janela.api._banco
+    for pid, la, lo in [("1-AA-1-RN", -5.00, -37.00), ("1-AA-2-RN", -5.00, -36.96), ("1-AA-3-RN", -5.04, -37.00),
+                        ("1-AA-4-RN", -5.04, -36.96), ("1-AA-5-RN", -5.02, -36.98)]:
+        poco(b, pid, la, lo, 50.0, [("F", "JANDAI", 20, 300), ("F", "ACU", 300, 700)], prof_final=900)
+    p.click("#aba-bloco")
+    janela.esperar("document.getElementById('bl-disponiveis').textContent.includes('5 poço')")
+    # escolher o campo já traz os poços; "Montar este campo" traz e monta, com título
+    assert p.locator("#bl-montar-campo").is_visible()
+    p.dispatch_event("#bl-campo", "change")
+    janela.esperar("document.getElementById('bl-n').textContent === '5'")
+    p.click("#bl-limpar")
+    p.click("#bl-montar-campo")
+    janela.esperar("!document.getElementById('bl-painel').hidden", 60)
+    assert p.input_value("#bl-titulo") == "Campo de Campo Teste" and p.text_content("#bl-n") == "5"
+    p.select_option("#bl-modo", "raio")
+    assert not p.locator("#bl-montar-campo").is_visible() and not p.locator("#bl-bacia-box").is_visible()
+    # produção da ANP: o campo do bloco já vem preenchido
+    assert p.input_value("#pr-campo") == "CAMPO TESTE"
+    p.select_option("#pr-periodo", "tudo")
+    p.click("#pr-baixar")
+    janela.esperar("document.getElementById('pr-resumo').textContent.includes('Plano de Desenvolvimento')", 60)
+    texto = p.text_content("#pr-resumo")
+    assert "01/1983 a 06/2026" in texto and "13,8" in texto and "Por zona produtora: 2 zona(s)" in texto
+    assert "Formação Açu" in texto and "polígono com 3 vértices" in texto
+    p.click("#pr-csv")
+    janela.esperar("document.getElementById('status').textContent.includes('producao_campo_teste_por_poco.csv')", 30)
+    assert (tmp_path / "ambiente_teste" / "exportacoes" / "producao" / "producao_campo_teste_por_zona.csv").exists()
+    # camadas no Mapa: marcadas as padrão; uma que falha aparece na lista de erros
+    p.click("#aba-mapa")
+    janela.esperar("document.querySelectorAll('#cm-lista input').length > 10", 30)
+    assert p.locator("#cm-lista input[value='epe_gasodutos_transporte']").is_checked()
+    assert not p.locator("#cm-lista input[value='ibge_rodovias']").is_checked()
+    p.click("#cm-baixar")
+    janela.esperar("document.getElementById('cm-lista').textContent.includes('1.500 feições')", 60)
+    assert p.locator("#cm-erros li").count() >= 1 and "Blocos" in p.text_content("#cm-erros")
+    assert (tmp_path / "ambiente_teste" / "sig" / "camadas.json").exists()
+    assert not janela.erros_js, janela.erros_js

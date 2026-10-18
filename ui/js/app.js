@@ -6,10 +6,10 @@
 const AO_ABRIR_ABA = {
   inicio: () => carregarPanorama(),
   catalogo: () => {},
-  mapa: () => carregarMapa(),
+  mapa: () => { carregarMapa(); carregarCamadas(); },
   perfis: () => carregarPerfis(),
   secao: () => carregarSecao(),
-  bloco: () => carregarBloco(),
+  bloco: () => { carregarBloco(); carregarProducao(); },
   docs: () => carregarDocumentos(),
   comunidade: () => carregarComunidade(),
 };
@@ -110,6 +110,7 @@ async function iniciar() {
   ligarPerfis();
   ligarSecao();
   ligarBloco();
+  ligarExternos();
   ligarComunidade();
   ligar("ocr-cancelar", "onclick", async () => {
     await chamar($("ocr-cancelar"), "cancelar_processamento");

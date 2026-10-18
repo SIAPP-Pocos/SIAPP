@@ -131,6 +131,24 @@ Precisa de internet. Comece por uma categoria pequena para ver o tempo.
 - [ ] Sem intervalo marcado, **Calcular** explica que precisa de um intervalo-alvo.
 - [ ] Repetir no `5PX__0011__RN_5PX__0011__RN.tif` (DLIS de 2020).
 
+## 0.24 — produção da ANP, camadas e um campo num clique
+
+- [ ] **Bloco 3D** → Escolher "os poços de um campo" → troque o **Campo** para `ESTREITO`: os poços vêm sozinhos.
+      **Montar este campo**: o bloco aparece com o título "Campo de Estreito" e a escala de reservatório.
+- [ ] **Produção do campo (ANP)**: o campo já vem preenchido. Período "últimos 5 anos" → **Baixar a produção**
+      (a barra de status mostra arquivo por arquivo; ~60 MB na primeira vez). O quadro mostra a soma do período
+      (óleo, gás, água, injeção de vapor), o último mês, as zonas (ALG, AÇU…) e o PD 2019 (óleo in place 133,35
+      milhões de m³, acumulada 16,26 até 31/12/2018; 2025 poços perfurados).
+- [ ] Baixe de novo: termina em segundos (cópia local em `ambiente_teste\fontes\anp\producao\`). Troque para
+      `GUAMARÉ` e baixe: só baixa o que faltar (os arquivos nacionais já estão guardados). **CSV**: dois arquivos
+      em `exportacoes\producao\`.
+- [ ] **Cancelar** no meio de um "todo o histórico": para, e o que já veio fica.
+- [ ] **Mapa** → **Camadas geográficas**: as marcadas por padrão (gasodutos de transporte e escoamento, UPGNs,
+      termelétricas, campos, blocos, dutos e portos do IBGE…). **Baixar as marcadas**: cada uma diz "baixada em …
+      · N feições". **Abrir a pasta** → `sig\epe\epe_gasodutos_transporte.geojson`; no **QGIS**, arraste o
+      GeoJSON e o shapefile de `sig\anp\anp_campos_producao\` — caem no lugar (SIRGAS 2000). Nordestão e Gasfor
+      aparecem saindo de Guamaré.
+
 ## 0.23 — interpolação e escala
 
 - [ ] **Bloco 3D**: a **Escala** abre em "reservatório": o quadro **Interpolação** mostra spline nos topos e

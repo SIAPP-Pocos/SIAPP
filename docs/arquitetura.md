@@ -10,7 +10,7 @@
 │                                                  │ eventoLevantamento(…)      │
 │  ponte/  API da janela, uma parte por aba (catalogo, pocos, documentos,       │
 │          vocabulario, fatos, perfis, comunidade, levantamento, secao,         │
-│          ferramentas, bloco) — valida,                                        │
+│          ferramentas, bloco, externos) — valida,                                        │
 │          chama o motor, devolve dicionários; nunca deixa exceção chegar ao JS │
 └──────────────┬───────────────────────────────────────────────────────────────┘
                ▼
@@ -35,6 +35,8 @@
     bloco_glb.py    glTF binário (JSON + buffer) do bloco fechado
     utm.py          SIRGAS 2000 / UTM, séries de Krüger (6ª ordem)
     bloco_figura.py figura estática do bloco (SVG → PDF/PNG pelo PyMuPDF)
+    producao.py     produção da ANP por campo (por poço, por zona, PD) → producao_poco, producao_zona, campos_anp
+    camadas.py      camadas geográficas: EPE (ArcGIS REST), ANP (zip), IBGE BC250 (Range) → sig/*.geojson
     direcionais.py  dados direcionais: 5 leiautes, curvatura mínima (tabela direcionais)
     ferramentas.py  esquemas de ferramentas: tipo da corrida, ferramentas, vínculo com os perfis (tabela esquemas)
                ▼
@@ -119,6 +121,8 @@ ambiente_teste/
 ├── pocos/<poço>/                      cache das curvas (.npz) e inventário de cada perfil
 ├── cadastro/tabela-pocos.csv          última Tabela de Poços baixada da ANP
 ├── exportacoes/<poço>/                LAS e CSV exportados
+├── fontes/anp/producao/               cópia compactada dos CSVs nacionais de produção da ANP
+├── sig/                               camadas geográficas (GeoJSON + shapefile original) e camadas.json
 ├── contribuicoes/                     pacotes exportados por este computador
 └── comunidade/siapp-dados.sqlite      última base comunitária baixada
 ```

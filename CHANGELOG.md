@@ -6,6 +6,24 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 
 ## [Não lançado]
 
+## [0.24.0] — 2026-10-17
+### Adicionado
+- **Produção do campo pela ANP** (`motor/producao.py`, quadro "Produção do campo (ANP)" na aba
+  Bloco 3D): produção e injeção mês a mês **por poço** (1941 até ~2 meses atrás), **por zona
+  produtora** (2014 em diante), a ficha e o **polígono** do campo e o **sumário do Plano de
+  Desenvolvimento** (volume in place, produção acumulada, poços, reservatórios). Os arquivos
+  nacionais da ANP ficam numa cópia compactada e servem para os próximos campos; CSV.
+  Tabelas `producao_poco`, `producao_zona`, `campos_anp` (migração 7). Só traz e guarda: as
+  contas (depleção) ficam para a próxima versão.
+- **Camadas geográficas** (`motor/camadas.py`, quadro "Camadas geográficas" na aba Mapa):
+  gasodutos de transporte, de escoamento e de distribuição, UPGNs, city gates, compressão,
+  GNL e termelétricas fósseis (EPE); campos de produção e blocos exploratórios (ANP); dutos,
+  termelétricas, linhas de transmissão, subestações, portos, cidades, estados, ferrovias e
+  rodovias (IBGE BC250, baixando só as camadas escolhidas de dentro do zip de 800 MB). GeoJSON
+  e o shapefile original em `sig/`, para o QGIS. Leitor de shapefile próprio (sem GDAL).
+- **Montar este campo**: um clique traz os poços do campo e monta o bloco com a escala de
+  reservatório; escolher o campo já traz os poços.
+
 ## [0.23.0] — 2026-10-17
 ### Adicionado
 - **Vários métodos de interpolação** (`motor/interpolacao.py`), um por campo — topos

@@ -23,6 +23,9 @@ existe e a validação científica ficam **para o final**, antes do lançamento 
 - [x] **Interpolação e escala** (0.23): linear, IDW, spline, krigagem, tendência + krigagem, um método
       por campo, com explicação; bloco fechado topo a topo; mapa de incerteza; comparação dos métodos
       pela validação cruzada (tabela, figura, "usar o melhor"); escala reservatório ou bacia.
+- [x] **Dados de fora do REATE** (0.24): produção da ANP por campo (por poço, por zona, sumário do PD,
+      polígono); camadas da EPE, ANP e IBGE (gasodutos, campos, blocos…) guardadas em `sig/`; um clique
+      monta o bloco de um campo.
 - [ ] **Gasodutos e blocos exploratórios** (com o Ruan): camadas do IBGE/EPE/ANP, distância
       do bloco exploratório ao gasoduto mais próximo, para a eficiência econômica de injetar CO₂.
 

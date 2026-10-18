@@ -48,6 +48,33 @@ function trocarModoBloco() {
   $("bl-campo-box").hidden = m !== "campo";
   $("bl-raio-box").hidden = m !== "raio";
   $("bl-bacia-box").hidden = m !== "todos";
+  $("bl-campo-um").hidden = m !== "campo";
+}
+
+// um campo, um clique: escolher o campo já traz os poços; "Montar este campo" traz e monta
+function campoEscolhidoBloco() {
+  if ($("bl-modo").value !== "campo" || !$("bl-campo").value) return;
+  if ($("pr-campo") && (!$("pr-campo").value || $("pr-campo").dataset.doBloco === "1")) {
+    $("pr-campo").value = $("bl-campo").value;
+    $("pr-campo").dataset.doBloco = "1";
+    if (typeof mostrarResumoProducao === "function") mostrarResumoProducao();
+  }
+  return selecionarPocosBloco();
+}
+
+async function montarCampoBloco() {
+  if ($("bl-modo").value !== "campo") { $("bl-modo").value = "campo"; trocarModoBloco(); }
+  if (!$("bl-campo").value) { status("Escolha o campo.", "erro"); return; }
+  if ($("bl-escala").value !== "reservatorio") { $("bl-escala").value = "reservatorio"; aplicarEscala("reservatorio"); }
+  await selecionarPocosBloco();
+  if (!$("bl-titulo").value.trim()) $("bl-titulo").value = `Campo de ${nomeCampo($("bl-campo").value)}`;
+  await montarBloco();
+}
+
+// GUAMARÉ → Guamaré; CANTO DO AMARO → Canto do Amaro
+function nomeCampo(c) {
+  return (c || "").toLowerCase().replace(/(^|\s)(\p{L})/gu, (m, a, b) => a + b.toUpperCase())
+    .replace(/ (Do|Da|De|Dos|Das|E) /g, (m) => m.toLowerCase());
 }
 
 async function selecionarPocosBloco() {
@@ -877,7 +904,9 @@ async function lerDirecionaisBloco() {
 
 function ligarBloco() {
   ligar("bl-direcionais", "onclick", lerDirecionaisBloco);
-  ligar("bl-modo", "onchange", trocarModoBloco);
+  ligar("bl-modo", "onchange", () => { trocarModoBloco(); campoEscolhidoBloco(); });
+  ligar("bl-campo", "onchange", campoEscolhidoBloco);
+  ligar("bl-montar-campo", "onclick", montarCampoBloco);
   ligar("bl-selecionar", "onclick", selecionarPocosBloco);
   ligar("bl-limpar", "onclick", () => { bl.pocos = []; desenharListaBloco(); });
   ligar("bl-form-poco", "onsubmit", (ev) => {

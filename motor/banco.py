@@ -182,6 +182,26 @@ MIGRACOES: list[str] = [
     );
     CREATE INDEX direcionais_poco ON direcionais(poco_id);
     """,
+    # 7 — produção da ANP por campo (SIAPP 0.24): por poço e por zona, mês a mês; ficha, polígono e PD
+    """
+    CREATE TABLE producao_poco(
+        campo TEXT NOT NULL, poco_anp TEXT NOT NULL, poco_id TEXT, periodo TEXT NOT NULL,
+        instalacao TEXT NOT NULL DEFAULT '',
+        oleo_m3 REAL, condensado_m3 REAL, gas_assoc_mil_m3 REAL, gas_nassoc_mil_m3 REAL, agua_m3 REAL,
+        inj_gas_mil_m3 REAL, inj_agua_rec_m3 REAL, inj_agua_desc_m3 REAL, inj_co2_mil_m3 REAL,
+        inj_n2_mil_m3 REAL, inj_vapor_t REAL, inj_polimeros_m3 REAL, inj_outros_m3 REAL, arquivo TEXT,
+        PRIMARY KEY (campo, poco_anp, periodo, instalacao)
+    );
+    CREATE INDEX producao_poco_id ON producao_poco(poco_id);
+    CREATE TABLE producao_zona(
+        campo TEXT NOT NULL, zona TEXT NOT NULL, poco_anp TEXT NOT NULL, poco_id TEXT, periodo TEXT NOT NULL,
+        oleo_m3 REAL, condensado_m3 REAL, gas_assoc_mil_m3 REAL, gas_nassoc_mil_m3 REAL, agua_m3 REAL,
+        inj_agua_desc_m3 REAL, inj_agua_rec_m3 REAL, inj_vapor_t REAL, inj_gas_mil_m3 REAL,
+        inj_co2_mil_m3 REAL, inj_n2_mil_m3 REAL, inj_outros_m3 REAL, arquivo TEXT,
+        PRIMARY KEY (campo, zona, poco_anp, periodo)
+    );
+    CREATE TABLE campos_anp(chave TEXT PRIMARY KEY, nome TEXT, dados TEXT, atualizado_em TEXT);
+    """,
 ]
 
 

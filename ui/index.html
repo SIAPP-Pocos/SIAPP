@@ -248,6 +248,18 @@
           <button class="btn secundario pequeno" id="lv-pasta">Abrir a pasta</button>
         </div>
       </section>
+      <section class="etapa" id="cm-etapa">
+        <h2>Camadas geográficas</h2>
+        <p class="ajuda">Gasodutos, campos, blocos exploratórios, termelétricas, portos… de fontes oficiais, em SIRGAS
+          2000. Ficam em <code>ambiente_teste\sig</code> (GeoJSON e o shapefile original, para o QGIS). Desenhar no
+          mapa e medir distâncias vêm na próxima etapa.</p>
+        <div class="cm-lista" id="cm-lista"></div>
+        <div class="linha">
+          <button class="btn secundario" id="cm-baixar">Baixar as marcadas</button>
+          <button class="btn secundario pequeno" id="cm-pasta">Abrir a pasta</button>
+        </div>
+        <ul class="sec-avisos" id="cm-erros"></ul>
+      </section>
       <section class="etapa">
         <h2>Pastas do REATE</h2>
         <p class="ajuda">Para marcar no mapa os poços que têm pasta no portal, o SIAPP lista todas as
@@ -681,12 +693,43 @@
           <button class="btn secundario" id="bl-selecionar">Trazer os poços</button>
           <button class="btn secundario pequeno" id="bl-limpar">Limpar</button>
         </div>
+        <div class="linha" id="bl-campo-um">
+          <button class="btn" id="bl-montar-campo"
+                  title="Traz os poços do campo escolhido e monta o bloco com a escala de reservatório">Montar este campo</button>
+          <span class="ajuda">traz os poços e monta</span>
+        </div>
         <form class="linha" id="bl-form-poco">
           <input type="text" id="bl-poco" list="bl-lista-pocos" placeholder="mais um poço…" autocomplete="off">
           <button class="btn secundario pequeno" type="submit">Adicionar</button>
         </form>
         <datalist id="bl-lista-pocos"></datalist>
         <p class="ajuda bl-lista" id="bl-lista"></p>
+      </section>
+      <section class="etapa" id="pr-etapa">
+        <h2>Produção do campo (ANP)</h2>
+        <p class="ajuda">Dados abertos da ANP (fora do REATE): produção e injeção <strong>mês a mês, por poço</strong>
+          (1941 até ~2 meses atrás), <strong>por zona produtora</strong> (2014 em diante), a ficha e o polígono do campo
+          e o <strong>sumário do Plano de Desenvolvimento</strong> (volume in place e produção acumulada). Cada arquivo
+          da ANP tem o país inteiro de um período (2–7 MB): o SIAPP guarda uma cópia compactada e reaproveita nos
+          outros campos.</p>
+        <div class="filtros">
+          <label>Campo <input type="text" id="pr-campo" list="pr-lista-campos" autocomplete="off" placeholder="ex.: GUAMARÉ"></label>
+          <datalist id="pr-lista-campos"></datalist>
+          <label>Período
+            <select id="pr-periodo">
+              <option value="1">último ano</option>
+              <option value="5" selected>últimos 5 anos (~60 MB na primeira vez)</option>
+              <option value="10">últimos 10 anos (~120 MB)</option>
+              <option value="tudo">todo o histórico, desde o início do campo (até ~550 MB)</option>
+            </select></label>
+          <label class="opcao"><input type="checkbox" id="pr-zona" checked> <span>também <strong>por zona produtora</strong> (2014 em diante; ~2 MB por mês)</span></label>
+        </div>
+        <div class="linha">
+          <button class="btn secundario" id="pr-baixar">Baixar a produção</button>
+          <button class="btn secundario pequeno" id="pr-cancelar" hidden>Cancelar</button>
+          <button class="btn secundario pequeno" id="pr-csv" hidden>CSV</button>
+        </div>
+        <div class="pr-resumo" id="pr-resumo"></div>
       </section>
       <section class="etapa">
         <h2>Superfícies e interpolação</h2>
@@ -1033,6 +1076,7 @@
   <script src="js/comum.js"></script>
   <script src="js/secao.js"></script>
   <script src="js/bloco.js"></script>
+  <script src="js/externos.js"></script>
   <script src="js/catalogo.js"></script>
   <script src="js/documentos.js"></script>
   <script src="js/fatos.js"></script>

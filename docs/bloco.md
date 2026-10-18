@@ -18,6 +18,10 @@ Só entram poços com topos litoestratigráficos no AGP lido e coordenadas no ca
 - **todos da bacia**: bloco regional (na Potiguar, Cat. 1 lida: 429 poços, 12.395 km²);
 - **os poços da aba Seção**; e mais um a um.
 
+Num campo, escolher o campo já traz os poços, e **Montar este campo** (0.24) traz, põe a escala de
+reservatório e o título e monta — um clique. A produção do campo pela ANP fica no quadro logo abaixo
+(ver [`producao-e-camadas.md`](producao-e-camadas.md)).
+
 Um poço muito longe de todos os outros (mais de 100 km e 5× a distância mediana ao centro)
 fica de fora, com aviso — na Potiguar, o AGP do `1-BRSA-264-ES` está na pasta de um poço do RN.
 

@@ -24,6 +24,7 @@ from .bloco import BlocoAPI
 from .catalogo import CatalogoAPI
 from .comunidade import ComunidadeAPI
 from .documentos import DocumentosAPI
+from .externos import ExternosAPI
 from .fatos import FatosAPI
 from .ferramentas import FerramentasAPI
 from .levantamento import LevantamentoAPI
@@ -35,7 +36,7 @@ from .vocabulario import VocabularioAPI
 
 class API(BaseAPI, PocosAPI, CatalogoAPI, DocumentosAPI, VocabularioAPI, ComunidadeAPI,
           FatosAPI, PerfisAPI, LevantamentoAPI, SecaoAPI, FerramentasAPI,
-          BlocoAPI):
+          BlocoAPI, ExternosAPI):
     def __init__(self):
         self._janela = None
         self._projeto = None
