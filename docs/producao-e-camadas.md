@@ -1,10 +1,11 @@
-# Produção da ANP e camadas geográficas (0.24)
+# Produção da ANP, camadas geográficas e viabilidade de injeção (0.24–0.26)
 
-Dados públicos de **fora do REATE**, trazidos para o projeto para a próxima etapa: comparar a
-distância de um campo a um gasoduto com a depleção do reservatório (viabilidade de injetar
-CO₂, H₂…). Nesta versão o SIAPP **só baixa, lê e guarda**; contas sobre os dados ficam para depois.
+Dados públicos de **fora do REATE** para comparar a distância de um campo à infraestrutura com
+o espaço que a produção liberou no reservatório — a viabilidade de injetar CO₂, H₂… (0.24 baixa
+e guarda; 0.25 mede distâncias e depleção; 0.26 calcula custo ÷ capacidade).
 
-Código: `motor/producao.py`, `motor/camadas.py`, `ponte/externos.py`, `ui/js/externos.js`.
+Código: `motor/producao.py`, `motor/camadas.py`, `motor/viabilidade.py`, `motor/economia.py`,
+`ponte/externos.py`, `ui/js/externos.js`.
 
 ## Produção do campo (aba Bloco 3D)
 
@@ -84,6 +85,58 @@ Guamaré, com os dados reais (camadas da EPE e da ANP, vértices e PD 2023): o G
 2,7 km, o city gate e a termelétrica Vale do Açu a 43 km; óleo produzido 10,1% do in place,
 gás 42,2% (BAR/2021).
 
-Ainda fora, de propósito: custo do duto (R$/km), capacidade de injeção e o indicador
-econômico — dependem de parâmetros a combinar. Unidades de conservação (ICMBio) e terras indígenas (FUNAI) não estão na BC250 2025;
+## Viabilidade econômica (0.26)
+
+Depois de medir as distâncias, o quadro **Viabilidade econômica** dá, para cada infraestrutura
+medida, o custo do duto até ela e o indicador do PIBIC: **investimento no duto ÷ capacidade de
+injeção do campo**. Menor = mais viável. Código: `motor/economia.py`.
+
+**Custo do duto** = distância × fator de traçado × custo por km, com custo por km = (R$ por
+polegada·km) × diâmetro × fator do fluido.
+
+| Referência (EPE, Plano Indicativo de Gasodutos) | Projeto | R$ mil por pol·km |
+|---|---|---|
+| PIG 2024 (padrão), data-base jun/2024 | Porto Murtinho–Campo Grande: 392 km, 32″, R$ 6.119 mi | 488 |
+| PIG 2022 | Brasil Central (São Carlos–Brasília): 893 km, 18–20″, R$ 11.152 mi (contado a 18″) | 694 |
+| PIG 2019, jun/2019, relevo plano | Uruguaiana–Triunfo: 594 km, 24″, R$ 4.634 mi | 325 |
+| PIG 2019, jun/2019, Serra do Mar | Siderópolis–Porto Alegre: 249 km, 16″, R$ 1.819 mi | 457 |
+
+- Conta do SIAPP: CAPEX total ÷ (extensão × diâmetro). A EPE estima com precisão de −20/−50% a
+  +30/+100% (classe conceitual, AACEI). Entre 2019 e 2022 os custos subiram 52–61%. Gasodutos curtos
+  ficam mais caros por km (ramais de terminais de GNL chegaram a ~US$ 140 mil/pol·km).
+- Literatura brasileira (GESEL/UFRJ, 2020): US$ 50 a 150 mil por pol·km, conforme o terreno.
+- **Fator do fluido**: CO₂ ×1,20 — em fase densa o duto trabalha a ~150 bar contra ~100 do gás e
+  pede ~50% mais aço; a tubulação é ~45% do CAPEX no PIG 2024 (estimativa do SIAPP). H₂ ×1,05 —
+  aço ~10% mais caro, +1,4 a 4,6% por pol·milha (EPRI, 2023).
+- **Fator de traçado**: 1 = a distância em linha reta (como no PIBIC); um traçado real costuma ser
+  10–30% mais longo.
+- O modelo é linear no diâmetro: para dutos finos (< 6″) tende a subestimar.
+
+**Capacidade de injeção** — três níveis, do que funciona para todo campo ao mais específico:
+
+| Método | Espaço | Precisa de | Indicador |
+|---|---|---|---|
+| Simples (PIBIC) | volume produzido em m³ de óleo equivalente: óleo + condensado + gás ÷ 1.000 | só a produção | R$/m³ oe |
+| Espaço poroso | Np·Bo + (Gp − Np·Rs)·Bg + Wp − Wi − Gi·Bg (m³ de reservatório) | Bo e/ou Bg; Rs opcional | R$/m³ res |
+| Pela molécula | espaço poroso × ρ(P, T) × eficiência (× (1 − colchão) para H₂ e CH₄) | o anterior + P e T (ou a profundidade) | R$/t, R$/MWh (H₂) |
+
+- **Produção acumulada**: a série mensal da ANP quando cobre todo o histórico sem meses
+  faltando (só aí entram água produzida e fluidos injetados); senão a acumulada do sumário do PD,
+  somando a produção mensal que vem logo depois; senão o período baixado, com aviso de que
+  subestima.
+- Sem Rs, todo o gás produzido conta como gás livre (superestima num campo de óleo). Sem influxo
+  de aquífero: com aquífero ativo, o espaço real é menor. É o método "baseado na produção" de
+  Bachu et al. (CSLF, 2007) para capacidade de CO₂ em campos depletados.
+- **Densidade**: Peng-Robinson com translação de volume (Peneloux). Contra as equações de
+  referência (NIST/CoolProp): CO₂ dentro de ~7% (o pior perto do ponto crítico, 100 bar e 40 °C),
+  H₂ e CH₄ dentro de ~4%. P e T: informados, ou hidrostática (0,1 bar/m) e 25 °C + 30 °C/km sobre a
+  profundidade — a informada ou a mediana da profundidade final dos poços do campo.
+- **Eficiência** (padrão 1 = teórica) e **gás de colchão** (padrão 0,5, usual em armazenamento
+  de gás em campo depletado) ficam para o usuário calibrar.
+- Guamaré (PD 2023, BAR/2021): 1,65 milhão de m³ oe produzidos. Com valores de exemplo (Bo 1,1,
+  Bg 0,012, Rs 30, 80 bar e 35 °C): 4,06 milhões de m³ de reservatório e 1,68 Mt de CO₂.
+
+É triagem para comparar campos e rotas: pressão e injetividade só a simulação responde.
+
+Unidades de conservação (ICMBio) e terras indígenas (FUNAI) não estão na BC250 2025;
 podem entrar depois como restrição ambiental.

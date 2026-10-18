@@ -28,8 +28,10 @@ existe e a validação científica ficam **para o final**, antes do lançamento 
       monta o bloco de um campo.
 - [x] **Camadas no mapa e campo × infraestrutura** (0.25): distâncias do campo ao gasoduto, UPGN, H₂, fonte
       de CO₂; depleção pelo PD.
-- [ ] **Viabilidade econômica** (com o Ruan): custo do duto por km e diâmetro, capacidade de injeção pelo espaço
-      poroso liberado (Np·Bo + Wp − Wi + gás livre·Bg), indicador investimento ÷ capacidade.
+- [x] **Viabilidade econômica** (0.26): custo do duto pelos PIGs da EPE, capacidade de injeção em três métodos
+      (simples/PIBIC, espaço poroso com Bo/Bg, pela molécula CO₂/H₂/CH₄), indicador investimento ÷ capacidade.
+- [ ] Viabilidade — próximos refinamentos (com o Ruan): Bo/Bg por campo de fonte pública, diâmetro pela vazão,
+      correção do custo pela inflação (IPCA/INCC), restrições ambientais (UCs, terras indígenas).
 - [ ] **Gasodutos e blocos exploratórios** (com o Ruan): camadas do IBGE/EPE/ANP, distância
       do bloco exploratório ao gasoduto mais próximo, para a eficiência econômica de injetar CO₂.
 

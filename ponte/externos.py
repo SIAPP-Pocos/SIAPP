@@ -7,6 +7,7 @@ import os
 from datetime import date
 
 from motor import camadas as mca
+from motor import economia as mec
 from motor import producao as mpr
 from motor import viabilidade as mvi
 
@@ -138,27 +139,93 @@ class ExternosAPI:
             return {"camada": reg, "geojson": json.load(f)}
 
     # ------------------------------------------------------------ campo × infraestrutura
+    def _relatorio_vb(self, campo: str) -> dict:
+        """Distâncias do campo (guardadas enquanto o polígono e as camadas não mudam)."""
+        try:
+            poli, _ = mvi.poligono_campo(self._banco, self._projeto.pasta, campo)
+        except mvi.ErroViabilidade as e:
+            raise ErroUsuario(str(e)) from e
+        caminho = os.path.join(self._projeto.pasta, mca.PASTA_SIG, "camadas.json")
+        chave = (mpr.chave_campo(campo), os.path.getmtime(caminho) if os.path.exists(caminho) else 0, str(poli))
+        cache = getattr(self, "_cache_vb", None)
+        if cache and cache[0] == chave:
+            return cache[1]
+        rel = mvi.relatorio(self._banco, self._projeto.pasta, campo)
+        self._cache_vb = (chave, rel)
+        return rel
+
+    def _parametros_guardados(self, campo: str) -> dict:
+        return (mpr.campo_guardado(self._banco, campo) or {}).get("viabilidade") or {}
+
     @resposta_segura
     def viabilidade_relatorio(self, campo: str):
         self._exigir_projeto()
         campo = (campo or "").strip()
         if not campo:
             raise ErroUsuario("Escolha o campo.")
-        try:
-            rel = mvi.relatorio(self._banco, self._projeto.pasta, campo)
-        except mvi.ErroViabilidade as e:
-            raise ErroUsuario(str(e)) from e
+        rel = self._relatorio_vb(campo)
         self._projeto.registrar("mediu_distancias", campo=campo,
                                 camadas=sum(1 for d in rel["distancias"] if d.get("distancia_km") is not None))
-        return {"relatorio": rel}
+        return {"relatorio": rel, "parametros": self._parametros_guardados(campo)}
+
+    @resposta_segura
+    def viabilidade_opcoes(self):
+        return {"fontes_custo": mec.FONTES_CUSTO, "padroes": mec.PADROES,
+                "fluidos": [{"id": k, "rotulo": v["rotulo"], "fator": mec.FATOR_FLUIDO[k][0],
+                             "motivo": mec.FATOR_FLUIDO[k][1], "armazenado": v["armazenado"]}
+                            for k, v in mec.FLUIDOS.items()]}
+
+    def _avaliar(self, campo: str, parametros) -> dict:
+        self._exigir_projeto()
+        campo = (campo or "").strip()
+        if not campo:
+            raise ErroUsuario("Escolha o campo.")
+        rel = self._relatorio_vb(campo)
+        try:
+            av = mec.avaliar(self._banco, campo, rel["distancias"], parametros or {})
+        except mec.ErroEconomia as e:
+            raise ErroUsuario(str(e)) from e
+        return av
+
+    @resposta_segura
+    def viabilidade_economia(self, campo: str, parametros: dict | None = None):
+        """Custo do duto ÷ capacidade de injeção, nos três métodos; guarda os parâmetros do campo."""
+        av = self._avaliar(campo, parametros)
+        guardar = {k: v for k, v in (parametros or {}).items() if k in mec.PADROES and v not in (None, "")}
+        mpr.guardar_campo(self._banco, campo.strip(), viabilidade=guardar)
+        self._projeto.registrar("avaliou_viabilidade", campo=campo.strip(), fluido=av["parametros"]["fluido"],
+                                metodos=[k for k, m in av["metodos"].items() if m.get("valor")])
+        return {"avaliacao": av}
+
+    @resposta_segura
+    def viabilidade_economia_csv(self, campo: str, parametros: dict | None = None):
+        av = self._avaliar(campo, parametros)
+        pasta = os.path.join(self._projeto.pasta, PASTA_EXPORTACAO)
+        os.makedirs(pasta, exist_ok=True)
+        saida = os.path.join(pasta, f"viabilidade_{mpr.chave_campo(campo).replace(' ', '_').lower()}.csv")
+        fmt = lambda v: "" if v is None else str(v).replace(".", ",") if isinstance(v, float) else v  # noqa: E731
+        p, c = av["parametros"], av["custo"]
+        with open(saida, "w", newline="", encoding="utf-8-sig") as f:
+            w = csv.writer(f, delimiter=";")
+            w.writerow(["# campo", campo.strip(), "fluido", mec.FLUIDOS[p["fluido"]]["rotulo"]])
+            w.writerow(["# custo do duto (R$/km)", fmt(round(c["r_por_km"], 2)), "referência", c["referencia"],
+                        "data-base", c["data_base"] or "", "diâmetro (pol)", fmt(p["diametro_pol"]),
+                        "fator do fluido", fmt(c["fator_fluido"]), "fator de traçado", fmt(p["fator_tracado"])])
+            w.writerow(["# produção acumulada", av["acumulados"]["fonte"]])
+            for m in av["metodos"].values():
+                w.writerow(["# capacidade — " + m["rotulo"], fmt(m.get("valor")), m.get("unidade") or "",
+                            m.get("formula") or "", ("falta: " + ", ".join(m["falta"])) if m.get("falta") else ""])
+            w.writerow(mec.COLUNAS_CSV)
+            for linha in mec.linhas_csv(av):
+                w.writerow([fmt(v) for v in linha])
+            for a in av["avisos"]:
+                w.writerow(["# aviso", a])
+        return {"arquivo": os.path.relpath(saida, self._projeto.pasta).replace(os.sep, "/")}
 
     @resposta_segura
     def viabilidade_csv(self, campo: str):
         self._exigir_projeto()
-        try:
-            rel = mvi.relatorio(self._banco, self._projeto.pasta, (campo or "").strip())
-        except mvi.ErroViabilidade as e:
-            raise ErroUsuario(str(e)) from e
+        rel = self._relatorio_vb((campo or "").strip())
         pasta = os.path.join(self._projeto.pasta, PASTA_EXPORTACAO)
         os.makedirs(pasta, exist_ok=True)
         saida = os.path.join(pasta, f"distancias_{mpr.chave_campo(campo).replace(' ', '_').lower()}.csv")

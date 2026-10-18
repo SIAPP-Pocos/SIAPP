@@ -1,5 +1,5 @@
-// SIAPP — dados de fora do REATE: produção da ANP por campo (aba Bloco 3D) e camadas geográficas
-// do IBGE, EPE e ANP (aba Mapa). Aqui só se baixa e se mostra o que veio; as contas ficam para depois.
+// SIAPP — dados de fora do REATE: produção da ANP por campo (aba Bloco 3D), camadas geográficas
+// do IBGE, EPE e ANP (aba Mapa), o campo diante da infraestrutura e a viabilidade econômica.
 "use strict";
 
 const ext = { campos: [], camadas: [], fontes: {} };
@@ -185,6 +185,13 @@ function ligarExternos() {
   ligar("cm-pasta", "onclick", () => chamar(null, "abrir_pasta_sig"));
   ligar("vb-medir", "onclick", medirDistancias);
   ligar("vb-csv", "onclick", exportarViabilidade);
+  ligar("vb-campo", "onchange", () => { $("vb-eco").hidden = true; limpar($("vb-eco-resultado")); });
+  ligar("vb-avaliar", "onclick", avaliarViabilidade);
+  ligar("vb-eco-csv", "onclick", exportarEconomia);
+  ligar("vb-fonte-custo", "onchange", aplicarReferenciaCusto);
+  ligar("vb-custo", "oninput", () => { $("vb-fonte-custo").value = "manual"; ajudaCustoVb(); });
+  ligar("vb-diametro", "oninput", ajudaCustoVb);
+  ligar("vb-fluido", "onchange", ajudaCustoVb);
 }
 
 // ---------------------------------------------------------------- camadas no mapa
@@ -274,6 +281,12 @@ async function medirDistancias() {
   if (!r.ok) return;
   desenharViabilidade(r.relatorio);
   $("vb-csv").hidden = false;
+  if (await carregarOpcoesViabilidade()) {
+    preencherParametrosVb(r.parametros);
+    limpar($("vb-eco-resultado"));
+    $("vb-eco-csv").hidden = true;
+    $("vb-eco").hidden = false;
+  }
   status(`Distâncias de ${campo} medidas (polígono: ${r.relatorio.fonte_poligono}).`, "ok");
 }
 
@@ -345,5 +358,164 @@ function desenharViabilidadeNoMapa(rel) {
 
 async function exportarViabilidade() {
   const r = await chamar($("vb-csv"), "viabilidade_csv", $("vb-campo").value.trim());
+  if (r.ok) status(`Salvo em ambiente_teste/${r.arquivo}`, "ok");
+}
+
+// ---------------------------------------------------------------- viabilidade econômica (0.26)
+const vbEco = { opcoes: null };
+
+function numeroBr(s) {
+  const t = String(s == null ? "" : s).trim();
+  if (!t) return null;
+  const n = Number(t.includes(",") ? t.replace(/\./g, "").replace(",", ".") : t);
+  return Number.isFinite(n) ? n : null;
+}
+
+async function carregarOpcoesViabilidade() {
+  if (vbEco.opcoes) return vbEco.opcoes;
+  const r = await chamar(null, "viabilidade_opcoes");
+  if (!r.ok) return null;
+  vbEco.opcoes = r;
+  const fl = limpar($("vb-fluido"));
+  for (const f of r.fluidos) {
+    const o = el("option", "", f.rotulo);
+    o.value = f.id;
+    fl.appendChild(o);
+  }
+  const fc = limpar($("vb-fonte-custo"));
+  for (const f of r.fontes_custo) {
+    const o = el("option", "", `${f.rotulo} — R$ ${numero(f.r_mil_pol_km, 0)} mil/pol·km`);
+    o.value = f.id;
+    fc.appendChild(o);
+  }
+  const m = el("option", "", "informado por mim");
+  m.value = "manual";
+  fc.appendChild(m);
+  return r;
+}
+
+function preencherParametrosVb(guardados) {
+  const g = guardados || {};
+  const v = { ...vbEco.opcoes.padroes, ...g };
+  for (const e of document.querySelectorAll("[data-vb]")) {
+    const x = v[e.dataset.vb];
+    e.value = x == null ? "" : typeof x === "number" ? String(x).replace(".", ",") : String(x);
+  }
+  if (g.custo_mil_pol_km == null || g.custo_mil_pol_km === "") aplicarReferenciaCusto();
+  ajudaCustoVb();
+}
+
+function aplicarReferenciaCusto() {
+  const f = vbEco.opcoes.fontes_custo.find((x) => x.id === $("vb-fonte-custo").value);
+  if (f) $("vb-custo").value = String(f.r_mil_pol_km);
+  ajudaCustoVb();
+}
+
+function ajudaCustoVb() {
+  if (!vbEco.opcoes) return;
+  const fl = vbEco.opcoes.fluidos.find((x) => x.id === $("vb-fluido").value);
+  const custo = numeroBr($("vb-custo").value), d = numeroBr($("vb-diametro").value);
+  if (!fl || custo == null || d == null) { $("vb-custo-ajuda").textContent = ""; return; }
+  $("vb-custo-ajuda").textContent = `Duto de ${numero(d, 1)}″ para ${fl.rotulo}: R$ ${numero(custo * d * fl.fator / 1000, 2)} ` +
+    `milhões por km (×${numero(fl.fator, 2)} — ${fl.motivo}).`;
+}
+
+function lerParametrosVb() {
+  const p = {};
+  for (const e of document.querySelectorAll("[data-vb]")) {
+    if (e.value.trim() !== "") p[e.dataset.vb] = e.value.trim();
+  }
+  return p;
+}
+
+async function avaliarViabilidade() {
+  const campo = $("vb-campo").value.trim();
+  if (!campo) { status("Escolha o campo.", "erro"); return; }
+  const r = await chamar($("vb-avaliar"), "viabilidade_economia", campo, lerParametrosVb());
+  if (!r.ok) return;
+  desenharEconomia(r.avaliacao);
+  $("vb-eco-csv").hidden = false;
+  const feitos = Object.values(r.avaliacao.metodos).filter((m) => m.valor).length;
+  status(`Viabilidade de ${campo}: ${feitos} de 3 métodos com dados suficientes.`, "ok");
+}
+
+const reais = (v) => (v == null ? "—" : numero(v, v < 1 ? 3 : v < 100 ? 2 : 0));
+
+function textoCapacidade(m) {
+  if (m.valor == null) return null;
+  if (m.metodo === "molecula") {
+    if (m.massa_mt != null) return `${numero(m.massa_mt, m.massa_mt < 1 ? 3 : 2)} Mt de CO₂`;
+    if (m.energia_util_mwh != null) return `${numero(m.valor, 0)} t de H₂ úteis`;
+    return `${numero(m.volume_padrao_util_milhoes_m3, 1)} milhões de m³ úteis`;
+  }
+  return m.valor >= 1e6 ? `${numero(m.valor / 1e6, 3)} milhões de ${m.unidade}` : `${numero(m.valor, 0)} ${m.unidade}`;
+}
+
+function detalheCapacidade(m) {
+  if (m.falta) return `falta: ${m.falta.join(", ")}`;
+  if (m.metodo === "molecula") {
+    const c = m.condicoes;
+    let t = `ρ = ${numero(m.densidade_kg_m3, 1)} kg/m³ a ${numero(c.pressao_bar, 0)} bar e ${numero(c.temperatura_c, 0)} °C ` +
+      `(${c.origem_pressao === "informada" && c.origem_temperatura === "informada" ? "P e T informadas"
+        : `${c.origem_pressao}; ${c.origem_temperatura}`}` + (c.origem_profundidade && c.origem_profundidade !== "informada"
+        ? `; ${numero(c.profundidade_m, 0)} m pela ${c.origem_profundidade}` : "") + ")";
+    if (m.energia_util_mwh != null) t += ` · ${numero(m.energia_util_mwh / 1000, 1)} GWh (PCI)`;
+    if (m.colchao != null) t += ` · colchão ${numero(m.colchao * 100, 0)}%`;
+    return t;
+  }
+  return m.formula;
+}
+
+function desenharEconomia(av) {
+  const box = limpar($("vb-eco-resultado"));
+  const c = av.custo;
+  box.appendChild(el("p", "ajuda", `Duto: R$ ${numero(c.r_por_km / 1e6, 2)} milhões por km — ${c.referencia}` +
+    `${c.data_base ? ", data-base " + c.data_base : ""}; ${numero(c.diametro_pol, 1)}″, ×${numero(c.fator_fluido, 2)} pelo fluido` +
+    `${av.parametros.fator_tracado !== 1 ? `, traçado ×${numero(av.parametros.fator_tracado, 2)}` : ""}.`));
+  box.appendChild(el("p", "ajuda", `Produção acumulada: ${av.acumulados.fonte}.`));
+
+  box.appendChild(el("h4", "", "Capacidade de injeção"));
+  const t = document.createElement("table");
+  for (const k of ["simples", "poroso", "molecula"]) {
+    const m = av.metodos[k];
+    const tr = document.createElement("tr");
+    const th = el("th", "", m.rotulo);
+    th.appendChild(el("span", "vb-sub", detalheCapacidade(m)));
+    const v = textoCapacidade(m);
+    tr.append(th, el("td", v ? "vb-km" : "vb-falta", v || "sem dados"));
+    t.appendChild(tr);
+  }
+  box.appendChild(t);
+
+  box.appendChild(el("h4", "", "Custo do duto ÷ capacidade"));
+  const temMwh = av.linhas.some((l) => l.r_por_mwh != null);
+  const t2 = document.createElement("table");
+  t2.className = "vb-ind";
+  const cab = document.createElement("tr");
+  for (const h of ["Até", "Duto R$ mi", "R$/m³ oe", "R$/m³ res", `R$/t ${vbEco.opcoes.fluidos.find((f) => f.id === av.parametros.fluido).rotulo}`]
+    .concat(temMwh ? ["R$/MWh"] : [])) cab.appendChild(el("th", "", h));
+  t2.appendChild(cab);
+  for (const l of av.linhas) {
+    const tr = document.createElement("tr");
+    if (l.origem_tipica) tr.className = "vb-origem";
+    const th = el("th", "", (l.origem_tipica ? "★ " : "") + l.rotulo);
+    th.appendChild(el("span", "vb-sub", l.toca_o_campo ? "no campo" : `${numero(l.distancia_km, 1)} km`));
+    tr.append(th, el("td", "", numero(l.custo_r / 1e6, l.custo_r < 1e7 ? 2 : 0)));
+    for (const k of ["simples", "poroso", "molecula"]) tr.appendChild(el("td", "vb-km", reais(l.indicadores[k])));
+    if (temMwh) tr.appendChild(el("td", "vb-km", reais(l.r_por_mwh)));
+    t2.appendChild(tr);
+  }
+  box.appendChild(t2);
+  box.appendChild(el("p", "ajuda", "★ origem natural do fluido escolhido. Menor = mais viável: menos investimento em duto " +
+    "por unidade de espaço. É triagem para comparar campos — pressão e injetividade só a simulação responde."));
+  if (av.avisos.length) {
+    const ul = el("ul", "vb-avisos");
+    for (const a of av.avisos) ul.appendChild(el("li", "", a));
+    box.appendChild(ul);
+  }
+}
+
+async function exportarEconomia() {
+  const r = await chamar($("vb-eco-csv"), "viabilidade_economia_csv", $("vb-campo").value.trim(), lerParametrosVb());
   if (r.ok) status(`Salvo em ambiente_teste/${r.arquivo}`, "ok");
 }

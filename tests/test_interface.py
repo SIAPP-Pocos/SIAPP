@@ -856,4 +856,35 @@ def test_camadas_no_mapa_e_distancias_do_campo(janela, tmp_path, monkeypatch):
     assert "Sem a camada" in texto and "Porto" in texto
     p.click("#vb-csv")
     janela.esperar("document.getElementById('status').textContent.includes('distancias_campo_teste.csv')", 30)
+    # viabilidade econômica: só com a produção, o método simples (PIBIC)
+    janela.esperar("!document.getElementById('vb-eco').hidden", 30)
+    assert p.input_value("#vb-custo") == "488" and p.input_value("#vb-diametro") == "8"
+    p.click("#vb-avaliar")
+    janela.esperar("document.getElementById('vb-eco-resultado').textContent.includes('Custo do duto')", 30)
+    t = p.text_content("#vb-eco-resultado")
+    assert "Simples (PIBIC)" in t and "m³ de óleo equivalente" in t and "falta: Bo, Bg" in t
+    assert "Gasoduto de transporte" in t and "R$/m³ oe" in t and "Plano de Desenvolvimento" in t
+    # com Bo, Bg, Rs, P e T: os três métodos
+    p.click("summary:has-text('Espaço poroso')")
+    p.fill("[data-vb='bo']", "1,2")
+    p.fill("[data-vb='bg']", "0,006")
+    p.fill("[data-vb='rs']", "100")
+    p.click("summary:has-text('Pela molécula')")
+    p.fill("[data-vb='pressao_bar']", "80")
+    p.fill("[data-vb='temperatura_c']", "35")
+    p.click("#vb-avaliar")
+    janela.esperar("document.getElementById('vb-eco-resultado').textContent.includes('Mt de CO₂')", 30)
+    assert "sem dados" not in p.text_content("#vb-eco-resultado")
+    p.select_option("#vb-fluido", "h2")
+    assert "×1,05" in p.text_content("#vb-custo-ajuda")
+    p.click("#vb-avaliar")
+    janela.esperar("document.getElementById('vb-eco-resultado').textContent.includes('R$/MWh')", 30)
+    assert "★ Hidrogênio verde" in p.text_content("#vb-eco-resultado")
+    p.click("#vb-eco-csv")
+    janela.esperar("document.getElementById('status').textContent.includes('viabilidade_campo_teste.csv')", 30)
+    # os parâmetros ficam guardados no campo
+    p.fill("[data-vb='bo']", "")
+    p.click("#vb-medir")
+    janela.esperar("document.querySelector(\"[data-vb='bo']\").value === '1,2'", 30)
+    assert p.input_value("#vb-fluido") == "h2"
     assert not janela.erros_js, janela.erros_js

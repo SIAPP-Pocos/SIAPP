@@ -38,6 +38,8 @@
     producao.py     produção da ANP por campo (por poço, por zona, PD) → producao_poco, producao_zona, campos_anp
     camadas.py      camadas geográficas: EPE (ArcGIS REST), ANP (zip), IBGE BC250 (Range) → sig/*.geojson
     viabilidade.py  campo × infraestrutura: polígono do campo, distância à feição mais próxima de cada camada, depleção
+    economia.py     viabilidade econômica: custo do duto (R$/pol·km da EPE × diâmetro × fator do fluido), capacidade
+                    de injeção em três métodos (volume produzido, espaço poroso, massa pela molécula — Peng-Robinson)
     direcionais.py  dados direcionais: 5 leiautes, curvatura mínima (tabela direcionais)
     ferramentas.py  esquemas de ferramentas: tipo da corrida, ferramentas, vínculo com os perfis (tabela esquemas)
                ▼

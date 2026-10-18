@@ -2,13 +2,13 @@
 
 [![testes](https://github.com/SIAPP-Pocos/siapp/actions/workflows/testes.yml/badge.svg)](https://github.com/SIAPP-Pocos/siapp/actions/workflows/testes.yml)
 [![licença: AGPL-3.0](https://img.shields.io/badge/licen%C3%A7a-AGPL--3.0-blue)](LICENSE)
-![versão](https://img.shields.io/badge/vers%C3%A3o-0.25.0-informational)
+![versão](https://img.shields.io/badge/vers%C3%A3o-0.26.0-informational)
 
 Ferramenta aberta para transformar o acervo **público** de dados de poços da ANP
 (portal [REATE](https://reate.cprm.gov.br/anp/TERRESTRE), ANP/CPRM) em dados
 organizados, pesquisáveis e prontos para análise — sem software comercial.
 
-> **Estado:** em desenvolvimento ativo (v0.25). A interface e os formatos ainda
+> **Estado:** em desenvolvimento ativo (v0.26). A interface e os formatos ainda
 > podem mudar entre versões; a 1.0 sai no lançamento público.
 
 ---
@@ -77,6 +77,7 @@ motor/            toda a lógica, sem nenhuma dependência de interface
   producao.py     produção da ANP por campo: por poço, por zona, ficha, polígono, sumário do PD
   camadas.py      camadas geográficas (EPE, ANP, IBGE BC250 por Range); leitor de shapefile
   viabilidade.py  campo × infraestrutura: polígono, distâncias geodésicas, depleção
+  economia.py     custo do duto ÷ capacidade de injeção (simples/PIBIC, espaço poroso, pela molécula)
   bloco_validacao.py validação cruzada (deixar um poço de fora) e prognóstico num ponto
   bloco_mapas.py  mapas de topo e isópaca: GeoTIFF e XYZ em SIRGAS 2000 / UTM
   bloco_eclipse.py deck ECLIPSE (.DATA + .GRDECL) do bloco fechado para simuladores

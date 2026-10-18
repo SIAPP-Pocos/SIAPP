@@ -6,6 +6,26 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 
 ## [Não lançado]
 
+## [0.26.0] — 2026-10-18
+### Adicionado
+- **Viabilidade econômica** (`motor/economia.py`, aba Mapa, depois de medir as distâncias): para
+  cada infraestrutura medida, o custo do duto até ela e o indicador **investimento ÷ capacidade de
+  injeção** do campo, em três métodos:
+  - **Simples (PIBIC)** — o espaço é o volume produzido, em m³ de óleo equivalente (óleo +
+    condensado + gás ÷ 1.000). Vale para todo campo com produção baixada.
+  - **Espaço poroso** — o volume liberado no reservatório, Np·Bo + (Gp − Np·Rs)·Bg + Wp − Wi − Gi·Bg.
+    Pede Bo (campo com óleo) e Bg (campo com gás); Rs opcional. Água e injeção entram só com a
+    série mensal completa.
+  - **Pela molécula** — esse espaço cheio de CO₂, H₂ ou CH₄ nas condições do reservatório (Peng-Robinson
+    com translação de volume; P e T informados ou por gradiente sobre a profundidade dos poços);
+    em t de CO₂, t de H₂ útil (descontado o gás de colchão) e MWh, ou m³ de gás natural.
+- Custo do duto: R$ por polegada·km de projetos reais dos Planos Indicativos de Gasodutos da EPE
+  (PIG 2024 por padrão: R$ 488 mil/pol·km, jun/2024; PIG 2022 e 2019 como alternativas, ou valor
+  próprio), × diâmetro × fator do fluido (CO₂ ×1,20; H₂ ×1,05) × fator de traçado.
+- Produção acumulada: a série mensal se cobre todo o histórico sem buracos; senão a acumulada do
+  PD (+ a produção mensal logo depois dela); senão o período baixado, avisando que subestima.
+- Os parâmetros ficam guardados por campo; CSV em `exportacoes\producao\viabilidade_<campo>.csv`.
+
 ## [0.25.0] — 2026-10-18
 ### Adicionado
 - **Camadas no mapa** (aba Mapa, "Mostrar no mapa"): cada camada baixada liga e desliga no

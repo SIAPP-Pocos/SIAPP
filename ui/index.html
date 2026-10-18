@@ -251,8 +251,8 @@
       <section class="etapa" id="cm-etapa">
         <h2>Camadas geográficas</h2>
         <p class="ajuda">Gasodutos, campos, blocos exploratórios, unidades de hidrogênio verde, termelétricas, portos… de fontes oficiais, em SIRGAS
-          2000. Ficam em <code>ambiente_teste\sig</code> (GeoJSON e o shapefile original, para o QGIS). Desenhar no
-          mapa e medir distâncias vêm na próxima etapa.</p>
+          2000. Ficam em <code>ambiente_teste\sig</code> (GeoJSON e o shapefile original, para o QGIS) e ligam
+          e desligam no mapa logo abaixo.</p>
         <div class="cm-lista" id="cm-lista"></div>
         <div class="linha">
           <button class="btn secundario" id="cm-baixar">Baixar as marcadas</button>
@@ -266,7 +266,7 @@
         <p class="ajuda">Distância do campo (polígono da ANP) até o gasoduto, o duto de escoamento, a UPGN, o projeto
           de hidrogênio, a termelétrica (fonte de CO₂) e o porto mais próximos, e quanto do volume in place já foi
           produzido (sumário do Plano de Desenvolvimento). Usa as camadas baixadas acima e a produção baixada na aba
-          Bloco 3D. Custos e capacidade de injeção vêm na próxima etapa.</p>
+          Bloco 3D. Depois de medir, a viabilidade econômica: custo do duto ÷ capacidade de injeção.</p>
         <div class="filtros">
           <label>Campo <input type="text" id="vb-campo" list="pr-lista-campos" autocomplete="off" placeholder="ex.: GUAMARÉ"></label>
         </div>
@@ -275,6 +275,56 @@
           <button class="btn secundario pequeno" id="vb-csv" hidden>CSV</button>
         </div>
         <div class="pr-resumo" id="vb-resultado"></div>
+        <fieldset class="vb-eco" id="vb-eco" hidden>
+          <legend>Viabilidade econômica</legend>
+          <p class="ajuda">Custo do duto até cada infraestrutura medida ÷ quanto o campo comporta. Três jeitos de
+            medir o espaço: <b>simples (PIBIC)</b>, o volume produzido — vale para todo campo com produção;
+            <b>espaço poroso</b>, o volume liberado no reservatório — pede Bo e Bg; <b>pela molécula</b>, esse
+            espaço cheio de CO₂, H₂ ou CH₄ nas condições do reservatório — pede também P e T (ou a profundidade).</p>
+          <div class="filtros vb-form">
+            <label>Fluido injetado <select id="vb-fluido" data-vb="fluido"></select></label>
+            <label>Custo de referência <select id="vb-fonte-custo" data-vb="fonte_custo"></select></label>
+            <label title="Custo de um gasoduto de gás natural por polegada de diâmetro e por km">R$ mil por pol·km
+              <input type="text" class="curto" inputmode="decimal" id="vb-custo" data-vb="custo_mil_pol_km"></label>
+            <label>Diâmetro (pol) <input type="text" class="curto" inputmode="decimal" id="vb-diametro" data-vb="diametro_pol"></label>
+            <label title="Comprimento real do duto ÷ distância em linha reta (1 = a distância, como no PIBIC)">Fator de traçado
+              <input type="text" class="curto" inputmode="decimal" data-vb="fator_tracado"></label>
+          </div>
+          <p class="ajuda" id="vb-custo-ajuda"></p>
+          <details class="vb-avancado">
+            <summary>Espaço poroso — Bo, Bg, Rs do campo</summary>
+            <div class="filtros vb-form">
+              <label title="Fator volume-formação do óleo (m³ no reservatório por m³ na superfície), típico 1,05–1,5">Bo (m³/m³)
+                <input type="text" class="curto" inputmode="decimal" data-vb="bo"></label>
+              <label title="Fator volume-formação do gás (m³ no reservatório por m³ padrão), típico 0,003–0,02">Bg (m³/m³)
+                <input type="text" class="curto" inputmode="decimal" data-vb="bg"></label>
+              <label title="Razão de solubilidade inicial (m³ de gás dissolvido por m³ de óleo). Sem ela, todo o gás conta como gás livre">Rs (m³/m³)
+                <input type="text" class="curto" inputmode="decimal" data-vb="rs"></label>
+            </div>
+          </details>
+          <details class="vb-avancado">
+            <summary>Pela molécula — pressão, temperatura, eficiência</summary>
+            <div class="filtros vb-form">
+              <label title="Profundidade do reservatório. Vazio: a mediana da profundidade final dos poços do campo">Profundidade (m)
+                <input type="text" class="curto" inputmode="decimal" data-vb="profundidade_m" placeholder="dos poços"></label>
+              <label title="Pressão a que o reservatório volta com a injeção. Vazio: hidrostática pela profundidade">Pressão (bar)
+                <input type="text" class="curto" inputmode="decimal" data-vb="pressao_bar" placeholder="gradiente"></label>
+              <label>Temperatura (°C) <input type="text" class="curto" inputmode="decimal" data-vb="temperatura_c" placeholder="gradiente"></label>
+              <label>Gradiente de pressão (bar/m) <input type="text" class="curto" inputmode="decimal" data-vb="gradiente_p_bar_m"></label>
+              <label>Temperatura na superfície (°C) <input type="text" class="curto" inputmode="decimal" data-vb="t_superficie_c"></label>
+              <label>Gradiente geotérmico (°C/km) <input type="text" class="curto" inputmode="decimal" data-vb="gradiente_t_c_km"></label>
+              <label title="Fração do espaço que o fluido de fato ocupa (1 = capacidade teórica)">Eficiência
+                <input type="text" class="curto" inputmode="decimal" data-vb="eficiencia"></label>
+              <label title="H₂ e CH₄ armazenados: fração que fica no reservatório para manter a pressão (usual ~0,5)">Gás de colchão
+                <input type="text" class="curto" inputmode="decimal" data-vb="colchao"></label>
+            </div>
+          </details>
+          <div class="linha">
+            <button class="btn secundario" id="vb-avaliar">Calcular a viabilidade</button>
+            <button class="btn secundario pequeno" id="vb-eco-csv" hidden>CSV</button>
+          </div>
+          <div class="pr-resumo" id="vb-eco-resultado"></div>
+        </fieldset>
       </section>
       <section class="etapa">
         <h2>Pastas do REATE</h2>

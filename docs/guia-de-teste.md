@@ -131,6 +131,20 @@ Precisa de internet. Comece por uma categoria pequena para ver o tempo.
 - [ ] Sem intervalo marcado, **Calcular** explica que precisa de um intervalo-alvo.
 - [ ] Repetir no `5PX__0011__RN_5PX__0011__RN.tif` (DLIS de 2020).
 
+## 0.26 — viabilidade econômica
+
+- [ ] **Mapa** → **Campo e infraestrutura** → `GUAMARÉ` → **Medir as distâncias**: abaixo aparece **Viabilidade
+      econômica**, com CO₂, custo do PIG 2024 (488) e 8″. O texto embaixo diz "R$ 4,68 milhões por km (×1,2 …)".
+- [ ] **Calcular a viabilidade** só com a produção: "Simples (PIBIC)" ≈ 1,65 milhão de m³ de óleo equivalente
+      (acumulada do PD, BAR/2021); poroso e molécula dizem o que falta. Na tabela, UPGN a 2,7 km ≈ R$ 13 mi de
+      duto, ≈ R$ 7,7 por m³ oe; termelétrica (★, origem do CO₂) a 43 km ≈ R$ 201 mi, ≈ R$ 122 por m³ oe.
+- [ ] Abra **Espaço poroso** e **Pela molécula**, preencha Bo, Bg, Rs do campo e P/T (ou só a profundidade) →
+      Calcular: os três métodos com valor e a capacidade em Mt de CO₂. Troque o fluido para H₂: aparece R$/MWh e
+      o ★ vai para os projetos de hidrogênio (se a camada estiver baixada).
+- [ ] Meça de novo o campo: os parâmetros voltam preenchidos. **CSV** → `exportacoes\producao\viabilidade_guamare.csv`.
+- [ ] Troque a referência de custo (PIG 2019 — relevo plano): 325; digite outro valor: a referência vira
+      "informado por mim".
+
 ## 0.25 — camadas no mapa e campo × infraestrutura
 
 - [ ] **Mapa** → em "Camadas geográficas", depois de baixar, aparece **Mostrar no mapa**: marque gasodutos de

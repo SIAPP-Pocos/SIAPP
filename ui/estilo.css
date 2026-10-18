@@ -708,6 +708,18 @@ input.sugestao { background: #fff6d6; border-color: #e0b84a; }
 .cm-amostra.poligono { width: 14px; height: 10px; border: 2px solid; }
 .vb-km { font-variant-numeric: tabular-nums; font-weight: 600; }
 .vb-sub { color: var(--suave); font-size: 11px; display: block; text-align: left; }
+/* viabilidade econômica (0.26) */
+.vb-eco { margin-top: 10px; border: 1px solid var(--linha); border-radius: 6px; padding: 6px 10px 10px; }
+.vb-eco legend { font-weight: 600; font-size: 12.5px; padding: 0 4px; }
+.vb-form { grid-template-columns: 1fr 1fr; }
+.vb-form label:has(select) { grid-column: 1 / -1; }
+.vb-form input.curto { width: 100%; }
+.vb-avancado { margin: 4px 0; font-size: 12.5px; }
+.vb-avancado summary { cursor: pointer; color: var(--suave); }
+.vb-eco .vb-origem th:first-child { font-weight: 600; color: inherit; }
+.vb-eco .vb-ind td { white-space: nowrap; }
+.vb-eco .vb-falta { color: var(--suave); font-style: italic; }
+.vb-eco ul.vb-avisos { margin: 6px 0 0; padding-left: 18px; color: var(--suave); font-size: 11.5px; }
 .leaflet-tooltip.vb-rotulo { font: 600 11px var(--sans); padding: 1px 5px; }
 .pp-tabela { border-collapse: collapse; margin-top: 4px; font-size: 11.5px; }
 .pp-tabela th { text-align: left; color: var(--suave); font-weight: 400; padding: 1px 8px 1px 0; vertical-align: top; }
