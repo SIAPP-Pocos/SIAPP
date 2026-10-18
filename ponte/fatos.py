@@ -43,6 +43,13 @@ class FatosAPI:
             raise ErroUsuario("Informe a profundidade.")
         if tipo == "intervalo_alvo" and (topo is None or base is None):
             raise ErroUsuario("Informe topo e base do intervalo.")
+        if tipo == "propriedade_fluido":
+            if not (dados.get("nome") or "").strip():
+                raise ErroUsuario("Informe o nome da propriedade (ex.: Grau API do óleo).")
+            try:
+                float(str(dados.get("valor") or "").replace(",", "."))
+            except ValueError:
+                raise ErroUsuario("Informe o valor da propriedade como número (ex.: 32,5).") from None
         fato = {k: (" ".join(str(dados.get(k) or "").split()) or None)
                 for k in ("nome", "valor", "unidade", "observacao")}
         fato.update({"id": dados.get("id"), "poco_id": self._id_poco(poco), "tipo": tipo,

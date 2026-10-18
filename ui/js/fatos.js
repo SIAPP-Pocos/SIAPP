@@ -10,6 +10,7 @@ const TIPOS_FATO = {
   canhoneio: "Canhoneio",
   mesa_rotativa: "Elevação da mesa rotativa",
   contato_fluido: "Contato de fluido",
+  propriedade_fluido: "Propriedade de fluido (API, densidade do gás…)",
   observacao: "Observação",
 };
 

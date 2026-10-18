@@ -700,9 +700,12 @@ def custos_duto(dados: dict | None, distancias_km: list) -> dict:
                          for k in ("custo_km", "comprimento", "custo_duto")}}
 
 
-def avaliar(banco: Banco, campo: str, distancias: list[dict], dados: dict | None) -> dict:
+def avaliar(banco: Banco, campo: str, distancias: list[dict], dados: dict | None,
+            sugeridos: dict | None = None) -> dict:
     """Custo do duto até cada infraestrutura medida e o indicador (R$ ÷ capacidade) em cada
-    método, com a memória de cálculo completa."""
+    método, com a memória de cálculo completa. `sugeridos`: API e densidade do gás achados nos
+    documentos dos poços ({"api": {"valor", "fonte", "origem"}, "densidade_gas": {...}}), usados
+    quando o usuário não informa."""
     from . import __version__
     p = parametros(dados)
     fl = p["fluido"]
@@ -776,15 +779,31 @@ def avaliar(banco: Banco, campo: str, distancias: list[dict], dados: dict | None
                "Bg": p["bg"] is None and (gp > 0 or gi > 0)}
     estimados: list[str] = []
     rotulos_falta = ROTULO_FALTA_EST if estimar else ROTULO_FALTA
+    sug = sugeridos or {}
+    if p["api"] is not None:
+        api_v, api_f = p["api"], "informado pelo usuário"
+    elif sug.get("api"):
+        api_v, api_f = sug["api"]["valor"], sug["api"]["fonte"]
+    else:
+        api_v, api_f = None, "não informado (nem transcrito, nem lido nos documentos dos poços do campo)"
+    if p["densidade_gas"] is not None:
+        gg_v, gg_f = p["densidade_gas"], "informada pelo usuário"
+    elif sug.get("densidade_gas"):
+        gg_v, gg_f = sug["densidade_gas"]["valor"], sug["densidade_gas"]["fonte"]
+    else:
+        gg_v, gg_f = constante(p, "gg_padrao"), "constante gg_padrao: " + _fonte_const(p, "gg_padrao")
     if estimar and tem_pt and any(precisa.values()):
         GF = "Dados dos fluidos (para as correlações)"
-        mem.entrada("gg", p["densidade_gas"] if p["densidade_gas"] is not None else constante(p, "gg_padrao"),
-                    "informada pelo usuário" if p["densidade_gas"] is not None
-                    else "constante gg_padrao: " + _fonte_const(p, "gg_padrao"), GF)
-        mem.entrada("API", p["api"], "informado pelo usuário" if p["api"] is not None else "não informado", GF)
+        mem.entrada("gg", gg_v, gg_f, GF)
+        mem.entrada("API", api_v, api_f, GF)
         mem.calcular("p_psia", "pvt")
         mem.calcular("t_f", "pvt")
-    tem_api = estimar and tem_pt and p["api"] is not None
+        for g, rot in (("api", "grau API"), ("densidade_gas", "densidade do gás")):
+            usado = (p["api"] is None) if g == "api" else (p["densidade_gas"] is None)
+            if usado and sug.get(g, {}).get("origem") == "leitura":
+                avisos.append(f"O {rot} veio de leitura automática dos documentos dos poços (o OCR pode errar "
+                              "números): confira as páginas e confirme ou descarte cada leitura.")
+    tem_api = estimar and tem_pt and api_v is not None
     # Rs
     if p["rs"] is not None:
         mem.entrada("Rs", p["rs"], "informado pelo usuário", G)

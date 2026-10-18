@@ -33,7 +33,9 @@ existe e a validação científica ficam **para o final**, antes do lançamento 
 - [x] **Viabilidade auditável** (0.27): memória de cálculo de cada execução (entradas com fonte, equação,
       números substituídos, resultado) em JSON e HTML; constantes com padrão e fonte; equações trocáveis por
       alternativas prontas ou por fórmula do usuário.
-- [ ] Viabilidade — próximos refinamentos (com o Ruan): API e densidade do gás por campo de fonte pública, diâmetro pela vazão,
+- [x] **API e densidade do gás das pastas de poço** (0.29): dados transcritos (tipo propriedade_fluido) e leitura
+      automática do texto dos documentos dos poços do campo, com a página como fonte.
+- [ ] Viabilidade — próximos refinamentos (com o Ruan): diâmetro pela vazão,
       correção do custo pela inflação (IPCA/INCC), restrições ambientais (UCs, terras indígenas).
 - [x] **Gasodutos e blocos exploratórios** (0.28): distância de cada bloco exploratório (ou campo) à feição mais
       próxima da camada escolhida e o custo do duto; mapa colorido por distância; CSV com fórmulas e entradas.

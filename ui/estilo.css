@@ -738,6 +738,12 @@ input.sugestao { background: #fff6d6; border-color: #e0b84a; }
 .vb-mem .tag { font: 600 10px var(--sans); color: #fff; background: #c0392b; padding: 0 4px; border-radius: 3px; }
 .vb-mem table td { text-align: left !important; }
 .vb-mem .res { font-weight: 600; }
+.vb-fl { border-top: 1px solid var(--linha); margin-top: 8px; padding-top: 6px; font-size: 12px; }
+.vb-fl table { width: 100%; font-size: 11.5px; }
+.vb-fl td button { font-size: 11px; padding: 1px 6px; margin: 1px 2px 1px 0; }
+.vb-fl .descartada { opacity: 0.45; text-decoration: line-through; }
+.vb-fl .em-uso { font-weight: 600; }
+.vb-fl h5 { margin: 8px 0 2px; font-size: 12px; }
 .leaflet-tooltip.vb-rotulo { font: 600 11px var(--sans); padding: 1px 5px; }
 .pp-tabela { border-collapse: collapse; margin-top: 4px; font-size: 11.5px; }
 .pp-tabela th { text-align: left; color: var(--suave); font-weight: 400; padding: 1px 8px 1px 0; vertical-align: top; }

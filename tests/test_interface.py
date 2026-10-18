@@ -908,6 +908,19 @@ def test_camadas_no_mapa_e_distancias_do_campo(janela, tmp_path, monkeypatch):
     p.click("#vb-medir")
     janela.esperar("document.querySelector(\"[data-vb='bo']\").value === '1,2'", 30)
     assert p.input_value("#vb-fluido") == "h2"
+    # API e densidade nos documentos dos poços do campo
+    poco = "7-TT-1-RN"
+    with janela.api._banco.conexao() as c:
+        c.execute("INSERT INTO pocos (id, nome_anp, campo) VALUES (?, ?, 'CAMPO TESTE')", (poco, poco))
+    janela.api._indice.substituir_documento("bruto/Potiguar/x/teste.pdf", "Potiguar", poco, "teste.pdf",
+                                            [{"pagina": 2, "texto": "óleo de 27,5 °API", "metodo": "ocr", "titulo": ""}])
+    p.click("#vb-fl-buscar")
+    janela.esperar("document.getElementById('vb-fl-resultado').textContent.includes('Grau API do óleo: 27,5')", 30)
+    assert "lido automaticamente" in p.text_content("#vb-fl-resultado")
+    p.click("#vb-fl-resultado button:has-text('confirmar')")
+    janela.esperar("document.getElementById('vb-fl-resultado').textContent.includes('dado transcrito')", 30)
+    assert "Dados transcritos" in p.text_content("#vb-fl-resultado")
+    assert "transcrito" in p.get_attribute("[data-vb='api']", "placeholder")
     # blocos e campos × infraestrutura: os campos de produção contra o gasoduto
     janela.esperar("[...document.querySelectorAll('#ba-areas option')].some(o => o.value === 'anp_campos_producao' && !o.disabled)", 30)
     p.select_option("#ba-areas", "anp_campos_producao")

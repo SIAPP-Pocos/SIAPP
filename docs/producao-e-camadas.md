@@ -157,6 +157,29 @@ informados ou pela profundidade), a menos que "Estimar o que faltar" esteja em "
 - Cada correlação é uma equação da lista (pode ser trocada) e aparece na memória com as conversões
   de unidade; caso fora da faixa original gera aviso.
 
+## API e densidade do gás nas pastas de poço (0.29)
+
+As correlações pedem o grau API do óleo e a densidade relativa do gás. O SIAPP procura esses
+números nos documentos dos poços do campo (pastas de poço do REATE já baixadas e com texto):
+
+| Nível | O que é | Como entra na viabilidade |
+|---|---|---|
+| Digitado | o valor no campo Grau API / Densidade do gás | "informado pelo usuário" |
+| Dado transcrito | tipo **Propriedade de fluido**: caixa desenhada na página, número conferido | mediana; fonte com poço, documento e página |
+| Leitura automática | o texto da página traz "28,5 °API", "Grau API: 30", "densidade do gás 0,70"… | mediana, com aviso: o OCR erra números — confira e confirme ou descarte |
+| Página que cita | "API", "DENS.(CNTP)", "análise do óleo/gás", "cromatografia", "PVT" sem número legível | lista para abrir e transcrever |
+
+- Leitura: texto sem acento; padrões para "N °API", "grau/densidade API: N", "API = N", "API
+  gravity N", "densidade (relativa) do gás (ar = 1): 0,NN", "gravidade específica do gás",
+  "gas specific gravity". Recusa especificação de tubo ("API 5CT", "API 5L"), frações de
+  polegada ("5 1/2 API") e valores fora da faixa (API 5–70; densidade 0,55–1,8).
+- Poços do campo: os do cadastro com aquele campo; o nome da pasta do REATE é casado pelo nome
+  canônico (7GMR_0013__RN = 7-GMR-13-RN).
+- Leituras descartadas ficam guardadas no campo.
+- Nas pastas do Potiguar, os formulários de análise de óleo e de teste de formação costumam ter
+  o valor manuscrito: o OCR acha a página ("análise do óleo produzido"), mas não o número — por
+  isso a lista de páginas para transcrever.
+
 ## Blocos e campos × infraestrutura (0.28)
 
 O estudo do PIBIC em lote: para **cada** bloco exploratório (ou campo de produção) da camada da

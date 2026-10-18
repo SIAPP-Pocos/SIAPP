@@ -199,6 +199,12 @@ function ligarExternos() {
   ligar("vb-diametro", "oninput", ajudaCustoVb);
   ligar("vb-fluido", "onchange", ajudaCustoVb);
   ligar("ba-medir", "onclick", medirAreas);
+  ligar("vb-fl-buscar", "onclick", () => carregarFluidos($("vb-fl-buscar")));
+  ligar("vb-fl-processar", "onclick", async () => {
+    const r = await chamar($("vb-fl-processar"), "fluido_processar_campo", $("vb-campo").value.trim());
+    if (r.ok) status(`${r.enfileirados} documento(s) na fila de texto/OCR — acompanhe na aba Documentos; depois clique em ` +
+                     `"Procurar de novo".`, "ok");
+  });
   ligar("ba-csv", "onclick", async () => {
     const r = await chamar($("ba-csv"), "areas_csv");
     if (r.ok) status(`Salvo em ambiente_teste/${r.arquivo}`, "ok");
@@ -297,6 +303,7 @@ async function medirDistancias() {
   $("vb-csv").hidden = false;
   if (await carregarOpcoesViabilidade()) {
     preencherParametrosVb(r.parametros);
+    carregarFluidos();
     limpar($("vb-eco-resultado"));
     $("vb-eco-csv").hidden = true;
     $("vb-eco").hidden = false;
@@ -807,4 +814,108 @@ async function desenharAreasNoMapa(res) {
   }).addTo(mapa);
   $("mapa-vazio").hidden = true;
   mapa.fitBounds(ba.camada.getBounds().pad(0.05));
+}
+
+// ---------------------------------------------------------------- API e densidade nos documentos (0.29)
+const fl = { dados: null, grandezas: {} };
+
+async function carregarFluidos(botao) {
+  const campo = $("vb-campo").value.trim();
+  if (!campo) return;
+  const r = await chamar(botao || null, "fluidos_campo", campo);
+  if (!r.ok) return;
+  fl.grandezas = r.grandezas;
+  desenharFluidos(r.fluidos);
+}
+
+function desenharFluidos(d) {
+  fl.dados = d;
+  const box = limpar($("vb-fl-resultado"));
+  const doc = d.documentos;
+  box.appendChild(el("p", "ajuda", `${d.n_pocos} poço(s) do campo no cadastro; ${doc.total} documento(s) baixado(s) ` +
+    `deles, ${doc.processados} com texto. ${d.leituras.length} leitura(s) de valor; ${d.n_paginas} página(s) que citam ` +
+    `API ou densidade sem número legível.`));
+  $("vb-fl-processar").hidden = !doc.pendentes.length;
+  $("vb-fl-processar").textContent = `Processar os ${doc.pendentes.length} documento(s) pendente(s)`;
+  for (const g of ["api", "densidade_gas"]) {
+    const e = d.escolha[g], inp = document.querySelector(`[data-vb="${g}"]`);
+    if (inp) inp.placeholder = e ? `${numero(e.valor, 3)} (${e.origem === "transcrito" ? "transcrito" : "documentos"})`
+      : (g === "densidade_gas" ? "0,65" : "");
+    const rot = fl.grandezas[g].rotulo;
+    box.appendChild(el("p", e ? "em-uso" : "ajuda", e
+      ? `${rot}: ${numero(e.valor, 3)} — ${e.fonte}`
+      : `${rot}: nada nos documentos — ${g === "api" ? "sem ele, Bo e Rs não são estimados" : "usa 0,65"}.`));
+  }
+  if (d.leituras.length) {
+    box.appendChild(el("h5", "", "Valores lidos nos documentos"));
+    const t = document.createElement("table");
+    for (const x of d.leituras) {
+      const tr = document.createElement("tr");
+      if (x.descartada) tr.className = "descartada";
+      const th = el("td", "", `${fl.grandezas[x.grandeza].rotulo}: ${numero(x.valor, 3)}`);
+      th.appendChild(el("span", "vb-sub", `${x.poco} · ${x.arquivo} p. ${x.pagina}${x.metodo === "ocr" ? " · OCR" : ""} · «${x.lido}»`));
+      th.title = x.trecho;
+      const acoes = el("td");
+      const b1 = el("button", "btn secundario", "abrir");
+      b1.onclick = () => abrirPaginaFluido(x, x.grandeza);
+      const b2 = el("button", "btn secundario", "confirmar");
+      b2.title = "Conferiu na página? Vira dado transcrito, com a página como fonte";
+      b2.onclick = async () => {
+        const r = await chamar(b2, "fluido_confirmar", $("vb-campo").value.trim(), x);
+        if (r.ok) { desenharFluidos(r.fluidos); status(`Guardado como dado transcrito do poço ${r.fato.poco_id}.`, "ok"); }
+      };
+      const b3 = el("button", "btn secundario", x.descartada ? "voltar" : "descartar");
+      b3.onclick = async () => {
+        const r = await chamar(b3, "fluido_descartar", $("vb-campo").value.trim(), x.chave, x.descartada);
+        if (r.ok) desenharFluidos(r.fluidos);
+      };
+      acoes.append(b1, b2, b3);
+      tr.append(th, acoes);
+      t.appendChild(tr);
+    }
+    box.appendChild(t);
+  }
+  if (d.fatos.length) {
+    box.appendChild(el("h5", "", "Dados transcritos (propriedade de fluido)"));
+    const t = document.createElement("table");
+    for (const f of d.fatos) {
+      const tr = document.createElement("tr");
+      const td = el("td", "", `${f.nome}: ${f.valor}${f.unidade ? " " + f.unidade : ""}`);
+      td.appendChild(el("span", "vb-sub", `${f.poco_id}${f.fonte_rel ? " · " + f.fonte_rel.split("/").pop() : ""}` +
+        `${f.pagina ? " p. " + f.pagina : ""}${f.grandeza ? "" : " · não usado na viabilidade"}`));
+      tr.appendChild(td);
+      t.appendChild(tr);
+    }
+    box.appendChild(t);
+  }
+  if (d.paginas.length) {
+    const det = el("details");
+    det.appendChild(el("summary", "", `Páginas que citam sem número legível (${d.n_paginas}) — abra e transcreva`));
+    const t = document.createElement("table");
+    for (const x of d.paginas.slice(0, 30)) {
+      const tr = document.createElement("tr");
+      const td = el("td", "", `${x.poco} · ${x.arquivo} p. ${x.pagina}`);
+      td.appendChild(el("span", "vb-sub", x.trecho));
+      const b = el("button", "btn secundario", "abrir e transcrever");
+      b.onclick = () => abrirPaginaFluido(x, /gas|cntp|gravidade/.test(x.termo) ? "densidade_gas" : "api");
+      const acoes = el("td");
+      acoes.appendChild(b);
+      tr.append(td, acoes);
+      t.appendChild(tr);
+    }
+    det.appendChild(t);
+    box.appendChild(det);
+  }
+}
+
+async function abrirPaginaFluido(x, grandeza) {
+  trocarAba("docs");
+  await abrirPagina(x.doc, x.pagina, grandeza === "api" ? "API" : "densidade");
+  $("tr-box").open = true;
+  $("tr-tipo").value = "propriedade_fluido";
+  $("tr-nome").value = (fl.grandezas[grandeza] || {}).rotulo || "";
+  $("tr-poco").value = x.poco;
+  $("tr-unidade").value = (fl.grandezas[grandeza] || {}).unidade || "";
+  status("Desenhe a caixa em volta do valor na imagem, confira e salve. Depois volte à aba Mapa e clique em " +
+         "\"Procurar de novo\".", "ok");
 }

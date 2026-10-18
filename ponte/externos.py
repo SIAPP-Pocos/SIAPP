@@ -8,7 +8,9 @@ import os
 from datetime import date, datetime
 
 from motor import camadas as mca
+from motor import documentos as mdoc
 from motor import economia as mec
+from motor import fluidos as mfl
 from motor import producao as mpr
 from motor import viabilidade as mvi
 
@@ -194,8 +196,9 @@ class ExternosAPI:
         if not campo:
             raise ErroUsuario("Escolha o campo.")
         rel = self._relatorio_vb(campo)
+        sugeridos = self._resumo_fluidos(campo)["escolha"]
         try:
-            av = mec.avaliar(self._banco, campo, rel["distancias"], parametros or {})
+            av = mec.avaliar(self._banco, campo, rel["distancias"], parametros or {}, sugeridos)
         except mec.ErroEconomia as e:
             raise ErroUsuario(str(e)) from e
         return av
@@ -349,3 +352,58 @@ class ExternosAPI:
                             fmt(pa[0]), fmt(pa[1]), fmt(pf[0]), fmt(pf[1]),
                             "; ".join(f"{k}={v}" for k, v in (l.get("feicao") or {}).items())])
         return {"arquivo": os.path.relpath(saida, self._projeto.pasta).replace(os.sep, "/")}
+
+    # ------------------------------------------------------------ API e densidade do gás nos documentos
+    def _resumo_fluidos(self, campo: str) -> dict:
+        indice = getattr(self, "_indice", None)
+        caminho = getattr(indice, "caminho", None)
+        docs = self._projeto.listar_documentos(mdoc.EXTENSOES)
+        return mfl.resumo(self._banco, caminho if caminho and os.path.exists(caminho) else None, campo, docs)
+
+    @resposta_segura
+    def fluidos_campo(self, campo: str):
+        """O que os documentos dos poços do campo dizem sobre API e densidade do gás."""
+        self._exigir_projeto()
+        campo = (campo or "").strip()
+        if not campo:
+            raise ErroUsuario("Escolha o campo.")
+        return {"fluidos": self._resumo_fluidos(campo), "grandezas": mfl.GRANDEZAS, "tipo_fato": mfl.TIPO_FATO,
+                "nomes": mfl.NOMES_SUGERIDOS}
+
+    @resposta_segura
+    def fluido_confirmar(self, campo: str, leitura: dict):
+        """Uma leitura automática conferida pelo usuário vira dado transcrito (com a página como fonte)."""
+        self._exigir_projeto()
+        g = mfl.GRANDEZAS.get(str(leitura.get("grandeza")))
+        if not g:
+            raise ErroUsuario("Leitura inválida.")
+        valor = str(leitura.get("valor")).replace(".", ",")
+        fato = self._salvar_fato({"tipo": mfl.TIPO_FATO, "poco": leitura.get("poco"), "nome": g["rotulo"],
+                                  "valor": valor, "unidade": g["unidade"], "pagina": int(leitura.get("pagina") or 0) or None,
+                                  "observacao": "confirmado de leitura automática: " + str(leitura.get("lido") or "")[:120]},
+                                 fonte_rel=leitura.get("doc"))
+        return {"fato": fato, "fluidos": self._resumo_fluidos(campo)}
+
+    @resposta_segura
+    def fluido_descartar(self, campo: str, chave: str, desfazer: bool = False):
+        self._exigir_projeto()
+        ficha = mpr.campo_guardado(self._banco, campo) or {}
+        lista = [c for c in (ficha.get("fluidos_descartados") or []) if c != chave]
+        if not desfazer:
+            lista.append(str(chave))
+        mpr.guardar_campo(self._banco, campo, fluidos_descartados=lista)
+        self._projeto.registrar("descartou_leitura_fluido" if not desfazer else "voltou_leitura_fluido",
+                                campo=campo, leitura=chave)
+        return {"fluidos": self._resumo_fluidos(campo)}
+
+    @resposta_segura
+    def fluido_processar_campo(self, campo: str):
+        """Põe na fila de texto/OCR os documentos baixados dos poços do campo que ainda não têm texto."""
+        self._exigir_projeto()
+        pend = self._resumo_fluidos(campo)["documentos"]["pendentes"]
+        if not pend:
+            raise ErroUsuario("Nenhum documento pendente dos poços deste campo (baixe as pastas de poço na aba Catálogo).")
+        r = self.processar_documentos(pend)
+        if not r.get("ok", True):
+            raise ErroUsuario(r.get("erro") or "Falha ao enfileirar.")
+        return {"enfileirados": r.get("enfileirados", len(pend))}

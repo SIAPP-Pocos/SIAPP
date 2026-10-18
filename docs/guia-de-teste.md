@@ -131,6 +131,20 @@ Precisa de internet. Comece por uma categoria pequena para ver o tempo.
 - [ ] Sem intervalo marcado, **Calcular** explica que precisa de um intervalo-alvo.
 - [ ] Repetir no `5PX__0011__RN_5PX__0011__RN.tif` (DLIS de 2020).
 
+## 0.29 — API e densidade do gás nas pastas de poço
+
+- [ ] Com pastas de poço de Guamaré baixadas (aba Catálogo) → Mapa → `GUAMARÉ` → **Medir as distâncias** → abra
+      "Espaço poroso": o quadro **Nos documentos dos poços do campo** diz quantos poços, documentos baixados e com
+      texto. Se houver pendentes: **Processar os documentos pendentes** (acompanhe na aba Documentos) e depois
+      **Procurar de novo**.
+- [ ] Valores lidos: cada um com poço, arquivo, página e o trecho lido. **abrir** leva à página na aba Documentos com
+      "Transcrever" aberto e o tipo "Propriedade de fluido" preenchido. **confirmar** vira dado transcrito;
+      **descartar** risca a leitura (e **voltar** desfaz).
+- [ ] "Páginas que citam sem número legível": no 7-GMR-13-RN aparece a pág. 43 ("análise do óleo produzido", com os
+      campos API e DENS.(CNTP) do formulário). **abrir e transcrever**, desenhe a caixa no valor, salve; volte e
+      **Procurar de novo**: o API passa a "dado transcrito" e o campo Grau API mostra o valor em cinza.
+- [ ] Calcular a viabilidade: na memória, a entrada API diz "dado transcrito: 7-GMR-13-RN (… p. 43) = …".
+
 ## 0.28 — Bo, Rs e Bg por correlação; blocos × gasoduto
 
 - [ ] `GUAMARÉ`, sem Bo/Bg/Rs, com o **Grau API** do óleo preenchido (em "Espaço poroso") → Calcular: o espaço

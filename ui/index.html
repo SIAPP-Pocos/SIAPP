@@ -312,6 +312,17 @@
               <label title="Razão de solubilidade inicial (m³ de gás dissolvido por m³ de óleo). Sem ela, todo o gás conta como gás livre">Rs (m³/m³)
                 <input type="text" class="curto" inputmode="decimal" data-vb="rs"></label>
             </div>
+            <div class="vb-fl" id="vb-fl">
+              <b>Nos documentos dos poços do campo</b>
+              <p class="ajuda">API e densidade do gás vêm, nesta ordem: do que você digitar acima; dos dados transcritos das
+                páginas (tipo "Propriedade de fluido"); da leitura automática do texto das pastas de poço (confira — o OCR
+                erra números).</p>
+              <div id="vb-fl-resultado"></div>
+              <div class="linha">
+                <button class="btn secundario pequeno" id="vb-fl-buscar">Procurar de novo</button>
+                <button class="btn secundario pequeno" id="vb-fl-processar" hidden>Processar os documentos pendentes</button>
+              </div>
+            </div>
           </details>
           <details class="vb-avancado">
             <summary>Pela molécula — pressão, temperatura, eficiência</summary>
@@ -502,7 +513,9 @@
         <form class="tr-form" id="tr-form">
           <label>Tipo <select id="tr-tipo"></select></label>
           <label>Poço <input id="tr-poco" type="text"></label>
-          <label class="largo">Nome <input id="tr-nome" type="text" placeholder="ex.: Formação Açu, sapata 9 5/8 pol."></label>
+          <label class="largo">Nome <input id="tr-nome" type="text" list="tr-nomes-fluido" placeholder="ex.: Formação Açu, sapata 9 5/8 pol., Grau API do óleo"></label>
+          <datalist id="tr-nomes-fluido"><option value="Grau API do óleo"><option value="Densidade relativa do gás">
+            <option value="RGO (razão gás-óleo)"><option value="Bo (fator volume-formação do óleo)"><option value="Viscosidade do óleo"><option value="BSW"></datalist>
           <label>Topo / profundidade (m) <input id="tr-topo" type="text" inputmode="decimal"></label>
           <label>Base (m) <input id="tr-base" type="text" inputmode="decimal" placeholder="se for intervalo"></label>
           <label>Valor <input id="tr-valor" type="text" placeholder="ex.: 12,5"></label>

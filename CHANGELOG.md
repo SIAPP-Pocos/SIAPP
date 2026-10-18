@@ -6,6 +6,24 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 
 ## [Não lançado]
 
+## [0.29.0] — 2026-10-18
+### Adicionado
+- **Grau API e densidade do gás a partir das pastas de poço** (`motor/fluidos.py`): para o
+  campo da viabilidade, o SIAPP procura no texto (embutido ou OCR) dos documentos dos poços
+  do campo valores como "28,5 °API", "Grau API: 30" e "densidade do gás 0,70", e lista as
+  páginas que citam API, densidade do gás ou análise de óleo/gás sem número legível (formulários
+  manuscritos). Cada leitura mostra poço, arquivo, página e trecho, e pode ser aberta,
+  **confirmada** (vira dado transcrito com a página como fonte) ou **descartada**.
+- Ordem de uso na viabilidade: o que o usuário digita → dados transcritos (mediana) → leitura
+  automática (mediana, com aviso de que o OCR erra números) → nada (API) ou 0,65 (densidade).
+  A memória de cálculo diz de qual poço, documento e página veio cada valor.
+- Tipo de dado transcrito **Propriedade de fluido** (`propriedade_fluido`), com nomes
+  sugeridos (Grau API do óleo, Densidade relativa do gás, RGO, Bo, viscosidade, BSW); "abrir e
+  transcrever" leva à página com o tipo, o nome, o poço e a unidade já preenchidos. O esquema v2
+  do SIAPP-dados aceita o tipo novo.
+- "Processar os documentos pendentes" põe na fila de texto/OCR os documentos baixados dos
+  poços do campo que ainda não têm texto.
+
 ## [0.28.0] — 2026-10-18
 ### Adicionado
 - **Bo, Rs e Bg estimados por correlação** quando não informados (pode desligar): Rs e Bo por

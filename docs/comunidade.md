@@ -24,7 +24,7 @@ Arquivo JSON em `ambiente_teste/contribuicoes/AAAA-MM-DD_sobrenome_siapp.json`:
 | `vocabulario.correcoes` | `{de, para}`: forma lida pelo OCR → forma escrita no papel |
 | `vocabulario.palavras` | termos técnicos (atalhos de busca e referência para a correção) |
 | `vocabulario.manter_original` | palavras que a correção automática não deve mexer |
-| `fatos` | dado transcrito: poço, tipo, nome, profundidades, valor e **fonte** |
+| `fatos` | dado transcrito: poço, tipo, nome, profundidades, valor e **fonte** (desde a 0.29, também o tipo `propriedade_fluido`: grau API, densidade do gás…) |
 | `apelidos` | outras grafias do nome de um poço |
 
 A fonte de um fato tem tudo o que um revisor precisa para conferir sem o pacote trazer

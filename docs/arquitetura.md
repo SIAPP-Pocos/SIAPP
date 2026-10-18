@@ -39,6 +39,8 @@
     camadas.py      camadas geográficas: EPE (ArcGIS REST), ANP (zip), IBGE BC250 (Range) → sig/*.geojson
     viabilidade.py  campo × infraestrutura: polígono do campo, distância à feição mais próxima de cada camada, depleção;
                     todas as áreas de uma camada (blocos exploratórios, campos) contra uma infraestrutura, com poda por limites
+    fluidos.py      grau API e densidade do gás dos documentos dos poços do campo: dados transcritos (propriedade_fluido),
+                    leitura automática no índice de texto, páginas que citam sem número
     economia.py     viabilidade econômica: custo do duto (R$/pol·km da EPE × diâmetro × fator do fluido), capacidade
                     de injeção em três métodos (volume produzido, espaço poroso, massa pela molécula — Peng-Robinson).
                     Cada passo é uma fórmula em texto (leitor seguro, sem eval) com memória de cálculo gravada em
