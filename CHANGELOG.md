@@ -6,6 +6,28 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 
 ## [Não lançado]
 
+## [0.27.0] — 2026-10-18
+### Adicionado
+- **Memória de cálculo** da viabilidade econômica: cada execução grava em
+  `execucoes\viabilidade\` um JSON completo e uma página HTML (abre no navegador, imprime em PDF) com
+  os dados de entrada e a fonte de cada um (arquivo da ANP, PD, camada, valor informado, constante
+  padrão ou alterada), cada passo com a equação, a equação com os números e o resultado, a equação de
+  estado com todos os valores intermediários (κ, α, a, b, A, B, raízes, Z, translação, volume
+  molar) e o cálculo por infraestrutura. Na tela, "Memória de cálculo — passo a passo"; no CSV, a
+  mesma memória em linhas.
+- **Constantes editáveis**, cada uma com valor padrão, fonte e faixa aceita: fator de custo por
+  fluido, gás por m³ de óleo equivalente, Bw, PCI do H₂, condição padrão, pressão na superfície e
+  as propriedades críticas de CO₂, H₂ e CH₄.
+- **Equações editáveis**: cada passo (custo por km, comprimento, custo do duto, espaço simples,
+  gás livre, espaço poroso, pressão, temperatura, massa, massa útil, volume padrão, energia,
+  indicador) é uma fórmula em texto. Dá para escolher uma alternativa pronta (custo afim ou por km
+  informado; espaço só com óleo ou com a água; espaço poroso sem água) ou escrever a própria, com
+  os símbolos listados e + − * / ^, min, max, abs, sqrt, exp, ln, log10. O leitor de fórmulas não
+  executa código; variável desconhecida, divisão por zero ou erro de escrita dão mensagem clara.
+  Equação ou constante alterada fica marcada na memória e nos avisos.
+- Parâmetros novos: parcela fixa do custo (R$ mil/km) e densidade informada (no lugar de
+  Peng-Robinson).
+
 ## [0.26.0] — 2026-10-18
 ### Adicionado
 - **Viabilidade econômica** (`motor/economia.py`, aba Mapa, depois de medir as distâncias): para

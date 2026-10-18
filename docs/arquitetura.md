@@ -39,7 +39,9 @@
     camadas.py      camadas geográficas: EPE (ArcGIS REST), ANP (zip), IBGE BC250 (Range) → sig/*.geojson
     viabilidade.py  campo × infraestrutura: polígono do campo, distância à feição mais próxima de cada camada, depleção
     economia.py     viabilidade econômica: custo do duto (R$/pol·km da EPE × diâmetro × fator do fluido), capacidade
-                    de injeção em três métodos (volume produzido, espaço poroso, massa pela molécula — Peng-Robinson)
+                    de injeção em três métodos (volume produzido, espaço poroso, massa pela molécula — Peng-Robinson).
+                    Cada passo é uma fórmula em texto (leitor seguro, sem eval) com memória de cálculo gravada em
+                    execucoes/viabilidade/ (JSON + HTML); constantes e equações editáveis
     direcionais.py  dados direcionais: 5 leiautes, curvatura mínima (tabela direcionais)
     ferramentas.py  esquemas de ferramentas: tipo da corrida, ferramentas, vínculo com os perfis (tabela esquemas)
                ▼

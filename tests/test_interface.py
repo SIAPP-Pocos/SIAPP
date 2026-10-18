@@ -880,6 +880,27 @@ def test_camadas_no_mapa_e_distancias_do_campo(janela, tmp_path, monkeypatch):
     p.click("#vb-avaliar")
     janela.esperar("document.getElementById('vb-eco-resultado').textContent.includes('R$/MWh')", 30)
     assert "★ Hidrogênio verde" in p.text_content("#vb-eco-resultado")
+    # memória de cálculo, equações e constantes editáveis
+    janela.esperar("!document.getElementById('vb-mem-caixa').hidden", 30)
+    assert "ambiente_teste/execucoes/viabilidade/" in p.text_content("#vb-mem-arquivo")
+    mem = p.text_content("#vb-memoria")
+    assert "oe = Np + Gp / gas_por_oe" in mem and "Peng-Robinson" in mem and "Plano de Desenvolvimento" in mem
+    pasta_mem = os.path.join(janela.api._projeto.pasta, "execucoes", "viabilidade")
+    assert any(n.endswith(".html") for n in os.listdir(pasta_mem))
+    p.click("summary:has-text('Equações')")
+    p.select_option("[data-vbe-sel='espaco_simples']", "0")
+    assert p.input_value("[data-vbe='espaco_simples']") == "Np"
+    p.click("summary:has-text('Constantes')")
+    p.fill("[data-vbc='f_h2']", "1,3")
+    assert "×1,3" in p.text_content("#vb-custo-ajuda")
+    p.click("#vb-avaliar")
+    janela.esperar("document.getElementById('vb-memoria').textContent.includes('alternativa: só óleo e condensado')", 30)
+    assert "constante(s) alterada(s)" in p.text_content("#vb-eco-resultado")
+    p.fill("[data-vbe='espaco_poroso']", "Np * Bo + Zz")
+    assert p.input_value("[data-vbe-sel='espaco_poroso']") == "__propria"
+    p.click("#vb-avaliar")
+    janela.esperar("document.getElementById('status').textContent.includes('variável desconhecida Zz')", 30)
+    p.select_option("[data-vbe-sel='espaco_poroso']", "__padrao")
     p.click("#vb-eco-csv")
     janela.esperar("document.getElementById('status').textContent.includes('viabilidade_campo_teste.csv')", 30)
     # os parâmetros ficam guardados no campo

@@ -289,6 +289,8 @@
             <label>Diâmetro (pol) <input type="text" class="curto" inputmode="decimal" id="vb-diametro" data-vb="diametro_pol"></label>
             <label title="Comprimento real do duto ÷ distância em linha reta (1 = a distância, como no PIBIC)">Fator de traçado
               <input type="text" class="curto" inputmode="decimal" data-vb="fator_tracado"></label>
+            <label title="Usada pelas equações alternativas de custo (afim ou valor por km informado)">Parcela fixa (R$ mil/km)
+              <input type="text" class="curto" inputmode="decimal" data-vb="custo_fixo_km"></label>
           </div>
           <p class="ajuda" id="vb-custo-ajuda"></p>
           <details class="vb-avancado">
@@ -317,13 +319,35 @@
                 <input type="text" class="curto" inputmode="decimal" data-vb="eficiencia"></label>
               <label title="H₂ e CH₄ armazenados: fração que fica no reservatório para manter a pressão (usual ~0,5)">Gás de colchão
                 <input type="text" class="curto" inputmode="decimal" data-vb="colchao"></label>
+              <label title="Vazio: Peng-Robinson. Preenchida: usa este valor no lugar da equação de estado">Densidade (kg/m³)
+                <input type="text" class="curto" inputmode="decimal" data-vb="densidade_kg_m3" placeholder="Peng-Robinson"></label>
             </div>
+          </details>
+          <details class="vb-avancado">
+            <summary>Constantes — valor padrão e fonte</summary>
+            <p class="ajuda">Vazio = o padrão (em cinza). Passe o mouse para ver a fonte. Constante alterada fica marcada na
+              memória de cálculo.</p>
+            <div id="vb-constantes"></div>
+          </details>
+          <details class="vb-avancado">
+            <summary>Equações — padrão, alternativas ou a sua fórmula</summary>
+            <p class="ajuda">Cada passo é uma fórmula. Escolha uma alternativa ou escreva a sua com os símbolos da lista
+              (+ − * / ^, min, max, abs, sqrt, exp, ln, log10). Equação alterada fica marcada na memória de cálculo.</p>
+            <div id="vb-equacoes"></div>
+            <details class="vb-simbolos"><summary>Símbolos</summary><table id="vb-simbolos"></table></details>
+            <button class="btn secundario pequeno" id="vb-eq-padrao">Voltar tudo ao padrão</button>
           </details>
           <div class="linha">
             <button class="btn secundario" id="vb-avaliar">Calcular a viabilidade</button>
             <button class="btn secundario pequeno" id="vb-eco-csv" hidden>CSV</button>
           </div>
           <div class="pr-resumo" id="vb-eco-resultado"></div>
+          <details class="vb-avancado vb-mem-caixa" id="vb-mem-caixa" hidden>
+            <summary>Memória de cálculo — passo a passo</summary>
+            <p class="ajuda" id="vb-mem-arquivo"></p>
+            <button class="btn secundario pequeno" id="vb-mem-abrir">Abrir a memória (HTML)</button>
+            <div class="vb-mem" id="vb-memoria"></div>
+          </details>
         </fieldset>
       </section>
       <section class="etapa">

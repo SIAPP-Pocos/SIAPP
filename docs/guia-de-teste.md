@@ -131,6 +131,22 @@ Precisa de internet. Comece por uma categoria pequena para ver o tempo.
 - [ ] Sem intervalo marcado, **Calcular** explica que precisa de um intervalo-alvo.
 - [ ] Repetir no `5PX__0011__RN_5PX__0011__RN.tif` (DLIS de 2020).
 
+## 0.27 — memória de cálculo, constantes e equações editáveis
+
+- [ ] `GUAMARÉ` → **Calcular a viabilidade**: aparece **Memória de cálculo — passo a passo**. Abra: cada dado de
+      entrada com a fonte (Np e Gp "Plano de Desenvolvimento (BAR/2021…)", custo "EPE PIG 2024…", f_fluido
+      "padrão — estimativa do SIAPP…"); cada passo com a equação, a equação com os números e o resultado; a
+      densidade do CO₂ com κ, α, a, b, A, B, Z… **Abrir a memória (HTML)**: a mesma página no navegador
+      (Ctrl+P → PDF). Em `ambiente_teste\execucoes\viabilidade\` ficam o .html e o .json de cada execução.
+- [ ] **Equações** → Custo do duto por km → "afim: parcela fixa + por polegada"; em **Parcela fixa** ponha 500.
+      Calcular: o custo por km muda, e a memória marca "alternativa: afim…".
+- [ ] Em Espaço — método simples, escreva a sua fórmula (ex.: `Np + 2 * Gp / gas_por_oe`): a caixa fica vermelha
+      e o seletor vira "a minha fórmula". Calcular: a memória marca "fórmula do usuário". Escreva `Np * Zz`: a
+      barra de status diz "variável desconhecida Zz".
+- [ ] **Constantes** → Fator de custo do duto — CO₂ = 1,3: o texto do custo mostra ×1,3; os avisos dizem
+      "1 constante(s) alterada(s)". **Voltar tudo ao padrão** limpa equações e constantes.
+- [ ] Meça o campo de novo: equações e constantes alteradas voltam preenchidas (ficam guardadas no campo).
+
 ## 0.26 — viabilidade econômica
 
 - [ ] **Mapa** → **Campo e infraestrutura** → `GUAMARÉ` → **Medir as distâncias**: abaixo aparece **Viabilidade

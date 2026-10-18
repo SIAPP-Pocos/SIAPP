@@ -1,4 +1,8 @@
-"""Viabilidade econômica: custo do duto, capacidade de injeção nos três métodos e o indicador."""
+"""Viabilidade econômica: custo do duto, capacidade de injeção nos três métodos, o indicador e a
+memória de cálculo (constantes e equações editáveis)."""
+import json
+import os
+
 import pytest
 
 from motor import economia as mec
@@ -16,32 +20,57 @@ def test_densidade_peng_robinson(fluido, p, t, ref, tol):
     assert mec.densidade(fluido, p, t) == pytest.approx(ref, rel=tol)
 
 
-def test_densidade_na_condicao_padrao():
+def test_densidade_na_condicao_padrao_e_constantes_criticas():
     assert mec.densidade("h2", 1.01325, 20) == pytest.approx(0.08375, rel=2e-3)
     assert mec.densidade("co2", 1.01325, 20) == pytest.approx(1.8393, rel=2e-3)
+    det = []
+    rho = mec.densidade("co2", 100, 40, mec.parametros({}), det)
+    assert det[-1][2] == pytest.approx(rho) and any(n == "Z" for n, _, _ in det)
+    # trocar a massa molar muda a densidade na mesma proporção
+    p = mec.parametros({"constantes": {"co2_m": 88.019}})
+    assert mec.densidade("co2", 100, 40, p) == pytest.approx(2 * rho, rel=1e-9)
 
 
-def test_parametros_padrao_referencia_e_manual():
+# ------------------------------------------------------------------ leitor de fórmulas
+def test_formula_segura():
+    a = mec.compilar("max(0, Gp - Np * Rs) + 2^3")
+    assert mec.nomes(a) == {"Gp", "Np", "Rs"}
+    assert mec.avaliar_formula(a, {"Gp": 10, "Np": 2, "Rs": 3}) == 4 + 8
+    assert mec.avaliar_formula(mec.compilar("sqrt(x) + ln(exp(1)) - abs(-y)"), {"x": 9, "y": 2}) == 2
+    for ruim in ("__import__('os')", "x.real", "(lambda: 1)()", "'a'", "x if y else z", "x < y", "[x]",
+                 "open('f')", "x; y", "f(x=1)"):
+        with pytest.raises(mec.ErroEconomia):
+            mec.compilar(ruim)
+    with pytest.raises(mec.ErroEconomia):
+        mec.compilar("")
+
+
+def test_substituir_e_formatar():
+    assert mec.fmt(1651720.0) == "1.651.720" and mec.fmt(0.012) == "0,012" and mec.fmt(415.14058) == "415,141"
+    assert mec.fmt(2.5e13) == "2,5×10^13"
+    assert mec.substituir("Np + Gp / gas_por_oe", {"Np": 1e6, "Gp": 2e8, "gas_por_oe": 1000}) == \
+        "1.000.000 + 200.000.000 / 1.000"
+    assert mec.substituir("max(0, a - b)", {"a": -1, "b": 2}) == "max(0, (-1) - 2)"
+
+
+# ------------------------------------------------------------------ parâmetros
+def test_parametros_padrao_referencia_manual_constantes_e_equacoes():
     p = mec.parametros(None)
     assert p["fonte_custo"] == "pig2024" and p["custo_mil_pol_km"] == 488 and p["fluido"] == "co2"
-    p = mec.parametros({"fonte_custo": "pig2019_plano"})
-    assert p["custo_mil_pol_km"] == 325
+    assert p["constantes"] == {} and p["equacoes"] == {}
+    assert mec.parametros({"fonte_custo": "pig2019_plano"})["custo_mil_pol_km"] == 325
     p = mec.parametros({"fonte_custo": "pig2024", "custo_mil_pol_km": "600", "bo": "1,25", "bg": "0,0045"})
     assert p["fonte_custo"] == "manual" and p["custo_mil_pol_km"] == 600 and p["bo"] == 1.25 and p["bg"] == 0.0045
     assert mec.parametros({"bo": ""})["bo"] is None
-    with pytest.raises(mec.ErroEconomia, match="Bo"):
-        mec.parametros({"bo": "12"})
-    with pytest.raises(mec.ErroEconomia):
-        mec.parametros({"fluido": "plasma"})
-    with pytest.raises(mec.ErroEconomia):
-        mec.parametros({"diametro_pol": "abc"})
-
-
-def test_custo_por_km_com_fator_do_fluido():
-    c = mec.custo_por_km(mec.parametros({"diametro_pol": 10}))
-    assert c["r_por_km_gas_natural"] == pytest.approx(4.88e6)
-    assert c["r_por_km"] == pytest.approx(4.88e6 * 1.20) and c["data_base"] == "jun/2024"
-    assert mec.custo_por_km(mec.parametros({"diametro_pol": 10, "fluido": "h2"}))["r_por_km"] == pytest.approx(4.88e6 * 1.05)
+    # constante igual ao padrão não conta como alterada; equação igual ao padrão também não
+    p = mec.parametros({"constantes": {"f_co2": "1,2", "bw": "1,02"},
+                        "equacoes": {"espaco_simples": "Np+Gp/gas_por_oe", "gas_livre": "Gp"}})
+    assert p["constantes"] == {"bw": 1.02} and p["equacoes"] == {"gas_livre": "Gp"}
+    for ruim in ({"bo": "12"}, {"fluido": "plasma"}, {"diametro_pol": "abc"}, {"constantes": {"xyz": 1}},
+                 {"constantes": {"f_co2": 9}}, {"equacoes": {"nada": "Np"}}, {"equacoes": {"espaco_simples": "Np + Zz"}},
+                 {"equacoes": {"espaco_simples": "oe * 2"}}, {"equacoes": {"massa": "V * import"}}):
+        with pytest.raises(mec.ErroEconomia):
+            mec.parametros(ruim)
 
 
 # ------------------------------------------------------------------ produção acumulada
@@ -58,7 +87,7 @@ def _banco(tmp_path, inicio="01/01/2010", pd=True):
 def _mes(b, periodo, oleo=0, gas=0, agua=0, inj_agua=0, inj_gas=0, poco="1-AA-1-RN"):
     with b.conexao() as c:
         c.execute("INSERT INTO producao_poco (campo, poco_anp, periodo, instalacao, oleo_m3, gas_assoc_mil_m3, agua_m3, "
-                  "inj_agua_rec_m3, inj_gas_mil_m3) VALUES ('CAMPO TESTE', ?, ?, '', ?, ?, ?, ?, ?)",
+                  "inj_agua_rec_m3, inj_gas_mil_m3, arquivo) VALUES ('CAMPO TESTE', ?, ?, '', ?, ?, ?, ?, ?, 'pt.csv')",
                   (poco, periodo, oleo, gas, agua, inj_agua, inj_gas))
 
 
@@ -90,80 +119,141 @@ def test_acumulados_serie_parcial_e_sem_nada(tmp_path):
     _mes(b, "2020-01", oleo=100)
     ac = mec.acumulados(b, "Campo Teste")
     assert ac["np"] == 100 and "só o período baixado" in ac["fonte"] and "desde 2010" in ac["avisos"][0]
-    # começa no início do campo, mas com um buraco: não é completa
     _mes(b, "2010-01", oleo=50)
     ac = mec.acumulados(b, "Campo Teste")
     assert not ac["serie_completa"] and ac["np"] == 150 and "faltam" in ac["avisos"][0]
 
 
-# ------------------------------------------------------------------ capacidade
-def test_simples_em_oleo_equivalente():
-    c = mec.capacidade_simples({"np": 1e6, "gp": 300e6})
-    assert c["valor"] == pytest.approx(1.3e6) and c["unidade"] == "m³ de óleo equivalente"
+# ------------------------------------------------------------------ avaliação e memória
+DIST = [{"id": "epe_gasodutos_transporte", "rotulo": "Gasoduto", "baixada": True, "distancia_km": 10.0,
+         "fonte": "EPE", "feicao": {"Nome_Dut_1": "Nordestão"}},
+        {"id": "epe_termeletricas_fosseis", "rotulo": "Termelétrica", "baixada": True, "distancia_km": 40.0},
+        {"id": "epe_dutos_escoamento", "rotulo": "Escoamento", "baixada": True, "distancia_km": 0.0, "toca_o_campo": True},
+        {"id": "ibge_portos", "rotulo": "Porto", "baixada": False}]
+NP, GP = 1.1e6, 200e6
 
 
-def test_poroso_pede_bo_bg_e_aplica_a_formula():
-    ac = {"np": 1e6, "gp": 300e6, "wp": None}
-    assert mec.capacidade_porosa(ac, mec.parametros({}))["falta"] == ["Bo", "Bg"]
-    # campo de gás puro: só Bg
-    assert mec.capacidade_porosa({"np": 0, "gp": 1e8, "wp": None}, mec.parametros({"bg": 0.005}))["valor"] == pytest.approx(5e5)
-    c = mec.capacidade_porosa(ac, mec.parametros({"bo": 1.2, "bg": 0.005, "rs": 100}))
-    assert c["valor"] == pytest.approx(1e6 * 1.2 + (300e6 - 1e8) * 0.005)
-    assert c["parcelas"]["agua_liquida"] is None
-    # sem Rs: aviso; com água e injeção (série completa)
-    ac2 = {"np": 1e6, "gp": 300e6, "wp": 5e6, "wi": 4e6, "gi": 10e6}
-    c = mec.capacidade_porosa(ac2, mec.parametros({"bo": 1.2, "bg": 0.005}))
-    assert c["valor"] == pytest.approx(1.2e6 + 1.5e6 + 1e6 - 5e4) and any("Rs" in a for a in c["avisos"])
-    # injeção maior que a produção → zero
-    c = mec.capacidade_porosa({"np": 1e5, "gp": 0, "wp": 0, "wi": 1e6, "gi": 0}, mec.parametros({"bo": 1.1}))
-    assert c["valor"] == 0 and any("repôs" in a for a in c["avisos"])
+def _passo(av, eq, metodo=None):
+    return next(s for s in av["memoria"]["passos"] if s["id"] == eq and (metodo is None or s["metodo"] == metodo))
 
 
-def test_molecula_co2_e_h2():
-    poroso = {"valor": 1e6}
-    cond = {"pressao_bar": 100.0, "temperatura_c": 40.0}
-    c = mec.capacidade_molecula(poroso, cond, mec.parametros({"eficiencia": 0.5}))
+def _entrada(av, simb):
+    return next(e for e in av["memoria"]["entradas"] if e["simbolo"] == simb)
+
+
+def test_simples_custo_e_indicador_com_memoria(tmp_path):
+    b = _banco(tmp_path)
+    av = mec.avaliar(b, "Campo Teste", DIST, {"diametro_pol": 8, "fator_tracado": 1.2})
+    custo_km = 488e3 * 8 * 1.2
+    assert av["custo"]["r_por_km"] == pytest.approx(custo_km)
+    assert av["metodos"]["simples"]["valor"] == pytest.approx(NP + GP / 1000)
+    assert len(av["linhas"]) == 3
+    g = av["linhas"][0]
+    assert g["comprimento_km"] == pytest.approx(12) and g["custo_r"] == pytest.approx(12 * custo_km)
+    assert g["indicadores"]["simples"] == pytest.approx(12 * custo_km / (NP + GP / 1000))
+    assert g["indicadores"]["poroso"] is None and av["metodos"]["poroso"]["falta"] == ["Bo", "Bg"]
+    assert av["metodos"]["molecula"]["falta"][:2] == ["Bo", "Bg"]
+    assert av["linhas"][1]["origem_tipica"] and not g["origem_tipica"]
+    assert av["linhas"][2]["custo_r"] == 0 and any("No campo" in a for a in av["avisos"])
+    # memória: equação, números substituídos, resultado e fonte de cada entrada
+    s = _passo(av, "espaco_simples")
+    assert s["equacao"] == "Np + Gp / gas_por_oe" and s["substituida"] == "1.100.000 + 200.000.000 / 1.000"
+    assert s["resultado"] == pytest.approx(1.3e6) and not s["alterada"]
+    assert "Plano de Desenvolvimento" in _entrada(av, "Np")["fonte"]
+    assert "PIG 2024" in _entrada(av, "custo_pol_km")["fonte"] and "padrão" in _entrada(av, "f_fluido")["fonte"]
+    assert "indisponível" in _entrada(av, "Wp")["fonte"]
+    passos_g = g["memoria"]
+    assert [x["id"] for x in passos_g] == ["comprimento", "custo_duto", "indicador"]
+    assert passos_g[0]["substituida"] == "10 * 1,2" and "Nordestão" in g["fonte_distancia"]
+
+
+def test_poroso_e_molecula(tmp_path):
+    b = _banco(tmp_path)
+    av = mec.avaliar(b, "Campo Teste", DIST, {"bo": 1.2, "bg": 0.005, "rs": 100, "pressao_bar": 100,
+                                               "temperatura_c": 40, "eficiencia": 0.5})
+    V = NP * 1.2 + (GP - NP * 100) * 0.005
+    assert av["metodos"]["poroso"]["valor"] == pytest.approx(V)
     rho = mec.densidade("co2", 100, 40)
-    assert c["valor"] == pytest.approx(1e6 * rho * 0.5 / 1e3) and c["unidade"] == "t de CO₂"
-    assert c["massa_mt"] == pytest.approx(c["valor"] / 1e6)
-    h = mec.capacidade_molecula(poroso, cond, mec.parametros({"fluido": "h2", "colchao": 0.4}))
-    util_kg = 1e6 * mec.densidade("h2", 100, 40) * 0.6
-    assert h["valor"] == pytest.approx(util_kg / 1e3) and h["energia_util_mwh"] == pytest.approx(util_kg * 33.33 / 1e3)
-    falta = mec.capacidade_molecula({"valor": None, "falta": ["Bo"]}, {}, mec.parametros({}))
-    assert falta["valor"] is None and falta["falta"] == ["Bo", "profundidade ou P e T"]
+    m = av["metodos"]["molecula"]
+    assert m["valor"] == pytest.approx(V * rho * 0.5 / 1000) and m["unidade"] == "t de CO₂"
+    assert m["massa_mt"] == pytest.approx(m["valor"] / 1e6) and m["condicoes"]["origem_pressao"] == "informada"
+    nota = next(s for s in av["memoria"]["passos"] if s["id"] == "nota")
+    assert nota["resultado"] == pytest.approx(rho) and len(nota["detalhes"]) > 8
+    g = av["linhas"][0]
+    assert g["indicadores"]["molecula"] == pytest.approx(g["custo_r"] / m["valor"])
+    # H₂: colchão e energia
+    av = mec.avaliar(b, "Campo Teste", DIST, {"bo": 1.2, "bg": 0.005, "rs": 100, "pressao_bar": 100,
+                                               "temperatura_c": 40, "fluido": "h2", "colchao": 0.4})
+    util = V * mec.densidade("h2", 100, 40) / 1000 * 0.6
+    m = av["metodos"]["molecula"]
+    assert m["valor"] == pytest.approx(util) and m["energia_util_mwh"] == pytest.approx(util * 33.33)
+    assert av["linhas"][0]["r_por_mwh"] == pytest.approx(av["linhas"][0]["custo_r"] / m["energia_util_mwh"])
+    assert av["custo"]["fator_fluido"] == 1.05
+    # densidade informada
+    av = mec.avaliar(b, "Campo Teste", DIST, {"bo": 1.2, "bg": 0.005, "rs": 100, "pressao_bar": 100,
+                                               "temperatura_c": 40, "densidade_kg_m3": 600})
+    assert av["metodos"]["molecula"]["valor"] == pytest.approx(V * 600 / 1000)
 
 
-def test_condicoes_pela_profundidade_dos_pocos(tmp_path):
+def test_agua_injecao_e_espaco_zerado(tmp_path):
+    b = _banco(tmp_path, inicio="15/03/2010", pd=False)
+    _mes(b, "2010-03", oleo=1e5, agua=5e5, inj_agua=1e6)
+    av = mec.avaliar(b, "Campo Teste", DIST, {"bo": 1.1})
+    assert av["metodos"]["poroso"]["valor"] == 0 and any("repôs" in a for a in av["avisos"])
+    assert _entrada(av, "Bg")["valor"] == 0          # sem gás: Bg não se aplica
+
+
+def test_profundidade_dos_pocos(tmp_path):
     b = _banco(tmp_path)
     with b.conexao() as c:
         for k, prof in enumerate([500, 700, 900]):
             c.execute("INSERT INTO pocos (id, campo, prof_vertical) VALUES (?, 'CAMPO TESTE', ?)", (f"P{k}", prof))
-    cond = mec.condicoes(b, "Campo Teste", mec.parametros({}))
+    av = mec.avaliar(b, "Campo Teste", DIST, {"bo": 1.2, "bg": 0.005})
+    cond = av["metodos"]["molecula"]["condicoes"]
     assert cond["profundidade_m"] == 700 and "mediana" in cond["origem_profundidade"]
     assert cond["pressao_bar"] == pytest.approx(1.01325 + 70) and cond["temperatura_c"] == pytest.approx(25 + 21)
-    cond = mec.condicoes(b, "Campo Teste", mec.parametros({"pressao_bar": 80, "temperatura_c": 35}))
-    assert (cond["pressao_bar"], cond["temperatura_c"], cond["origem_pressao"]) == (80, 35, "informada")
+    assert _passo(av, "pressao")["substituida"] == "1,01325 + 0,1 * 700"
 
 
-# ------------------------------------------------------------------ indicador
-def test_avaliar_custo_sobre_capacidade(tmp_path):
+def test_equacoes_e_constantes_alteradas(tmp_path):
     b = _banco(tmp_path)
-    dist = [{"id": "epe_gasodutos_transporte", "rotulo": "Gasoduto", "baixada": True, "distancia_km": 10.0},
-            {"id": "epe_termeletricas_fosseis", "rotulo": "Termelétrica", "baixada": True, "distancia_km": 40.0},
-            {"id": "epe_dutos_escoamento", "rotulo": "Escoamento", "baixada": True, "distancia_km": 0.0,
-             "toca_o_campo": True},
-            {"id": "ibge_portos", "rotulo": "Porto", "baixada": False}]
-    av = mec.avaliar(b, "Campo Teste", dist, {"diametro_pol": 8, "fator_tracado": 1.2})
-    assert len(av["linhas"]) == 3
-    g = av["linhas"][0]
-    custo_km = 488e3 * 8 * 1.2
-    assert g["comprimento_km"] == pytest.approx(12) and g["custo_r"] == pytest.approx(12 * custo_km)
-    assert g["indicadores"]["simples"] == pytest.approx(12 * custo_km / (1.1e6 + 200e6 / 1000))
-    assert g["indicadores"]["poroso"] is None and av["metodos"]["poroso"]["falta"] == ["Bo", "Bg"]
-    assert av["linhas"][1]["origem_tipica"] and not g["origem_tipica"]
-    assert av["linhas"][2]["custo_r"] == 0 and any("No campo" in a for a in av["avisos"])
-    av = mec.avaliar(b, "Campo Teste", dist, {"bo": 1.3, "bg": 0.006, "rs": 120, "pressao_bar": 90,
-                                               "temperatura_c": 38})
-    m = av["metodos"]["molecula"]
-    assert m["valor"] > 0 and av["linhas"][0]["indicadores"]["molecula"] == pytest.approx(av["linhas"][0]["custo_r"] / m["valor"])
+    alt = mec.EQUACOES["espaco_simples"]["alternativas"]["só óleo e condensado"]
+    av = mec.avaliar(b, "Campo Teste", DIST, {"equacoes": {"espaco_simples": alt},
+                                               "constantes": {"f_co2": 1.5, "gas_por_oe": 500}})
+    assert av["metodos"]["simples"]["valor"] == pytest.approx(NP)
+    s = _passo(av, "espaco_simples")
+    assert s["alterada"] and s["alternativa"] == "só óleo e condensado" and not s["personalizada"]
+    assert av["custo"]["r_por_km"] == pytest.approx(488e3 * 8 * 1.5)
+    assert "alterada pelo usuário" in _entrada(av, "f_fluido")["fonte"]
+    assert av["avisos"][0].startswith("2 constante") and "equação" in av["avisos"][1]
+    # fórmula do usuário
+    av = mec.avaliar(b, "Campo Teste", DIST, {"equacoes": {"espaco_simples": "Np + 2 * Gp / gas_por_oe",
+                                                           "custo_km": "(custo_fixo_km + custo_pol_km * D) * 1000"},
+                                               "custo_fixo_km": 100})
+    assert av["metodos"]["simples"]["valor"] == pytest.approx(NP + 2 * GP / 1000)
+    assert _passo(av, "espaco_simples")["personalizada"]
+    assert av["custo"]["r_por_km"] == pytest.approx((100 + 488 * 8) * 1000)
+    alts = {a["id"]: a for a in av["memoria"]["meta"]["equacoes_alteradas"]}
+    assert alts["custo_km"]["padrao"] == "custo_pol_km * 1000 * D * f_fluido"
+    # variável que não existe naquele passo
+    with pytest.raises(mec.ErroEconomia, match="variável desconhecida"):
+        mec.avaliar(b, "Campo Teste", DIST, {"equacoes": {"custo_km": "custo_pol_km * V"}})
+    with pytest.raises(mec.ErroEconomia, match="divisão por zero"):
+        mec.avaliar(b, "Campo Teste", DIST, {"equacoes": {"espaco_simples": "Np / Wp"}})
+
+
+def test_memoria_salva_em_json_html_e_csv(tmp_path):
+    b = _banco(tmp_path)
+    av = mec.avaliar(b, "Campo Teste", DIST, {"bo": 1.2, "bg": 0.005, "pressao_bar": 80, "temperatura_c": 35,
+                                               "equacoes": {"espaco_simples": "Np"}})
+    r = mec.salvar_memoria(str(tmp_path), av)
+    assert r["json"].startswith("execucoes/viabilidade/") and r["html"].endswith("_campo_teste.html")
+    dados = json.load(open(tmp_path / r["json"], encoding="utf-8"))
+    assert dados["memoria"]["passos"][0]["id"] == "custo_km" and dados["parametros"]["equacoes"] == {"espaco_simples": "Np"}
+    pagina = open(tmp_path / r["html"], encoding="utf-8").read()
+    assert "Memória de cálculo" in pagina and "1.100.000 + 200.000.000 / 1.000" not in pagina
+    assert "oe = Np" in pagina and "alternativa: só óleo e condensado" in pagina and "Peng-Robinson" in pagina
+    assert "PIG 2024" in pagina and "Diferenças em relação ao padrão" in pagina
+    linhas = mec.linhas_csv_memoria(av)
+    assert ["# entradas"] in linhas and any(l[:2] == ["simples", "Espaço — método simples (PIBIC)"] for l in linhas)
     assert len(mec.linhas_csv(av)) == 3

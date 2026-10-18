@@ -30,6 +30,9 @@ existe e a validação científica ficam **para o final**, antes do lançamento 
       de CO₂; depleção pelo PD.
 - [x] **Viabilidade econômica** (0.26): custo do duto pelos PIGs da EPE, capacidade de injeção em três métodos
       (simples/PIBIC, espaço poroso com Bo/Bg, pela molécula CO₂/H₂/CH₄), indicador investimento ÷ capacidade.
+- [x] **Viabilidade auditável** (0.27): memória de cálculo de cada execução (entradas com fonte, equação,
+      números substituídos, resultado) em JSON e HTML; constantes com padrão e fonte; equações trocáveis por
+      alternativas prontas ou por fórmula do usuário.
 - [ ] Viabilidade — próximos refinamentos (com o Ruan): Bo/Bg por campo de fonte pública, diâmetro pela vazão,
       correção do custo pela inflação (IPCA/INCC), restrições ambientais (UCs, terras indígenas).
 - [ ] **Gasodutos e blocos exploratórios** (com o Ruan): camadas do IBGE/EPE/ANP, distância

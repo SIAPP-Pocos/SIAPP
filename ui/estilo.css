@@ -720,6 +720,24 @@ input.sugestao { background: #fff6d6; border-color: #e0b84a; }
 .vb-eco .vb-ind td { white-space: nowrap; }
 .vb-eco .vb-falta { color: var(--suave); font-style: italic; }
 .vb-eco ul.vb-avisos { margin: 6px 0 0; padding-left: 18px; color: var(--suave); font-size: 11.5px; }
+.vb-const-grupo { font-size: 11.5px; color: var(--suave); font-weight: 600; margin: 8px 0 2px; }
+.vb-eq { border-top: 1px solid var(--linha); padding: 6px 0; font-size: 12px; }
+.vb-eq b { display: block; }
+.vb-eq select, .vb-eq input { width: 100%; margin-top: 3px; }
+.vb-eq input { font-family: Consolas, monospace; font-size: 11.5px; }
+.vb-eq input.alterada, .vb-form input.alterada { border-color: #c0392b; }
+.vb-eq .ajuda { margin: 2px 0 0; font-size: 11px; }
+.vb-simbolos table { font-size: 11px; }
+.vb-simbolos td:first-child { font-family: Consolas, monospace; white-space: nowrap; }
+.vb-mem { font-size: 11.5px; }
+.vb-mem h5 { margin: 10px 0 2px; font-size: 12px; }
+.vb-mem .passo { margin: 6px 0; }
+.vb-mem code { display: block; font-family: Consolas, monospace; font-size: 11px; background: var(--fundo-suave, #f4f4f2);
+  padding: 2px 6px; border-left: 3px solid #9aa; overflow-wrap: anywhere; }
+.vb-mem code.alt { border-left-color: #c0392b; }
+.vb-mem .tag { font: 600 10px var(--sans); color: #fff; background: #c0392b; padding: 0 4px; border-radius: 3px; }
+.vb-mem table td { text-align: left !important; }
+.vb-mem .res { font-weight: 600; }
 .leaflet-tooltip.vb-rotulo { font: 600 11px var(--sans); padding: 1px 5px; }
 .pp-tabela { border-collapse: collapse; margin-top: 4px; font-size: 11.5px; }
 .pp-tabela th { text-align: left; color: var(--suave); font-weight: 400; padding: 1px 8px 1px 0; vertical-align: top; }

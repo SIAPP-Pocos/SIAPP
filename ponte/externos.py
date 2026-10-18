@@ -170,10 +170,22 @@ class ExternosAPI:
 
     @resposta_segura
     def viabilidade_opcoes(self):
+        """Tudo que a tela precisa para mostrar e editar: referências, constantes (com fonte),
+        equações (padrão, alternativas, explicação) e o significado de cada símbolo."""
         return {"fontes_custo": mec.FONTES_CUSTO, "padroes": mec.PADROES,
-                "fluidos": [{"id": k, "rotulo": v["rotulo"], "fator": mec.FATOR_FLUIDO[k][0],
-                             "motivo": mec.FATOR_FLUIDO[k][1], "armazenado": v["armazenado"]}
-                            for k, v in mec.FLUIDOS.items()]}
+                "fluidos": [{"id": k, "rotulo": v["rotulo"], "fator": mec.CONSTANTES[f"f_{k}"]["valor"],
+                             "motivo": mec.CONSTANTES[f"f_{k}"]["fonte"], "armazenado": v["armazenado"]}
+                            for k, v in mec.FLUIDOS.items()],
+                "constantes": [{"id": k, **{c: v for c, v in d.items() if c != "faixa"}, "faixa": list(d["faixa"])}
+                               for k, d in mec.CONSTANTES.items()],
+                "equacoes": [{"id": k, "titulo": d["titulo"], "resultado": d["resultado"], "unidade": d["unidade"],
+                              "padrao": d["padrao"], "explicacao": d["explicacao"],
+                              "alternativas": [{"nome": n, "formula": f} for n, f in d["alternativas"].items()],
+                              "variaveis": sorted(mec.nomes(mec.compilar(d["padrao"])),
+                                                  key=lambda n: d["padrao"].find(n))}
+                             for k, d in mec.EQUACOES.items()],
+                "simbolos": {k: {"descricao": d, "unidade": u} for k, (d, u) in mec.SIMBOLOS.items()},
+                "funcoes": ["min", "max", "abs", "sqrt", "exp", "ln", "log10"]}
 
     def _avaliar(self, campo: str, parametros) -> dict:
         self._exigir_projeto()
@@ -192,10 +204,28 @@ class ExternosAPI:
         """Custo do duto ÷ capacidade de injeção, nos três métodos; guarda os parâmetros do campo."""
         av = self._avaliar(campo, parametros)
         guardar = {k: v for k, v in (parametros or {}).items() if k in mec.PADROES and v not in (None, "")}
+        for k in ("constantes", "equacoes"):
+            if av["parametros"][k]:
+                guardar[k] = av["parametros"][k]
         mpr.guardar_campo(self._banco, campo.strip(), viabilidade=guardar)
+        arquivos = mec.salvar_memoria(self._projeto.pasta, av)
         self._projeto.registrar("avaliou_viabilidade", campo=campo.strip(), fluido=av["parametros"]["fluido"],
-                                metodos=[k for k, m in av["metodos"].items() if m.get("valor")])
-        return {"avaliacao": av}
+                                metodos=[k for k, m in av["metodos"].items() if m.get("valor")],
+                                memoria=arquivos["json"],
+                                equacoes_alteradas=list(av["parametros"]["equacoes"]),
+                                constantes_alteradas=list(av["parametros"]["constantes"]))
+        return {"avaliacao": av, "memoria": arquivos}
+
+    @resposta_segura
+    def viabilidade_abrir_memoria(self, rel: str):
+        """Abre no navegador a memória de cálculo (HTML) gravada em execucoes/viabilidade/."""
+        self._exigir_projeto()
+        base = os.path.realpath(os.path.join(self._projeto.pasta, "execucoes", "viabilidade"))
+        caminho = os.path.realpath(os.path.join(self._projeto.pasta, str(rel or "")))
+        if not caminho.startswith(base + os.sep) or not os.path.exists(caminho):
+            raise ErroUsuario("Memória de cálculo não encontrada.")
+        _abrir_no_sistema(caminho)
+        return {}
 
     @resposta_segura
     def viabilidade_economia_csv(self, campo: str, parametros: dict | None = None):
@@ -220,6 +250,10 @@ class ExternosAPI:
                 w.writerow([fmt(v) for v in linha])
             for a in av["avisos"]:
                 w.writerow(["# aviso", a])
+            w.writerow([])
+            w.writerow(["# memória de cálculo"])
+            for linha in mec.linhas_csv_memoria(av):
+                w.writerow([fmt(v) for v in linha])
         return {"arquivo": os.path.relpath(saida, self._projeto.pasta).replace(os.sep, "/")}
 
     @resposta_segura

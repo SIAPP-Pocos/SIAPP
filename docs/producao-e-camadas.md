@@ -138,5 +138,64 @@ polegada·km) × diâmetro × fator do fluido.
 
 É triagem para comparar campos e rotas: pressão e injetividade só a simulação responde.
 
+## Auditoria: memória de cálculo, constantes e equações (0.27)
+
+**Memória de cálculo.** Cada "Calcular a viabilidade" grava em `execucoes\viabilidade\` um
+`AAAAMMDD-HHMMSS_<campo>.json` (tudo: parâmetros, entradas, passos, resultados) e um `.html`
+legível, com:
+
+1. **dados de entrada e de onde vieram** — símbolo, o que é, valor, unidade e fonte (arquivo da
+   ANP e data do PD, camada e feição, "informado pelo usuário", "padrão — <fonte>" ou "alterada
+   pelo usuário (padrão X)"); dado ausente aparece como tal ("indisponível — usado 0", "não
+   informado");
+2. **passo a passo** — para cada equação: o texto da fórmula, a fórmula com os números
+   substituídos e o resultado com unidade; a equação de estado com cada valor intermediário;
+3. **por infraestrutura** — comprimento, custo do duto e cada indicador, com a fonte da distância;
+4. **diferenças em relação ao padrão** — equações e constantes alteradas.
+
+Com o .html dá para refazer qualquer número à mão ou no Excel. O histórico do projeto
+(`siapp.json`) registra cada execução, o arquivo da memória e o que foi alterado.
+
+**Constantes** (quadro "Constantes"): cada uma com padrão, fonte e faixa aceita.
+
+| Constante | Padrão | Fonte |
+|---|---|---|
+| gás por m³ de óleo equivalente | 1.000 m³/m³ | ANP |
+| Bw | 1,0 | aproximação usual |
+| pressão na superfície; condição padrão | 1,01325 bar; 1,01325 bar e 20 °C | 1 atm; ANP |
+| PCI do H₂ | 33,33 kWh/kg | 120 MJ/kg |
+| fator de custo CO₂ / H₂ / CH₄ | 1,20 / 1,05 / 1,00 | estimativa do SIAPP / EPRI 2023 / referência |
+| Tc, Pc, ω, M, Z_RA de CO₂, H₂, CH₄ | — | NIST, DIPPR, Reid-Prausnitz-Poling |
+
+**Equações** (quadro "Equações"): cada passo é uma fórmula em texto. O seletor traz o padrão, as
+alternativas prontas e "a minha fórmula".
+
+| Passo | Resultado | Padrão | Alternativas |
+|---|---|---|---|
+| Custo do duto por km | custo_km (R$/km) | `custo_pol_km * 1000 * D * f_fluido` | afim `(custo_fixo_km + custo_pol_km * D) * 1000 * f_fluido`; por km `custo_fixo_km * 1000 * f_fluido` |
+| Comprimento | L (km) | `dist * f_tracado` | |
+| Custo do duto | custo (R$) | `L * custo_km` | |
+| Espaço simples (PIBIC) | oe (m³ oe) | `Np + Gp / gas_por_oe` | `Np`; `Np + Gp / gas_por_oe + max(0, Wp - Wi)` |
+| Gás livre | Gl (m³) | `max(0, Gp - Np * Rs)` | |
+| Espaço poroso | V (m³ res) | `Np * Bo + Gl * Bg + (Wp - Wi) * Bw - Gi * Bg` | `Np * Bo + Gl * Bg` |
+| Pressão | P (bar) | `p_atm + grad_p * prof` | |
+| Temperatura | T (°C) | `t_sup + grad_t * prof / 1000` | |
+| Massa | m (t) | `V * rho * ef / 1000` | |
+| Massa útil | m_util (t) | `m * (1 - colchao)` | |
+| Volume padrão | Vp (m³) | `m_util * 1000 / rho_padrao` | |
+| Energia (H₂) | E (MWh) | `m_util * pci_h2` | |
+| Indicador | ind | `custo / capacidade` | |
+
+- A fórmula do usuário pode usar qualquer símbolo já conhecido naquele passo (a lista "Símbolos"
+  diz o que é cada um e a unidade), números, `+ − * / ^`, parênteses e `min, max, abs, sqrt, exp,
+  ln, log10`. O leitor é próprio (árvore sintática com lista do que é permitido): não executa
+  código, não acessa arquivos.
+- Erros dizem onde: "Equação «Espaço poroso…»: variável desconhecida Zz" (com a lista do que está disponível quando o símbolo existe mas ainda não foi calculado naquele passo),
+  divisão por zero com a conta substituída, escrita inválida.
+- A unidade do resultado é a do passo: quem escreve a fórmula responde pela coerência das unidades.
+- A equação de estado (Peng-Robinson + Peneloux) não é uma fórmula editável; dá para trocar as
+  suas constantes ou informar a densidade diretamente.
+- Equações, constantes e parâmetros ficam guardados no campo e voltam quando ele é medido de novo.
+
 Unidades de conservação (ICMBio) e terras indígenas (FUNAI) não estão na BC250 2025;
 podem entrar depois como restrição ambiental.
