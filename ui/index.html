@@ -537,7 +537,8 @@
         <p class="ajuda legenda">Clique numa palavra para corrigir.
           <span class="corr auto">verde</span> = corrigida pelo dicionário ·
           <span class="corr usuario">azul</span> = corrigida por você ·
-          <span class="corr comunidade">roxo</span> = corrigida pela comunidade.</p>
+          <span class="corr comunidade">roxo</span> = corrigida pela comunidade.
+          Na imagem, as mesmas cores contornam as palavras corrigidas.</p>
         <div class="editor" id="editor" hidden>
           <div class="ed-linha">
             <span>O OCR leu <code id="ed-orig"></code></span>
@@ -553,6 +554,7 @@
             <button type="button" class="btn secundario" id="ed-desfazer" hidden>Desfazer minha correção</button>
             <button type="button" class="btn secundario" id="ed-adicionar">Adicionar ao dicionário</button>
           </div>
+          <p class="ajuda ed-msg" id="ed-msg" hidden></p>
         </div>
         <div class="pg-texto-corpo" id="pg-texto"></div>
       </section>

@@ -28,6 +28,13 @@ async function conectar() {
   const r = await chamar($("btn-conectar"), "conectar", bacia);
   if (!r.ok) return;
   baciaConectada = bacia;
+  // a lista e a gaveta abertas eram da bacia anterior: some com elas
+  pedidoLista++;
+  fecharGaveta();
+  pocosAtuais = [];
+  baciaDaLista = "";
+  $("painel-pocos").hidden = true;
+  $("vazio").hidden = false;
 
   const lista = $("lista-cat");
   lista.innerHTML = "";
@@ -45,16 +52,28 @@ async function conectar() {
   status(`Conectado à Bacia ${bacia}. Catálogo salvo em ${r.salvo_em}.`, "ok");
 }
 
+// Listar uma categoria grande leva segundos. Se nesse meio-tempo o usuário listar
+// outra categoria ou conectar em outra bacia, a resposta antiga é descartada.
+let pedidoLista = 0;
+let baciaDaLista = "";    // bacia da lista de poços que está na tela
+
 async function listarPocos(categoria, botao) {
   document.querySelectorAll(".lista-cat button").forEach((b) => b.classList.remove("ativa"));
   botao.classList.add("ativa");
   status(`Listando poços de "${categoria}"…`, "trab");
 
-  const r = await chamar(null, "listar_pocos", categoria);
+  const meu = ++pedidoLista;
+  const bacia = baciaConectada;
+  const r = await chamar(null, "listar_pocos", categoria, bacia);
+  if (meu !== pedidoLista || bacia !== baciaConectada) {
+    if (r.ok) status(`A lista de "${categoria}" (${bacia}) chegou depois da troca e foi guardada na bacia ${bacia}, sem aparecer aqui.`, "ok");
+    return;
+  }
   if (!r.ok) return;
 
   fecharGaveta();
   pocosAtuais = r.pocos;
+  baciaDaLista = r.bacia || bacia;
   $("vazio").hidden = true;
   $("painel-pocos").hidden = false;
   $("titulo-pocos").textContent = categoria;
@@ -119,7 +138,7 @@ async function explorarPoco(p, botao) {
   abrirGaveta();
   status(`Mapeando ${p.nome}…`, "trab");
 
-  const r = await chamar(null, "explorar_poco", p.nome, p.caminho, $("titulo-pocos").textContent, p.parte);
+  const r = await chamar(null, "explorar_poco", p.nome, p.caminho, $("titulo-pocos").textContent, p.parte, baciaDaLista);
   if (meu !== pedidoAtual) return;          // usuário já clicou em outro poço
   $("g-arvore").innerHTML = "";
   if (!r.ok) {
@@ -239,7 +258,7 @@ async function baixarSelecionados() {
   if (!sel.length || !pocoAberto) return;
   const pedido = sel.map((a) => ({ caminho: a.no.caminho, nome: a.no.nome,
                                    tamanho: a.no.tamanho, pasta_relativa: a.no.pasta_relativa }));
-  const r = await chamar($("btn-baixar"), "baixar", pocoAberto, pedido);
+  const r = await chamar($("btn-baixar"), "baixar", pocoAberto, pedido, baciaDaLista);
   if (!r.ok) return;
   for (const a of sel) marcarArquivo(a, "fila");
   status(`${r.enfileirados} arquivo(s) na fila de download.`, "trab");

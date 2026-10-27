@@ -243,36 +243,54 @@ def _abrir_pagina(caminho: str, n_pagina: int):
                             f"({e}). Use “No computador” para abrir em outro programa.") from e
 
 
-def _destacar(pix: pymupdf.Pixmap, caixas: list) -> pymupdf.Pixmap:
-    """Pinta caixas amarelas translúcidas (com borda laranja) sobre a imagem.
-    Feito nos pixels, e não com draw_rect: o PyMuPDF só desenha em PDF, e
-    TIF/PNG/JPG falhariam com "is no PDF"."""
+# (preenchimento, borda) — as mesmas cores do texto reconhecido na janela (estilo.css)
+CORES_CAIXA = {
+    "busca": ((255, 217, 0), (217, 140, 0)),
+    "auto": ((99, 176, 127), (29, 106, 61)),
+    "usuario": ((108, 147, 214), (35, 78, 154)),
+    "comunidade": ((156, 124, 200), (91, 47, 143)),
+}
+
+
+def _destacar(pix: pymupdf.Pixmap, caixas: list, cor: str = "busca", opacidade: float = 0.35,
+              espessura: int = 1) -> pymupdf.Pixmap:
+    """Pinta caixas translúcidas (com borda) sobre a imagem: amarelo para a busca,
+    verde/azul/roxo para as palavras corrigidas. Feito nos pixels, e não com
+    draw_rect: o PyMuPDF só desenha em PDF, e TIF/PNG/JPG falhariam com "is no PDF"."""
     a = np.frombuffer(pix.samples, np.uint8).reshape(pix.height, pix.width, pix.n)[:, :, :3].astype(np.float32)
-    amarelo, laranja = np.array([255, 217, 0], np.float32), np.array([217, 140, 0], np.float32)
+    fundo, borda = (np.array(c, np.float32) for c in CORES_CAIXA[cor])
+    e = max(1, int(espessura))
     for x0, y0, x1, y1 in caixas:
         c0, c1 = max(0, int(x0 * pix.width) - 2), min(pix.width, int(x1 * pix.width) + 3)
         l0, l1 = max(0, int(y0 * pix.height) - 2), min(pix.height, int(y1 * pix.height) + 3)
         if c1 <= c0 or l1 <= l0:
             continue
-        a[l0:l1, c0:c1] = a[l0:l1, c0:c1] * 0.65 + amarelo * 0.35
-        a[l0:l0 + 1, c0:c1] = a[l1 - 1:l1, c0:c1] = laranja
-        a[l0:l1, c0:c0 + 1] = a[l0:l1, c1 - 1:c1] = laranja
+        a[l0:l1, c0:c1] = a[l0:l1, c0:c1] * (1 - opacidade) + fundo * opacidade
+        a[l0:l0 + e, c0:c1] = a[l1 - e:l1, c0:c1] = borda
+        a[l0:l1, c0:c0 + e] = a[l0:l1, c1 - e:c1] = borda
     rgb = np.ascontiguousarray(a.astype(np.uint8))
     return pymupdf.Pixmap(pymupdf.csRGB, pix.width, pix.height, rgb.tobytes(), False)
 
 
 def imagem_pagina(caminho: str, n_pagina: int, palavras: list, termo: str = "",
-                  largura: int = 900, variacoes: list | None = None) -> str:
+                  largura: int = 900, variacoes: list | None = None,
+                  corrigidas: list | None = None) -> str:
     """PNG (data URL) da página, com as palavras que casam com o termo (ou com
     suas variações de OCR) destacadas em amarelo. Nada é gravado no arquivo.
     `palavras`: [x0,y0,x1,y1,texto] com coordenadas normalizadas; o texto pode
-    trazer a forma original e a corrigida separadas por espaço."""
+    trazer a forma original e a corrigida separadas por espaço.
+    `corrigidas`: [x0,y0,x1,y1,tipo] das palavras que o corretor trocou
+    (tipo auto/usuario/comunidade), contornadas na cor de cada origem."""
     doc, page = _abrir_pagina(caminho, n_pagina)
     try:
         z = _escala(page, largura, PIXELS_PAGINA)
         pix = page.get_pixmap(matrix=pymupdf.Matrix(z, z), colorspace=pymupdf.csRGB, alpha=False)
     finally:
         doc.close()
+    for tipo in ("auto", "comunidade", "usuario"):
+        caixas = [w[:4] for w in corrigidas or [] if w[4] == tipo]
+        if caixas:
+            pix = _destacar(pix, caixas, tipo, opacidade=0.28, espessura=2)
     tokens = [sem_acento(t) for t in re.findall(r"\w+", termo or "")] + list(variacoes or [])
     if tokens:
         caixas = [w[:4] for w in palavras if any(t in sem_acento(w[4]) for t in tokens)]

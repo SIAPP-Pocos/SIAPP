@@ -935,3 +935,45 @@ def test_camadas_no_mapa_e_distancias_do_campo(janela, tmp_path, monkeypatch):
     p.click("#ba-csv")
     janela.esperar("document.getElementById('status').textContent.includes('distancias_anp_campos_producao')", 30)
     assert not janela.erros_js, janela.erros_js
+
+
+def test_correcao_fica_colorida_a_vista_no_texto_e_na_imagem(janela, tmp_path):
+    """0.29.1: depois de corrigir, o texto não volta ao topo, a palavra pisca na cor
+    nova, e a imagem contorna as palavras corrigidas. Igual ao lido = aviso no editor."""
+    import pymupdf
+    p = janela.page
+    abrir_projeto(janela)
+    pasta = tmp_path / "ambiente_teste" / "bruto" / "Potiguar" / "7-GMR-13-RN" / "Pasta de Poco"
+    pasta.mkdir(parents=True)
+    doc = pymupdf.open()
+    pg = doc.new_page()
+    for i in range(45):                                   # texto longo: a caixa rola
+        pg.insert_text((72, 60 + 16 * i), f"LINHA {i} RELATORIO DE PERFURACAO DO POCO", fontsize=9)
+    pg.insert_text((72, 60 + 16 * 46), "Sonda Plataforma ww iReline", fontsize=9)
+    doc.save(str(pasta / "p.pdf"))
+    api = janela.api
+    api._abrir_projeto(str(tmp_path / "ambiente_teste"))
+    rel = "bruto/Potiguar/7-GMR-13-RN/Pasta de Poco/p.pdf"
+    from motor import documentos as md
+    r = md.processar_arquivo(str(pasta / "p.pdf"), tessdata=str(tmp_path))
+    api._projeto.salvar_texto(rel, r)
+    api._indice.substituir_documento(rel, "Potiguar", "7-GMR-13-RN", "p.pdf", r["paginas"], api._corretor)
+    p.click("#aba-docs")
+    janela.esperar("document.querySelectorAll('#lista-docs button').length === 1")
+    p.click("#lista-docs button")
+    janela.esperar("document.getElementById('pg-num').textContent.includes('1 de 1')")
+    img_antes = p.get_attribute("#pg-img", "src")
+    p.locator("#pg-texto .pal", has_text="iReline").scroll_into_view_if_needed()
+    rolagem = p.evaluate("document.getElementById('pg-texto').scrollTop")
+    assert rolagem > 0
+    p.locator("#pg-texto .pal", has_text="iReline").click()
+    p.click("#ed-form button[type=submit]")               # sem mudar nada
+    assert p.is_visible("#ed-msg") and "igual ao que o OCR leu" in p.text_content("#ed-msg")
+    p.fill("#ed-para", "Wireline")
+    p.click("#ed-form button[type=submit]")
+    janela.esperar("!!document.querySelector('#pg-texto .corr.usuario')")
+    assert p.text_content("#pg-texto .corr.usuario") == "Wireline"
+    assert "piscar" in p.get_attribute("#pg-texto .corr.usuario", "class")
+    assert p.evaluate("document.getElementById('pg-texto').scrollTop") > 0
+    assert p.get_attribute("#pg-img", "src") != img_antes  # a imagem foi repintada com o contorno
+    assert not janela.erros_js, janela.erros_js

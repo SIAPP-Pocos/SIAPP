@@ -131,6 +131,19 @@ Precisa de internet. Comece por uma categoria pequena para ver o tempo.
 - [ ] Sem intervalo marcado, **Calcular** explica que precisa de um intervalo-alvo.
 - [ ] Repetir no `5PX__0011__RN_5PX__0011__RN.tif` (DLIS de 2020).
 
+## 0.29.1 — bacias misturadas e cores das correções
+
+- [ ] Ao abrir o projeto, a ficha do `7-GMR-13-RN` (Mapa → clique no poço) mostra **só** "Potiguar · Categoria-7 ·
+      Categoria-7_parte28" no portal REATE. No `siapp.json`, o histórico tem `reparou_catalogo` com quantos
+      registros saíram.
+- [ ] Catálogo → Potiguar → **Conectar** → clique em Categoria-7 e, antes de a lista aparecer, troque para Alagoas
+      → **Conectar**. A lista da Potiguar não aparece sob Alagoas (o rodapé diz que ela foi guardada na Potiguar).
+      Liste a Categoria-7 de Alagoas: ~510 poços, todos `-AL`.
+- [ ] Documentos → abra uma página com OCR, role o texto até o meio, clique numa palavra errada, digite a forma
+      certa → **Corrigir em todos os documentos**: o texto fica no mesmo ponto, a palavra aparece **azul** e pisca, e
+      na imagem a palavra ganha um contorno azul (as corrigidas pelo dicionário, verde).
+- [ ] Clique numa palavra e envie sem mudar nada: o editor explica que é igual ao lido (em vez de só o rodapé).
+
 ## 0.29 — API e densidade do gás nas pastas de poço
 
 - [ ] Com pastas de poço de Guamaré baixadas (aba Catálogo) → Mapa → `GUAMARÉ` → **Medir as distâncias** → abra

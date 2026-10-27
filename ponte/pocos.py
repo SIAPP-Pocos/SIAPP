@@ -19,7 +19,7 @@ class PocosAPI:
         return mpo.resolver(self._banco, nome_pasta) if nome_pasta else ""
 
     def _ao_listar_pocos(self, bacia, categoria, pocos):
-        mpo.registrar_reate(self._banco, bacia, categoria, pocos)
+        mpo.registrar_reate(self._banco, bacia, categoria, pocos, substituir=True)
 
     def _migrar_pocos(self):
         """Listas de poços salvas antes do banco (catalogo/*.json) entram na
@@ -27,6 +27,11 @@ class PocosAPI:
         if not self._banco.meta("migrou_catalogo_json"):
             n = mpo.importar_catalogo_json(self._banco, os.path.join(self._projeto.pasta, "catalogo"))
             self._banco.definir_meta("migrou_catalogo_json", str(n))
+        if not self._banco.meta("reparou_reate_bacias"):
+            r = mpo.reparar_reate_bacias(self._banco)
+            self._banco.definir_meta("reparou_reate_bacias", str(r["apagados"]))
+            if r["apagados"]:
+                self._projeto.registrar("reparou_catalogo", apagados=r["apagados"], bacias=r["bacias"])
         with self._banco.conexao() as c:
             for rel, poco in c.execute("SELECT rel, poco_id FROM arquivos").fetchall():
                 novo = mpo.chave(poco or "")
@@ -102,14 +107,14 @@ class PocosAPI:
     def catalogar_bacia(self):
         """Lista TODAS as categorias da bacia conectada e registra cada pasta de
         poço no banco (sem baixar nada). Permite marcar no mapa o que tem dado."""
-        self._exigir_conexao()
-        _, categorias = self._cliente.descobrir_categorias()
+        cliente, _, bacia, base = self._conexao_reate()   # retrato: trocar de bacia no meio não mistura
+        _, categorias = cliente.descobrir_categorias()
         total = 0
         for i, cat in enumerate(categorias, 1):
-            self._status(f"Catalogando {self._bacia}: {cat['nome']} ({i} de {len(categorias)})…")
-            r = self._cliente.listar_pocos(self._base_remota + cat["nome"], progresso=self._status)
-            self._projeto.salvar_pocos(self._bacia, cat["nome"], r["pocos"], r["arquivos_soltos"],
+            self._status(f"Catalogando {bacia}: {cat['nome']} ({i} de {len(categorias)})…")
+            r = cliente.listar_pocos(base + cat["nome"], progresso=self._status)
+            self._projeto.salvar_pocos(bacia, cat["nome"], r["pocos"], r["arquivos_soltos"],
                                        partes=r["partes"], duplicados=r["duplicados"])
-            total += mpo.registrar_reate(self._banco, self._bacia, cat["nome"], r["pocos"])
-        self._projeto.registrar("catalogou_bacia", bacia=self._bacia, pocos=total)
-        return {"bacia": self._bacia, "categorias": len(categorias), "pocos": total}
+            total += mpo.registrar_reate(self._banco, bacia, cat["nome"], r["pocos"], substituir=True)
+        self._projeto.registrar("catalogou_bacia", bacia=bacia, pocos=total)
+        return {"bacia": bacia, "categorias": len(categorias), "pocos": total}

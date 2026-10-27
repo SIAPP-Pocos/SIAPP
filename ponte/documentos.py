@@ -88,12 +88,20 @@ class DocumentosAPI:
         # destaque: casa com o que o OCR leu OU com a forma corrigida
         palavras = [[*w[:4], f"{w[4]} {self._corretor.corrigir(w[4])}"] for w in p["palavras"]]
         segmentos = self._corretor.segmentos(p["texto"])
+        # palavras trocadas pelo corretor: contornadas na imagem com a cor da origem
+        corrigidas = []
+        for w in p["palavras"]:
+            tipo = next((x["tipo"] for x in self._corretor.segmentos(w[4]) if isinstance(x, dict)), None)
+            if tipo:
+                corrigidas.append([*w[:4], tipo])
         return {**base, "metodo": p["metodo"],
                 "titulo": self._indice.titulos(rel).get(pagina, ""),
                 "segmentos": segmentos,
                 "palavras": p["palavras"],
                 "n_corrigidas": sum(isinstance(x, dict) for x in segmentos),
-                "imagem": md.imagem_pagina(caminho, pagina, palavras, termo, variacoes=variacoes)}
+                "n_corrigidas_imagem": len(corrigidas),
+                "imagem": md.imagem_pagina(caminho, pagina, palavras, termo, variacoes=variacoes,
+                                           corrigidas=corrigidas)}
 
     @resposta_segura
     def visor_pagina(self, rel: str, pagina: int):

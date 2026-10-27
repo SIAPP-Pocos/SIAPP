@@ -154,6 +154,7 @@ async function abrirPagina(rel, pagina, termo) {
   desenharTexto(r.segmentos);
   $("pg-corr-resumo").textContent = r.n_corrigidas
     ? `${r.n_corrigidas} palavra(s) corrigida(s) nesta página` : "";
+  if (aposRedesenhar) { const f = aposRedesenhar; aposRedesenhar = null; f(); }
   document.querySelectorAll("#lista-docs button").forEach((b) => b.classList.toggle("ativo", b.dataset.rel === r.rel));
 }
 
@@ -213,6 +214,7 @@ function abrirEditor(span, orig, tipo, atual) {
   $("ed-para").value = atual;
   $("ed-manter").hidden = !(tipo === "auto" || tipo === "comunidade");
   $("ed-desfazer").hidden = tipo !== "usuario";
+  mensagemEditor("");
   $("editor").hidden = false;
   $("ed-para").focus();
   $("ed-para").select();
@@ -224,34 +226,82 @@ function fecharEditor() {
   document.querySelectorAll("#pg-texto .sel").forEach((x) => x.classList.remove("sel"));
 }
 
+// Chamado uma vez depois que a página é redesenhada (ver abrirPagina).
+let aposRedesenhar = null;
+
 // Depois de qualquer mudança no vocabulário: o motor já reindexou tudo.
-async function aposVocabulario(r, msg) {
-  if (!r.ok) return;
+// A página volta para o mesmo ponto do texto, e a palavra mexida pisca — sem isso o
+// texto voltava ao topo e a correção (já colorida) ficava fora da vista.
+async function aposVocabulario(r, msg, palavra) {
+  if (!r.ok) { mensagemEditor(r.erro); return; }
   desenharDicionario(r);
   status(`${msg} ${r.paginas_atualizadas} página(s) atualizadas em todos os documentos.`, "ok");
   carregarAtalhos();
-  if (docAtual) abrirPagina(docAtual.rel, docAtual.pagina, termoAtual);
+  if (docAtual) {
+    const rolagem = { texto: $("pg-texto").scrollTop, painel: $("painel-pagina").scrollTop };
+    const voltar = () => {
+      $("pg-texto").scrollTop = rolagem.texto;
+      $("painel-pagina").scrollTop = rolagem.painel;
+    };
+    aposRedesenhar = () => {
+      voltar();
+      // a imagem nova ainda carrega e muda a altura do painel: volta de novo quando chegar
+      if (!$("pg-img").complete) $("pg-img").addEventListener("load", voltar, { once: true });
+      if (palavra) realcarPalavra(palavra);
+    };
+    abrirPagina(docAtual.rel, docAtual.pagina, termoAtual);
+  }
   if (termoAtual && $("busca").value.trim()) buscar();
+}
+
+function realcarPalavra(palavra) {
+  const alvo = norm(palavra);
+  const achada = [...document.querySelectorAll("#pg-texto .corr, #pg-texto .pal")]
+    .find((x) => norm(x.textContent) === alvo);
+  if (!achada) return;
+  achada.classList.add("piscar");
+  const caixa = $("pg-texto");
+  const topo = achada.getBoundingClientRect().top - caixa.getBoundingClientRect().top + caixa.scrollTop;
+  if (topo < caixa.scrollTop || topo > caixa.scrollTop + caixa.clientHeight - 20)
+    caixa.scrollTop = Math.max(0, topo - caixa.clientHeight / 2);
+  setTimeout(() => achada.classList.remove("piscar"), 2400);
+}
+
+function norm(t) { return (t || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase(); }
+
+// Recusa ou aviso dentro do editor: a mensagem do rodapé pode ficar cortada.
+function mensagemEditor(texto) {
+  $("ed-msg").textContent = texto || "";
+  $("ed-msg").hidden = !texto;
 }
 
 async function salvarCorrecao(ev) {
   ev.preventDefault();
   if (!edicao) return;
   const para = $("ed-para").value.trim();
+  if (para === edicao.orig) {
+    // igual ao que o OCR leu: numa palavra corrigida pelo dicionário/comunidade, é
+    // "o OCR estava certo"; numa palavra comum, não há o que mudar
+    if (edicao.tipo === "auto" || edicao.tipo === "comunidade") return manterOriginal();
+    mensagemEditor("A forma correta é igual ao que o OCR leu. Digite como a palavra deveria ser lida — ou feche, se já está certa.");
+    return;
+  }
   const r = await chamar(null, "corrigir_palavra", edicao.orig, para);
-  aposVocabulario(r, `“${edicao.orig}” agora é lida como “${para}”.`);
+  aposVocabulario(r, `“${edicao.orig}” agora é lida como “${para}”.`, para);
 }
 
 async function manterOriginal() {
   if (!edicao) return;
-  const r = await chamar($("ed-manter"), "manter_original", edicao.orig);
-  aposVocabulario(r, `“${edicao.orig}” não será mais corrigida automaticamente.`);
+  const orig = edicao.orig;
+  const r = await chamar($("ed-manter"), "manter_original", orig);
+  aposVocabulario(r, `“${orig}” não será mais corrigida automaticamente.`, orig);
 }
 
 async function desfazerCorrecao() {
   if (!edicao) return;
-  const r = await chamar($("ed-desfazer"), "remover_correcao", edicao.orig);
-  aposVocabulario(r, `Correção de “${edicao.orig}” desfeita.`);
+  const orig = edicao.orig;
+  const r = await chamar($("ed-desfazer"), "remover_correcao", orig);
+  aposVocabulario(r, `Correção de “${orig}” desfeita.`, orig);
 }
 
 async function adicionarDoEditor() {

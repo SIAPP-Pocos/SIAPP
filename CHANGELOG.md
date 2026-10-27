@@ -6,6 +6,33 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 
 ## [Não lançado]
 
+## [0.29.1] — 2026-10-26
+Bloco 1 das mudanças do teste da 0.29 (erros que afetam dados).
+### Corrigido
+- **Poço aparecendo em duas bacias na ficha** (ex.: 7-GMR-13-RN em "Alagoas · Categoria-7_parte28"
+  e em "Potiguar"). Causa: a lista de uma categoria era gravada na bacia conectada no momento
+  em que a listagem *terminava*. Listar a Categoria-7 da Potiguar (36 partes, alguns segundos)
+  e conectar em Alagoas nesse meio-tempo gravava as 7.198 pastas da Potiguar como Alagoas — e a
+  janela mostrava essa lista sob Alagoas, com "Pasta não encontrada" ao clicar. Agora cada
+  ação do catálogo (listar, catalogar, abrir um poço, baixar) usa um retrato da conexão do
+  começo, grava na bacia que foi listada, e recusa um pedido feito para a bacia anterior; a
+  janela descarta a lista que chega depois da troca.
+- **Reparo automático** dos projetos afetados, uma vez ao abrir: sai o registro repetido (mesma
+  pasta, mesmo caminho, em duas bacias) quando o cadastro da ANP põe o poço na outra bacia — ou,
+  sem o poço no cadastro, quando a leva listada é quase toda de poços de outra bacia. Pasta que
+  só existe numa bacia nunca é apagada. Fica registrado no histórico (`reparou_catalogo`).
+- Listar uma categoria de novo agora **substitui** o que estava guardado dela (pastas que sumiram
+  do portal saem do catálogo).
+- **Correções de OCR coloridas à vista.** As cores já eram aplicadas, mas depois de corrigir o
+  texto voltava ao topo e a palavra (já azul) ficava fora da vista. Agora a página volta ao mesmo
+  ponto, a palavra corrigida pisca, e **a imagem da página contorna as palavras corrigidas** nas
+  mesmas cores (verde = dicionário, azul = você, roxo = comunidade).
+- Corrigir para a mesma palavra lida não some mais num aviso cortado no rodapé: o editor explica;
+  numa palavra corrigida pelo dicionário ou pela comunidade, isso vale como "o OCR estava certo".
+### Adicionado
+- A ficha avisa quando uma pasta do REATE está num compartilhamento de bacia diferente da do
+  cadastro da ANP.
+
 ## [0.29.0] — 2026-10-18
 ### Adicionado
 - **Grau API e densidade do gás a partir das pastas de poço** (`motor/fluidos.py`): para o

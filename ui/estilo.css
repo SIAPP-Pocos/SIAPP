@@ -302,6 +302,10 @@ mark { background: #ffe58a; color: inherit; border-radius: 2px; padding: 0 1px; 
 .corr.usuario { background: #dde8fb; color: #234e9a; border-bottom: 1px solid #6c93d6; }
 .corr.comunidade { background: #ece3f7; color: #5b2f8f; border-bottom: 1px solid #9c7cc8; }
 .pal.sel, .corr.sel { outline: 2px solid var(--destaque); }
+.corr.piscar, .pal.piscar { animation: piscar 0.8s ease-in-out 3; }
+@keyframes piscar { 50% { outline: 3px solid var(--destaque); outline-offset: 1px; } }
+.ed-msg { margin: 0; color: var(--erro); }
+.ed-msg[hidden] { display: none; }
 .editor {
   border: 1px solid var(--destaque); background: var(--painel); border-radius: 8px;
   padding: 10px 12px; margin-bottom: 10px; display: grid; gap: 8px;

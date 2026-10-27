@@ -218,14 +218,63 @@ def resolver(banco: Banco, nome: str) -> str:
     return r[0] if r else k
 
 
-def registrar_reate(banco: Banco, bacia: str, categoria: str, pocos: list[dict]) -> int:
-    """Pastas de poço vistas no portal (resultado de ClienteREATE.listar_pocos)."""
+def registrar_reate(banco: Banco, bacia: str, categoria: str, pocos: list[dict],
+                    substituir: bool = False) -> int:
+    """Pastas de poço vistas no portal (resultado de ClienteREATE.listar_pocos).
+    `substituir`: a lista é a categoria inteira, recém-listada — o que estava guardado
+    nessa bacia e categoria e não apareceu agora sai (pasta removida do portal, ou
+    registro errado de versões antigas)."""
     quando = agora()
     with banco.conexao() as c:
+        if substituir:
+            c.execute("DELETE FROM reate WHERE bacia = ? AND categoria = ?", (bacia, categoria))
         c.executemany("INSERT OR REPLACE INTO reate VALUES (?, ?, ?, ?, ?, ?, ?)",
                       [(bacia, p["caminho"], p["nome"], chave(p["nome"]), categoria,
                         p.get("parte"), quando) for p in pocos])
     return len(pocos)
+
+
+def reparar_reate_bacias(banco: Banco) -> dict:
+    """Desfaz o erro das versões até a 0.29: uma categoria listada numa bacia era gravada
+    na bacia conectada no momento em que a listagem terminava. Se o usuário trocava de
+    bacia no meio, as pastas da Potiguar entravam como Alagoas (mesmo caminho
+    /POCO/Categoria-7/..., mesma pasta), e a ficha mostrava as duas.
+
+    Só apaga o registro repetido — a mesma pasta, no mesmo caminho, em duas bacias:
+    1. se o cadastro da ANP diz que o poço é da outra bacia, sai o registro desta;
+    2. sem o poço no cadastro, decide pela leva (bacia, categoria, momento da listagem):
+       sai o da leva em que quase todos os poços com cadastro são de outra bacia.
+    Pasta que só existe numa bacia nunca é apagada aqui."""
+    with banco.conexao() as c:
+        dup = c.execute(
+            """SELECT r.rowid AS id, r.bacia, r.categoria, r.visto_em, o.bacia AS outra, p.bacia AS cadastro
+               FROM reate r JOIN reate o ON o.caminho = r.caminho AND o.nome_pasta = r.nome_pasta
+                                         AND o.bacia <> r.bacia
+               LEFT JOIN pocos p ON p.id = r.poco_id""").fetchall()
+        if not dup:
+            return {"apagados": 0, "bacias": {}}
+        # fração de poços "de outra bacia" (pelo cadastro) em cada leva
+        levas = {}
+        for r in c.execute(
+                """SELECT r.bacia, r.categoria, r.visto_em,
+                          sum(p.bacia IS NOT NULL) AS com_cadastro,
+                          sum(p.bacia IS NOT NULL AND p.bacia <> r.bacia) AS de_outra
+                   FROM reate r LEFT JOIN pocos p ON p.id = r.poco_id
+                   GROUP BY r.bacia, r.categoria, r.visto_em"""):
+            levas[(r["bacia"], r["categoria"], r["visto_em"])] = (
+                r["de_outra"] / r["com_cadastro"] if r["com_cadastro"] else None)
+        apagar, por_bacia = [], {}
+        for r in dup:
+            if r["cadastro"]:
+                errado = r["cadastro"] == r["outra"]
+            else:
+                f = levas.get((r["bacia"], r["categoria"], r["visto_em"]))
+                errado = f is not None and f >= 0.5
+            if errado:
+                apagar.append((r["id"],))
+                por_bacia[r["bacia"]] = por_bacia.get(r["bacia"], 0) + 1
+        c.executemany("DELETE FROM reate WHERE rowid = ?", apagar)
+    return {"apagados": len(apagar), "bacias": por_bacia}
 
 
 def importar_catalogo_json(banco: Banco, pasta_catalogo: str) -> int:

@@ -111,3 +111,27 @@ def test_visor_entrega_pagina_longa_em_faixas(tmp_path):
     png = base64.b64decode(md.imagem_pagina(f, 1, []).split(",")[1])
     larg, alt = int.from_bytes(png[16:20], "big"), int.from_bytes(png[20:24], "big")
     assert larg * alt <= md.PIXELS_PAGINA and alt > larg * 15
+
+
+def test_palavras_corrigidas_contornadas_na_imagem(tmp_path):
+    """Correção do usuário em azul, do dicionário em verde — também na imagem (0.29.1)."""
+    import base64
+    import io
+
+    from PIL import Image
+    f = str(tmp_path / "branco.tif")
+    tif_paginas(f, [(800, 1000)])
+
+    def pixels(**kw):
+        png = base64.b64decode(md.imagem_pagina(f, 1, [], **kw).split(",")[1])
+        return Image.open(io.BytesIO(png)).convert("RGB")
+    limpa = pixels()
+    img = pixels(corrigidas=[[0.1, 0.1, 0.4, 0.2, "usuario"], [0.5, 0.5, 0.8, 0.6, "auto"]])
+    w, h = img.size
+    centro_azul = img.getpixel((int(0.25 * w), int(0.15 * h)))
+    centro_verde = img.getpixel((int(0.65 * w), int(0.55 * h)))
+    assert limpa.getpixel((int(0.25 * w), int(0.15 * h))) == (255, 255, 255)
+    assert centro_azul[2] > centro_azul[0] + 15            # azulado
+    assert centro_verde[1] > centro_verde[0] + 15          # esverdeado
+    borda = img.getpixel((int(0.1 * w) - 1, int(0.15 * h)))
+    assert borda == md.CORES_CAIXA["usuario"][1]

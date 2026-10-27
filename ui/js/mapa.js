@@ -192,6 +192,9 @@ async function abrirFicha(id) {
   for (const x of r.reate) {
     const linha = el("div", "linha ficha-reate");
     linha.append(el("span", "", `${x.bacia} · ${x.categoria}${x.parte ? " · " + x.parte : ""}`));
+    // pasta num compartilhamento de outra bacia: pode ser real, mas vale conferir
+    if (r.no_cadastro && r.poco.bacia && x.bacia !== r.poco.bacia)
+      linha.append(el("span", "ajuda", ` (o cadastro da ANP põe o poço na bacia ${r.poco.bacia})`));
     const b = el("button", "btn secundario pequeno", "Ver arquivos");
     b.onclick = () => abrirPocoNoCatalogo(x);
     linha.appendChild(b);

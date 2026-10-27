@@ -1,5 +1,6 @@
 """Nome canônico de poço, cadastro da ANP, catálogo do REATE e mapa."""
 import json
+import os
 
 import pytest
 
@@ -154,3 +155,87 @@ def test_catalogar_bacia_inteira(api):
     with api._banco.conexao() as cx:
         ids = sorted(x[0] for x in cx.execute("SELECT poco_id FROM reate"))
     assert ids == ["1-AURI-12-RN", "7-GMR-13-RN", "7-GMR-27-RN"]
+
+
+# ---------------------------------------------------------- bacias misturadas (0.29.1)
+def _pasta(nome, parte="Categoria-7_parte28"):
+    return {"nome": nome, "caminho": f"/POCO/Categoria-7/{parte}/{nome}/", "parte": parte}
+
+
+def _reate(banco):
+    with banco.conexao() as c:
+        return sorted((r["bacia"], r["nome_pasta"]) for r in c.execute("SELECT bacia, nome_pasta FROM reate"))
+
+
+def test_listar_categoria_substitui_a_anterior(banco):
+    mpo.registrar_reate(banco, "Potiguar", "Categoria-7", [_pasta("7-GMR-13-RN"), _pasta("7-GMR-99-RN")])
+    mpo.registrar_reate(banco, "Potiguar", "Categoria-1", [_pasta("1-AURI-12-RN", "x")])
+    mpo.registrar_reate(banco, "Potiguar", "Categoria-7", [_pasta("7-GMR-13-RN")], substituir=True)
+    assert _reate(banco) == [("Potiguar", "1-AURI-12-RN"), ("Potiguar", "7-GMR-13-RN")]
+
+
+def test_reparo_tira_a_pasta_gravada_na_bacia_errada(banco, monkeypatch):
+    # o caso real: a Categoria-7 da Potiguar terminou de listar depois de conectar em
+    # Alagoas e entrou como Alagoas, junto com as pastas de Alagoas de verdade
+    monkeypatch.setattr(mpo, "agora", lambda: "2026-10-18T10:42:35")
+    mpo.registrar_reate(banco, "Alagoas", "Categoria-7",
+                        [_pasta("7-GMR-13-RN"), _pasta("7-NOVO-1-RN"), _pasta("7-AL-1-AL", "Categoria-7_parte1")])
+    monkeypatch.setattr(mpo, "agora", lambda: "2026-10-23T08:09:45")
+    mpo.registrar_reate(banco, "Potiguar", "Categoria-7", [_pasta("7-GMR-13-RN"), _pasta("7-NOVO-1-RN")])
+    # pasta que só existe numa bacia nunca sai, mesmo com o cadastro dizendo outra coisa
+    mpo.registrar_reate(banco, "Sergipe", "Categoria-1", [_pasta("1-AURI-12-RN", "y")])
+    r = mpo.reparar_reate_bacias(banco)
+    # 7-GMR-13-RN: o cadastro diz Potiguar. 7-NOVO-1-RN: fora do cadastro, mas a leva de
+    # Alagoas é quase toda de poços de outra bacia
+    assert r == {"apagados": 2, "bacias": {"Alagoas": 2}}
+    assert _reate(banco) == [("Alagoas", "7-AL-1-AL"), ("Potiguar", "7-GMR-13-RN"),
+                             ("Potiguar", "7-NOVO-1-RN"), ("Sergipe", "1-AURI-12-RN")]
+    assert [x["bacia"] for x in mpo.ficha(banco, "7-GMR-13-RN")["reate"]] == ["Potiguar"]
+    assert mpo.reparar_reate_bacias(banco)["apagados"] == 0
+
+
+def test_reparo_roda_uma_vez_ao_abrir_o_projeto(api, tmp_path):
+    api.escolher_pasta()
+    for bacia in ("Alagoas", "Potiguar"):
+        mpo.registrar_reate(api._banco, bacia, "Categoria-7", [_pasta("7-GMR-13-RN")])
+    mpo.importar_cadastro(api._banco, mpo.ler_cadastro(csv_exemplo()), "anp:teste")
+    api._banco.definir_meta("reparou_reate_bacias", "")
+    api._abrir_projeto(str(tmp_path / "ambiente_teste"))
+    assert _reate(api._banco) == [("Potiguar", "7-GMR-13-RN")]
+    assert api._banco.meta("reparou_reate_bacias") == "1"
+    assert any(e["evento"] == "reparou_catalogo" and e["apagados"] == 1
+               for e in api._projeto.config["historico"])
+
+
+def test_trocar_de_bacia_no_meio_da_listagem_nao_mistura(api):
+    """A listagem guarda o retrato da conexão do começo: termina gravada na bacia listada."""
+    import threading
+    from conftest import ArvoreFalsa, item
+    from motor.reate import ClienteREATE
+    api.escolher_pasta()
+    liberar, entrou = threading.Event(), threading.Event()
+    arvore = ArvoreFalsa({"/POCO/Categoria-7/": [item("7-GMR-13-RN", True)]})
+
+    def listar_devagar(caminho, *a, **kw):
+        entrou.set()
+        liberar.wait(5)
+        return arvore(caminho, *a, **kw)
+    potiguar = ClienteREATE("p", pausa_s=0)
+    potiguar.listar = listar_devagar
+    api._cliente, api._cliente_dl, api._bacia, api._base_remota = potiguar, potiguar, "Potiguar", "/POCO/"
+    resposta = {}
+    t = threading.Thread(target=lambda: resposta.update(api.listar_pocos("Categoria-7", "Potiguar")))
+    t.start()
+    entrou.wait(5)
+    alagoas = ClienteREATE("a", pausa_s=0)
+    api._cliente, api._cliente_dl, api._bacia = alagoas, alagoas, "Alagoas"    # = conectar(Alagoas)
+    liberar.set()
+    t.join(5)
+    assert resposta["ok"] and resposta["bacia"] == "Potiguar"
+    assert _reate(api._banco) == [("Potiguar", "7-GMR-13-RN")]
+    assert os.path.isfile(os.path.join(api._projeto.pasta, "catalogo", "Potiguar", "Categoria-7.json"))
+    assert not os.path.exists(os.path.join(api._projeto.pasta, "catalogo", "Alagoas", "Categoria-7.json"))
+    # pedido feito para a bacia antiga, com a conexão já trocada: recusado
+    r = api.explorar_poco("7-GMR-13-RN", "/POCO/Categoria-7/7-GMR-13-RN/", "Categoria-7", None, "Potiguar")
+    assert not r["ok"] and "Alagoas" in r["erro"] and "Potiguar" in r["erro"]
+    assert not api.baixar("7-GMR-13-RN", [{"caminho": "/POCO/x", "nome": "x"}], "Potiguar")["ok"]

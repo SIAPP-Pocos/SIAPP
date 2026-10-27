@@ -87,3 +87,21 @@ def test_arvore_do_poco_traz_caminho_local_dos_baixados(api):
     a, b = r["arvore"]["filhos"]
     assert a["baixado"] and a["rel"] == "bruto/Potiguar/X/P/a.pdf"
     assert not b["baixado"] and "rel" not in b
+
+
+def test_pagina_diz_quais_palavras_da_imagem_foram_corrigidas(api, tmp_path):
+    import pymupdf
+    api.escolher_pasta()
+    pasta = os.path.join(api._projeto.pasta, "bruto", "Potiguar", "7-GMR-13-RN", "Pasta")
+    os.makedirs(pasta)
+    doc = pymupdf.open()
+    doc.new_page().insert_text((72, 100), "SONDA iReline FORMACAO BARIGIRAS RELATORIO DO POCO", fontsize=10)
+    doc.save(os.path.join(pasta, "p.pdf"))
+    rel = "bruto/Potiguar/7-GMR-13-RN/Pasta/p.pdf"
+    from motor import documentos as md
+    r = md.processar_arquivo(os.path.join(pasta, "p.pdf"), tessdata=str(tmp_path))
+    api._projeto.salvar_texto(rel, r)
+    assert api.corrigir_palavra("iReline", "Wireline")["ok"]
+    v = api.ver_pagina(rel, 1)
+    tipos = [s["tipo"] for s in v["segmentos"] if isinstance(s, dict)]
+    assert tipos == ["usuario", "auto"] and v["n_corrigidas_imagem"] == 2
