@@ -14,12 +14,14 @@ class VocabularioAPI:
 
     def _carregar_corretor(self):
         self._corretor = mvoc.Corretor(mvoc.ler_base(CAMINHO_VOCAB_BASE), self._banco.vocab_efetivo())
+        self._conhecida_cache = None          # palavras conhecidas do texto remontado (documentos.py)
+        self._corpus_cache = None
 
     def _aplicar_vocabulario(self, evento: str, **detalhe) -> dict:
         """Reaplica as correções em TODOS os documentos já processados (o OCR
         original não é refeito nem alterado) e anota o evento no histórico."""
         self._carregar_corretor()
-        n = self._indice.reconstruir(self._projeto.documentos_processados(), self._corretor)
+        n = self._reindexar_tudo()
         self._projeto.registrar(evento, **detalhe)
         return {"paginas_atualizadas": n, **self._dicionario()}
 

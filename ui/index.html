@@ -518,7 +518,27 @@
           Na primeira vez, o SIAPP baixa o idioma português do OCR (~15 MB).
         </p>
       </section>
-      <ul class="lista-docs" id="lista-docs"></ul>
+      <section class="etapa docs-filtros" id="docs-filtros">
+        <input id="df-texto" type="search" autocomplete="off" placeholder="Filtrar: nome, poço ou pasta">
+        <div class="df-grade">
+          <select id="df-bacia" title="Bacia"><option value="">Todas as bacias</option></select>
+          <select id="df-campo" title="Campo (cadastro da ANP)"><option value="">Todos os campos</option></select>
+          <select id="df-situacao" title="Situação do texto">
+            <option value="">Qualquer situação</option>
+            <option value="processado">Com texto</option>
+            <option value="pendente">Sem texto (pendentes)</option>
+            <option value="revisado">Com páginas revisadas</option>
+          </select>
+          <select id="df-agrupar" title="Como agrupar a lista">
+            <option value="poco">Bacia › poço</option>
+            <option value="pasta">Bacia › poço › pasta</option>
+            <option value="">Sem agrupar</option>
+          </select>
+        </div>
+        <p class="ajuda df-resumo"><span id="df-resumo"></span>
+          <button type="button" class="link" id="df-limpar" hidden>limpar filtro</button></p>
+      </section>
+      <div class="lista-docs-grupos" id="lista-docs"></div>
 
       <section class="etapa dicionario">
         <h2>Dicionário do projeto</h2>
@@ -544,8 +564,16 @@
                placeholder="Buscar nos documentos — ex.: cimentação, perda de circulação, calha">
         <button class="btn" id="btn-buscar" type="submit">Buscar</button>
       </form>
-      <label class="opcao"><input type="checkbox" id="tolerante" checked>
-        Tolerar erros de OCR (procura também palavras com 1–2 letras diferentes)</label>
+      <div class="busca-opcoes">
+        <label class="opcao">Buscar em
+          <select id="busca-escopo">
+            <option value="todos">todos os documentos</option>
+            <option value="filtrados">só os do filtro ao lado</option>
+            <option value="este">só o documento aberto</option>
+          </select></label>
+        <label class="opcao"><input type="checkbox" id="tolerante" checked>
+          Tolerar erros de OCR (procura também palavras com 1–2 letras diferentes)</label>
+      </div>
       <details class="atalhos" id="atalhos-box" open>
         <summary>Palavras-chave <span class="ajuda">— clique para buscar; o número é de páginas</span></summary>
         <div id="atalhos"></div>
@@ -567,8 +595,17 @@
         <button class="btn secundario" id="pg-ant" title="Página anterior">‹</button>
         <span id="pg-num">—</span>
         <button class="btn secundario" id="pg-prox" title="Próxima página">›</button>
+        <form class="pg-ir" id="pg-ir-form" title="Ir direto para uma página (Enter)">
+          <label>ir à <input id="pg-ir" type="number" min="1" inputmode="numeric" aria-label="Ir para a página"></label>
+        </form>
         <button class="btn secundario" id="pg-ampliar" title="Ver a página em tela cheia, com zoom (também: duplo clique na imagem)">Ampliar</button>
         <button class="btn secundario" id="pg-abrir" title="Abrir no programa do computador (leitor de PDF, visualizador de imagens)">No computador</button>
+      </div>
+      <div class="pg-achados" id="pg-achados" hidden>
+        <button class="btn secundario pequeno" id="ac-ant" title="Achado anterior da busca (pode ser outro documento)">‹ anterior</button>
+        <span id="ac-num">—</span>
+        <button class="btn secundario pequeno" id="ac-prox" title="Próximo achado da busca (pode ser outro documento)">próximo ›</button>
+        <span class="ajuda" id="ac-termo"></span>
       </div>
       <div class="pg-aviso pg-pendente" id="pg-pendente" hidden>
         <span>Documento <strong>ainda sem texto</strong>: dá para ler, ampliar e transcrever olhando a imagem.
@@ -596,6 +633,7 @@
           <label>Base (m) <input id="tr-base" type="text" inputmode="decimal" placeholder="se for intervalo"></label>
           <label>Valor <input id="tr-valor" type="text" placeholder="ex.: 12,5"></label>
           <label>Unidade <input id="tr-unidade" type="text" placeholder="ex.: m, pol, kgf/cm²"></label>
+          <label class="largo tr-so-trecho">Trecho <textarea id="tr-trecho" rows="5" placeholder="Desenhe uma caixa em volta do trecho na imagem: o texto lido aparece aqui para conferir. Ou digite/cole o texto."></textarea></label>
           <label class="largo">Observação <input id="tr-obs" type="text"></label>
           <div class="linha largo">
             <button class="btn" type="submit">Salvar dado</button>
@@ -607,10 +645,32 @@
       </details>
       <section class="pg-texto" id="pg-texto-box">
         <div class="pg-texto-cab">
-          <strong>Texto reconhecido</strong>
+          <strong>Texto da página</strong>
+          <span class="selo" id="pg-modo"></span>
           <span class="ajuda" id="pg-corr-resumo"></span>
         </div>
-        <p class="ajuda legenda">Clique numa palavra para corrigir.
+        <div class="pg-texto-acoes">
+          <div class="segmentado" role="group" aria-label="Qual texto mostrar">
+            <button type="button" id="pg-ver-final" class="ativo" title="Linhas, colunas e parágrafos remontados pelas posições das palavras na página, com as correções">Texto arrumado</button>
+            <button type="button" id="pg-ver-ocr" title="O texto exatamente como o OCR devolveu, sem arrumar nem corrigir">Como o OCR leu</button>
+          </div>
+          <button type="button" class="btn secundario pequeno" id="pg-editar" title="Arrumar o texto desta página à mão: vale na página e na busca">Editar o texto</button>
+          <button type="button" class="btn secundario pequeno" id="pg-copiar" title="Copiar o texto mostrado">Copiar</button>
+        </div>
+        <p class="pg-aviso" id="pg-ilegivel" hidden></p>
+        <div class="pg-edicao" id="pg-edicao" hidden>
+          <p class="ajuda">Arrume quebras de linha, parágrafos e palavras olhando a imagem. O texto salvo passa a
+            valer nesta página e na busca; o que o OCR leu continua guardado (e a busca também acha).</p>
+          <textarea id="pg-edicao-texto" rows="16" spellcheck="true" lang="pt-BR"></textarea>
+          <div class="linha">
+            <button type="button" class="btn" id="pg-edicao-salvar">Salvar texto</button>
+            <button type="button" class="btn secundario" id="pg-edicao-cancelar">Cancelar</button>
+            <button type="button" class="btn secundario" id="pg-edicao-auto" hidden
+                    title="Apaga a sua revisão: a página volta ao texto arrumado automaticamente">Voltar ao texto automático</button>
+          </div>
+          <p class="ajuda ed-msg" id="pg-edicao-msg" hidden></p>
+        </div>
+        <p class="ajuda legenda" id="pg-legenda">Clique numa palavra para corrigir.
           <span class="corr auto">verde</span> = corrigida pelo dicionário ·
           <span class="corr usuario">azul</span> = corrigida por você ·
           <span class="corr comunidade">roxo</span> = corrigida pela comunidade.
@@ -621,6 +681,7 @@
             <span class="ajuda" id="ed-estado"></span>
             <button type="button" class="fechar" id="ed-fechar" aria-label="Fechar">×</button>
           </div>
+          <div class="ed-linha ed-sugestoes" id="ed-sugestoes" hidden></div>
           <form class="ed-linha" id="ed-form">
             <input id="ed-para" type="text" autocomplete="off" placeholder="Forma correta">
             <button class="btn" type="submit">Corrigir em todos os documentos</button>
@@ -633,6 +694,13 @@
           <p class="ajuda ed-msg" id="ed-msg" hidden></p>
         </div>
         <div class="pg-texto-corpo" id="pg-texto"></div>
+        <details class="pg-erros" id="pg-erros-box" hidden>
+          <summary>Possíveis erros <span class="contagem" id="pg-erros-n">0</span>
+            <span class="ajuda">— palavras fora do dicionário de português e do vocabulário técnico</span></summary>
+          <p class="ajuda">Clique para corrigir (vale em todos os documentos), ou em “Adicionar ao dicionário”
+            se a palavra estiver certa. A sugestão já vem preenchida.</p>
+          <div class="chips" id="pg-erros"></div>
+        </details>
       </section>
     </aside>
   </main>

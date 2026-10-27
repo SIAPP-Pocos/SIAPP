@@ -91,7 +91,7 @@ class API(BaseAPI, JanelasAPI, PocosAPI, CatalogoAPI, DocumentosAPI, Vocabulario
         self._carregar_corretor()
         if self._indice.recriado:   # estrutura do índice mudou de versão: refaz a partir dos textos
             self._progresso_abertura(5, passos, "Refazendo o índice de texto (estrutura nova)")
-            self._indice.reconstruir(self._projeto.documentos_processados(), self._corretor)
+            self._reindexar_tudo()
         self._js("projetoAbertoEmOutraJanela", {"pasta": self._projeto.pasta})
         cfg = self._projeto.config
         return {"pasta": self._projeto.pasta, "bacia_anterior": cfg.get("bacia"),

@@ -376,7 +376,7 @@ class Indice:
     O índice é derivado (pode ser apagado e refeito a partir de texto/*.json).
     Se a estrutura mudar entre versões, ele é recriado automaticamente.
     """
-    VERSAO = 3   # 3: ids de documento com "/" em qualquer sistema (SIAPP 0.7)
+    VERSAO = 4   # 3: ids com "/" em qualquer sistema (0.7); 4: texto remontado/revisado (0.31)
 
     def __init__(self, caminho: str):
         self.caminho = caminho
@@ -410,7 +410,8 @@ class Indice:
     def _linhas(doc_id, bacia, poco, arquivo, paginas, corretor):
         from .vocabulario import titulo_confiavel
         for p in paginas:
-            corrigido = corretor.corrigir(p["texto"]) if corretor else p["texto"]
+            final = p.get("final", p["texto"])       # remontado ou revisado (ponte/documentos.py)
+            corrigido = corretor.corrigir(final) if corretor else final
             titulo = corretor.corrigir(p["titulo"]) if corretor else p["titulo"]
             titulo = titulo if titulo_confiavel(titulo) else ""
             yield (corrigido, p["texto"], titulo, doc_id, bacia, poco, arquivo, p["pagina"], p["metodo"])
@@ -469,12 +470,18 @@ class Indice:
             saida.append({"termo": t, "variacoes": [v for _, v in sorted(achadas)[:12]]})
         return saida
 
-    def buscar(self, termo: str, limite: int = 300, tolerante: bool = True) -> dict:
+    def buscar(self, termo: str, limite: int = 300, tolerante: bool = True,
+               docs: list | None = None) -> dict:
+        """`docs`: restringe a estes documentos (lista de ids); None = todos."""
         exp = self.expandir(termo) if tolerante else [
             {"termo": sem_acento(t), "variacoes": []} for t in re.findall(r"\w+", termo or "")]
-        if not exp:
-            return {"resultados": [], "expansoes": []}
+        if not exp or (docs is not None and not docs):
+            return {"resultados": [], "expansoes": [e for e in exp if e["variacoes"]]}
         campos = "doc, bacia, poco, arquivo, pagina, metodo, titulo"
+        filtro, args_filtro = "", []
+        if docs is not None:
+            filtro = f" AND doc IN ({','.join('?' * len(docs))})"
+            args_filtro = list(docs)
         with self._con() as c:
             if self.fts:
                 partes = []
@@ -483,13 +490,13 @@ class Indice:
                     partes.append("(" + " OR ".join(opcoes) + ")")
                 linhas = c.execute(
                     f"SELECT {campos}, snippet(paginas, -1, char(1), char(2), '…', 14) "
-                    f"FROM paginas WHERE paginas MATCH ? ORDER BY rank LIMIT ?",
-                    (" AND ".join(partes), limite)).fetchall()
+                    f"FROM paginas WHERE paginas MATCH ?{filtro} ORDER BY rank LIMIT ?",
+                    (" AND ".join(partes), *args_filtro, limite)).fetchall()
             else:
                 cond = " AND ".join("norm LIKE ?" for _ in exp)
                 linhas = [(*l[:7], l[7][:200]) for l in c.execute(
-                    f"SELECT {campos}, texto FROM paginas_simples WHERE {cond} LIMIT ?",
-                    [f"%{e['termo']}%" for e in exp] + [limite]).fetchall()]
+                    f"SELECT {campos}, texto FROM paginas_simples WHERE {cond}{filtro} LIMIT ?",
+                    [f"%{e['termo']}%" for e in exp] + args_filtro + [limite]).fetchall()]
         return {"expansoes": [e for e in exp if e["variacoes"]],
                 "resultados": [{"doc": l[0], "bacia": l[1], "poco": l[2], "arquivo": l[3],
                                 "pagina": l[4], "metodo": l[5], "titulo": l[6],

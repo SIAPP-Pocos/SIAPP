@@ -1131,3 +1131,141 @@ def test_aba_em_janela_propria_e_conversa_entre_janelas(janela, tmp_path):
     assert docs.falsa.destruida
     assert not docs.erros_js and not janela.erros_js, (docs.erros_js, janela.erros_js)
     docs.page.close()
+
+
+# ---------------------------------------------------------------- 0.31: documentos e texto
+def _docs_de_teste(janela, tmp_path):
+    """Três documentos em duas bacias (texto embutido: não precisa do OCR)."""
+    import pymupdf
+    from motor import documentos as md
+    api = janela.api
+    api._abrir_projeto(str(tmp_path / "ambiente_teste"))
+    feitos = []
+    for bacia, poco, nome, paginas in [
+            ("Potiguar", "7-GMR-13-RN", "pasta.pdf", ["perda de circulacao na fase de 12 1/4 pol", "relatorio diario de perfuracao sem ocorrencias", "perda de circulacao severa no fundo do poco"]),
+            ("Potiguar", "7-GMR-14-RN", "rfp.pdf", ["relatorio final com perda de circulacao parcial"]),
+            ("Alagoas", "3-PIA-12-AL", "pasta.pdf", ["perda de circulacao total na formacao Muribeca", "o amanheccr do relatorio diario de perfuracao"])]:
+        pasta = tmp_path / "ambiente_teste" / "bruto" / bacia / poco / "Pasta de Poco"
+        pasta.mkdir(parents=True, exist_ok=True)
+        doc = pymupdf.open()
+        for t in paginas:
+            doc.new_page().insert_text((72, 100), t, fontsize=11)
+        doc.save(str(pasta / nome))
+        rel = f"bruto/{bacia}/{poco}/Pasta de Poco/{nome}"
+        api._projeto.salvar_texto(rel, md.processar_arquivo(str(pasta / nome), tessdata=str(tmp_path)))
+        api._reindexar_documento(rel)
+        feitos.append(rel)
+    with api._banco.conexao() as c:
+        c.execute("INSERT INTO pocos (id, campo, bacia) VALUES ('7-GMR-13-RN', 'GUAMARÉ', 'Potiguar'), "
+                  "('7-GMR-14-RN', 'GUAMARÉ', 'Potiguar'), ('3-PIA-12-AL', 'PILAR', 'Alagoas')")
+    return feitos
+
+
+def test_lista_agrupada_filtro_e_busca_no_escopo(janela, tmp_path):
+    p = janela.page
+    abrir_projeto(janela)
+    rels = _docs_de_teste(janela, tmp_path)
+    p.click("#aba-docs")
+    janela.esperar("document.querySelectorAll('#lista-docs button').length === 3")
+    # agrupado por bacia › poço, com o campo do cadastro
+    assert p.locator(".grupo-docs.bacia").count() == 2
+    assert "GUAMARÉ" in p.text_content(".grupo-docs.poco[data-chave='p:Potiguar/7-GMR-13-RN'] summary")
+    p.select_option("#df-campo", "GUAMARÉ")
+    janela.esperar("document.querySelectorAll('#lista-docs button').length === 2")
+    assert "2 de 3" in p.text_content("#df-resumo")
+    # buscar só nos documentos do filtro
+    p.select_option("#busca-escopo", "filtrados")
+    p.fill("#busca", "circulacao")
+    p.click("#btn-buscar")
+    janela.esperar("document.querySelectorAll('#resultados button').length === 3")
+    assert "do filtro" in p.text_content("#busca-resumo")
+    # andar pelos achados de documento em documento
+    p.click("#resultados button >> nth=0")
+    janela.esperar("document.getElementById('ac-num').textContent.includes('achado 1 de 3')")
+    p.click("#ac-prox")
+    janela.esperar("document.getElementById('ac-num').textContent.includes('achado 2 de 3')")
+    assert "ativo" in p.get_attribute("#resultados button >> nth=1", "class")
+    p.keyboard.press("F3")
+    janela.esperar("document.getElementById('ac-num').textContent.includes('achado 3 de 3')")
+    assert p.is_disabled("#ac-prox")
+    # só no documento aberto: em ordem de página
+    p.click("#df-limpar")
+    janela.esperar("document.querySelectorAll('#lista-docs button').length === 3")
+    p.click(f"#lista-docs button[data-rel='{rels[0]}']")
+    janela.esperar("document.getElementById('pg-num').textContent.includes('de 3')")
+    p.select_option("#busca-escopo", "este")
+    p.click("#btn-buscar")
+    janela.esperar("document.querySelectorAll('#resultados button').length === 2")
+    assert [p.text_content(f"#resultados button >> nth={i} >> .r-cab") .split("pág ")[1][:1] for i in range(2)] == ["1", "3"]
+    # pular para a página
+    p.fill("#pg-ir", "2")
+    p.press("#pg-ir", "Enter")
+    janela.esperar("document.getElementById('pg-num').textContent === 'pág 2 de 3'")
+    assert "não está entre eles" in p.text_content("#ac-termo")
+    assert not janela.erros_js, janela.erros_js
+
+
+def test_editar_texto_da_pagina_e_possiveis_erros(janela, tmp_path):
+    p = janela.page
+    abrir_projeto(janela)
+    rels = _docs_de_teste(janela, tmp_path)
+    p.click("#aba-docs")
+    janela.esperar("document.querySelectorAll('#lista-docs button').length === 3")
+    p.evaluate(f"abrirPagina({rels[2]!r}, 2, '')")
+    janela.esperar("document.getElementById('pg-num').textContent === 'pág 2 de 2'")
+    # possível erro com sugestão: abre o editor de correção já preenchido
+    assert p.is_visible("#pg-erros-box")
+    p.click("#pg-erros-box summary")
+    p.locator(".chip-erro", has_text="amanheccr").click()
+    assert p.is_visible("#editor") and p.input_value("#ed-para") == "amanhecer"
+    assert p.locator("#ed-sugestoes .chip-busca").count() >= 1
+    p.click("#ed-fechar")
+    # como o OCR leu × texto arrumado
+    p.click("#pg-ver-ocr")
+    assert "ocr" in p.get_attribute("#pg-texto", "class") and p.is_hidden("#pg-erros-box")
+    p.click("#pg-ver-final")
+    # editar e salvar: vale na página e na busca
+    p.click("#pg-editar")
+    assert p.is_visible("#pg-edicao") and "amanheccr" in p.input_value("#pg-edicao-texto")
+    p.fill("#pg-edicao-texto", "O amanhecer do relatório.\n\nSegundo parágrafo com testemunhagem.")
+    p.click("#pg-ant")                                       # não sai com edição por salvar
+    assert p.is_visible("#pg-edicao-msg") and "Salve ou cancele" in p.text_content("#pg-edicao-msg")
+    p.click("#pg-edicao-salvar")
+    janela.esperar("document.getElementById('pg-modo').textContent === 'revisado'")
+    assert "Segundo parágrafo" in p.inner_text("#pg-texto")
+    assert p.is_hidden("#pg-erros-box")
+    assert "1 revisada" in p.text_content(f"#lista-docs button[data-rel='{rels[2]}']")
+    p.fill("#busca", "testemunhagem")
+    p.select_option("#busca-escopo", "todos")
+    p.click("#btn-buscar")
+    janela.esperar("document.querySelectorAll('#resultados button').length === 1")
+    # voltar ao texto automático: dois cliques
+    p.click("#pg-editar")
+    p.click("#pg-edicao-auto")
+    assert "Confirmar" in p.text_content("#pg-edicao-auto")
+    p.click("#pg-edicao-auto")
+    janela.esperar("document.getElementById('pg-modo').textContent !== 'revisado'")
+    assert "amanheccr" in p.inner_text("#pg-texto")
+    assert not janela.erros_js, janela.erros_js
+
+
+def test_transcrever_trecho_de_texto_livre(janela, tmp_path):
+    p = janela.page
+    abrir_projeto(janela)
+    rels = _docs_de_teste(janela, tmp_path)
+    p.click("#aba-docs")
+    janela.esperar("document.querySelectorAll('#lista-docs button').length === 3")
+    p.evaluate(f"abrirPagina({rels[0]!r}, 1, '')")
+    janela.esperar("document.getElementById('pg-num').textContent === 'pág 1 de 3'")
+    p.click("#tr-box summary")
+    p.select_option("#tr-tipo", "trecho")
+    assert p.is_visible("#tr-trecho") and p.is_hidden("#tr-valor")
+    p.evaluate("sugerirDoOCR([0, 0, 1, 0.2])")
+    janela.esperar("document.getElementById('tr-trecho').value.includes('circulacao')")
+    p.fill("#tr-nome", "Perda de circulação")
+    p.fill("#tr-trecho", "perda de circulacao\nna fase de 12 1/4 pol")
+    p.click("#tr-form button[type=submit]")
+    janela.esperar("document.querySelectorAll('#tr-lista td.trecho').length === 1")
+    f = janela.api._banco.fatos(fonte_rel=rels[0], pagina=1)[0]
+    assert f["tipo"] == "trecho" and f["observacao"] == "perda de circulacao\nna fase de 12 1/4 pol"
+    assert not janela.erros_js, janela.erros_js

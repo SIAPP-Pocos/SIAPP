@@ -2,7 +2,7 @@
 
 [![testes](https://github.com/SIAPP-Pocos/siapp/actions/workflows/testes.yml/badge.svg)](https://github.com/SIAPP-Pocos/siapp/actions/workflows/testes.yml)
 [![licença: AGPL-3.0](https://img.shields.io/badge/licen%C3%A7a-AGPL--3.0-blue)](LICENSE)
-![versão](https://img.shields.io/badge/vers%C3%A3o-0.30.0-informational)
+![versão](https://img.shields.io/badge/vers%C3%A3o-0.31.0-informational)
 
 Ferramenta aberta para transformar o acervo **público** de dados de poços da ANP
 (portal [REATE](https://reate.cprm.gov.br/anp/TERRESTRE), ANP/CPRM) em dados
@@ -149,6 +149,7 @@ usado para PDF e OCR.
 | [dlisio](https://github.com/equinor/dlisio) | leitura de DLIS e LIS | LGPL-3.0 |
 | [lasio](https://github.com/kinverarity1/lasio) | leitura e escrita de LAS | MIT |
 | [Tesseract `por.traineddata`](https://github.com/tesseract-ocr/tessdata_best) | modelo de português (baixado na 1ª vez) | Apache-2.0 |
+| Lista de palavras do [pyspellchecker](https://github.com/barrust/pyspellchecker) (em `recursos/palavras_pt.txt.gz`) | dicionário de português do texto dos documentos | MIT |
 
 ## Como citar
 

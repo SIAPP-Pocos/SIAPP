@@ -6,6 +6,41 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 
 ## [Não lançado]
 
+## [0.31.0] — 2026-10-27
+Blocos 3 e 4 do teste da 0.29: navegação nos documentos e texto do OCR.
+### Adicionado
+- **Texto arrumado das páginas** (`motor/layout.py`): o texto é remontado pelas posições das palavras
+  na página, em vez de sair na ordem dos blocos do OCR (três palavras, quebra, uma letra, quebra…).
+  - Pedaços da mesma linha voltam para a mesma linha ("Setor⏎de⏎Avaliação" → "Setor de Avaliação").
+  - Formulários ficam em linhas e colunas ("POÇO: 7-GMR-13-RN    CAMPO: GUAMARÉ").
+  - Texto corrido vira parágrafo; "cimen-⏎tação" vira "cimentação".
+  - Palavra partida em duas peças é juntada quando a palavra inteira existe e uma das peças não
+    ("Avalia ção" → "Avaliação"; "a ponta" continua separado).
+  - Riscos, manchas e letras soltas na borda saem do texto (o original continua guardado).
+  - Vale na página, na busca e nos trechos dos resultados. O índice é refeito sozinho na primeira
+    abertura (estrutura nova).
+- **"Como o OCR leu"**: alterna com o texto arrumado, para comparar.
+- **Editar o texto da página** à mão (parágrafos, quebras, palavras): o texto revisado passa a valer na
+  página e na busca, com selo "revisado", autor e data. O que o OCR leu continua guardado e também é
+  achado pela busca. "Voltar ao texto automático" apaga a revisão (dois cliques). Não dá para trocar de
+  página com uma edição por salvar. Tabela nova `paginas_revisadas` no banco.
+- **Possíveis erros** de cada página: palavras fora de um dicionário de português (~385 mil palavras,
+  com flexões), do vocabulário técnico e das palavras que o próprio acervo repete, com sugestão
+  (letra trocada, faltando, sobrando e as confusões típicas do OCR: rn↔m, cl↔d, 1↔l…). Um clique abre o
+  editor de correção já preenchido; a correção vale em todos os documentos, como antes.
+- **Aviso de página pouco legível** quando menos de 40% das palavras são palavras conhecidas
+  (manuscrito, gráfico, carimbo): o texto serve de pista, vale a imagem.
+- **Transcrever um trecho de texto** (tipo novo "Trecho do texto (citação)"): a caixa desenhada na
+  imagem traz o texto remontado e corrigido daquele pedaço; guarda as quebras de linha, até 4000
+  caracteres.
+- **Lista de documentos agrupada** por bacia › poço (com o campo do cadastro da ANP) ou bacia › poço
+  › pasta, com filtro por texto, bacia, campo e situação (com texto, pendentes, com páginas revisadas).
+- **Buscar em**: todos os documentos, só os do filtro da lista (ex.: um campo ou uma bacia) ou só o
+  documento aberto (resultados em ordem de página).
+- **Andar pelos achados**: "‹ anterior · achado 2 de 14 · próximo ›" no painel da página, de documento
+  em documento (também F3 e Shift+F3).
+- **Ir à página**: campo para pular direto para uma página do documento.
+
 ## [0.30.0] — 2026-10-27
 Bloco 2 do teste da 0.29 (organização geral, navegação e configurações), pela maquete aprovada.
 ### Mudado

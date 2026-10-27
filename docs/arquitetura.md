@@ -18,6 +18,8 @@
     reate.py        portal REATE via WebDAV          banco.py       projeto.sqlite
     downloads.py    fila em segundo plano            pocos.py       nome canônico, cadastro ANP
     documentos.py   texto/OCR, índice FTS5           perfis.py      DLIS/LIS/LAS → metros
+    layout.py       texto da página remontado pelas caixas das palavras (linhas, colunas, parágrafos)
+    dicionario.py   dicionário de português: palavra partida, possíveis erros, sugestões, legibilidade
     vocabulario.py  correção de OCR em camadas       comunidade.py  pacotes e base
     projeto.py      pasta de projeto, procedência    registro.py    siapp.log
     preferencias.py cores, tamanho do texto, arranjo das janelas (preferencias.json)
@@ -93,6 +95,7 @@ importar = inserir com outra origem. Um código só para os dois lados.
 | `perfis`, `curvas` | inventário dos DLIS/LIS/LAS: quadros, curvas, família, unidade, intervalo |
 | `fatos` | dados com fonte: topo de formação, intervalo-alvo, revestimento, teste… |
 | `pacotes` | contribuições exportadas e importadas, bases aplicadas |
+| `paginas_revisadas` | texto de página revisado à mão (vale no lugar do texto remontado) |
 
 Migrações numeradas (`motor/banco.py:MIGRACOES`) atualizam o banco de quem já usa o
 SIAPP sem perder nada. Nunca se edita uma migração publicada: acrescenta-se outra.

@@ -4,6 +4,11 @@
 let docs = [];                 // lista vinda do motor
 let docAtual = null;           // {rel, pagina, n_paginas} da página aberta no painel
 let termoAtual = "";
+let paginaAtual = null;        // resposta de ver_pagina da página aberta
+let achados = [];              // resultados da última busca, na ordem mostrada
+let achadoAtual = -1;          // índice em `achados` da página aberta (-1: nenhum)
+let verTexto = "final";        // "final" (arrumado) | "ocr" (como o OCR leu)
+const gruposFechados = new Set();   // grupos da lista que o usuário fechou
 
 const SITUACAO = {
   pendente: "sem texto — clique para ver",
@@ -33,30 +38,180 @@ async function carregarDocumentos() {
     : "Nenhum PDF, TIF ou imagem baixado ainda. Baixe na aba Dados › Catálogo do REATE.";
   $("btn-processar").disabled = pend.length === 0;
   $("aviso-idioma").hidden = r.idioma_ok || pend.length === 0;
+  preencherFiltrosDocs();
   desenharDocs();
   carregarAtalhos();
   carregarDicionario();
 }
 
+// ---------------------------------------------------- lista: filtro e grupos
+function preencherFiltrosDocs() {
+  const opcoes = (id, valores, rotuloTodos) => {
+    const sel = $(id);
+    const atual = sel.value;
+    limpar(sel).appendChild(new Option(rotuloTodos, ""));
+    for (const v of valores) sel.appendChild(new Option(v, v));
+    sel.value = valores.includes(atual) ? atual : "";
+  };
+  const unicos = (f) => [...new Set(docs.map(f).filter(Boolean))].sort((a, b) => a.localeCompare(b, "pt-BR"));
+  opcoes("df-bacia", unicos((d) => d.bacia), "Todas as bacias");
+  const bacia = $("df-bacia").value;
+  opcoes("df-campo", unicos((d) => (!bacia || d.bacia === bacia) ? d.campo : ""), "Todos os campos");
+}
+
+function filtroDocs() {
+  return { texto: norm($("df-texto").value.trim()), bacia: $("df-bacia").value, campo: $("df-campo").value,
+           situacao: $("df-situacao").value };
+}
+
+function filtroAtivo() {
+  const f = filtroDocs();
+  return Boolean(f.texto || f.bacia || f.campo || f.situacao);
+}
+
+function docsFiltrados() {
+  const f = filtroDocs();
+  return docs.filter((d) => {
+    if (f.bacia && d.bacia !== f.bacia) return false;
+    if (f.campo && d.campo !== f.campo) return false;
+    if (f.situacao === "revisado" ? !d.revisadas
+        : f.situacao === "pendente" ? d.situacao === "processado"
+        : f.situacao && d.situacao !== f.situacao) return false;
+    if (f.texto && !norm(`${d.nome} ${d.poco} ${d.pasta} ${d.campo}`).includes(f.texto)) return false;
+    return true;
+  });
+}
+
+function botaoDoc(d) {
+  const li = el("li");
+  const b = el("button");
+  b.dataset.rel = d.rel;
+  b.title = `${d.rel}\n${tamanho(d.tamanho)}`;
+  if (docAtual && docAtual.rel === d.rel) b.classList.add("ativo");
+  const info = el("span", "d-info");
+  if (!$("df-agrupar").value) info.append(el("span", "", d.poco || "—"));
+  const sel = el("span", "selo" + (d.situacao === "processado" ? " ok" : ""), descreverDoc(d));
+  sel.id = "sit-" + d.rel;
+  info.appendChild(sel);
+  if (d.revisadas) info.appendChild(el("span", "selo rev", `${d.revisadas} revisada(s)`));
+  b.append(el("span", "d-nome", d.nome), info);
+  b.onclick = () => abrirPagina(d.rel, 1, d.situacao === "processado" ? termoAtual : "");
+  li.appendChild(b);
+  return li;
+}
+
+function grupoDocs(chave, classe, rotulo, sub, n, abertoPadrao) {
+  const g = el("details", "grupo-docs " + classe);
+  g.dataset.chave = chave;
+  g.open = filtroAtivo() || (gruposFechados.has(chave) ? false : abertoPadrao);
+  const s = el("summary");
+  s.append(el("span", "g-nome", rotulo));
+  if (sub) s.append(el("span", "g-campo", sub));
+  s.append(el("span", "contagem", String(n)));
+  g.appendChild(s);
+  g.addEventListener("toggle", () => {
+    if (g.open) gruposFechados.delete(chave); else gruposFechados.add(chave);
+  });
+  return g;
+}
+
 function desenharDocs() {
-  const ul = $("lista-docs");
-  ul.innerHTML = "";
-  for (const d of docs) {
-    const li = el("li");
-    const b = el("button");
-    b.dataset.rel = d.rel;
-    b.title = `${d.rel}\n${tamanho(d.tamanho)}`;
-    if (docAtual && docAtual.rel === d.rel) b.classList.add("ativo");
-    const info = el("span", "d-info");
-    info.append(el("span", "", d.poco || "—"));
-    const sel = el("span", "selo" + (d.situacao === "processado" ? " ok" : ""), descreverDoc(d));
-    sel.id = "sit-" + d.rel;
-    info.appendChild(sel);
-    b.append(el("span", "d-nome", d.nome), info);
-    b.onclick = () => abrirPagina(d.rel, 1, d.situacao === "processado" ? termoAtual : "");
-    li.appendChild(b);
-    ul.appendChild(li);
+  const caixa = limpar($("lista-docs"));
+  const lista = docsFiltrados();
+  const agrupar = $("df-agrupar").value;
+  const filtrando = filtroAtivo();
+  $("df-resumo").textContent = filtrando ? `${lista.length} de ${docs.length} documento(s) no filtro.` : "";
+  $("df-limpar").hidden = !filtrando;
+  atualizarEscopo();
+  if (!lista.length) {
+    if (docs.length) caixa.appendChild(el("p", "ajuda", "Nenhum documento neste filtro."));
+    return;
   }
+  if (!agrupar) {
+    const ul = el("ul", "lista-docs");
+    for (const d of lista) ul.appendChild(botaoDoc(d));
+    caixa.appendChild(ul);
+    return;
+  }
+  const porBacia = new Map();
+  for (const d of lista) {
+    const b = d.bacia || "Sem bacia";
+    if (!porBacia.has(b)) porBacia.set(b, new Map());
+    const pocos = porBacia.get(b);
+    const p = d.poco || "—";
+    if (!pocos.has(p)) pocos.set(p, []);
+    pocos.get(p).push(d);
+  }
+  const muitos = lista.length > 40;
+  for (const [bacia, pocos] of [...porBacia].sort((a, b) => a[0].localeCompare(b[0], "pt-BR"))) {
+    const nb = [...pocos.values()].reduce((n, x) => n + x.length, 0);
+    const gb = grupoDocs("b:" + bacia, "bacia", bacia, "", nb, true);
+    for (const [poco, ds] of [...pocos].sort((a, b) => a[0].localeCompare(b[0], "pt-BR"))) {
+      const temAtivo = docAtual && ds.some((d) => d.rel === docAtual.rel);
+      const gp = grupoDocs(`p:${bacia}/${poco}`, "poco", poco, ds[0].campo || "", ds.length, !muitos || temAtivo);
+      if (agrupar === "pasta") {
+        const porPasta = new Map();
+        for (const d of ds) {
+          const k = d.pasta || "(raiz do poço)";
+          if (!porPasta.has(k)) porPasta.set(k, []);
+          porPasta.get(k).push(d);
+        }
+        for (const [pasta, dd] of [...porPasta].sort((a, b) => a[0].localeCompare(b[0], "pt-BR"))) {
+          const gq = grupoDocs(`q:${bacia}/${poco}/${pasta}`, "pasta", pasta, "", dd.length, true);
+          const ul = el("ul", "lista-docs");
+          for (const d of dd) ul.appendChild(botaoDoc(d));
+          gq.appendChild(ul);
+          gp.appendChild(gq);
+        }
+      } else {
+        const ul = el("ul", "lista-docs");
+        for (const d of ds) ul.appendChild(botaoDoc(d));
+        gp.appendChild(ul);
+      }
+      gb.appendChild(gp);
+    }
+    caixa.appendChild(gb);
+  }
+}
+
+function limparFiltroDocs() {
+  $("df-texto").value = "";
+  $("df-bacia").value = $("df-campo").value = $("df-situacao").value = "";
+  preencherFiltrosDocs();
+  desenharDocs();
+}
+
+// "Buscar em": o rótulo diz quantos documentos entram em cada escopo
+function atualizarEscopo() {
+  const sel = $("busca-escopo");
+  const n = docsFiltrados().filter((d) => d.situacao === "processado").length;
+  sel.options[1].textContent = filtroAtivo() ? `só os do filtro ao lado (${n})` : "só os do filtro ao lado";
+  sel.options[1].disabled = !filtroAtivo();
+  sel.options[2].disabled = !(docAtual && docAtual.processado);
+  sel.options[2].textContent = docAtual ? `só o documento aberto (${(docs.find((d) => d.rel === docAtual.rel) || {}).nome || "…"})` : "só o documento aberto";
+  if (sel.selectedOptions[0] && sel.selectedOptions[0].disabled) sel.value = "todos";
+}
+
+function ligarDocumentos() {
+  $("df-texto").oninput = desenharDocs;
+  $("df-bacia").onchange = () => { preencherFiltrosDocs(); desenharDocs(); };
+  for (const id of ["df-campo", "df-situacao", "df-agrupar"]) $(id).onchange = desenharDocs;
+  $("df-limpar").onclick = limparFiltroDocs;
+  $("busca-escopo").onchange = () => termoAtual && $("busca").value.trim() && buscar();
+  $("pg-ir-form").onsubmit = (ev) => {
+    ev.preventDefault();
+    const n = parseInt($("pg-ir").value, 10);
+    if (docAtual && n >= 1) abrirPagina(docAtual.rel, Math.min(n, docAtual.n_paginas), termoAtual);
+  };
+  $("ac-ant").onclick = () => irAchado(-1);
+  $("ac-prox").onclick = () => irAchado(1);
+  $("pg-ver-final").onclick = () => trocarVerTexto("final");
+  $("pg-ver-ocr").onclick = () => trocarVerTexto("ocr");
+  $("pg-editar").onclick = abrirEdicaoPagina;
+  $("pg-copiar").onclick = copiarTextoPagina;
+  $("pg-edicao-salvar").onclick = salvarEdicaoPagina;
+  $("pg-edicao-cancelar").onclick = cancelarEdicaoPagina;
+  $("pg-edicao-auto").onclick = voltarTextoAutomatico;
 }
 
 async function processarEste() {
@@ -74,20 +229,33 @@ async function processarPendentes() {
   if (r.ok) status(`${r.enfileirados} documento(s) na fila de processamento.`, "trab");
 }
 
+// Escopo da busca: todos, os documentos do filtro da lista (bacia, campo, poço, pasta…)
+// ou só o documento aberto. null = todos.
+function docsDoEscopo() {
+  const escopo = $("busca-escopo").value;
+  if (escopo === "este" && docAtual) return [docAtual.rel];
+  if (escopo === "filtrados" && filtroAtivo())
+    return docsFiltrados().filter((d) => d.situacao === "processado").map((d) => d.rel);
+  return null;
+}
+
 async function buscar(ev) {
   if (ev) ev.preventDefault();
   const termo = $("busca").value.trim();
   if (!termo) return;
   termoAtual = termo;
   $("atalhos-box").open = false;   // abre espaço para os resultados; um clique reabre
-  const r = await chamar($("btn-buscar"), "buscar_documentos", termo, $("tolerante").checked);
+  const escopo = docsDoEscopo();
+  const r = await chamar($("btn-buscar"), "buscar_documentos", termo, $("tolerante").checked, escopo);
   if (!r.ok) return;
   const ul = $("resultados");
   ul.innerHTML = "";
   const resumo = $("busca-resumo");
+  const onde = escopo === null ? "" : escopo.length === 1 && docAtual && escopo[0] === docAtual.rel
+    ? " neste documento" : ` nos ${escopo.length} documento(s) do filtro`;
   resumo.textContent = r.resultados.length
-    ? `${r.resultados.length} página(s) em ${r.documentos} documento(s) para “${termo}”.`
-    : `Nada encontrado para “${termo}”. Os documentos pendentes ainda não entram na busca.`;
+    ? `${r.resultados.length} página(s) em ${r.documentos} documento(s) para “${termo}”${onde}.`
+    : `Nada encontrado para “${termo}”${onde}. Os documentos pendentes ainda não entram na busca.`;
   if (r.expansoes && r.expansoes.length) {
     const v = el("span", "variacoes", " Também procurei, como possível erro de OCR: ");
     r.expansoes.forEach((e, i) => {
@@ -99,9 +267,13 @@ async function buscar(ev) {
     });
     resumo.appendChild(v);
   }
-  for (const res of r.resultados) {
+  // num documento só, na ordem das páginas; em vários, por relevância
+  achados = escopo && escopo.length === 1 ? [...r.resultados].sort((a, b) => a.pagina - b.pagina) : r.resultados;
+  achadoAtual = -1;
+  achados.forEach((res, i) => {
     const li = el("li");
     const b = el("button");
+    b.dataset.i = i;
     const cab = el("span", "r-cab");
     cab.append(el("strong", "", res.poco || "—"), el("span", "", res.arquivo),
                el("span", "", `pág ${res.pagina}`),
@@ -109,13 +281,38 @@ async function buscar(ev) {
     b.appendChild(cab);
     if (res.titulo) b.appendChild(el("span", "r-titulo", res.titulo));
     b.appendChild(trechoComDestaque(res.trecho));
-    b.onclick = () => {
-      document.querySelectorAll(".resultados button.ativo").forEach((x) => x.classList.remove("ativo"));
-      b.classList.add("ativo");
-      abrirPagina(res.doc, res.pagina, termo);
-    };
+    b.onclick = () => irAchado(0, i);
     li.appendChild(b);
     ul.appendChild(li);
+  });
+  if (docAtual) marcarAchado(docAtual.rel, docAtual.pagina);
+}
+
+// Anda pelos achados da busca, de documento em documento (‹ anterior · próximo ›).
+function irAchado(delta, indice) {
+  if (!achados.length) return;
+  const i = indice !== undefined ? indice : Math.max(0, Math.min(achados.length - 1, achadoAtual + delta));
+  if (indice === undefined && achadoAtual < 0 && delta < 0) return;
+  const res = achados[i];
+  achadoAtual = i;
+  abrirPagina(res.doc, res.pagina, termoAtual);
+}
+
+function marcarAchado(rel, pagina) {
+  const i = achados.findIndex((x) => x.doc === rel && x.pagina === pagina);
+  if (i >= 0) achadoAtual = i;
+  document.querySelectorAll(".resultados button.ativo").forEach((x) => x.classList.remove("ativo"));
+  const box = $("pg-achados");
+  box.hidden = !achados.length;
+  if (!achados.length) return;
+  const noAchado = i >= 0;
+  $("ac-num").textContent = noAchado ? `achado ${i + 1} de ${achados.length}` : `${achados.length} achado(s)`;
+  $("ac-termo").textContent = `“${termoAtual}”` + (noAchado ? "" : " — esta página não está entre eles");
+  $("ac-ant").disabled = !noAchado ? achadoAtual < 0 : i <= 0;
+  $("ac-prox").disabled = noAchado ? i >= achados.length - 1 : false;
+  if (noAchado) {
+    const b = document.querySelector(`.resultados button[data-i="${i}"]`);
+    if (b) { b.classList.add("ativo"); b.scrollIntoView({ block: "nearest" }); }
   }
 }
 
@@ -133,15 +330,25 @@ function trechoComDestaque(trecho) {
 
 let pedidoPagina = 0;
 async function abrirPagina(rel, pagina, termo) {
+  if (edicaoPaginaSuja()) {
+    mensagemEdicao("Salve ou cancele a edição do texto antes de sair desta página.");
+    $("pg-edicao-texto").focus();
+    return;
+  }
   const meu = ++pedidoPagina;
   $("painel-pagina").hidden = false;
   $("pg-num").textContent = "carregando…";
   const r = await chamar(null, "ver_pagina", rel, pagina, termo || "");
   if (meu !== pedidoPagina || !r.ok) return;
+  paginaAtual = r;
   docAtual = { rel: r.rel, pagina: r.pagina, n_paginas: r.n_paginas, processado: r.processado };
   $("pg-nome").textContent = r.nome;
   $("pg-sub").textContent = r.titulo || "";
   $("pg-num").textContent = `pág ${r.pagina} de ${r.n_paginas}`;
+  $("pg-ir").value = "";
+  $("pg-ir").max = r.n_paginas;
+  $("pg-ir").placeholder = String(r.pagina);
+  $("pg-ir-form").hidden = r.n_paginas < 3;
   $("pg-ant").disabled = r.pagina <= 1;
   $("pg-prox").disabled = r.pagina >= r.n_paginas;
   $("pg-aviso").hidden = r.metodo !== "ocr";
@@ -151,18 +358,191 @@ async function abrirPagina(rel, pagina, termo) {
   $("pg-img").src = r.imagem;
   iniciarTranscricao(r);
   fecharEditor();
-  desenharTexto(r.segmentos);
-  $("pg-corr-resumo").textContent = r.n_corrigidas
-    ? `${r.n_corrigidas} palavra(s) corrigida(s) nesta página` : "";
+  fecharEdicaoPagina();
+  desenharTextoPagina();
   if (aposRedesenhar) { const f = aposRedesenhar; aposRedesenhar = null; f(); }
   document.querySelectorAll("#lista-docs button").forEach((b) => b.classList.toggle("ativo", b.dataset.rel === r.rel));
+  marcarAchado(r.rel, r.pagina);
+  atualizarEscopo();
 }
 
 function fecharPagina() {
+  if (edicaoPaginaSuja()) {
+    mensagemEdicao("Salve ou cancele a edição do texto antes de fechar a página.");
+    return;
+  }
+  fecharEdicaoPagina();
   $("painel-pagina").hidden = true;
   docAtual = null;
+  paginaAtual = null;
   pedidoPagina++;
   document.querySelectorAll("#lista-docs button.ativo, .resultados button.ativo").forEach((b) => b.classList.remove("ativo"));
+  atualizarEscopo();
+}
+
+// ------------------------------------------- texto da página: arrumado, OCR, edição
+const MODO_TEXTO = {
+  remontado: ["texto arrumado", "Linhas, colunas e parágrafos remontados pelas posições das palavras na página"],
+  ocr: ["como o OCR leu", ""],
+  revisado: ["revisado", ""],
+};
+
+function desenharTextoPagina() {
+  const r = paginaAtual;
+  if (!r || !r.processado) return;
+  const modo = MODO_TEXTO[r.modo_texto] || MODO_TEXTO.ocr;
+  const selo = $("pg-modo");
+  selo.className = "selo" + (r.modo_texto === "revisado" ? " revisado" : "");
+  selo.textContent = modo[0];
+  selo.title = r.revisao
+    ? `Texto revisado à mão${r.revisao.autor ? " por " + r.revisao.autor : ""} em ${r.revisao.criado_em.slice(0, 16).replace("T", " ")}`
+    : modo[1];
+  $("pg-ver-final").classList.toggle("ativo", verTexto === "final");
+  $("pg-ver-ocr").classList.toggle("ativo", verTexto === "ocr");
+  $("pg-ver-final").textContent = r.modo_texto === "revisado" ? "Texto revisado" : "Texto arrumado";
+  const corpo = $("pg-texto");
+  corpo.classList.toggle("ocr", verTexto === "ocr");
+  if (verTexto === "ocr") {
+    corpo.textContent = r.texto_ocr || "";
+  } else {
+    desenharTexto(r.segmentos);
+  }
+  $("pg-legenda").hidden = verTexto === "ocr";
+  $("pg-corr-resumo").textContent = verTexto === "final" && r.n_corrigidas
+    ? `${r.n_corrigidas} palavra(s) corrigida(s) nesta página` : "";
+  const leg = r.legibilidade;
+  $("pg-ilegivel").hidden = !(leg !== null && leg !== undefined && leg < 40);
+  $("pg-ilegivel").textContent = `Texto pouco legível: só ${leg}% das palavras são palavras conhecidas `
+    + "(página manuscrita, gráfico, carimbo ou imagem ruim). Use o texto como pista e confira tudo na imagem.";
+  desenharErros(r.possiveis_erros || []);
+}
+
+function trocarVerTexto(modo) {
+  verTexto = modo;
+  fecharEditor();
+  desenharTextoPagina();
+}
+
+async function copiarTextoPagina() {
+  const texto = $("pg-texto").innerText;
+  try {
+    await navigator.clipboard.writeText(texto);
+    status("Texto da página copiado.", "ok");
+  } catch (e) {
+    const sel = window.getSelection();
+    const rng = document.createRange();
+    rng.selectNodeContents($("pg-texto"));
+    sel.removeAllRanges();
+    sel.addRange(rng);
+    status("Texto selecionado: use Ctrl+C para copiar.");
+  }
+}
+
+// Palavras fora do dicionário: um clique abre o editor de correção com a sugestão
+function desenharErros(erros) {
+  const box = $("pg-erros-box");
+  box.hidden = !erros.length || verTexto === "ocr";
+  $("pg-erros-n").textContent = erros.length;
+  const lista = limpar($("pg-erros"));
+  for (const e of erros) {
+    const c = el("button", "chip-erro");
+    c.type = "button";
+    c.append(e.palavra);
+    if (e.vezes > 1) c.append(el("span", "sug", `×${e.vezes}`));
+    if (e.sugestoes.length) c.append(el("span", "sug", "→ " + e.sugestoes[0]));
+    c.title = e.sugestoes.length ? `Sugestões: ${e.sugestoes.join(", ")}` : "Sem sugestão no dicionário";
+    c.onclick = () => corrigirPossivelErro(e);
+    lista.appendChild(c);
+  }
+}
+
+function corrigirPossivelErro(e) {
+  if (verTexto !== "final") trocarVerTexto("final");
+  const alvo = norm(e.palavra);
+  const span = [...document.querySelectorAll("#pg-texto .pal, #pg-texto .corr")].find((x) => norm(x.textContent) === alvo);
+  if (!span) return;
+  const caixa = $("pg-texto");
+  const topo = span.getBoundingClientRect().top - caixa.getBoundingClientRect().top + caixa.scrollTop;
+  caixa.scrollTop = Math.max(0, topo - caixa.clientHeight / 2);
+  abrirEditor(span, e.palavra, null, e.sugestoes[0] || e.palavra);
+}
+
+let textoAntesDaEdicao = null;
+
+function edicaoPaginaSuja() {
+  return !$("pg-edicao").hidden && textoAntesDaEdicao !== null && $("pg-edicao-texto").value !== textoAntesDaEdicao;
+}
+
+function mensagemEdicao(texto, erro = true) {
+  const m = $("pg-edicao-msg");
+  m.textContent = texto || "";
+  m.hidden = !texto;
+  m.style.color = erro ? "" : "var(--suave)";
+}
+
+function abrirEdicaoPagina() {
+  if (!paginaAtual || !paginaAtual.processado) return;
+  fecharEditor();
+  textoAntesDaEdicao = paginaAtual.texto_editavel || "";
+  $("pg-edicao-texto").value = textoAntesDaEdicao;
+  $("pg-edicao-auto").hidden = !paginaAtual.revisao;
+  $("pg-edicao-auto").textContent = "Voltar ao texto automático";
+  delete $("pg-edicao-auto").dataset.confirmar;
+  mensagemEdicao("");
+  $("pg-edicao").hidden = false;
+  $("pg-editar").disabled = true;
+  $("pg-texto").hidden = true;
+  $("pg-erros-box").hidden = true;
+  $("pg-legenda").hidden = true;
+  const area = $("pg-edicao-texto");
+  area.focus();
+  area.setSelectionRange(0, 0);
+  area.scrollTop = 0;
+}
+
+function fecharEdicaoPagina() {
+  $("pg-edicao").hidden = true;
+  $("pg-editar").disabled = false;
+  $("pg-texto").hidden = false;
+  $("pg-legenda").hidden = verTexto === "ocr";
+  textoAntesDaEdicao = null;
+}
+
+function cancelarEdicaoPagina() {
+  fecharEdicaoPagina();
+  desenharTextoPagina();
+}
+
+async function salvarEdicaoPagina() {
+  if (!docAtual) return;
+  const texto = $("pg-edicao-texto").value;
+  const r = await chamar($("pg-edicao-salvar"), "salvar_texto_pagina", docAtual.rel, docAtual.pagina, texto);
+  if (!r.ok) { mensagemEdicao(r.erro); return; }
+  fecharEdicaoPagina();
+  verTexto = "final";
+  status(`Texto da página ${r.pagina} revisado: já vale na busca.`, "ok");
+  const d = docs.find((x) => x.rel === docAtual.rel);
+  if (d && !(paginaAtual && paginaAtual.revisao)) { d.revisadas = (d.revisadas || 0) + 1; desenharDocs(); }
+  abrirPagina(docAtual.rel, docAtual.pagina, termoAtual);
+}
+
+// Dois cliques (sem diálogo do navegador): o primeiro pede confirmação no próprio botão.
+async function voltarTextoAutomatico() {
+  const b = $("pg-edicao-auto");
+  if (!b.dataset.confirmar) {
+    b.dataset.confirmar = "1";
+    b.textContent = "Confirmar: apagar a revisão desta página";
+    setTimeout(() => { if (b.dataset.confirmar) { delete b.dataset.confirmar; b.textContent = "Voltar ao texto automático"; } }, 5000);
+    return;
+  }
+  delete b.dataset.confirmar;
+  const r = await chamar(b, "descartar_texto_pagina", docAtual.rel, docAtual.pagina);
+  if (!r.ok) { mensagemEdicao(r.erro); return; }
+  fecharEdicaoPagina();
+  status(`A página ${r.pagina} voltou ao texto arrumado automaticamente.`, "ok");
+  const d = docs.find((x) => x.rel === docAtual.rel);
+  if (d && r.removida && d.revisadas) { d.revisadas -= 1; desenharDocs(); }
+  abrirPagina(docAtual.rel, docAtual.pagina, termoAtual);
 }
 
 // ------------------------------------------- texto clicável e correções
@@ -212,6 +592,18 @@ function abrirEditor(span, orig, tipo, atual) {
                              : tipo === "usuario" ? `→ você corrigiu para “${atual}”`
                              : tipo === "comunidade" ? `→ corrigida pela comunidade para “${atual}”` : "";
   $("ed-para").value = atual;
+  const erro = paginaAtual && (paginaAtual.possiveis_erros || []).find((e) => norm(e.palavra) === norm(orig));
+  const sug = limpar($("ed-sugestoes"));
+  sug.hidden = !(erro && erro.sugestoes.length);
+  if (erro && erro.sugestoes.length) {
+    sug.appendChild(el("span", "ajuda", "Sugestões do dicionário:"));
+    for (const x of erro.sugestoes) {
+      const b = el("button", "chip-busca", x);
+      b.type = "button";
+      b.onclick = () => { $("ed-para").value = x; $("ed-para").focus(); };
+      sug.appendChild(b);
+    }
+  }
   $("ed-manter").hidden = !(tipo === "auto" || tipo === "comunidade");
   $("ed-desfazer").hidden = tipo !== "usuario";
   mensagemEditor("");

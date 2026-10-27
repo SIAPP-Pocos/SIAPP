@@ -52,6 +52,18 @@ class FatosAPI:
                 raise ErroUsuario("Informe o valor da propriedade como número (ex.: 32,5).") from None
         fato = {k: (" ".join(str(dados.get(k) or "").split()) or None)
                 for k in ("nome", "valor", "unidade", "observacao")}
+        if tipo == "trecho":
+            # texto livre: guarda as quebras de linha (parágrafos), só arruma os espaços
+            linhas = [" ".join(l.split()) for l in str(dados.get("observacao") or "").splitlines()]
+            texto = "\n".join(linhas).strip()
+            while "\n\n\n" in texto:
+                texto = texto.replace("\n\n\n", "\n\n")
+            if not texto:
+                raise ErroUsuario("Escreva ou cole o trecho do texto.")
+            if len(texto) > 4000:
+                raise ErroUsuario(f"Trecho longo demais ({len(texto)} caracteres; até 4000). "
+                                  "Para a página inteira, use “Editar o texto desta página”.")
+            fato["observacao"] = texto
         fato.update({"id": dados.get("id"), "poco_id": self._id_poco(poco), "tipo": tipo,
                      "prof_topo": topo, "prof_base": base, "autor": self._autor(), "origem": "local"})
         if fonte_rel:

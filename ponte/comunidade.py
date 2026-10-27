@@ -139,7 +139,7 @@ class ComunidadeAPI:
     def _aplicar_vocabulario_silencioso(self) -> dict:
         """Depois de mudar o que veio da comunidade: recarrega o corretor e o índice."""
         self._carregar_corretor()
-        n = self._indice.reconstruir(self._projeto.documentos_processados(), self._corretor)
+        n = self._reindexar_tudo()
         return {"paginas_atualizadas": n}
 
 

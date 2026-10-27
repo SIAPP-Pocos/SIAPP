@@ -131,6 +131,27 @@ Precisa de internet. Comece por uma categoria pequena para ver o tempo.
 - [ ] Sem intervalo marcado, **Calcular** explica que precisa de um intervalo-alvo.
 - [ ] Repetir no `5PX__0011__RN_5PX__0011__RN.tif` (DLIS de 2020).
 
+## 0.31 — texto arrumado, revisão de página e busca por escopo
+
+- [ ] Ao abrir o projeto, o índice de texto é refeito (passo "Refazendo o índice de texto"). Pode levar alguns segundos.
+- [ ] Documentos → `7GMR_0013__RN_pasta_poco_pub.pdf`, pág. 27: o texto mostra "Setor de Avaliação" numa linha e
+      "POÇO: …" numa linha. Clique em **Como o OCR leu** para comparar com o texto antigo (uma palavra por linha).
+- [ ] Pág. 10 (revestimento/cimentação): campos do formulário na mesma linha. Abra **Possíveis erros**: palavras
+      como `POCUMENTO → DOCUMENTO`, `adiiivos → aditivos`. Clique numa: o editor de correção abre com a sugestão.
+- [ ] Numa página de gráfico ou manuscrita (ex.: 7AG, pág. 8), aparece o aviso **Texto pouco legível**.
+- [ ] **Editar o texto** de uma página: arrume dois parágrafos e salve. Aparece o selo **revisado**, a lista mostra
+      "1 revisada(s)" e a busca acha uma palavra que você digitou. Tente mudar de página antes de salvar: o SIAPP
+      pede para salvar ou cancelar. **Voltar ao texto automático** (dois cliques) desfaz.
+- [ ] Transcrever → tipo **Trecho do texto (citação)**: desenhe uma caixa em volta de um parágrafo; o texto aparece
+      já arrumado. Salve e confira na tabela da página.
+- [ ] Lista de documentos agrupada por bacia › poço, com o campo ao lado do poço. Filtre por **campo** (GUAMARÉ):
+      "N de M documento(s) no filtro".
+- [ ] **Buscar em** "só os do filtro ao lado" e busque `revestimento`: só documentos do campo. "Só o documento
+      aberto": resultados em ordem de página.
+- [ ] Clique num resultado: no painel aparece "achado 1 de N"; **próximo ›** (ou F3) vai ao seguinte, mesmo em outro
+      documento; Shift+F3 volta.
+- [ ] **ir à** 40 + Enter: vai para a pág. 40.
+
 ## 0.30 — abas novas, janelas, divisão, cores e configurações
 
 - [ ] Abra o SIAPP: com o projeto já criado, ele **abre sozinho** e mostra a tela "Abrindo o projeto" com os

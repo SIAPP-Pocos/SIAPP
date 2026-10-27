@@ -202,6 +202,14 @@ MIGRACOES: list[str] = [
     );
     CREATE TABLE campos_anp(chave TEXT PRIMARY KEY, nome TEXT, dados TEXT, atualizado_em TEXT);
     """,
+    # 8 — texto de página revisado à mão (SIAPP 0.31): vale no lugar do texto remontado do OCR
+    """
+    CREATE TABLE paginas_revisadas(
+        rel TEXT NOT NULL, pagina INTEGER NOT NULL, texto TEXT NOT NULL,
+        autor TEXT, criado_em TEXT NOT NULL,
+        PRIMARY KEY (rel, pagina)
+    );
+    """,
 ]
 
 
@@ -508,6 +516,31 @@ class Banco:
                               (id_,)).rowcount for t in ("vocab", "fatos", "apelidos")}
             c.execute("DELETE FROM pacotes WHERE id = ? AND tipo = 'importado'", (id_,))
         return n
+
+    # ============================================================ páginas revisadas
+    def salvar_revisao(self, rel: str, pagina: int, texto: str, autor: str | None = None) -> None:
+        with self.conexao() as c:
+            c.execute("""INSERT INTO paginas_revisadas (rel, pagina, texto, autor, criado_em)
+                         VALUES (?, ?, ?, ?, ?)
+                         ON CONFLICT (rel, pagina) DO UPDATE SET texto = excluded.texto,
+                             autor = excluded.autor, criado_em = excluded.criado_em""",
+                      (rel, int(pagina), texto, autor, agora()))
+
+    def remover_revisao(self, rel: str, pagina: int) -> int:
+        with self.conexao() as c:
+            return c.execute("DELETE FROM paginas_revisadas WHERE rel = ? AND pagina = ?",
+                             (rel, int(pagina))).rowcount
+
+    def revisoes(self, rel: str | None = None) -> dict:
+        """{pagina: {"texto", "autor", "criado_em"}} de um documento; sem `rel`, {rel: {pagina: …}}."""
+        with self.conexao() as c:
+            if rel is not None:
+                return {r["pagina"]: dict(r) for r in c.execute(
+                    "SELECT pagina, texto, autor, criado_em FROM paginas_revisadas WHERE rel = ?", (rel,))}
+            out: dict = {}
+            for r in c.execute("SELECT * FROM paginas_revisadas"):
+                out.setdefault(r["rel"], {})[r["pagina"]] = dict(r)
+            return out
 
     def contar(self, tabela: str, where: str = "", args=()) -> int:
         assert tabela.isidentifier()

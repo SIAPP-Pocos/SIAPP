@@ -112,6 +112,7 @@ async function iniciar() {
   ligarTranscricao();
   ligarVisor();
   ligar("tolerante", "onchange", () => termoAtual && $("busca").value.trim() && buscar());
+  ligarDocumentos();
   // mapa e comunidade
   ligarMapa();
   ligarPerfis();
@@ -125,13 +126,20 @@ async function iniciar() {
   });
 
   document.addEventListener("keydown", (e) => {
+    // F3 / Shift+F3: próximo / anterior achado da busca (documentos)
+    if (e.key === "F3" && !$("vista-docs").hidden && achados.length) {
+      e.preventDefault();
+      irAchado(e.shiftKey ? -1 : 1);
+      return;
+    }
     if (e.key !== "Escape") return;
     if (visorAberto()) fecharVisor();
     else if (!$("config").hidden) $("config").hidden = true;
     else if (![...document.querySelectorAll(".popover")].every((p) => p.hidden)) {
       for (const p of document.querySelectorAll(".popover")) p.hidden = true;
     } else if (!$("vista-docs").hidden) {
-      if (!$("editor").hidden) fecharEditor();
+      if (!$("pg-edicao").hidden) { if (!edicaoPaginaSuja()) cancelarEdicaoPagina(); }
+      else if (!$("editor").hidden) fecharEditor();
       else if (!$("painel-pagina").hidden) fecharPagina();
     } else if (!$("vista-dados").hidden && !$("gaveta").hidden) fecharGaveta();
     else if (!$("vista-mapa").hidden && !$("ficha").hidden) fecharFicha();

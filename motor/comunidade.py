@@ -57,6 +57,7 @@ TIPOS_FATO = {
     "contato_fluido": "Contato de fluido",
     "propriedade_fluido": "Propriedade de fluido (API, densidade do gás…)",
     "observacao": "Observação",
+    "trecho": "Trecho do texto (citação)",
 }
 PROF_MAX_M = 12_000
 

@@ -12,6 +12,7 @@ const TIPOS_FATO = {
   contato_fluido: "Contato de fluido",
   propriedade_fluido: "Propriedade de fluido (API, densidade do gás…)",
   observacao: "Observação",
+  trecho: "Trecho do texto (citação)",
 };
 
 const ORIGEM_FATO = { local: "seu", pacote: "pacote", base: "comunidade" };
@@ -44,7 +45,14 @@ function tabelaFatos(fatos, aoRemover) {
     } else if (f.origem !== "local") {
       tdAcao.appendChild(el("span", "selo", ORIGEM_FATO[f.origem]));
     }
-    tr.append(el("td", "", TIPOS_FATO[f.tipo] || f.tipo), el("td", "", valor || f.observacao || "—"),
+    const texto = valor || f.observacao || "—";
+    const tdValor = el("td", f.tipo === "trecho" ? "trecho" : "",
+                       f.tipo === "trecho" ? [f.nome, f.observacao].filter(Boolean).join(" — ") : texto);
+    if (f.tipo === "trecho" && f.observacao && f.observacao.length > 240) {
+      tdValor.textContent = (f.nome ? f.nome + " — " : "") + f.observacao.slice(0, 240) + "…";
+      tdValor.title = f.observacao;
+    }
+    tr.append(el("td", "", TIPOS_FATO[f.tipo] || f.tipo), tdValor,
               el("td", "mono", profFato(f)), tdFonte, tdAcao);
     t.appendChild(tr);
   }
@@ -112,7 +120,31 @@ function pontoNormalizado(ev) {
           Math.min(1, Math.max(0, (ev.clientY - r.top) / r.height))];
 }
 
+// Tipo "trecho": o texto da caixa vem remontado em linhas pelo motor, com as correções
+async function sugerirTrecho(caixa) {
+  if (!docAtual || !docAtual.processado) {
+    $("tr-caixa-info").textContent = "Documento ainda sem texto: digite o trecho olhando a imagem.";
+    return;
+  }
+  const r = await chamar(null, "texto_caixa", tr.rel, tr.pagina, caixa);
+  if (!r.ok) return;
+  $("tr-caixa-info").textContent = r.texto ? "Trecho lido na caixa: confira com a imagem." : "O OCR não leu nada na caixa.";
+  if (r.texto && !$("tr-trecho").value.trim()) {
+    $("tr-trecho").value = r.texto;
+    $("tr-trecho").classList.add("sugestao");
+  }
+}
+
+function ajustarCamposTranscricao() {
+  const trecho = $("tr-tipo").value === "trecho";
+  for (const id of ["tr-valor", "tr-unidade"]) $(id).closest("label").hidden = trecho;
+  $("tr-trecho").closest("label").hidden = !trecho;
+  $("tr-nome").placeholder = trecho ? "assunto, ex.: perda de circulação na fase de 12 1/4 pol."
+    : "ex.: Formação Açu, sapata 9 5/8 pol., Grau API do óleo";
+}
+
 function sugerirDoOCR(caixa) {
+  if ($("tr-tipo").value === "trecho") { sugerirTrecho(caixa); return; }
   const [x0, y0, x1, y1] = caixa;
   const dentro = tr.palavras.filter(([a, b, c, d]) => {
     const cx = (a + c) / 2, cy = (b + d) / 2;
@@ -141,7 +173,9 @@ function sugerirDoOCR(caixa) {
 function ligarTranscricao() {
   const sel = $("tr-tipo");
   for (const [k, v] of Object.entries(TIPOS_FATO)) sel.appendChild(new Option(v, k));
-  for (const inp of document.querySelectorAll("#tr-form input")) inp.addEventListener("input", () => inp.classList.remove("sugestao"));
+  for (const inp of document.querySelectorAll("#tr-form input, #tr-form textarea")) inp.addEventListener("input", () => inp.classList.remove("sugestao"));
+  sel.addEventListener("change", ajustarCamposTranscricao);
+  ajustarCamposTranscricao();
 
   const quadro = $("pg-quadro");
   quadro.onmousedown = (ev) => {
@@ -168,7 +202,7 @@ function ligarTranscricao() {
   $("tr-box").addEventListener("toggle", () => quadro.classList.toggle("marcando", $("tr-box").open));
 
   $("tr-limpar").onclick = () => {
-    for (const id of ["tr-nome", "tr-topo", "tr-base", "tr-valor", "tr-unidade", "tr-obs"]) {
+    for (const id of ["tr-nome", "tr-topo", "tr-base", "tr-valor", "tr-unidade", "tr-obs", "tr-trecho"]) {
       $(id).value = "";
       $(id).classList.remove("sugestao");
     }
@@ -181,6 +215,11 @@ function ligarTranscricao() {
     const dados = { tipo: $("tr-tipo").value, poco: $("tr-poco").value, nome: $("tr-nome").value,
                     prof_topo: num("tr-topo"), prof_base: num("tr-base"), valor: $("tr-valor").value,
                     unidade: $("tr-unidade").value, observacao: $("tr-obs").value, caixa: tr.caixa };
+    if (dados.tipo === "trecho") {
+      dados.observacao = $("tr-trecho").value;
+      dados.valor = dados.unidade = "";
+      if ($("tr-obs").value.trim()) dados.nome = [dados.nome, $("tr-obs").value].filter((x) => x.trim()).join(" — ");
+    }
     const r = await chamar(null, "salvar_fato_pagina", tr.rel, tr.pagina, dados);
     if (!r.ok) return;
     tr.fatos = r.fatos;

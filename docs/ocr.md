@@ -134,6 +134,31 @@ Resultado da auditoria: **68 correções na 1ª versão → 33 na final, todas l
 
 **Busca tolerante:** cada termo também procura palavras do índice com 1 letra de diferença (5–8 letras) ou 2 (9+). `amostras contaminadas`: busca exata 0 páginas → tolerante 1 (achou `contlmindas`).
 
+### Texto arrumado, revisão e possíveis erros — v0.31 (27/10/2026)
+
+O texto que o PyMuPDF devolve do PDF de OCR vem **um bloco do Tesseract por linha**: "Setor⏎de⏎Avaliação",
+colunas de formulário lidas de cima para baixo. Mas cada palavra tem a sua caixa na página, e com elas
+`motor/layout.py` remonta o texto como está no papel, sem refazer o OCR (milissegundos por página):
+
+1. todas as palavras de uma linha do Tesseract têm **a mesma caixa vertical** — esse é o primeiro agrupamento
+   (as caixas são mais altas que as letras e se sobrepõem entre linhas vizinhas, então sobreposição não basta);
+2. pedaços na mesma altura e sem sobreposição horizontal viram a mesma linha;
+3. espaço grande entre palavras vira separador de coluna (4 espaços);
+4. palavra partida: peças coladas juntam sempre; com espaço pequeno, só se a palavra inteira for conhecida
+   e alguma das peças não for;
+5. espaço vertical acima do passo típico (quartil de baixo) abre parágrafo; linha de texto corrido que
+   continua é emendada, e hífen de fim de linha some.
+
+**Texto final** de cada página: revisão à mão (`paginas_revisadas`) > texto remontado > texto do OCR. É ele que
+o índice guarda na coluna corrigida; a coluna `original` continua com o que o OCR leu.
+
+**Dicionário**: lista de português do pyspellchecker (MIT), ~385 mil palavras com flexões, em
+`recursos/palavras_pt.txt.gz` (1 MB; ~60 MB de memória quando carregado). Usado para juntar peças, para a
+lista de possíveis erros (com o vocabulário técnico e as palavras que o acervo repete 3+ vezes) e para a
+legibilidade da página. Nas pastas antigas, páginas manuscritas ou de gráfico dão 10–35% de palavras
+conhecidas; formulários datilografados, 50–85%; PDFs com texto embutido, 90–100%. Descrições de amostra em
+inglês (pastas dos anos 60) aparecem como possíveis erros: é só "Adicionar ao dicionário".
+
 ### Como funcionaria no SIAPP
 
 ```
