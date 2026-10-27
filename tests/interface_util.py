@@ -67,8 +67,9 @@ class JanelaFalsa:
 
 
 class JanelaTeste:
-    def __init__(self, api, page):
+    def __init__(self, api, page, falsa=None):
         self.api, self.page = api, page
+        self.falsa = falsa          # a JanelaFalsa desta página (padrão: a principal da API)
         self.erros_js: list[str] = []
         page.on("pageerror", lambda e: self.erros_js.append(str(e)))
         page.on("console", lambda m: m.type == "error" and self.erros_js.append(m.text))
@@ -77,7 +78,7 @@ class JanelaTeste:
         """Executa na página os eventos que a API mandou (downloads, OCR, status)."""
         while True:
             try:
-                codigo = self.api._janela.js.get_nowait()
+                codigo = (self.falsa or self.api._janela).js.get_nowait()
             except queue.Empty:
                 return
             self.page.evaluate(f"() => {{ {codigo}; }}")
@@ -96,11 +97,15 @@ class JanelaTeste:
         return self.page.text_content("#status") or ""
 
 
-def abrir(api, browser):
-    srv = _Servidor()
-    srv.start()
+def abrir(api, browser, srv=None, consulta="", falsa=None):
+    """Abre a interface num Chromium sem tela. `consulta` ("?janela=docs") e `falsa`
+    abrem uma janela destacada, ligada à mesma API (o pywebview faria o mesmo)."""
+    if srv is None:
+        srv = _Servidor()
+        srv.start()
     page = browser.new_page(viewport={"width": 1400, "height": 900})
-    jt = JanelaTeste(api, page)
+    jt = JanelaTeste(api, page, falsa)
+    jt.srv, jt.navegador = srv, browser
 
     def chamar(nome, args_json):
         r = getattr(api, nome)(*json.loads(args_json))
@@ -110,8 +115,37 @@ def abrir(api, browser):
     # mapas de fundo e qualquer outro endereço externo: resposta vazia (sem internet nos testes)
     page.route(lambda url: not url.startswith("http://127.0.0.1"),
                lambda rota: rota.fulfill(status=204, body=""))
-    page.goto(srv.url)
+    page.goto(srv.url + consulta)
     nomes = [n for n in dir(api) if not n.startswith("_") and callable(getattr(api, n))]
     page.evaluate(PONTE_JS, nomes)
     jt.esperar("document.getElementById('versao').textContent.startsWith('v')")
+    # iniciar() termina sempre com uma mensagem: espera a janela acabar de se montar
+    jt.esperar("typeof historicoStatus !== 'undefined' && historicoStatus.length > 0")
     return jt, srv
+
+
+class JanelaDestacadaFalsa(JanelaFalsa):
+    """Uma aba em janela própria: o que o motor manda para ela fica na fila desta página."""
+
+    def __init__(self, pasta_dialogo):
+        super().__init__(pasta_dialogo)
+        self.destruida = False
+        self.focada = 0
+
+    def destroy(self):
+        self.destruida = True
+
+    def restore(self):
+        self.focada += 1
+
+    def show(self):
+        pass
+
+
+def abrir_destacada(jt_principal, aba):
+    """Abre a aba `aba` como janela destacada (outra página, mesma API e servidor)."""
+    api = jt_principal.api
+    falsa = JanelaDestacadaFalsa(api._janela.pasta_dialogo)
+    api._janelas[aba] = falsa
+    jt, _ = abrir(api, jt_principal.navegador, srv=jt_principal.srv, consulta=f"?janela={aba}", falsa=falsa)
+    return jt

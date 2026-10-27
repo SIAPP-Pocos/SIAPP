@@ -19,7 +19,7 @@ def test_cancelar_dialogo_nao_e_erro(api):
 
 
 def test_acoes_exigem_projeto_e_conexao(api):
-    assert "pasta do projeto" in api.conectar("Sergipe")["erro"]
+    assert "Abra primeiro o projeto" in api.conectar("Sergipe")["erro"]
     api.escolher_pasta()
     assert "Conecte-se" in api.listar_pocos("Categoria-7")["erro"]
 

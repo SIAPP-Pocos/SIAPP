@@ -21,7 +21,7 @@ function descreverDoc(d) {
 
 async function carregarDocumentos() {
   if (!projetoAberto) {
-    $("docs-resumo").textContent = "Escolha primeiro a pasta do projeto na aba Catálogo.";
+    $("docs-resumo").textContent = "Abra primeiro o projeto (aba Projeto).";
     return;
   }
   const r = await chamar(null, "documentos");
@@ -30,7 +30,7 @@ async function carregarDocumentos() {
   const pend = docs.filter((d) => d.situacao !== "processado");
   $("docs-resumo").textContent = docs.length
     ? `${docs.length} documento(s) · ${docs.length - pend.length} processado(s) · ${pend.length} pendente(s)`
-    : "Nenhum PDF, TIF ou imagem baixado ainda. Baixe na aba Catálogo.";
+    : "Nenhum PDF, TIF ou imagem baixado ainda. Baixe na aba Dados › Catálogo do REATE.";
   $("btn-processar").disabled = pend.length === 0;
   $("aviso-idioma").hidden = r.idioma_ok || pend.length === 0;
   desenharDocs();

@@ -1,4 +1,4 @@
-// SIAPP — levantamento do acervo (aba Mapa): o que cada poço tem no portal,
+// SIAPP — levantamento do acervo (aba Dados): o que cada poço tem no portal,
 // pelo conteúdo dos arquivos. O trabalho roda no motor, em segundo plano.
 "use strict";
 
@@ -203,10 +203,8 @@ window.eventoLevantamento = function (ev) {
       status(`Levantamento interrompido: ${ev.erro}. O que já foi lido fica salvo.`, "erro");
     }
     carregarLevantamento();
-    if (!$("vista-mapa").hidden) {
-      $("f-cor").value = "acervo";
-      trocarCorMapa();
-    }
+    $("f-cor").value = "acervo";       // o Mapa passa a colorir pelo acervo
+    trocarCorMapa();
   }
 };
 

@@ -9,7 +9,7 @@ falhar, envie a mensagem da barra inferior **e** o arquivo `ambiente_teste\siapp
    muda, como agora), ele instala o que falta no ambiente `.venv`: `dlisio` e `lasio` são
    novos na 0.9. Leva um ou dois minutos.
    *Se mover a pasta do SIAPP de lugar, apague a `.venv` — ela é recriada sozinha.*
-2. A janela abre na aba **Início**. Clique em **Abrir o projeto** e confirme a pasta
+2. A janela abre na aba **Projeto**. Clique em **Abrir o projeto** e confirme a pasta
    `ambiente_teste` (o diálogo já abre nela).
 
 Alternativa pelo terminal: `.venv\Scripts\python.exe siapp.py --debug` (F12 abre o inspetor).
@@ -130,6 +130,28 @@ Precisa de internet. Comece por uma categoria pequena para ver o tempo.
 - [ ] **Exportar CSV** e **LAS**: arquivos em `exportacoes\1-AURI-12-RN\`.
 - [ ] Sem intervalo marcado, **Calcular** explica que precisa de um intervalo-alvo.
 - [ ] Repetir no `5PX__0011__RN_5PX__0011__RN.tif` (DLIS de 2020).
+
+## 0.30 — abas novas, janelas, divisão, cores e configurações
+
+- [ ] Abra o SIAPP: com o projeto já criado, ele **abre sozinho** e mostra a tela "Abrindo o projeto" com os
+      passos. As cores são **Marinho e lima**.
+- [ ] Abas: Projeto · Dados · Mapa · Documentos · Perfis · Interpretação · Viabilidade · Comunidade. Em **Dados**,
+      as sub-abas Catálogo do REATE, Cadastro da ANP, Levantamento do acervo, Produção da ANP e Camadas geográficas.
+      Em **Interpretação**, os botões Seção e Bloco 3D no alto da barra lateral. **Viabilidade** tem mapa próprio.
+- [ ] **Dividir**: Mapa à esquerda e Documentos à direita. Arraste a divisória; dois cliques voltam à metade. Troque a
+      aba da direita ("à direita") e os lados (⇄). Clique na aba da direita: ela passa para a esquerda.
+- [ ] Na aba **Mapa** → **Abrir em janela**: o Mapa vira uma janela própria. Arraste para o outro monitor, maximize,
+      encaixe com Win+←/→. Na principal, a aba aparece em itálico com "janela"; clicar nela traz a janela para a frente.
+- [ ] Com Documentos numa janela própria, abra a ficha de um poço no Mapa e clique em **Ver** num PDF: o documento abre
+      na janela de Documentos.
+- [ ] Feche a janela do Mapa (ou "Voltar para a principal"): a aba volta. Deixe uma aba destacada, feche o SIAPP e abra
+      de novo: as janelas voltam onde estavam (desligue em Configurações › "Lembrar o arranjo").
+- [ ] **Recolher** a barra lateral (seta no canto): fica uma faixa com o nome; abre de novo pela seta. Continua recolhida
+      depois de reabrir o SIAPP.
+- [ ] **Engrenagem** → Configurações: troque a paleta, o modo (escuro) e o tamanho do texto; com uma aba destacada, as
+      duas janelas mudam juntas. → **Diagnóstico**: versões, erros e tempos; **Copiar para enviar** e cole num e-mail.
+- [ ] **Exportações** (no alto): as quatro pastas, com quantos arquivos; **Abrir** abre no Explorador.
+- [ ] Clique na mensagem do rodapé: o histórico da sessão, com as mensagens inteiras.
 
 ## 0.29.1 — bacias misturadas e cores das correções
 

@@ -1,4 +1,4 @@
-// SIAPP — aba Mapa: cadastro da ANP, poços no mapa, filtros e ficha do poço.
+// SIAPP — aba Mapa (e o cadastro da ANP, em Dados): poços no mapa, filtros e ficha do poço.
 "use strict";
 
 let mapa = null;            // L.Map
@@ -25,7 +25,7 @@ function criarMapa() {
 
 async function carregarMapa() {
   if (!projetoAberto) {
-    $("cad-info").textContent = "Abra o projeto primeiro (aba Início).";
+    $("cad-info").textContent = "Abra o projeto primeiro (aba Projeto).";
     return;
   }
   criarMapa();
@@ -235,9 +235,10 @@ function fecharFicha() {
   setTimeout(() => mapa && mapa.invalidateSize(), 50);
 }
 
-// Leva o usuário à árvore de arquivos do poço na aba Catálogo.
-async function abrirPocoNoCatalogo(x) {
-  trocarAba("catalogo");
+// Leva o usuário à árvore de arquivos do poço (aba Dados › Catálogo do REATE).
+function abrirPocoNoCatalogo(x) { irPara("catalogo", "mostrarPocoNoCatalogo", x); }
+
+async function mostrarPocoNoCatalogo(x) {
   if ($("sel-bacia").value !== x.bacia || !document.querySelector("#lista-cat button")) {
     $("sel-bacia").value = x.bacia;
     await conectar();

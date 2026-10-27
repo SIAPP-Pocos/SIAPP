@@ -402,7 +402,7 @@ class ExternosAPI:
         self._exigir_projeto()
         pend = self._resumo_fluidos(campo)["documentos"]["pendentes"]
         if not pend:
-            raise ErroUsuario("Nenhum documento pendente dos poços deste campo (baixe as pastas de poço na aba Catálogo).")
+            raise ErroUsuario("Nenhum documento pendente dos poços deste campo (baixe as pastas de poço na aba Dados › Catálogo do REATE).")
         r = self.processar_documentos(pend)
         if not r.get("ok", True):
             raise ErroUsuario(r.get("erro") or "Falha ao enfileirar.")

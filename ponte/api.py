@@ -14,8 +14,7 @@ import webview
 from motor import banco as mb
 from motor import documentos as md
 from motor import projeto as mp
-from motor import reate
-from motor import registro
+from motor import reate, registro
 from motor.downloads import FilaDownloads
 
 from . import base
@@ -27,18 +26,22 @@ from .documentos import DocumentosAPI
 from .externos import ExternosAPI
 from .fatos import FatosAPI
 from .ferramentas import FerramentasAPI
+from .janelas import JanelasAPI
 from .levantamento import LevantamentoAPI
-from .secao import SecaoAPI
 from .perfis import PerfisAPI
 from .pocos import PocosAPI
+from .secao import SecaoAPI
 from .vocabulario import VocabularioAPI
 
 
-class API(BaseAPI, PocosAPI, CatalogoAPI, DocumentosAPI, VocabularioAPI, ComunidadeAPI,
+class API(BaseAPI, JanelasAPI, PocosAPI, CatalogoAPI, DocumentosAPI, VocabularioAPI, ComunidadeAPI,
           FatosAPI, PerfisAPI, LevantamentoAPI, SecaoAPI, FerramentasAPI,
           BlocoAPI, ExternosAPI):
     def __init__(self):
         self._janela = None
+        self._janelas = {}            # abas destacadas em janela própria: {aba: janela}
+        self._salvar_depois = {}
+        self._prefs = None
         self._projeto = None
         self._fila = FilaDownloads(self._emitir_download)
         self._fila_docs = md.FilaDocumentos(base.PASTA_TESSDATA, self._emitir_documento)
@@ -67,19 +70,29 @@ class API(BaseAPI, PocosAPI, CatalogoAPI, DocumentosAPI, VocabularioAPI, Comunid
         return self._abrir_projeto(pasta_projeto)
 
     def _abrir_projeto(self, pasta: str) -> dict:
+        # cada passo avisa a janela (tela "Abrindo o projeto", com o que falta)
+        passos = 5
+        self._progresso_abertura(1, passos, f"Abrindo a pasta {os.path.basename(pasta)}")
         self._projeto = mp.Projeto.abrir_ou_criar(pasta)
         registro.configurar(self._projeto.pasta)
         registro.log.info("projeto aberto: %s (SIAPP %s)", self._projeto.pasta, mp.VERSAO_SIAPP)
+        tam = os.path.getsize(self._projeto.caminho_banco) if os.path.isfile(self._projeto.caminho_banco) else 0
+        self._progresso_abertura(2, passos, "Lendo o banco do projeto" + (f" ({tam / 1e6:.0f} MB)" if tam > 2e6 else ""))
         self._banco = mb.Banco(self._projeto.caminho_banco)
         n = self._banco.migrar_vocab_json(self._projeto.caminho_vocabulario)
         if n:
             registro.log.info("vocabulário do SIAPP 0.6 migrado para o banco: %d itens", n)
+        self._progresso_abertura(3, passos, "Conferindo os arquivos baixados (só os novos ganham hash)")
         self._migrar_downloads()
+        self._progresso_abertura(4, passos, "Conferindo o catálogo do REATE")
         self._migrar_pocos()
+        self._progresso_abertura(5, passos, "Carregando o índice de texto dos documentos")
         self._indice = md.Indice(os.path.join(self._projeto.pasta, "texto", "indice.sqlite"))
         self._carregar_corretor()
         if self._indice.recriado:   # estrutura do índice mudou de versão: refaz a partir dos textos
+            self._progresso_abertura(5, passos, "Refazendo o índice de texto (estrutura nova)")
             self._indice.reconstruir(self._projeto.documentos_processados(), self._corretor)
+        self._js("projetoAbertoEmOutraJanela", {"pasta": self._projeto.pasta})
         cfg = self._projeto.config
         return {"pasta": self._projeto.pasta, "bacia_anterior": cfg.get("bacia"),
                 "criado": cfg.get("criado"), "autor": cfg.get("autor") or {}}

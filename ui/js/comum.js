@@ -6,12 +6,14 @@ const $ = (id) => document.getElementById(id);
 let api = null;
 let projetoAberto = false;
 let baciaAnterior = "";     // última bacia usada neste projeto (siapp.json)
-let baciaConectada = "";    // bacia conectada agora na aba Catálogo
+let baciaConectada = "";    // bacia conectada agora (aba Dados › Catálogo)
 
 // ------------------------------------------------------------------ status
 function status(texto, tipo = "") {
   $("status").textContent = texto;
+  $("status").title = `${texto}\n(clique para ver as mensagens desta sessão)`;
   document.querySelector(".rodape").className = "rodape " + tipo;
+  if (typeof anotarStatus === "function") anotarStatus(texto, tipo);
 }
 
 function liberar(idEtapa) { $(idEtapa).classList.remove("bloqueada"); }
@@ -83,11 +85,9 @@ async function abrirBaixado(rel, botao, tipo) {
   const nome = rel.split("/").pop();
   tipo = tipo || tipoPorExtensao(rel);
   if (tipo === "documento") {
-    trocarAba("docs");
-    abrirPagina(rel, 1, "");
+    irPara("docs", "abrirPagina", rel, 1, "");
   } else if (tipo === "perfil") {
-    trocarAba("perfis");
-    abrirPerfil({ rel, nome });
+    irPara("perfis", "abrirPerfil", { rel, nome });
   } else {
     const r = await chamar(botao || null, "abrir_arquivo", rel);
     if (r.ok) status(`${nome} aberto no programa do computador.`, "ok");

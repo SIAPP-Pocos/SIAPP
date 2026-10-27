@@ -6,6 +6,53 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 
 ## [Não lançado]
 
+## [0.30.0] — 2026-10-27
+Bloco 2 do teste da 0.29 (organização geral, navegação e configurações), pela maquete aprovada.
+### Mudado
+- **Abas pelo fluxo de trabalho**: Projeto · Dados · Mapa · Documentos · Perfis · Interpretação ·
+  Viabilidade · Comunidade.
+  - **Projeto** (era Início): abrir o projeto, números, últimas mensagens, etapas do trabalho; o guia do
+    REATE fica recolhido.
+  - **Dados** junta tudo o que se baixa, em sub-abas: Catálogo do REATE (com "Catalogar a bacia
+    conectada"), Cadastro da ANP, Levantamento do acervo, Produção da ANP e Camadas geográficas. Saíram
+    do Mapa e do Bloco 3D.
+  - **Mapa** fica só para ver: filtros, camadas no mapa e a ficha do poço.
+  - **Interpretação** reúne Seção e Bloco 3D (botões no alto da barra lateral).
+  - **Viabilidade** ganha aba e mapa próprios (campo × infraestrutura, viabilidade econômica, blocos e
+    campos × infraestrutura).
+- O passo "Pasta do projeto" do Catálogo saiu (é o "Abrir o projeto" da aba Projeto).
+### Adicionado
+- **Abas em janelas próprias** ("Abrir em janela"): a aba vira uma janela do Windows, para outro monitor,
+  maximizar ou encaixar (Win+setas). Todas as janelas usam o mesmo motor: downloads, OCR e mensagens
+  aparecem em todas, e um pedido de uma aba que está noutra janela vai para lá (ex.: "Ver" um documento
+  na ficha do Mapa abre na janela de Documentos). Fechar a janela (ou "Voltar para a principal") devolve
+  a aba. Fechar a principal fecha o SIAPP.
+- **Dividir** a janela principal em duas áreas lado a lado, com divisória arrastável (dois cliques:
+  metade), escolha da aba da direita e troca de lados.
+- **Arranjo lembrado** (pode desligar): posição, tamanho e monitor de cada janela, divisão, sub-abas e
+  quais abas estavam destacadas voltam ao abrir. Janela cujo monitor não existe mais abre na tela
+  principal.
+- **Configurações** (engrenagem nova):
+  - sete paletas, cada uma em claro e escuro — **Marinho e lima** é a padrão; as outras são Petróleo,
+    Oceano, Arenito, Grafite, Floresta e Alto contraste;
+  - tamanho do texto (pequeno, médio, grande);
+  - abrir o projeto sozinho ao iniciar;
+  - lembrar o arranjo das janelas.
+
+  Ficam em `ambiente_teste/preferencias.json`. Mudar as cores muda todas as janelas juntas.
+- **Diagnóstico**: versões (SIAPP, Python, pywebview, PyMuPDF…), tamanho do banco, OCR instalado, erros
+  desta sessão, últimos erros do `siapp.log` com a causa, ações mais demoradas, e **Copiar para enviar**.
+- **Exportações** no alto: as pastas `exportacoes`, `execucoes`, `sig` e `contribuicoes`, com quantos
+  arquivos e o último, e "Abrir".
+- **Barra lateral recolhível** em todas as abas (o estado fica guardado).
+- **Histórico de mensagens**: clicar na mensagem do rodapé (ou em "Histórico") mostra todas as da
+  sessão, inteiras, com a hora.
+- **Abrindo o projeto**: tela com cada passo (pasta, banco, arquivos, catálogo, índice de texto) e o
+  progresso.
+### Corrigido
+- O levantamento do acervo passa a colorir o Mapa pelo acervo mesmo quando termina com o Mapa fechado.
+- A caixa "Filtrar" dos blocos × infraestrutura aparecia antes de medir.
+
 ## [0.29.1] — 2026-10-26
 Bloco 1 das mudanças do teste da 0.29 (erros que afetam dados).
 ### Corrigido

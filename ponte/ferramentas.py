@@ -59,7 +59,7 @@ class FerramentasAPI:
                 "SELECT DISTINCT bacia FROM acervo_pocos WHERE poco_id = ?", (pid,))]
         itens = [(b, it) for b in bacias for it in mf.pendentes(self._banco, b, poco_id=pid)]
         if not bacias:
-            raise ErroUsuario(f"{pid} ainda não está no levantamento do acervo (aba Mapa → Levantamento).")
+            raise ErroUsuario(f"{pid} ainda não está no levantamento do acervo (aba Dados › Levantamento do acervo).")
         ocr = self._garantir_ocr_ingles() if itens else True
         lidos = 0
         for bacia in bacias:

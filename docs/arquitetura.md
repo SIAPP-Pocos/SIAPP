@@ -10,7 +10,7 @@
 │                                                  │ eventoLevantamento(…)      │
 │  ponte/  API da janela, uma parte por aba (catalogo, pocos, documentos,       │
 │          vocabulario, fatos, perfis, comunidade, levantamento, secao,         │
-│          ferramentas, bloco, externos) — valida,                                        │
+│          ferramentas, bloco, externos, janelas) — valida,                     │
 │          chama o motor, devolve dicionários; nunca deixa exceção chegar ao JS │
 └──────────────┬───────────────────────────────────────────────────────────────┘
                ▼
@@ -20,6 +20,7 @@
     documentos.py   texto/OCR, índice FTS5           perfis.py      DLIS/LIS/LAS → metros
     vocabulario.py  correção de OCR em camadas       comunidade.py  pacotes e base
     projeto.py      pasta de projeto, procedência    registro.py    siapp.log
+    preferencias.py cores, tamanho do texto, arranjo das janelas (preferencias.json)
     formatos.py     formato pelo conteúdo (1 KB)     levantamento.py  acervo da bacia, sem baixar
     avaliacao.py    Vsh, φ, Sw, net pay no intervalo-alvo (registro em execucoes/)
     agp.py          AGP da ANP: topos, lama, testes, litologia (tabelas agp, agp_unidades)
@@ -50,6 +51,22 @@
                ▼
   ambiente_teste/  — pasta de projeto (contrato entre as partes)
 ```
+
+## Janelas (0.30)
+
+A janela principal tem as abas (Projeto, Dados, Mapa, Documentos, Perfis, Interpretação,
+Viabilidade, Comunidade) e pode se dividir em duas áreas. Qualquer aba (menos Projeto) abre
+numa **janela própria** do Windows: `ponte/janelas.py` cria a janela com a mesma página
+(`index.html?janela=<aba>`) e a **mesma API**. Consequências:
+
+- os eventos do motor (download, OCR, levantamento, status) vão para **todas** as janelas
+  (`BaseAPI._js`); cada uma mostra o que lhe cabe;
+- uma janela pede a outra que mostre algo com `janela_chamar(alvo, "irPara", [...])` — no JS,
+  `irPara(aba, função, ...args)` decide se a aba está nesta janela, na própria ou na principal;
+- posição, tamanho, monitor, divisão, barras recolhidas e abas destacadas ficam em
+  `ambiente_teste/preferencias.json` (`motor/preferencias.py`, validado chave a chave) e voltam
+  ao abrir; janela cujo monitor sumiu abre na tela principal;
+- fechar a principal fecha as outras (e lembra quais estavam abertas).
 
 ## O banco do projeto
 

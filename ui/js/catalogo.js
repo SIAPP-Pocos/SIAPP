@@ -1,25 +1,42 @@
-// SIAPP — aba Catálogo: bacias, categorias, poços, árvore de arquivos e downloads.
+// SIAPP — aba Dados › Catálogo do REATE: bacias, categorias, poços, árvore de arquivos e downloads.
 "use strict";
 
 let pocosAtuais = [];
 
 async function escolherPasta(ev) {
-  const r = await chamar((ev && ev.currentTarget) || $("btn-pasta"), "escolher_pasta");
+  inicioAbertura();
+  const r = await chamar((ev && ev.currentTarget) || $("ini-pasta"), "escolher_pasta");
+  fimAbertura();
   if (!r.ok || r.cancelado) return;
+  liberarProjeto(r);
+  status(r.bacia_anterior
+    ? `Projeto existente aberto (última bacia: ${r.bacia_anterior}).`
+    : "Projeto criado — siapp.json gravado na pasta.", "ok");
+}
 
+// Abre a pasta do projeto sem o diálogo (preferência "abrir ao iniciar").
+async function abrirProjetoSozinho() {
+  inicioAbertura();
+  const r = await chamar(null, "abrir_projeto_padrao");
+  fimAbertura();
+  if (!r.ok) return false;
+  liberarProjeto(r);
+  status(`Projeto aberto: ${r.pasta.split(/[\\/]/).pop()}` +
+         (r.bacia_anterior ? ` (última bacia: ${r.bacia_anterior})` : "") + ". Abre sozinho ao iniciar (Configurações).", "ok");
+  return true;
+}
+
+// O projeto ficou aberto (nesta janela ou em outra): libera as abas.
+function liberarProjeto(r) {
+  const primeiraVez = !projetoAberto;
   projetoAberto = true;
-  baciaAnterior = r.bacia_anterior || "";
+  if (r.bacia_anterior) baciaAnterior = r.bacia_anterior;
   aoAbrirProjeto(r);
-  $("caminho-pasta").textContent = r.pasta;
-  $("caminho-pasta").hidden = false;
   liberar("etapa-bacia");
   $("sel-bacia").disabled = false;
   $("btn-conectar").disabled = false;
   if (r.bacia_anterior) $("sel-bacia").value = r.bacia_anterior;
-
-  status(r.bacia_anterior
-    ? `Projeto existente aberto (última bacia: ${r.bacia_anterior}).`
-    : "Projeto criado — siapp.json gravado na pasta.", "ok");
+  if (primeiraVez) aplicarLayout(new Set(abasVisiveis()));
 }
 
 async function conectar() {

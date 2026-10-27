@@ -31,13 +31,16 @@ def main():
     os.makedirs(base.PASTA_PROJETO, exist_ok=True)
     registro.configurar(base.PASTA_PROJETO)
     api = API()
+    # posição e tamanho da última vez (se a tela ainda existir; senão, centralizada)
+    geometria = api._kwargs_geometria(api._preferencias().ler()["principal"], padrao=(1280, 820))
     janela = webview.create_window(
         f"SIAPP {mp.VERSAO_SIAPP}",
         url=os.path.join(base.PASTA_APP, "ui", "index.html"),
-        js_api=api,
-        width=1280, height=820, min_size=(980, 640),
+        js_api=api, min_size=(980, 640), **geometria,
     )
     api._janela = janela
+    api._vigiar_geometria(janela, "principal")
+    janela.events.closing += api._ao_fechar_principal
     # http_server=True serve a pasta ui/ por um servidor local interno, o que
     # garante que index.html carregue estilo.css e os scripts em qualquer sistema.
     webview.start(http_server=True, debug="--debug" in sys.argv)

@@ -11,14 +11,23 @@ def abrir_projeto(janela):
     janela.esperar("document.getElementById('ini-pasta').disabled")
 
 
+def ir(p, aba, sub=None):
+    """Vai até uma aba (e uma sub-aba de Dados ou de Interpretação)."""
+    p.click(f"#aba-{aba}")
+    if sub and aba == "dados":
+        p.click(f".sub-nav [data-sub='{sub}']")
+    elif sub and aba == "interp":
+        p.locator(f"[data-interp='{sub}'] >> visible=true").first.click()
+
+
 def test_abre_no_inicio_e_abre_projeto(janela):
     p = janela.page
     assert p.text_content("#versao").startswith("v0.")
-    assert p.is_visible("#vista-inicio") and not p.is_visible("#vista-catalogo")
+    assert p.is_visible("#vista-projeto") and not p.is_visible("#vista-dados")
     abrir_projeto(janela)
     janela.esperar("!document.getElementById('panorama').hidden")
     assert "arquivo(s) baixado(s)" in p.text_content("#panorama")
-    p.click("#aba-catalogo")
+    p.click("#aba-dados")
     assert not p.is_visible("#etapa-bacia.bloqueada")
     assert not janela.erros_js, janela.erros_js
 
@@ -26,8 +35,8 @@ def test_abre_no_inicio_e_abre_projeto(janela):
 def test_abas_trocam_de_vista(janela):
     p = janela.page
     p.click("#aba-docs")
-    assert p.is_visible("#vista-docs") and not p.is_visible("#vista-inicio")
-    assert "pasta do projeto" in p.text_content("#docs-resumo")
+    assert p.is_visible("#vista-docs") and not p.is_visible("#vista-projeto")
+    assert "Abra primeiro o projeto" in p.text_content("#docs-resumo")
     p.click(".fluxo button[data-ir='comunidade']") if p.is_visible(".fluxo") else p.click("#aba-comunidade")
     p.click("#aba-comunidade")
     assert p.is_visible("#vista-comunidade")
@@ -74,7 +83,7 @@ def test_mapa_com_cadastro_e_ficha(janela):
     p.click("#aba-mapa")
     janela.esperar("!document.getElementById('mapa-vazio').hidden")
     janela.api._importar_cadastro(csv_exemplo(), "anp:teste")
-    p.click("#aba-inicio")
+    p.click("#aba-projeto")
     p.click("#aba-mapa")
     janela.esperar("document.getElementById('mapa-resumo').textContent.includes('2 poço')")
     assert p.is_hidden("#mapa-vazio")
@@ -221,6 +230,7 @@ def test_levantamento_do_acervo_no_mapa(janela, monkeypatch):
     janela.api._importar_cadastro(csv_exemplo(), "anp:teste")
     p.click("#aba-mapa")
     janela.esperar("document.getElementById('mapa-resumo').textContent.includes('2 poço')")
+    ir(p, "dados", "levantamento")
     p.select_option("#lv-bacia", "Potiguar")
     janela.esperar("document.getElementById('lv-resumo').textContent.includes('Ainda não levantada')")
     p.click("#lv-carregar")
@@ -230,12 +240,14 @@ def test_levantamento_do_acervo_no_mapa(janela, monkeypatch):
     assert "Levantamento concluído" in janela.status()
     texto = p.text_content("#lv-resumo")
     assert ".tif → LIS" in texto and "perfil digital" in texto
+    p.click("#aba-mapa")
     assert p.is_visible("#legenda-acervo") and p.input_value("#f-cor") == "acervo"
     p.select_option("#f-acervo", "digital")
     janela.esperar("document.querySelectorAll('#lista-mapa button').length === 1")
     p.click("#lista-mapa button")
     janela.esperar("document.getElementById('fi-corpo').textContent.includes('No acervo do REATE')")
     assert "LIS em fita" in p.text_content("#fi-corpo")
+    ir(p, "dados", "levantamento")
     p.click("#lv-exportar")
     janela.esperar("document.getElementById('status').textContent.includes('_pocos.csv')")
     assert not janela.erros_js, janela.erros_js
@@ -299,6 +311,7 @@ def test_agp_na_ficha_e_na_avaliacao(janela, monkeypatch, tmp_path):
     janela.api._importar_cadastro(csv_exemplo(), "anp:teste")
     p.click("#aba-mapa")
     janela.esperar("document.getElementById('mapa-resumo').textContent.includes('poço')")
+    ir(p, "dados", "levantamento")
     p.select_option("#lv-bacia", "Potiguar")
     assert p.is_checked("#lv-agp")
     p.click("#lv-iniciar")
@@ -333,7 +346,7 @@ def test_aba_secao(janela):
     poco(b, "1-OES-1-RN", -5.30, -36.80, 50.0, [("F", "JANDAI", 10, 300), ("F", "ACU", 300, 700)], prof_final=750)
     poco(b, "1-MEI-1-RN", -5.30, -36.75, 40.0, [("F", "JANDAI", 8, 320), ("F", "ACU", 320, 760)], prof_final=800)
     poco(b, "1-LES-1-RN", -5.30, -36.70, 30.0, [("F", "JANDAI", 5, 330), ("F", "ACU", 330, 900)], prof_final=950)
-    p.click("#aba-secao")
+    ir(p, "interp", "secao")
     janela.esperar("document.getElementById('sec-disponiveis').textContent.includes('3 poço')")
     # pelas pontas da linha
     p.fill("#sec-a", "1-OES-1-RN")
@@ -416,10 +429,12 @@ def test_esquemas_de_ferramentas_na_ficha_e_na_aba_perfis(janela, monkeypatch, t
     janela.api._importar_cadastro(csv_exemplo(), "anp:teste")
     p.click("#aba-mapa")
     janela.esperar("document.getElementById('mapa-resumo').textContent.includes('poço')")
+    ir(p, "dados", "levantamento")
     p.select_option("#lv-bacia", "Potiguar")
     assert not p.is_checked("#lv-esquemas")
     p.click("#lv-iniciar")
     janela.esperar("document.getElementById('lv-resumo').textContent.includes('Esquemas de ferramentas')", 30)
+    p.click("#aba-mapa")
     p.evaluate("abrirFicha('1-AURI-12-RN')")
     janela.esperar("document.getElementById('fi-corpo').textContent.includes('Esquemas de ferramentas (1)')")
     # antes de ler: o tipo da corrida pelo nome, e o perfil já rotulado
@@ -461,7 +476,7 @@ def test_aba_bloco_3d(janela, tmp_path):
         leste = (lo + 37.00) * 111.0
         poco(b, pid, la, lo, 50.0, [("F", "JANDAI", 20, 300 + 10 * leste), ("F", "ACU", 300 + 10 * leste, 700)],
              prof_final=900)
-    p.click("#aba-bloco")
+    ir(p, "interp", "bloco")
     janela.esperar("document.getElementById('bl-disponiveis').textContent.includes('5 poço')")
     assert p.input_value("#bl-campo") == "CAMPO TESTE"
     p.click("#bl-selecionar")
@@ -514,7 +529,7 @@ def test_bloco_3d_trilhas_propriedade_e_figura(janela, tmp_path):
             _avaliacao(ex, pid, f"avaliacao_{pid}_1", prof, (prof > 400).astype(float), (prof > 500).astype(float),
                        [{"nome": "Açu", "topo": 320, "base": 700, "hpv_m": 2.0 + 3 * k, "net_pay_m": 20.0,
                          "ntg": 0.6, "phi_media_pay": 0.2, "sw_media_pay": 0.35}])
-    p.click("#aba-bloco")
+    ir(p, "interp", "bloco")
     janela.esperar("document.getElementById('bl-disponiveis').textContent.includes('5 poço')")
     p.click("#bl-selecionar")
     janela.esperar("document.getElementById('bl-n').textContent === '5'")
@@ -554,7 +569,7 @@ def test_bloco_fechado_corte_camadas_e_secao(janela, tmp_path):
         if pid != "1-AA-4-RN":
             un.append(("F", "ALAGAM", 700, 850))
         poco(b, pid, la, lo, 50.0, un, prof_final=900)
-    p.click("#aba-bloco")
+    ir(p, "interp", "bloco")
     janela.esperar("document.getElementById('bl-disponiveis').textContent.includes('5 poço')")
     p.click("#bl-selecionar")
     janela.esperar("document.getElementById('bl-n').textContent === '5'")
@@ -612,7 +627,7 @@ def test_bloco_validacao_e_prognostico(janela, tmp_path):
         leste = (lo + 37.00) * 111.0
         poco(b, pid, la, lo, 50.0, [("F", "JANDAI", 20, 300 + 10 * leste), ("F", "ACU", 300 + 10 * leste, 700)],
              prof_final=900)
-    p.click("#aba-bloco")
+    ir(p, "interp", "bloco")
     janela.esperar("document.getElementById('bl-disponiveis').textContent.includes('5 poço')")
     p.click("#bl-selecionar")
     janela.esperar("document.getElementById('bl-n').textContent === '5'")
@@ -671,7 +686,7 @@ def test_bloco_saidas(janela, tmp_path):
         leste = (lo + 37.00) * 111.0
         poco(b, pid, la, lo, 50.0, [("F", "JANDAI", 20, 300 + 10 * leste), ("F", "ACU", 300 + 10 * leste, 700)],
              prof_final=900)
-    p.click("#aba-bloco")
+    ir(p, "interp", "bloco")
     janela.esperar("document.getElementById('bl-disponiveis').textContent.includes('5 poço')")
     p.click("#bl-selecionar")
     janela.esperar("document.getElementById('bl-n').textContent === '5'")
@@ -714,7 +729,7 @@ def test_bloco_escala_interpolacao_e_comparacao(janela, tmp_path):
         poco(b, f"1-AA-{k + 1}-RN", la, lo, 50.0,
              [("F", "JANDAI", 20, 300 + 10 * leste + 3 * k), ("F", "ACU", 300 + 10 * leste + 3 * k, 700)],
              prof_final=900)
-    p.click("#aba-bloco")
+    ir(p, "interp", "bloco")
     janela.esperar("document.getElementById('bl-disponiveis').textContent.includes('9 poço')")
     # escala: reservatório preenche o formulário (spline topo a topo, sem margem)
     janela.esperar("document.getElementById('bl-m-estrutura').options.length === 5")
@@ -789,7 +804,7 @@ def test_campo_um_clique_producao_e_camadas(janela, tmp_path, monkeypatch):
     for pid, la, lo in [("1-AA-1-RN", -5.00, -37.00), ("1-AA-2-RN", -5.00, -36.96), ("1-AA-3-RN", -5.04, -37.00),
                         ("1-AA-4-RN", -5.04, -36.96), ("1-AA-5-RN", -5.02, -36.98)]:
         poco(b, pid, la, lo, 50.0, [("F", "JANDAI", 20, 300), ("F", "ACU", 300, 700)], prof_final=900)
-    p.click("#aba-bloco")
+    ir(p, "interp", "bloco")
     janela.esperar("document.getElementById('bl-disponiveis').textContent.includes('5 poço')")
     # escolher o campo já traz os poços; "Montar este campo" traz e monta, com título
     assert p.locator("#bl-montar-campo").is_visible()
@@ -803,6 +818,7 @@ def test_campo_um_clique_producao_e_camadas(janela, tmp_path, monkeypatch):
     assert not p.locator("#bl-montar-campo").is_visible() and not p.locator("#bl-bacia-box").is_visible()
     # produção da ANP: o campo do bloco já vem preenchido
     assert p.input_value("#pr-campo") == "CAMPO TESTE"
+    ir(p, "dados", "producao")
     p.select_option("#pr-periodo", "tudo")
     p.click("#pr-baixar")
     janela.esperar("document.getElementById('pr-resumo').textContent.includes('Plano de Desenvolvimento')", 60)
@@ -812,8 +828,8 @@ def test_campo_um_clique_producao_e_camadas(janela, tmp_path, monkeypatch):
     p.click("#pr-csv")
     janela.esperar("document.getElementById('status').textContent.includes('producao_campo_teste_por_poco.csv')", 30)
     assert (tmp_path / "ambiente_teste" / "exportacoes" / "producao" / "producao_campo_teste_por_zona.csv").exists()
-    # camadas no Mapa: marcadas as padrão; uma que falha aparece na lista de erros
-    p.click("#aba-mapa")
+    # camadas (aba Dados): marcadas as padrão; uma que falha aparece na lista de erros
+    ir(p, "dados", "camadas")
     janela.esperar("document.querySelectorAll('#cm-lista input').length > 10", 30)
     assert p.locator("#cm-lista input[value='epe_gasodutos_transporte']").is_checked()
     assert not p.locator("#cm-lista input[value='ibge_rodovias']").is_checked()
@@ -833,7 +849,7 @@ def test_camadas_no_mapa_e_distancias_do_campo(janela, tmp_path, monkeypatch):
     abrir_projeto(janela)
     from motor import producao as mpr
     mpr.baixar(janela.api._banco, janela.api._projeto.pasta, "Campo Teste", sessao=falsa)
-    p.click("#aba-mapa")
+    ir(p, "dados", "camadas")
     janela.esperar("document.querySelectorAll('#cm-lista input').length > 10", 30)
     for cb in p.locator("#cm-lista input").all():
         cb.uncheck()
@@ -841,13 +857,15 @@ def test_camadas_no_mapa_e_distancias_do_campo(janela, tmp_path, monkeypatch):
         p.check(f"#cm-lista input[value='{ident}']")
     p.click("#cm-baixar")
     janela.esperar("document.querySelectorAll('#cm-mapa input').length === 4", 60)
-    # liga uma camada no mapa: os traços aparecem
+    # liga uma camada no mapa (aba Mapa): os traços aparecem
+    p.click("#aba-mapa")
     p.check("#cm-mapa input[data-camada='ibge_dutos']")
     janela.esperar("sig.camadas.ibge_dutos && mapa.hasLayer(sig.camadas.ibge_dutos)", 30)
     assert p.evaluate("sig.camadas.ibge_dutos.getLayers().length") == 2
     p.uncheck("#cm-mapa input[data-camada='ibge_dutos']")
     janela.esperar("!sig.camadas.ibge_dutos", 30)
-    # campo × infraestrutura
+    # campo × infraestrutura (aba Viabilidade)
+    p.click("#aba-viab")
     p.fill("#vb-campo", "CAMPO TESTE")
     p.click("#vb-medir")
     janela.esperar("document.getElementById('vb-resultado').textContent.includes('Gasoduto de transporte')", 30)
@@ -929,7 +947,7 @@ def test_camadas_no_mapa_e_distancias_do_campo(janela, tmp_path, monkeypatch):
     janela.esperar("document.getElementById('ba-resultado').textContent.includes('Campos de produção até Gasoduto')", 60)
     texto = p.text_content("#ba-resultado")
     assert "CAMPO TESTE" in texto and "execucoes/viabilidade/" in texto and "R$" in texto
-    janela.esperar("ba.camada && mapa.hasLayer(ba.camada)", 30)
+    janela.esperar("ba.camada && mapaVb.hasLayer(ba.camada)", 30)
     p.fill("#ba-filtro", "nada-assim")
     assert "0 área(s) no filtro" in p.text_content("#ba-resultado")
     p.click("#ba-csv")
@@ -977,3 +995,139 @@ def test_correcao_fica_colorida_a_vista_no_texto_e_na_imagem(janela, tmp_path):
     assert p.evaluate("document.getElementById('pg-texto').scrollTop") > 0
     assert p.get_attribute("#pg-img", "src") != img_antes  # a imagem foi repintada com o contorno
     assert not janela.erros_js, janela.erros_js
+
+
+# ---------------------------------------------------------------- 0.30: layout, cores, janelas
+def test_dividir_recolher_e_guardar_o_arranjo(janela):
+    p = janela.page
+    abrir_projeto(janela)
+    p.click("#aba-mapa")
+    p.click("#btn-dividir")
+    assert p.is_visible("#vista-mapa") and p.is_visible("#vista-docs") and p.is_visible("#divisor")
+    assert "direita" in p.get_attribute("#aba-docs", "class")
+    # a área da direita troca de aba; os lados trocam
+    p.select_option("#div-dir", "perfis")
+    assert p.is_visible("#vista-perfis") and not p.is_visible("#vista-docs")
+    p.click("#div-trocar")
+    assert "ativa" in p.get_attribute("#aba-perfis", "class") and "direita" in p.get_attribute("#aba-mapa", "class")
+    # arrastar a divisória muda a proporção
+    caixa = p.locator("#divisor").bounding_box()
+    p.mouse.move(caixa["x"] + 3, caixa["y"] + 200)
+    p.mouse.down()
+    p.mouse.move(1000, caixa["y"] + 200, steps=5)
+    p.mouse.up()
+    flex = p.evaluate("getComputedStyle(document.getElementById('vista-perfis')).flexGrow")
+    assert 0.65 < float(flex) < 0.75
+    # clicar na aba da direita a traz para a esquerda
+    p.click("#aba-mapa")
+    assert "ativa" in p.get_attribute("#aba-mapa", "class")
+    # recolher a barra lateral do Mapa
+    p.locator("#vista-mapa > .lateral > .recolher").click()
+    assert "recolhida" in p.get_attribute("#vista-mapa", "class")
+    assert p.is_visible("#vista-mapa .rotulo-vertical") and not p.is_visible("#etapa-filtros")
+    janela.page.wait_for_timeout(600)          # o arranjo é gravado com um pequeno atraso
+    pref = janela.api._preferencias().ler()
+    assert pref["recolhidas"] == {"mapa": True}
+    assert pref["layout"]["dividida"] and pref["layout"]["ativa"] == "mapa" and pref["layout"]["direita"] == "perfis"
+    p.click("#btn-dividir")
+    assert not p.is_visible("#divisor") and not p.is_visible("#vista-perfis")
+    assert not janela.erros_js, janela.erros_js
+
+
+def test_configuracoes_cores_diagnostico_exportacoes_historico(janela, monkeypatch):
+    abertas = []
+    monkeypatch.setattr("ponte.comunidade._abrir_no_sistema", abertas.append)
+    p = janela.page
+    assert p.get_attribute("html", "data-paleta") == "marinho"
+    abrir_projeto(janela)
+    p.click("#btn-config")
+    assert p.is_visible("#config") and p.locator("#cfg-paletas .paleta").count() == 7
+    assert "ativa" in p.get_attribute("#cfg-paletas .paleta >> nth=0", "class")
+    p.click("#cfg-paletas .paleta:has-text('Arenito')")
+    p.select_option("#cfg-tema", "escuro")
+    p.select_option("#cfg-fonte", "G")
+    assert p.get_attribute("html", "data-paleta") == "arenito" and p.get_attribute("html", "data-tema") == "escuro"
+    janela.esperar("document.documentElement.dataset.fonte === 'G'")
+    pref = janela.api._preferencias().ler()
+    assert (pref["paleta"], pref["tema"], pref["fonte"]) == ("arenito", "escuro", "G")
+    fundo = p.evaluate("getComputedStyle(document.body).backgroundColor")
+    assert fundo == "rgb(23, 20, 15)"                 # fundo escuro do Arenito
+    p.uncheck("#cfg-abrir")
+    # diagnóstico: versões e erros
+    p.click("[data-cfg='diag']")
+    janela.esperar("document.getElementById('dg-conteudo').textContent.includes('Python')")
+    p.click("#dg-copiar")
+    janela.esperar("document.getElementById('status').textContent.includes('copi')")
+    p.keyboard.press("Escape")
+    assert p.is_hidden("#config")
+    assert janela.api._preferencias().ler()["abrir_ao_iniciar"] is False
+    # exportações
+    p.click("#btn-exportacoes")
+    janela.esperar("document.querySelectorAll('#exp-lista .pasta-linha').length === 4")
+    p.click("#exp-lista .pasta-linha:has-text('sig') button")
+    janela.esperar("document.getElementById('status').textContent.includes('aberta no Explorador')")
+    assert abertas and abertas[-1].endswith("sig")
+    # histórico: a mensagem inteira, mesmo a que o rodapé corta
+    p.click("#status")
+    assert p.is_visible("#historico") and p.is_hidden("#exportacoes")
+    assert "aberta no Explorador" in p.text_content("#hist-lista")
+    assert "Projeto criado" in p.text_content("#hist-lista")
+    p.keyboard.press("Escape")
+    assert p.is_hidden("#historico")
+    assert not janela.erros_js, janela.erros_js
+
+
+def test_abre_o_projeto_sozinho_com_progresso(janela, tmp_path):
+    from interface_util import abrir
+    api = janela.api
+    api.abrir_projeto_padrao()                    # cria siapp.json (o projeto "já existe")
+    api._projeto = None
+    api._janela.js.queue.clear()
+    jt, _ = abrir(api, janela.navegador, srv=janela.srv)
+    jt.esperar("document.getElementById('ini-pasta').disabled")
+    assert "Abre sozinho ao iniciar" in jt.status() or "Projeto aberto" in jt.status()
+    assert jt.page.is_hidden("#abertura")
+    # a tela "Abrindo o projeto" (no pywebview, os passos chegam durante a abertura)
+    jt.page.evaluate("inicioAbertura(); progressoAbertura({passo: 1, total: 5, texto: 'Abrindo a pasta'});"
+                     "progressoAbertura({passo: 2, total: 5, texto: 'Lendo o banco do projeto (134 MB)'})")
+    assert jt.page.is_visible("#abertura") and jt.page.locator("#ab-passos li").count() == 2
+    assert "134 MB" in jt.page.text_content("#ab-passos li.atual")
+    jt.page.evaluate("fimAbertura()")
+    assert jt.page.is_hidden("#abertura")
+    assert not jt.erros_js, jt.erros_js
+    jt.page.close()
+
+
+def test_aba_em_janela_propria_e_conversa_entre_janelas(janela, tmp_path):
+    import pymupdf
+
+    from interface_util import abrir_destacada
+    p = janela.page
+    abrir_projeto(janela)
+    pasta = tmp_path / "ambiente_teste" / "bruto" / "Potiguar" / "7-GMR-13-RN" / "Pasta de Poco"
+    pasta.mkdir(parents=True)
+    doc = pymupdf.open()
+    for i in range(3):
+        doc.new_page().insert_text((72, 100), f"PAGINA {i + 1} RELATORIO DE PERFURACAO DO POCO 7-GMR-13-RN", fontsize=10)
+    doc.save(str(pasta / "p.pdf"))
+    janela.api._abrir_projeto(str(tmp_path / "ambiente_teste"))
+    # a aba Documentos vai para uma janela própria
+    docs = abrir_destacada(janela, "docs")
+    docs.esperar("!document.getElementById('vista-docs').hidden")
+    assert docs.page.is_hidden("#abas") and docs.page.text_content("#janela-nome") == "Documentos"
+    assert "Voltar para a principal" in docs.page.text_content("#btn-janela")
+    assert docs.page.is_hidden("#vista-projeto") and docs.page.is_hidden("#btn-dividir")
+    docs.esperar("document.querySelectorAll('#lista-docs button').length === 1")
+    # a principal fica sabendo: a aba aparece marcada e sai da área visível
+    p.evaluate("janelasMudaram(['docs'])")
+    assert "fora" in p.get_attribute("#aba-docs", "class")
+    # um pedido da principal para Documentos vai para a janela própria
+    p.evaluate("abrirBaixado('bruto/Potiguar/7-GMR-13-RN/Pasta de Poco/p.pdf', null, 'documento')")
+    docs.esperar("document.getElementById('pg-num').textContent.includes('1 de 3')")
+    assert p.is_hidden("#vista-docs")
+    assert docs.falsa.focada >= 1
+    # "Voltar para a principal" fecha a janela própria
+    docs.page.click("#btn-janela")
+    assert docs.falsa.destruida
+    assert not docs.erros_js and not janela.erros_js, (docs.erros_js, janela.erros_js)
+    docs.page.close()

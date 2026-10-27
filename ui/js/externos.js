@@ -1,5 +1,5 @@
-// SIAPP — dados de fora do REATE: produção da ANP por campo (aba Bloco 3D), camadas geográficas
-// do IBGE, EPE e ANP (aba Mapa), o campo diante da infraestrutura e a viabilidade econômica.
+// SIAPP — dados de fora do REATE: produção da ANP por campo (aba Dados), camadas geográficas
+// do IBGE, EPE e ANP (abas Dados e Mapa), o campo diante da infraestrutura e a viabilidade econômica.
 "use strict";
 
 const ext = { campos: [], camadas: [], fontes: {} };
@@ -240,6 +240,30 @@ const ESTILO_CAMADA = {
 };
 const sig = { camadas: {}, vb: null };
 
+// Mapa da aba Viabilidade: o campo, as linhas até a infraestrutura e as áreas coloridas.
+let mapaVb = null;
+function criarMapaVb() {
+  if (mapaVb || typeof L === "undefined") return;
+  mapaVb = L.map("mapa-vb", { preferCanvas: true, zoomControl: true }).setView([-8.5, -38.5], 6);
+  const ruas = L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 18, attribution: "© colaboradores do OpenStreetMap" });
+  const satelite = L.tileLayer(
+    "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {
+      maxZoom: 18, attribution: "Imagens © Esri, Maxar, Earthstar Geographics" });
+  ruas.addTo(mapaVb);
+  mapaVb.attributionControl.setPrefix('<a href="https://leafletjs.com">Leaflet</a>');
+  L.control.layers({ "Mapa": ruas, "Satélite": satelite }, null, { position: "topright" }).addTo(mapaVb);
+  L.control.scale({ imperial: false }).addTo(mapaVb);
+}
+
+async function carregarViabilidade() {
+  criarMapaVb();
+  setTimeout(() => mapaVb && mapaVb.invalidateSize(), 50);   // a aba estava oculta
+  if (!projetoAberto) return;
+  if (!$("pr-lista-campos").options.length) carregarProducao();   // lista de campos do "Campo"
+  carregarAreas();
+}
+
 function desenharListaMapaCamadas() {
   const box = limpar($("cm-mapa"));
   const baixadas = ext.camadas.filter((c) => c.baixada);
@@ -351,14 +375,15 @@ function desenharViabilidade(rel) {
     }
     box.appendChild(t2);
   } else {
-    box.appendChild(el("p", "ajuda", "Depleção: baixe a produção do campo (aba Bloco 3D) para ter o sumário do PD."));
+    box.appendChild(el("p", "ajuda", "Depleção: baixe a produção do campo (aba Dados › Produção da ANP) para ter o sumário do PD."));
   }
   desenharViabilidadeNoMapa(rel);
 }
 
 function desenharViabilidadeNoMapa(rel) {
-  if (!mapa) return;
-  if (sig.vb) mapa.removeLayer(sig.vb);
+  criarMapaVb();
+  if (!mapaVb) return;
+  if (sig.vb) mapaVb.removeLayer(sig.vb);
   const g = L.layerGroup();
   const poli = L.polygon(rel.poligono, { color: "#f1c40f", weight: 3, fillOpacity: 0.08 }).bindTooltip(rel.campo);
   g.addLayer(poli);
@@ -372,9 +397,9 @@ function desenharViabilidadeNoMapa(rel) {
     g.addLayer(L.circleMarker(d.ponto_feicao, { radius: 4, color: e.cor, fillOpacity: 1 }));
     if (d.distancia_km < 150) pontos.push(d.ponto_feicao);
   }
-  sig.vb = g.addTo(mapa);
-  $("mapa-vazio").hidden = true;
-  mapa.fitBounds(L.latLngBounds(pontos).pad(0.1));
+  sig.vb = g.addTo(mapaVb);
+  $("mapa-vb-vazio").hidden = true;
+  mapaVb.fitBounds(L.latLngBounds(pontos).pad(0.1));
 }
 
 async function exportarViabilidade() {
@@ -783,7 +808,7 @@ function desenharAreas(res) {
     const a = l.atributos || {};
     th.appendChild(el("span", "vb-sub", [a.NOM_BACIA, a.OPERADOR_C, Object.values(l.feicao || {})[0]].filter(Boolean).join(" · ")));
     th.style.cursor = "pointer";
-    th.onclick = () => { if (mapa && l.ponto_area) mapa.setView(l.ponto_area, 9); };
+    th.onclick = () => { if (mapaVb && l.ponto_area) mapaVb.setView(l.ponto_area, 9); };
     tr.append(th, el("td", "vb-km", l.toca ? "toca" : numero(l.distancia_km, l.distancia_km < 10 ? 1 : 0)),
       el("td", "", numero(l.custo_r / 1e6, l.custo_r < 1e7 ? 2 : 0)));
     t.appendChild(tr);
@@ -795,10 +820,11 @@ function desenharAreas(res) {
 }
 
 async function desenharAreasNoMapa(res) {
-  if (!mapa) return;
+  criarMapaVb();
+  if (!mapaVb) return;
   const r = await chamar(null, "sig_camada", res.areas);
   if (!r.ok) return;
-  if (ba.camada) mapa.removeLayer(ba.camada);
+  if (ba.camada) mapaVb.removeLayer(ba.camada);
   const porIndice = new Map(res.linhas.map((l) => [l.indice, l]));
   const pos = new Map(r.geojson.features.map((f, k) => [f, k]));
   ba.camada = L.geoJSON(r.geojson, {
@@ -811,9 +837,9 @@ async function desenharAreasNoMapa(res) {
       if (l) camada.bindTooltip(`${l.nome}: ${l.toca ? "toca ou atravessa" : numero(l.distancia_km, 1) + " km"}` +
         ` até ${res.rotulo_alvo} · R$ ${numero(l.custo_r / 1e6, 1)} mi`);
     },
-  }).addTo(mapa);
-  $("mapa-vazio").hidden = true;
-  mapa.fitBounds(ba.camada.getBounds().pad(0.05));
+  }).addTo(mapaVb);
+  $("mapa-vb-vazio").hidden = true;
+  mapaVb.fitBounds(ba.camada.getBounds().pad(0.05));
 }
 
 // ---------------------------------------------------------------- API e densidade nos documentos (0.29)
@@ -908,14 +934,18 @@ function desenharFluidos(d) {
   }
 }
 
-async function abrirPaginaFluido(x, grandeza) {
-  trocarAba("docs");
+function abrirPaginaFluido(x, grandeza) {
+  irPara("docs", "prepararPaginaFluido", x, grandeza, fl.grandezas[grandeza] || {});
+}
+
+// Na janela de Documentos (esta ou outra): abre a página com a transcrição preenchida.
+async function prepararPaginaFluido(x, grandeza, info) {
   await abrirPagina(x.doc, x.pagina, grandeza === "api" ? "API" : "densidade");
   $("tr-box").open = true;
   $("tr-tipo").value = "propriedade_fluido";
-  $("tr-nome").value = (fl.grandezas[grandeza] || {}).rotulo || "";
+  $("tr-nome").value = info.rotulo || "";
   $("tr-poco").value = x.poco;
-  $("tr-unidade").value = (fl.grandezas[grandeza] || {}).unidade || "";
-  status("Desenhe a caixa em volta do valor na imagem, confira e salve. Depois volte à aba Mapa e clique em " +
+  $("tr-unidade").value = info.unidade || "";
+  status("Desenhe a caixa em volta do valor na imagem, confira e salve. Depois volte à aba Viabilidade e clique em " +
          "\"Procurar de novo\".", "ok");
 }

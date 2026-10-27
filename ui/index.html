@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-paleta="marinho" data-tema="claro" data-fonte="M">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -9,25 +9,49 @@
 </head>
 <body>
   <header class="topo">
-    <div class="marca">
+    <div class="marca" title="Sistema Integrado de Aquisição e Processamento de Perfis">
       <span class="sigla">SIAPP</span>
-      <span class="nome">Sistema Integrado de Aquisição e Processamento de Perfis</span>
+      <span class="versao" id="versao">—</span>
+      <span class="janela-nome" id="janela-nome" hidden></span>
     </div>
-    <nav class="abas" role="tablist">
-      <button class="aba ativa" id="aba-inicio" data-vista="inicio" role="tab" aria-selected="true">Início</button>
-      <button class="aba" id="aba-catalogo" data-vista="catalogo" role="tab" aria-selected="false">Catálogo</button>
+    <nav class="abas" id="abas" role="tablist">
+      <button class="aba ativa" id="aba-projeto" data-vista="projeto" role="tab" aria-selected="true">Projeto</button>
+      <button class="aba" id="aba-dados" data-vista="dados" role="tab" aria-selected="false">Dados</button>
       <button class="aba" id="aba-mapa" data-vista="mapa" role="tab" aria-selected="false">Mapa</button>
       <button class="aba" id="aba-docs" data-vista="docs" role="tab" aria-selected="false">Documentos</button>
       <button class="aba" id="aba-perfis" data-vista="perfis" role="tab" aria-selected="false">Perfis</button>
-      <button class="aba" id="aba-secao" data-vista="secao" role="tab" aria-selected="false">Seção</button>
-      <button class="aba" id="aba-bloco" data-vista="bloco" role="tab" aria-selected="false">Bloco 3D</button>
+      <button class="aba" id="aba-interp" data-vista="interp" role="tab" aria-selected="false">Interpretação</button>
+      <button class="aba" id="aba-viab" data-vista="viab" role="tab" aria-selected="false">Viabilidade</button>
       <button class="aba" id="aba-comunidade" data-vista="comunidade" role="tab" aria-selected="false">Comunidade</button>
     </nav>
-    <span class="versao" id="versao">—</span>
+    <div class="topo-acoes">
+      <label class="div-dir" id="div-dir-box" hidden>à direita <select id="div-dir"></select></label>
+      <button class="icone" id="div-trocar" hidden title="Trocar os lados" aria-label="Trocar os lados"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M2 5h11l-3-3M14 11H3l3 3"></path></svg></button>
+      <button class="acao" id="btn-dividir" title="Duas abas lado a lado nesta janela"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="1.5" y="2.5" width="13" height="11" rx="1"></rect><path d="M8 2.5v11"></path></svg><span>Dividir</span></button>
+      <button class="acao" id="btn-janela" title="Abre a aba ativa numa janela própria, para outro monitor"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M10 3H3v10h10V6"></path><path d="M7 9l7-7M9 2h5v5"></path></svg><span>Abrir em janela</span></button>
+      <button class="acao" id="btn-exportacoes" title="Pastas com o que o SIAPP exporta"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M1.5 4.5h5l1.5 1.5h6.5v7.5h-13z"></path></svg><span>Exportações</span></button>
+      <button class="icone" id="btn-config" title="Configurações e diagnóstico" aria-label="Configurações e diagnóstico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg></button>
+    </div>
   </header>
 
-  <main class="inicio" id="vista-inicio">
-    <div class="inicio-col">
+  <div class="area" id="area">
+  <main class="grade projeto" id="vista-projeto">
+    <aside class="lateral" data-titulo="Etapas do trabalho">
+      <section class="etapa">
+        <h2>Etapas do trabalho</h2>
+        <ol class="fluxo etapas-lista">
+          <li><button data-ir="dados"><strong>Dados</strong><span>Cadastro da ANP, catálogo do REATE, levantamento do acervo, produção e camadas.</span></button></li>
+          <li><button data-ir="mapa"><strong>Mapa</strong><span>Poços, campos e infraestrutura no mapa; a ficha de cada poço.</span></button></li>
+          <li><button data-ir="docs"><strong>Documentos</strong><span>Ler, buscar, corrigir o OCR e transcrever dados com fonte.</span></button></li>
+          <li><button data-ir="perfis"><strong>Perfis</strong><span>Curvas dos DLIS, LIS e LAS; intervalo-alvo e avaliação de formação.</span></button></li>
+          <li><button data-ir="interp"><strong>Interpretação</strong><span>Seção estratigráfica e bloco 3D, pelos topos do AGP.</span></button></li>
+          <li><button data-ir="viab"><strong>Viabilidade</strong><span>Distância até a infraestrutura, capacidade de injeção e custo do duto.</span></button></li>
+          <li><button data-ir="comunidade"><strong>Comunidade</strong><span>Exportar suas correções e importar as de colegas.</span></button></li>
+        </ol>
+      </section>
+    </aside>
+    <section class="principal inicio">
+      <div class="inicio-col">
       <section class="abertura">
         <h1>Dados públicos de poços, organizados</h1>
         <p>O SIAPP lista o acervo do portal <strong>REATE</strong> (ANP/CPRM), baixa os arquivos que
@@ -41,18 +65,14 @@
         <div class="panorama" id="panorama" hidden></div>
       </section>
 
-      <section>
-        <h2>Como usar</h2>
-        <ol class="fluxo">
-          <li><button data-ir="catalogo"><strong>Catálogo</strong><span>Escolha a bacia e a categoria; clique num poço para ver as pastas e os arquivos no portal.</span></button></li>
-          <li><button data-ir="mapa"><strong>Mapa</strong><span>Importe o cadastro da ANP: poços no mapa, com campo, operador, profundidade e o que já existe no REATE.</span></button></li>
-          <li><button data-ir="catalogo"><strong>Baixar</strong><span>Marque os arquivos. Nada vem marcado: cada tipo serve a uma finalidade (veja abaixo).</span></button></li>
-          <li><button data-ir="docs"><strong>Documentos</strong><span>Extraia o texto dos PDFs e TIFs, busque termos e corrija o que o OCR leu errado.</span></button></li>
-          <li><button data-ir="perfis"><strong>Perfis</strong><span>Leia as curvas dos DLIS, LIS e LAS em metros, veja o gráfico, marque o intervalo-alvo e exporte em LAS ou CSV.</span></button></li>
-          <li><button data-ir="comunidade"><strong>Comunidade</strong><span>Exporte suas correções, importe as de colegas e atualize a base comunitária.</span></button></li>
-        </ol>
+      <section class="cartao-projeto">
+        <h2>Últimas mensagens</h2>
+        <ul class="lista-msgs" id="ini-msgs"></ul>
+        <button class="btn secundario pequeno" id="ini-historico">Ver todas</button>
       </section>
 
+      <details class="guia">
+        <summary>Guia do REATE: o que tem em cada pasta, sufixos dos perfis e o que baixar</summary>
       <section>
         <h2>O que tem em cada pasta do REATE</h2>
         <p class="ajuda">O nome das pastas não é padronizado; o SIAPP reconhece as variantes mais comuns.</p>
@@ -100,6 +120,7 @@
           </tbody>
         </table>
       </section>
+      </details>
 
       <section class="limites">
         <h2>Limites que o SIAPP sempre deixa à vista</h2>
@@ -109,20 +130,22 @@
           <li>Correções da comunidade nunca apagam o original e podem ser desfeitas a qualquer momento.</li>
         </ul>
       </section>
-    </div>
+      </div>
+    </section>
   </main>
 
-  <main class="grade" id="vista-catalogo" hidden>
-    <aside class="lateral">
-      <section class="etapa" id="etapa-pasta">
-        <h2><span class="num">1</span> Pasta do projeto</h2>
-        <p class="ajuda" id="ajuda-pasta">Tudo que o SIAPP baixar e produzir fica nesta pasta.</p>
-        <button id="btn-pasta" class="btn">Escolher pasta…</button>
-        <div class="caminho" id="caminho-pasta" hidden></div>
-      </section>
-
+  <main class="grade dados" id="vista-dados" hidden>
+    <aside class="lateral" data-titulo="Dados">
+      <nav class="sub-nav" aria-label="O que baixar">
+        <button class="sub-btn" data-sub="catalogo">Catálogo do REATE</button>
+        <button class="sub-btn" data-sub="cadastro">Cadastro da ANP</button>
+        <button class="sub-btn" data-sub="levantamento">Levantamento do acervo</button>
+        <button class="sub-btn" data-sub="producao">Produção da ANP</button>
+        <button class="sub-btn" data-sub="camadas">Camadas geográficas</button>
+      </nav>
+      <div data-sub-lat="catalogo">
       <section class="etapa bloqueada" id="etapa-bacia">
-        <h2><span class="num">2</span> Bacia</h2>
+        <h2><span class="num">1</span> Bacia</h2>
         <p class="ajuda">Acervo público do REATE (ANP/CPRM).</p>
         <div class="linha">
           <select id="sel-bacia" disabled></select>
@@ -131,13 +154,21 @@
       </section>
 
       <section class="etapa bloqueada" id="etapa-categoria">
-        <h2><span class="num">3</span> Categoria</h2>
+        <h2><span class="num">2</span> Categoria</h2>
         <p class="ajuda" id="ajuda-categoria">Conecte-se a uma bacia para ver as categorias.</p>
         <ul class="lista-cat" id="lista-cat"></ul>
       </section>
+      <section class="etapa">
+        <h2>Pastas do REATE</h2>
+        <p class="ajuda">Para marcar no mapa os poços que têm pasta no portal, o SIAPP lista todas as
+          categorias da bacia conectada acima (só a lista; nada é baixado).</p>
+        <button class="btn secundario" id="btn-catalogar">Catalogar a bacia conectada</button>
+      </section>
+      </div>
     </aside>
 
     <section class="principal">
+      <div class="sub-painel" data-sub-painel="catalogo">
       <div class="vazio" id="vazio">
         <p class="vazio-titulo">Catálogo de poços</p>
         <p>Escolha a pasta, conecte-se a uma bacia e clique numa categoria.<br>
@@ -154,28 +185,8 @@
         </div>
         <ul class="grade-pocos" id="grade-pocos"></ul>
       </div>
-    </section>
-
-    <aside class="gaveta" id="gaveta" hidden aria-label="Arquivos do poço">
-      <div class="g-cab">
-        <div>
-          <h2 id="g-titulo">—</h2>
-          <p class="ajuda" id="g-sub"></p>
-        </div>
-        <button class="fechar" id="g-fechar" title="Fechar (Esc)" aria-label="Fechar">×</button>
       </div>
-      <div class="g-resumo" id="g-resumo"></div>
-      <div class="g-acoes" id="g-acoes" hidden>
-        <button id="btn-baixar" class="btn" disabled>Baixar selecionados</button>
-        <span class="ajuda" id="g-selecao"></span>
-      </div>
-      <ul class="arvore" id="g-arvore"></ul>
-      <p class="ajuda g-rodape" id="g-rodape"></p>
-    </aside>
-  </main>
-
-  <main class="grade mapa" id="vista-mapa" hidden>
-    <aside class="lateral">
+      <div class="sub-painel cartoes" data-sub-painel="cadastro" hidden>
       <section class="etapa">
         <h2>Cadastro da ANP</h2>
         <p class="ajuda" id="cad-info">Tabela de Poços dos dados abertos da ANP: coordenadas, campo,
@@ -185,37 +196,8 @@
           <button class="btn secundario" id="btn-cadastro-arq" title="Use se o download falhar">Importar CSV…</button>
         </div>
       </section>
-      <section class="etapa" id="etapa-filtros">
-        <h2>Filtros</h2>
-        <div class="filtros">
-          <label>Bacia <select id="f-bacia"></select></label>
-          <label>Nome, campo ou operador <input id="f-texto" type="search" placeholder="ex.: GMR, Guamaré"></label>
-          <div class="linha">
-            <label>Ambiente <select id="f-terra"><option value="">todos</option><option value="T">terra</option><option value="M">mar</option></select></label>
-            <label>Categoria <select id="f-tipo"><option value="">todas</option>
-              <option value="1">1 · pioneiro</option><option value="2">2 · estratigráfico</option>
-              <option value="3">3 · extensão</option><option value="4">4 · pioneiro adjacente</option>
-              <option value="5">5 · jazida mais rasa</option><option value="6">6 · jazida mais profunda</option>
-              <option value="7">7 · desenvolvimento</option><option value="8">8 · injeção</option>
-              <option value="9">9 · especial</option><option value="10">10 · outros</option></select></label>
-          </div>
-          <div class="linha">
-            <label>No acervo <select id="f-acervo"><option value="">todos</option>
-              <option value="digital">perfil digital</option><option value="imagem">só imagem</option>
-              <option value="sem_perfil">sem perfil</option><option value="pendente">falta conferir</option>
-              <option value="nao_levantado">não levantado</option></select></label>
-            <label>Com a curva <select id="f-familia"><option value="">qualquer</option>
-              <option value="GR">GR</option><option value="SP">SP</option><option value="CALI">cáliper</option>
-              <option value="RES_PROF">resist. profunda</option><option value="RHOB">RHOB</option>
-              <option value="NPHI">NPHI</option><option value="DT">DT</option><option value="PE">PE</option></select></label>
-          </div>
-          <label>Cor dos poços <select id="f-cor"><option value="pasta">pasta no REATE e downloads</option>
-            <option value="acervo">levantamento do acervo</option></select></label>
-          <label class="opcao"><input type="checkbox" id="f-reate"> Só com pasta no REATE</label>
-          <label class="opcao"><input type="checkbox" id="f-baixados"> Só com arquivos baixados</label>
-        </div>
-        <p class="ajuda" id="mapa-resumo"></p>
-      </section>
+      </div>
+      <div class="sub-painel cartoes" data-sub-painel="levantamento" hidden>
       <section class="etapa" id="etapa-levantamento">
         <h2>Levantamento do acervo</h2>
         <p class="ajuda">O que cada poço tem no portal, <strong>pelo conteúdo</strong> dos arquivos — não pelo
@@ -248,25 +230,149 @@
           <button class="btn secundario pequeno" id="lv-pasta">Abrir a pasta</button>
         </div>
       </section>
+      </div>
+      <div class="sub-painel cartoes" data-sub-painel="producao" hidden>
+      <section class="etapa" id="pr-etapa">
+        <h2>Produção do campo (ANP)</h2>
+        <p class="ajuda">Dados abertos da ANP (fora do REATE): produção e injeção <strong>mês a mês, por poço</strong>
+          (1941 até ~2 meses atrás), <strong>por zona produtora</strong> (2014 em diante), a ficha e o polígono do campo
+          e o <strong>sumário do Plano de Desenvolvimento</strong> (volume in place e produção acumulada). Cada arquivo
+          da ANP tem o país inteiro de um período (2–7 MB): o SIAPP guarda uma cópia compactada e reaproveita nos
+          outros campos.</p>
+        <div class="filtros">
+          <label>Campo <input type="text" id="pr-campo" list="pr-lista-campos" autocomplete="off" placeholder="ex.: GUAMARÉ"></label>
+          <datalist id="pr-lista-campos"></datalist>
+          <label>Período
+            <select id="pr-periodo">
+              <option value="1">último ano</option>
+              <option value="5" selected>últimos 5 anos (~60 MB na primeira vez)</option>
+              <option value="10">últimos 10 anos (~120 MB)</option>
+              <option value="tudo">todo o histórico, desde o início do campo (até ~550 MB)</option>
+            </select></label>
+          <label class="opcao"><input type="checkbox" id="pr-zona" checked> <span>também <strong>por zona produtora</strong> (2014 em diante; ~2 MB por mês)</span></label>
+        </div>
+        <div class="linha">
+          <button class="btn secundario" id="pr-baixar">Baixar a produção</button>
+          <button class="btn secundario pequeno" id="pr-cancelar" hidden>Cancelar</button>
+          <button class="btn secundario pequeno" id="pr-csv" hidden>CSV</button>
+        </div>
+        <div class="pr-resumo" id="pr-resumo"></div>
+      </section>
+      </div>
+      <div class="sub-painel cartoes" data-sub-painel="camadas" hidden>
       <section class="etapa" id="cm-etapa">
         <h2>Camadas geográficas</h2>
         <p class="ajuda">Gasodutos, campos, blocos exploratórios, unidades de hidrogênio verde, termelétricas, portos… de fontes oficiais, em SIRGAS
           2000. Ficam em <code>ambiente_teste\sig</code> (GeoJSON e o shapefile original, para o QGIS) e ligam
-          e desligam no mapa logo abaixo.</p>
+          e desligam no Mapa (barra lateral, “Camadas no mapa”).</p>
         <div class="cm-lista" id="cm-lista"></div>
         <div class="linha">
           <button class="btn secundario" id="cm-baixar">Baixar as marcadas</button>
           <button class="btn secundario pequeno" id="cm-pasta">Abrir a pasta</button>
         </div>
         <ul class="sec-avisos" id="cm-erros"></ul>
+      </section>
+      </div>
+    </section>
+
+    <aside class="gaveta" id="gaveta" hidden aria-label="Arquivos do poço">
+      <div class="g-cab">
+        <div>
+          <h2 id="g-titulo">—</h2>
+          <p class="ajuda" id="g-sub"></p>
+        </div>
+        <button class="fechar" id="g-fechar" title="Fechar (Esc)" aria-label="Fechar">×</button>
+      </div>
+      <div class="g-resumo" id="g-resumo"></div>
+      <div class="g-acoes" id="g-acoes" hidden>
+        <button id="btn-baixar" class="btn" disabled>Baixar selecionados</button>
+        <span class="ajuda" id="g-selecao"></span>
+      </div>
+      <ul class="arvore" id="g-arvore"></ul>
+      <p class="ajuda g-rodape" id="g-rodape"></p>
+    </aside>
+  </main>
+
+  <main class="grade mapa" id="vista-mapa" hidden>
+    <aside class="lateral" data-titulo="Filtros e camadas">
+      <section class="etapa" id="etapa-filtros">
+        <h2>Filtros</h2>
+        <div class="filtros">
+          <label>Bacia <select id="f-bacia"></select></label>
+          <label>Nome, campo ou operador <input id="f-texto" type="search" placeholder="ex.: GMR, Guamaré"></label>
+          <div class="linha">
+            <label>Ambiente <select id="f-terra"><option value="">todos</option><option value="T">terra</option><option value="M">mar</option></select></label>
+            <label>Categoria <select id="f-tipo"><option value="">todas</option>
+              <option value="1">1 · pioneiro</option><option value="2">2 · estratigráfico</option>
+              <option value="3">3 · extensão</option><option value="4">4 · pioneiro adjacente</option>
+              <option value="5">5 · jazida mais rasa</option><option value="6">6 · jazida mais profunda</option>
+              <option value="7">7 · desenvolvimento</option><option value="8">8 · injeção</option>
+              <option value="9">9 · especial</option><option value="10">10 · outros</option></select></label>
+          </div>
+          <div class="linha">
+            <label>No acervo <select id="f-acervo"><option value="">todos</option>
+              <option value="digital">perfil digital</option><option value="imagem">só imagem</option>
+              <option value="sem_perfil">sem perfil</option><option value="pendente">falta conferir</option>
+              <option value="nao_levantado">não levantado</option></select></label>
+            <label>Com a curva <select id="f-familia"><option value="">qualquer</option>
+              <option value="GR">GR</option><option value="SP">SP</option><option value="CALI">cáliper</option>
+              <option value="RES_PROF">resist. profunda</option><option value="RHOB">RHOB</option>
+              <option value="NPHI">NPHI</option><option value="DT">DT</option><option value="PE">PE</option></select></label>
+          </div>
+          <label>Cor dos poços <select id="f-cor"><option value="pasta">pasta no REATE e downloads</option>
+            <option value="acervo">levantamento do acervo</option></select></label>
+          <label class="opcao"><input type="checkbox" id="f-reate"> Só com pasta no REATE</label>
+          <label class="opcao"><input type="checkbox" id="f-baixados"> Só com arquivos baixados</label>
+        </div>
+        <p class="ajuda" id="mapa-resumo"></p>
+      </section>
+      <section class="etapa">
+        <h2>Camadas no mapa</h2>
+        <p class="ajuda">As camadas baixadas na aba Dados › Camadas geográficas.</p>
         <div class="cm-mapa" id="cm-mapa"></div>
       </section>
+      <ul class="lista-mapa" id="lista-mapa"></ul>
+    </aside>
+    <section class="principal mapa-principal">
+      <div id="mapa" class="mapa-div"></div>
+      <div class="mapa-legenda" id="legenda-pasta">
+        <span><i class="bola cad"></i>só no cadastro</span>
+        <span><i class="bola reate"></i>pasta no REATE</span>
+        <span><i class="bola baixado"></i>arquivos baixados</span>
+        <span><i class="bola fatos"></i>com dados transcritos</span>
+      </div>
+      <div class="mapa-legenda" id="legenda-acervo" hidden>
+        <span><i class="bola ac-digital"></i>perfil digital</span>
+        <span><i class="bola ac-imagem"></i>só imagem</span>
+        <span><i class="bola ac-sem_perfil"></i>sem perfil</span>
+        <span><i class="bola ac-pendente"></i>falta conferir</span>
+        <span><i class="bola cad"></i>não levantado</span>
+      </div>
+      <div class="vazio mapa-vazio" id="mapa-vazio">
+        <p class="vazio-titulo">Mapa dos poços</p>
+        <p>Baixe o cadastro da ANP (aba Dados › Cadastro da ANP) para ver os poços com coordenadas, campo, operador e
+          profundidade. É um arquivo público de ~12 MB, atualizado todo mês.</p>
+      </div>
+    </section>
+    <aside class="gaveta" id="ficha" hidden aria-label="Ficha do poço">
+      <div class="g-cab">
+        <div>
+          <h2 id="fi-titulo">—</h2>
+          <p class="ajuda" id="fi-sub"></p>
+        </div>
+        <button class="fechar" id="fi-fechar" title="Fechar (Esc)" aria-label="Fechar">×</button>
+      </div>
+      <div id="fi-corpo"></div>
+    </aside>
+  </main>
+
+  <main class="grade viab" id="vista-viab" hidden>
+    <aside class="lateral" data-titulo="Campo e infraestrutura">
       <section class="etapa" id="vb-etapa">
         <h2>Campo e infraestrutura</h2>
         <p class="ajuda">Distância do campo (polígono da ANP) até o gasoduto, o duto de escoamento, a UPGN, o projeto
           de hidrogênio, a termelétrica (fonte de CO₂) e o porto mais próximos, e quanto do volume in place já foi
-          produzido (sumário do Plano de Desenvolvimento). Usa as camadas baixadas acima e a produção baixada na aba
-          Bloco 3D. Depois de medir, a viabilidade econômica: custo do duto ÷ capacidade de injeção.</p>
+          produzido (sumário do Plano de Desenvolvimento). Usa as camadas e a produção baixadas na aba Dados. Depois de medir, a viabilidade econômica: custo do duto ÷ capacidade de injeção.</p>
         <div class="filtros">
           <label>Campo <input type="text" id="vb-campo" list="pr-lista-campos" autocomplete="off" placeholder="ex.: GUAMARÉ"></label>
         </div>
@@ -388,49 +494,19 @@
         </div>
         <div class="pr-resumo" id="ba-resultado"></div>
       </section>
-      <section class="etapa">
-        <h2>Pastas do REATE</h2>
-        <p class="ajuda">Para marcar no mapa os poços que têm pasta no portal, o SIAPP lista todas as
-          categorias da bacia conectada na aba Catálogo (só a lista; nada é baixado).</p>
-        <button class="btn secundario" id="btn-catalogar">Catalogar a bacia conectada</button>
-      </section>
-      <ul class="lista-mapa" id="lista-mapa"></ul>
     </aside>
     <section class="principal mapa-principal">
-      <div id="mapa" class="mapa-div"></div>
-      <div class="mapa-legenda" id="legenda-pasta">
-        <span><i class="bola cad"></i>só no cadastro</span>
-        <span><i class="bola reate"></i>pasta no REATE</span>
-        <span><i class="bola baixado"></i>arquivos baixados</span>
-        <span><i class="bola fatos"></i>com dados transcritos</span>
-      </div>
-      <div class="mapa-legenda" id="legenda-acervo" hidden>
-        <span><i class="bola ac-digital"></i>perfil digital</span>
-        <span><i class="bola ac-imagem"></i>só imagem</span>
-        <span><i class="bola ac-sem_perfil"></i>sem perfil</span>
-        <span><i class="bola ac-pendente"></i>falta conferir</span>
-        <span><i class="bola cad"></i>não levantado</span>
-      </div>
-      <div class="vazio mapa-vazio" id="mapa-vazio">
-        <p class="vazio-titulo">Mapa dos poços</p>
-        <p>Baixe o cadastro da ANP (ao lado) para ver os poços com coordenadas, campo, operador e
-          profundidade. É um arquivo público de ~12 MB, atualizado todo mês.</p>
+      <div id="mapa-vb" class="mapa-div"></div>
+      <div class="vazio mapa-vazio" id="mapa-vb-vazio">
+        <p class="vazio-titulo">Viabilidade</p>
+        <p>Escolha um campo e meça as distâncias (ao lado): o campo, a infraestrutura mais próxima e as linhas
+          até cada uma aparecem aqui. Em “Blocos e campos × infraestrutura”, as áreas ficam coloridas pela distância.</p>
       </div>
     </section>
-    <aside class="gaveta" id="ficha" hidden aria-label="Ficha do poço">
-      <div class="g-cab">
-        <div>
-          <h2 id="fi-titulo">—</h2>
-          <p class="ajuda" id="fi-sub"></p>
-        </div>
-        <button class="fechar" id="fi-fechar" title="Fechar (Esc)" aria-label="Fechar">×</button>
-      </div>
-      <div id="fi-corpo"></div>
-    </aside>
   </main>
 
   <main class="grade docs" id="vista-docs" hidden>
-    <aside class="lateral">
+    <aside class="lateral" data-titulo="Documentos">
       <section class="etapa">
         <h2>Documentos baixados</h2>
         <p class="ajuda" id="docs-resumo">PDFs e imagens (TIF) em ambiente_teste\bruto.</p>
@@ -562,10 +638,10 @@
   </main>
 
   <main class="grade perfis" id="vista-perfis" hidden>
-    <aside class="lateral">
+    <aside class="lateral" data-titulo="Perfis">
       <section class="etapa">
         <h2>Arquivos de perfil</h2>
-        <p class="ajuda" id="pf-resumo">DLIS, LIS e LAS baixados na aba Catálogo.</p>
+        <p class="ajuda" id="pf-resumo">DLIS, LIS e LAS baixados na aba Dados.</p>
         <ul class="lista-docs" id="lista-perfis"></ul>
       </section>
       <section class="etapa" id="pf-curvas-box" hidden>
@@ -695,10 +771,14 @@
   </main>
 
   <main class="grade secao" id="vista-secao" hidden>
-    <aside class="lateral">
+    <aside class="lateral" data-titulo="Seção">
+      <div class="sub-alternar" role="tablist" aria-label="Interpretação">
+        <button data-interp="secao">Seção</button>
+        <button data-interp="bloco">Bloco 3D</button>
+      </div>
       <section class="etapa">
         <h2>Poços da seção <span class="contagem" id="sec-n">0</span></h2>
-        <p class="ajuda" id="sec-disponiveis">Poços com topos de formação no AGP (leia os AGPs no Levantamento do acervo, aba Mapa).</p>
+        <p class="ajuda" id="sec-disponiveis">Poços com topos de formação no AGP (leia os AGPs no Levantamento do acervo, aba Dados).</p>
         <form class="linha" id="sec-form-poco">
           <input type="text" id="sec-poco" list="sec-lista-pocos" placeholder="ex.: 1-BRSA-276-RN" autocomplete="off">
           <button class="btn secundario pequeno" type="submit">Adicionar</button>
@@ -802,10 +882,14 @@
   </main>
 
   <main class="grade bloco" id="vista-bloco" hidden>
-    <aside class="lateral">
+    <aside class="lateral" data-titulo="Bloco 3D">
+      <div class="sub-alternar" role="tablist" aria-label="Interpretação">
+        <button data-interp="secao">Seção</button>
+        <button data-interp="bloco">Bloco 3D</button>
+      </div>
       <section class="etapa">
         <h2>Poços do bloco <span class="contagem" id="bl-n">0</span></h2>
-        <p class="ajuda" id="bl-disponiveis">Poços com topos de formação no AGP (leia os AGPs no Levantamento do acervo, aba Mapa).</p>
+        <p class="ajuda" id="bl-disponiveis">Poços com topos de formação no AGP (leia os AGPs no Levantamento do acervo, aba Dados).</p>
         <div class="filtros">
           <label>Escolher
             <select id="bl-modo">
@@ -836,32 +920,6 @@
         </form>
         <datalist id="bl-lista-pocos"></datalist>
         <p class="ajuda bl-lista" id="bl-lista"></p>
-      </section>
-      <section class="etapa" id="pr-etapa">
-        <h2>Produção do campo (ANP)</h2>
-        <p class="ajuda">Dados abertos da ANP (fora do REATE): produção e injeção <strong>mês a mês, por poço</strong>
-          (1941 até ~2 meses atrás), <strong>por zona produtora</strong> (2014 em diante), a ficha e o polígono do campo
-          e o <strong>sumário do Plano de Desenvolvimento</strong> (volume in place e produção acumulada). Cada arquivo
-          da ANP tem o país inteiro de um período (2–7 MB): o SIAPP guarda uma cópia compactada e reaproveita nos
-          outros campos.</p>
-        <div class="filtros">
-          <label>Campo <input type="text" id="pr-campo" list="pr-lista-campos" autocomplete="off" placeholder="ex.: GUAMARÉ"></label>
-          <datalist id="pr-lista-campos"></datalist>
-          <label>Período
-            <select id="pr-periodo">
-              <option value="1">último ano</option>
-              <option value="5" selected>últimos 5 anos (~60 MB na primeira vez)</option>
-              <option value="10">últimos 10 anos (~120 MB)</option>
-              <option value="tudo">todo o histórico, desde o início do campo (até ~550 MB)</option>
-            </select></label>
-          <label class="opcao"><input type="checkbox" id="pr-zona" checked> <span>também <strong>por zona produtora</strong> (2014 em diante; ~2 MB por mês)</span></label>
-        </div>
-        <div class="linha">
-          <button class="btn secundario" id="pr-baixar">Baixar a produção</button>
-          <button class="btn secundario pequeno" id="pr-cancelar" hidden>Cancelar</button>
-          <button class="btn secundario pequeno" id="pr-csv" hidden>CSV</button>
-        </div>
-        <div class="pr-resumo" id="pr-resumo"></div>
       </section>
       <section class="etapa">
         <h2>Superfícies e interpolação</h2>
@@ -1112,7 +1170,7 @@
   </main>
 
   <main class="grade comunidade" id="vista-comunidade" hidden>
-    <aside class="lateral">
+    <aside class="lateral" data-titulo="Comunidade">
       <section class="etapa">
         <h2>Quem é você</h2>
         <p class="ajuda">Seu nome assina as contribuições que você exportar (licença CC-BY 4.0: quem usar os dados cita os autores).</p>
@@ -1167,9 +1225,12 @@
     </section>
   </main>
 
+    <div class="divisor" id="divisor" hidden title="Arraste para mudar a divisão; dois cliques: metade"></div>
+  </div>
+
   <footer class="rodape">
     <span class="ponto" id="ponto"></span>
-    <span id="status">Iniciando…</span>
+    <span id="status" title="Clique para ver as mensagens desta sessão">Iniciando…</span>
     <div class="dl" id="dl" hidden>
       <span class="dl-nome" id="dl-nome"></span>
       <span class="dl-trilho"><span class="dl-barra" id="dl-barra"></span></span>
@@ -1182,6 +1243,7 @@
       <span class="dl-num" id="ocr-num"></span>
       <button class="dl-cancelar" id="ocr-cancelar">Cancelar</button>
     </div>
+    <button class="hist" id="btn-historico" title="Mensagens desta sessão">Histórico</button>
   </footer>
 
   <div class="visor" id="visor" hidden role="dialog" aria-modal="true" aria-label="Visor de página">
@@ -1202,6 +1264,58 @@
     <div class="v-area" id="v-area"><div class="v-folha" id="v-folha"></div></div>
   </div>
 
+
+  <div class="sobrepor" id="config" hidden role="dialog" aria-modal="true" aria-label="Configurações e diagnóstico">
+    <div class="modal">
+      <div class="modal-cab">
+        <div class="modal-abas">
+          <button class="aba ativa" data-cfg="config">Configurações</button>
+          <button class="aba" data-cfg="diag">Diagnóstico</button>
+        </div>
+        <button class="fechar" id="cfg-fechar" title="Fechar (Esc)" aria-label="Fechar">×</button>
+      </div>
+      <div class="modal-corpo" id="cfg-config">
+        <h3>Cores</h3>
+        <div class="cfg-paletas" id="cfg-paletas"></div>
+        <div class="cfg-grade">
+          <label>Modo <select id="cfg-tema"><option value="claro">claro</option><option value="escuro">escuro</option></select></label>
+          <label>Tamanho do texto <select id="cfg-fonte"><option value="P">pequeno</option><option value="M">médio</option><option value="G">grande</option></select></label>
+        </div>
+        <h3>Ao iniciar</h3>
+        <label class="opcao"><input type="checkbox" id="cfg-abrir"> <span>Abrir o projeto sozinho (sem o botão “Abrir o projeto”)</span></label>
+        <label class="opcao"><input type="checkbox" id="cfg-arranjo"> <span>Lembrar o arranjo das janelas: posição, tamanho, monitor, divisão e abas destacadas</span></label>
+        <p class="ajuda">Pasta do projeto: <code id="cfg-pasta">—</code> (por enquanto, sempre esta). As preferências ficam em <code>preferencias.json</code>, dentro dela.</p>
+      </div>
+      <div class="modal-corpo" id="cfg-diag" hidden>
+        <div id="dg-conteudo"><p class="ajuda">Carregando…</p></div>
+        <div class="linha">
+          <button class="btn" id="dg-copiar">Copiar para enviar</button>
+          <button class="btn secundario" id="dg-log">Abrir o siapp.log</button>
+          <button class="btn secundario" id="dg-atualizar">Atualizar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="popover" id="exportacoes" hidden role="dialog" aria-label="Exportações">
+    <div class="pop-cab"><strong>Exportações</strong><button class="fechar" id="exp-fechar" aria-label="Fechar">×</button></div>
+    <div id="exp-lista"></div>
+  </div>
+
+  <div class="popover base" id="historico" hidden role="dialog" aria-label="Mensagens desta sessão">
+    <div class="pop-cab"><strong>Mensagens desta sessão</strong><button class="fechar" id="hist-fechar" aria-label="Fechar">×</button></div>
+    <ul class="lista-msgs" id="hist-lista"></ul>
+  </div>
+
+  <div class="sobrepor" id="abertura" hidden role="status" aria-live="polite">
+    <div class="abertura-caixa">
+      <h2>Abrindo o projeto</h2>
+      <p class="ajuda" id="ab-texto">—</p>
+      <span class="dl-trilho"><span class="dl-barra" id="ab-barra"></span></span>
+      <ol class="ab-passos" id="ab-passos"></ol>
+    </div>
+  </div>
+
   <script src="vendor/leaflet/leaflet.js"></script>
   <script type="importmap">{ "imports": { "three": "./vendor/three/three.module.min.js" } }</script>
   <script type="module" src="js/bloco3d.js"></script>
@@ -1219,6 +1333,7 @@
   <script src="js/ferramentas.js"></script>
   <script src="js/perfis.js"></script>
   <script src="js/avaliacao.js"></script>
+  <script src="js/janelas.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

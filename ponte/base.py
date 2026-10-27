@@ -11,9 +11,12 @@ Regras da ponte:
 
 from __future__ import annotations
 
+import collections
 import functools
 import json
 import os
+import time
+from datetime import datetime
 
 from motor import documentos as md
 from motor import reate
@@ -51,22 +54,42 @@ def mesma_pasta(a: str, b: str) -> bool:
 ERROS_ESPERADOS = (reate.ErroREATE, md.ErroDocumento, NotADirectoryError, ValueError)
 
 
+# Últimas chamadas da janela (nome, duração, resultado), para a tela de Diagnóstico.
+CHAMADAS: collections.deque = collections.deque(maxlen=300)
+
+
+def _anotar(nome: str, inicio: float, ok: bool, erro: str = ""):
+    CHAMADAS.append({"quando": datetime.now().isoformat(timespec="seconds"), "funcao": nome,
+                     "ms": round((time.perf_counter() - inicio) * 1000), "ok": ok, "erro": erro[:300]})
+
+
 def resposta_segura(func):
     """Toda chamada vinda da interface devolve {"ok": True, ...} ou
     {"ok": False, "erro": "..."} — nunca deixa uma exceção estourar no JS.
     Erros inesperados vão completos para o siapp.log."""
     @functools.wraps(func)
     def envelope(*args, **kwargs):
+        inicio = time.perf_counter()
         try:
-            return {"ok": True, **(func(*args, **kwargs) or {})}
+            r = {"ok": True, **(func(*args, **kwargs) or {})}
+            _anotar(func.__name__, inicio, True)
+            return r
         except ERROS_ESPERADOS as e:
             log.info("%s recusado: %s", func.__name__, e)
+            _anotar(func.__name__, inicio, False, str(e))
             return {"ok": False, "erro": str(e)}
         except Exception as e:  # erro inesperado: mensagem curta na tela, detalhe no log
             log.exception("erro inesperado em %s", func.__name__)
+            _anotar(func.__name__, inicio, False, f"{type(e).__name__}: {e}")
             return {"ok": False, "erro": f"Erro inesperado ({type(e).__name__}): {e}. "
                                          f"Detalhes em ambiente_teste\\siapp.log."}
     return envelope
+
+
+def _carregada(janela) -> bool:
+    eventos = getattr(janela, "events", None)
+    carregou = getattr(eventos, "loaded", None)
+    return carregou is None or not hasattr(carregou, "is_set") or carregou.is_set()
 
 
 class BaseAPI:
@@ -75,20 +98,34 @@ class BaseAPI:
     _janela = None
     _projeto = None
 
+    def _janelas_abertas(self) -> list:
+        """A principal e as abas destacadas que já carregaram (evaluate_js numa janela que
+        ainda carrega esperaria até 15 s e travaria quem chamou)."""
+        extras = [j for j in (getattr(self, "_janelas", None) or {}).values() if _carregada(j)]
+        return [j for j in [self._janela, *extras] if j is not None]
+
     def _js(self, funcao: str, dados) -> None:
-        """Chama uma função global da janela. Se a janela já fechou, ignora:
-        o trabalho em segundo plano nunca quebra por causa da interface."""
-        try:
-            self._janela.evaluate_js(f"{funcao}({json.dumps(dados)})")
-        except Exception:
-            pass
+        """Chama uma função global em TODAS as janelas (a principal e as abas destacadas):
+        cada uma mostra o que lhe cabe. Janela que já fechou é ignorada — o trabalho em
+        segundo plano nunca quebra por causa da interface."""
+        codigo = f"{funcao}({json.dumps(dados)})"
+        for janela in self._janelas_abertas():
+            try:
+                janela.evaluate_js(codigo)
+            except Exception:
+                pass
 
     def _status(self, texto: str):
-        """Atualiza a barra de status da janela durante operações longas."""
-        try:
-            self._janela.evaluate_js(f"status({json.dumps(texto)}, 'trab')")
-        except Exception:
-            pass
+        """Atualiza a barra de status das janelas durante operações longas."""
+        self._js_status(texto, "trab")
+
+    def _js_status(self, texto: str, tipo: str):
+        codigo = f"status({json.dumps(texto)}, {json.dumps(tipo)})"
+        for janela in self._janelas_abertas():
+            try:
+                janela.evaluate_js(codigo)
+            except Exception:
+                pass
 
     def _autor(self) -> str:
         """Nome de quem usa este computador (aba Comunidade), para a autoria
@@ -99,4 +136,4 @@ class BaseAPI:
 
     def _exigir_projeto(self):
         if self._projeto is None:
-            raise ErroUsuario("Escolha primeiro a pasta do projeto (aba Catálogo, passo 1).")
+            raise ErroUsuario("Abra primeiro o projeto (aba Projeto, “Abrir o projeto”).")

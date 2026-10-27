@@ -13,7 +13,7 @@ function descreverItens(it) {
 
 async function carregarComunidade() {
   if (!projetoAberto) {
-    $("com-local").textContent = "Abra o projeto primeiro (aba Início ou Catálogo).";
+    $("com-local").textContent = "Abra o projeto primeiro (aba Projeto).";
     return;
   }
   const r = await chamar(null, "comunidade");
