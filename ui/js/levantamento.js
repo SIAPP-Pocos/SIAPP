@@ -264,7 +264,7 @@ function secaoAgpFicha(corpo, agps) {
   if (us.length) {
     const tu = el("table", "tabela agp-tabela");
     const cab = el("tr");
-    for (const h of ["Unidade", "Topo (m)", "Base (m)", "Fonte"]) cab.appendChild(el("th", "", h));
+    for (const h of ["Unidade", "Topo (m)", "Base (m)", "Fonte", "Qualidade"]) cab.appendChild(el("th", "", h));
     tu.appendChild(cab);
     for (const u of us) {
       const tr = el("tr");
@@ -273,10 +273,14 @@ function secaoAgpFicha(corpo, agps) {
         (u.qualidade ? ` · qualidade: ${u.qualidade}` : "") + (u.metodo_desc ? ` · método: ${u.metodo_desc}` : "") +
         (u.desc_topo ? ` · topo: ${u.desc_topo}` : "");
       tr.append(nome, el("td", "", numero(u.topo, 1)), el("td", "", u.base == null ? "—" : numero(u.base, 1)),
-                el("td", "", [u.fonte, u.data && u.data !== "01/01/1900" ? u.data : ""].filter(Boolean).join(" · ")));
+                el("td", "", [u.fonte, u.data && u.data !== "01/01/1900" ? u.data : ""].filter(Boolean).join(" · ")),
+                el("td", u.qualidade === "questionável" ? "ql-questionavel" : "", u.qualidade || "—"));
       tu.appendChild(tr);
     }
     corpo.appendChild(tu);
+    const nota = el("details", "nota-agp");
+    nota.append(el("summary", "", "O que são \"fonte\" e \"qualidade\"?"), notaFonteAgp(el("div", "nota-agp-texto")));
+    corpo.appendChild(nota);
   }
   const extras = [];
   if ((g.zonas || []).length) extras.push(`${g.zonas.length} zona(s)-reservatório`);

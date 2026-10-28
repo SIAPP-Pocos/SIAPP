@@ -41,6 +41,31 @@ falha (NaN), nunca zero.
 A **visão padrão** escolhe uma curva por família, pela ordem de `preferencia` (a curva
 medida antes da calculada: `AT90` antes de `RT`) e, no empate, a com mais dados.
 
+## Na tela (0.33)
+
+- **Sugerir para** um objetivo: marca a melhor curva de cada família do objetivo que o arquivo
+  tem (mesma escolha da visão padrão), diz o porquê e o que falta (`motor/perfis.py:OBJETIVOS`):
+
+| Objetivo | Famílias, em ordem |
+|---|---|
+| Litologia e correlação | GR, SP, PE, RHOB, NPHI, CALI |
+| Porosidade | RHOB, NPHI, DT, PE, DRHO, CALI |
+| Saturação de água (Sw) | RES_PROF, RES_MED, RES_RASA, GR, RHOB, NPHI |
+| Avaliação de formação | GR, RES_PROF, RHOB, NPHI, DT, CALI, BS, DRHO |
+| Qualidade do poço | CALI, BS, DRHO, GR |
+| Geomecânica | DT, DTS, RHOB, CALI |
+
+- **Buscar curva** por mnemônico, descrição, unidade ou nome da família ("densidade" acha RHOB).
+- **Cabeçalhos**: o nome da curva quebra a linha em vez de ser cortado, a escala fica embaixo, e
+  todos os cabeçalhos têm a mesma altura — as trilhas começam na mesma linha e a profundidade
+  fica alinhada entre elas.
+- **Arrastar** na vertical mostra a faixa sendo marcada, em todas as trilhas, com topo, base e
+  espessura.
+- **Topos do AGP** (linhas verdes tracejadas): passar o mouse no eixo mostra o nome, a fonte e
+  a qualidade. "Fonte" e "qualidade" são do próprio AGP (ver a nota "O que são fonte e
+  qualidade" na tela): a qualidade é a nota do intérprete da ANP — bom, regular,
+  questionável, inferido, não revisto.
+
 ## Cache
 
 Na primeira leitura, cada quadro vai para `ambiente_teste/pocos/<poço>/<arquivo>__<quadro>.npz`

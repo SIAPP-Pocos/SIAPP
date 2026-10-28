@@ -87,6 +87,13 @@ function mostrarPerfil(r) {
     : "";
   $("pf-aviso").hidden = !r.aviso;
   $("pf-aviso").textContent = r.aviso || "";
+  const so = $("pf-objetivo"), atualO = so.value;
+  limpar(so).appendChild(new Option("— escolha um objetivo —", ""));
+  for (const [k, n] of Object.entries(r.objetivos || {})) so.appendChild(new Option(n, k));
+  so.value = atualO && (r.objetivos || {})[atualO] ? atualO : "";
+  $("pf-sugestao").hidden = true;
+  $("pf-nota-agp").hidden = !(pf.toposAgp || []).length;
+  if ((pf.toposAgp || []).length) notaFonteAgp($("pf-nota-agp").querySelector(".nota-agp-texto"));
   const principal = r.inventario.quadros.find((q) => q.curvas.some((x) => x.familia === "GR")) || r.inventario.quadros[0];
   $("pf-passo").value = principal && principal.passo_m ? String(principal.passo_m).replace(".", ",") : "";
   desenharListaCurvas();
@@ -96,19 +103,31 @@ function mostrarPerfil(r) {
   status(`${r.inventario.arquivo}: ${pf.selecao.length} curva(s) na visão padrão.`, "ok");
 }
 
+// busca por mnemônico, descrição, unidade ou família ("densidade" acha RHOB)
+function curvaCasa(c, termo) {
+  if (!termo) return true;
+  const fam = c.familia && pf.familias[c.familia] ? pf.familias[c.familia].nome : "";
+  return norm([c.mnemonico, c.descricao, c.unidade, c.familia, fam].filter(Boolean).join(" ")).includes(termo);
+}
+
 function desenharListaCurvas() {
   const box = limpar($("pf-curvas"));
   const marcadas = new Set(pf.selecao.map((s) => s.quadro + "|" + s.mnemonico));
+  const termo = norm($("pf-busca").value.trim());
+  let achadas = 0;
   for (const q of pf.inv.quadros) {
     const reconhecidas = q.curvas.filter((c) => c.familia).length;
+    const visiveis = q.curvas.filter((c) => curvaCasa(c, termo));
+    achadas += visiveis.length;
+    if (termo && !visiveis.length) continue;
     const det = el("details", "pf-quadro");
-    det.open = q.curvas.some((c) => marcadas.has(q.nome + "|" + c.mnemonico));
+    det.open = termo ? true : q.curvas.some((c) => marcadas.has(q.nome + "|" + c.mnemonico));
     const sum = el("summary");
     sum.append(el("strong", "mono", q.nome),
       el("span", "ajuda", ` ${q.curvas.length} curvas · passo ${numero(q.passo_m, 4)} m${reconhecidas ? ` · ${reconhecidas} reconhecida(s)` : ""}`));
     det.appendChild(sum);
     const ul = el("ul", "pf-lista-curvas");
-    for (const c of q.curvas) {
+    for (const c of visiveis) {
       const li = el("li");
       const lab = el("label");
       const cb = el("input");
@@ -126,7 +145,30 @@ function desenharListaCurvas() {
     det.appendChild(ul);
     box.appendChild(det);
   }
+  $("pf-busca-n").hidden = !termo;
+  $("pf-busca-n").textContent = termo ? (achadas ? `${achadas} curva(s) para “${$("pf-busca").value.trim()}”.`
+    : `Nenhuma curva com “${$("pf-busca").value.trim()}” neste arquivo.`) : "";
   $("pf-n-sel").textContent = pf.selecao.length;
+}
+
+async function sugerirCurvas() {
+  const ob = $("pf-objetivo").value;
+  if (!ob || !pf.rel) { $("pf-sugestao").hidden = true; return; }
+  const r = await chamar($("pf-objetivo"), "sugerir_curvas", pf.rel, ob);
+  if (!r.ok) return;
+  const p = limpar($("pf-sugestao"));
+  p.append(el("strong", "", `${r.nome}: `), document.createTextNode(r.porque + " "));
+  if (r.curvas.length) {
+    p.append(document.createTextNode("Marcadas: "), el("span", "mono", r.curvas.map((c) => c.mnemonico).join(", ")), document.createTextNode(". "));
+  }
+  if (r.faltam.length) p.append(el("em", "", `Este arquivo não tem: ${r.faltam.map((f) => f.nome).join(", ")}.`));
+  p.hidden = false;
+  if (!r.curvas.length) { status("Nenhuma curva deste objetivo no arquivo.", "erro"); return; }
+  pf.selecao = r.curvas.slice();
+  $("pf-busca").value = "";
+  desenharListaCurvas();
+  atualizarGrafico();
+  status(`${r.curvas.length} curva(s) marcada(s) para: ${r.nome}.`, "ok");
 }
 
 function alternarCurva(quadro, c, marcar) {
@@ -244,10 +286,15 @@ function desenharTrilhas() {
         cab.appendChild(linha);
         continue;
       }
+      // nome em cima (quebra a linha em vez de cortar), escala embaixo
       const linha = el("div", "pf-legenda");
       linha.style.color = e.cor;
       linha.style.borderBottom = `2px ${e.tracejado ? "dashed" : "solid"} ${e.cor}`;
-      linha.append(el("span", "", numero(e.min, 2)), el("strong", "", `${c.mnemonico} (${c.unidade || "—"})`), el("span", "", numero(e.max, 2)));
+      linha.title = [`${c.mnemonico} (${c.unidade || "—"})`, (pf.familias[c.familia] || {}).nome,
+                     `escala ${numero(e.min, 2)} a ${numero(e.max, 2)}${e.log ? " (log)" : ""}`].filter(Boolean).join(" · ");
+      const esc = el("div", "pf-escala");
+      esc.append(el("span", "", numero(e.min, 2)), el("span", "", numero(e.max, 2)));
+      linha.append(el("strong", "", `${c.mnemonico} (${c.unidade || "—"})`), esc);
       cab.appendChild(linha);
     }
     div.appendChild(cab);
@@ -256,6 +303,10 @@ function desenharTrilhas() {
     box.appendChild(div);
     telas.push([cv, t]);
   }
+  // cabeçalhos da mesma altura: senão as trilhas começam em alturas diferentes e a profundidade desalinha
+  const cabs = [...box.querySelectorAll(".pf-cab-trilha")];
+  const altura = Math.max(64, ...cabs.map((c) => c.scrollHeight));
+  for (const c of cabs) c.style.height = altura + "px";
   const dpr = window.devicePixelRatio || 1;
   if (cvLito) desenharLitologia(cvLito, yDe, dpr);
   for (const [cv, t] of telas) {
@@ -385,6 +436,33 @@ function ligarInteracao(box, yDe) {
   let leitura = $("pf-leitura");
   if (!leitura) { leitura = el("div", "pf-leitura"); leitura.id = "pf-leitura"; document.body.appendChild(leitura); }
   let arraste = null;
+  // faixa marcada enquanto arrasta (todas as trilhas), com as profundidades
+  const yNa = (ev) => {
+    const cv0 = box.querySelector("canvas");
+    return Math.max(0, Math.min(ALTURA_TRILHAS, ev.clientY - cv0.getBoundingClientRect().top));
+  };
+  const faixaSel = () => {
+    let f = $("pf-faixa-sel");
+    if (!f) {
+      f = el("div", "pf-faixa-sel");
+      f.id = "pf-faixa-sel";
+      f.appendChild(el("span", "pf-faixa-rotulo"));
+    }
+    if (f.parentElement !== box) box.appendChild(f);
+    return f;
+  };
+  const mostrarFaixa = (y0, y1) => {
+    const f = faixaSel(), cv0 = box.querySelector("canvas");
+    const topoCv = cv0.getBoundingClientRect().top - box.getBoundingClientRect().top;
+    const a = Math.min(y0, y1), b = Math.max(y0, y1);
+    f.style.top = topoCv + a + "px";
+    f.style.height = Math.max(1, b - a) + "px";
+    f.style.width = box.scrollWidth + "px";
+    f.hidden = false;
+    f.firstChild.textContent = `${numero(profDe(a), 2)} – ${numero(profDe(b), 2)} m (${numero(profDe(b) - profDe(a), 2)} m)`;
+  };
+  const esconderFaixa = () => { const f = $("pf-faixa-sel"); if (f) f.hidden = true; };
+  box.onmouseleave = () => { if (arraste) { arraste = null; esconderFaixa(); } };
   for (const cv of box.querySelectorAll("canvas")) {
     cv.onwheel = (ev) => {
       ev.preventDefault();
@@ -398,10 +476,12 @@ function ligarInteracao(box, yDe) {
         definirJanela(pf.topo + d, pf.base + d, yRel);
       }
     };
-    cv.onmousedown = (ev) => { arraste = { y0: ev.offsetY }; };
+    cv.onmousedown = (ev) => { ev.preventDefault(); arraste = { y0: yNa(ev) }; };
     cv.onmouseup = (ev) => {
-      if (arraste && Math.abs(ev.offsetY - arraste.y0) > 6) {
-        const a = profDe(Math.min(arraste.y0, ev.offsetY)), b = profDe(Math.max(arraste.y0, ev.offsetY));
+      const y = yNa(ev);
+      esconderFaixa();
+      if (arraste && Math.abs(y - arraste.y0) > 6) {
+        const a = profDe(Math.min(arraste.y0, y)), b = profDe(Math.max(arraste.y0, y));
         $("pf-int-topo").value = numero(a, 2);
         $("pf-int-base").value = numero(b, 2);
         $("pf-int-nome").focus();
@@ -411,8 +491,15 @@ function ligarInteracao(box, yDe) {
     };
     cv.onmouseleave = () => { leitura.hidden = true; };
     cv.onmousemove = (ev) => {
-      const prof = profDe(ev.offsetY);
+      if (arraste && Math.abs(yNa(ev) - arraste.y0) > 2) mostrarFaixa(arraste.y0, yNa(ev));
+      const prof = profDe(yNa(ev));
       const partes = [`${numero(prof, 2)} m`];
+      // perto de um topo do AGP: nome, fonte e qualidade
+      const tol = (4 / ALTURA_TRILHAS) * faixa;
+      const topoAgp = (pf.toposAgp || []).find((u) => Math.abs(u.topo - prof) <= tol);
+      if (topoAgp) {
+        partes.push(`topo AGP: ${topoAgp.nome}` + [topoAgp.fonte, topoAgp.qualidade].filter(Boolean).map((x) => ` · ${x}`).join(""));
+      }
       for (const c of pf.dados) {
         let i = 0, melhor = Infinity, v = null;
         for (; i < c.prof.length; i++) { const d = Math.abs(c.prof[i] - prof); if (d < melhor) { melhor = d; v = c.valores[i]; } }
@@ -480,6 +567,8 @@ function ligarPerfis() {
     if (r.ok && r.inventario) { pf.selecao = r.padrao.slice(); desenharListaCurvas(); atualizarGrafico(); }
   };
   $("pf-limpar").onclick = () => { pf.selecao = []; desenharListaCurvas(); atualizarGrafico(); };
+  $("pf-busca").oninput = () => pf.inv && desenharListaCurvas();
+  $("pf-objetivo").onchange = sugerirCurvas;
   $("pf-aplicar").onclick = () => {
     const a = lerNumero("pf-topo"), b = lerNumero("pf-base");
     if (a !== null && b !== null && b > a) definirJanela(a, b);

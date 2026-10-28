@@ -6,6 +6,25 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 
 ## [Não lançado]
 
+## [0.33.0] — 2026-10-28
+Bloco 5 do teste da 0.29 (Perfis) e as cores do modo escuro.
+### Adicionado
+- **Sugerir curvas para um objetivo** (aba Perfis): litologia e correlação, porosidade, saturação de água,
+  avaliação de formação, qualidade do poço, geomecânica. Marca a melhor curva de cada família que o arquivo
+  tem, diz o porquê do conjunto e o que falta.
+- **Buscar curva** por mnemônico, descrição, unidade ou família.
+- **Faixa visível ao arrastar** sobre os perfis, em todas as trilhas, com topo, base e espessura.
+- **"Fonte" e "qualidade" dos topos do AGP** explicadas na tela ("AGP antigo", "questionável"): na aba Perfis,
+  na tabela da seção e na ficha do poço (que ganha a coluna Qualidade, com "questionável" em destaque). No
+  eixo de profundidade dos perfis, o mouse num topo do AGP mostra nome, fonte e qualidade.
+### Corrigido
+- **Modo escuro**: textos e legendas dentro do visor do bloco 3D, da figura da seção, dos perfis, da página do
+  documento e da legenda do mapa ficavam claros sobre fundo branco. Essas áreas agora são "papel": fundo branco
+  e texto escuro em qualquer tema, como as figuras exportadas.
+- **Cabeçalhos cortados nos perfis**: o nome da curva quebra a linha em vez de ser cortado, e todos os cabeçalhos
+  têm a mesma altura (com cabeçalhos de alturas diferentes, as trilhas começavam em alturas diferentes e a
+  profundidade não batia entre elas).
+
 ## [0.32.0] — 2026-10-28
 Bloco 7 do teste da 0.29: Bloco 3D.
 ### Adicionado

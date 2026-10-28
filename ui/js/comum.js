@@ -105,3 +105,29 @@ function botaoAbrir(rel, tipo) {
   b.onclick = (ev) => { ev.preventDefault(); ev.stopPropagation(); abrirBaixado(rel, b, tipo); };
   return b;
 }
+
+// "Fonte" e "qualidade" dos topos do AGP (Bloco 5 do teste da 0.29): os termos são da ANP, não do SIAPP.
+const QUALIDADES_AGP = [["bom", "o intérprete confia no topo"], ["regular", "aceitável, com alguma dúvida"],
+  ["questionável", "a ANP pede para conferir antes de usar"], ["inferido", "não observado: deduzido (ex.: de poço vizinho)"],
+  ["dado não revisto", "a ANP ainda não revisou"]];
+
+function notaFonteAgp(caixa) {
+  limpar(caixa);
+  caixa.append(el("p", "", "Os dois vêm do próprio AGP da ANP, não de um cálculo do SIAPP."));
+  const ul = el("ul");
+  const fonte = el("li");
+  fonte.append(el("strong", "", "Fonte: "), document.createTextNode(
+    "de onde veio o topo, como o AGP registra (ex.: perfil, amostra de calha). \"AGP antigo\" é o leiaute antigo do " +
+    "AGP — o arquivo de texto da época da Petrobras, que o SIAPP lê de outro jeito; os topos são os mesmos, só a " +
+    "origem do registro muda."));
+  const ql = el("li");
+  ql.append(el("strong", "", "Qualidade: "), document.createTextNode("a nota que o intérprete da ANP deu ao topo — "));
+  QUALIDADES_AGP.forEach(([n, d], i) => {
+    if (i) ql.append(document.createTextNode("; "));
+    ql.append(el("em", "", n), document.createTextNode(` (${d})`));
+  });
+  ql.append(document.createTextNode(". \"Questionável\" não é erro do SIAPP: é um aviso para conferir esse topo no perfil."));
+  ul.append(fonte, ql);
+  caixa.appendChild(ul);
+  return caixa;
+}

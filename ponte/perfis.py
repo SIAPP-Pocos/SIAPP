@@ -78,16 +78,30 @@ class PerfisAPI:
         return {"rel": rel, "poco": poco, "inventario": inv,
                 "corrida": self._corrida_do_arquivo(poco, os.path.basename(rel)),
                 "topos_agp": [{"sigla": u["sigla"], "nome": u["nome"], "nivel": u["nivel"], "tip": u["tip"],
-                               "topo": u["topo"], "base": u["base"]}
+                               "topo": u["topo"], "base": u["base"], "fonte": u.get("fonte") or "",
+                               "qualidade": magp.QUALIDADES.get(u.get("ql") or "", "")}
                               for u in magp.unidades_do_poco(self._banco, poco) if u["topo"] is not None],
                 "litologia_agp": [c for g in magp.do_poco(self._banco, poco)[:1]
                                   for c in g["dados"].get("litologia", [])],
                 "padrao": mpf.curvas_padrao(inv, self._cl()),
+                "objetivos": {k: v["nome"] for k, v in mpf.OBJETIVOS.items()},
                 "familias": self._cl().familias,
                 "fatos": [f for f in self._banco.fatos(poco)
                           if f["tipo"] in ("topo_formacao", "intervalo_alvo", "revestimento",
                                            "profundidade_final", "contato_fluido", "teste_formacao",
                                            "canhoneio")]}
+
+    @resposta_segura
+    def sugerir_curvas(self, rel: str, objetivo: str):
+        """Conjunto de curvas para um objetivo (litologia, porosidade, Sw…), do que o arquivo tem."""
+        _, arq = self._arquivo_perfil(rel)
+        inv = mpf.ler_inventario(self._cache(arq.get("poco_id", "")), os.path.basename(mp.rel_padrao(rel)))
+        if inv is None:
+            raise ErroUsuario("Abra o arquivo primeiro (o SIAPP precisa ler as curvas).")
+        try:
+            return mpf.sugerir_curvas(inv, self._cl(), objetivo)
+        except ValueError as e:
+            raise ErroUsuario(str(e)) from e
 
     @resposta_segura
     def curvas_perfil(self, rel: str):

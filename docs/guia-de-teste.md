@@ -131,6 +131,19 @@ Precisa de internet. Comece por uma categoria pequena para ver o tempo.
 - [ ] Sem intervalo marcado, **Calcular** explica que precisa de um intervalo-alvo.
 - [ ] Repetir no `5PX__0011__RN_5PX__0011__RN.tif` (DLIS de 2020).
 
+## 0.33 — perfis e modo escuro
+
+- [ ] Configurações › modo **escuro**. Mapa (legenda embaixo), Seção (figura e tabela), Bloco 3D (nomes dos poços,
+      eixos, legenda e escala de cor), Perfis (cabeçalhos) e Documentos (página): texto escuro sobre branco, legível.
+- [ ] Perfis: abra um DLIS com várias curvas. Os nomes nos cabeçalhos aparecem inteiros (quebram a linha) e as trilhas
+      começam todas na mesma altura.
+- [ ] **Sugerir para** "Saturação de água (Sw)": as curvas certas ficam marcadas; a explicação diz o porquê e o que falta.
+      Teste também "Qualidade do poço".
+- [ ] **Buscar curva**: digite "densidade" (acha RHOB/RHOZ) e um mnemônico.
+- [ ] Arraste na vertical sobre o gráfico: a faixa amarela aparece enquanto arrasta, com topo, base e espessura.
+- [ ] Passe o mouse no eixo de profundidade sobre uma linha verde tracejada: nome, fonte e qualidade do topo do AGP.
+      Abra "O que são fonte e qualidade…" (Perfis, tabela da Seção e ficha do poço no Mapa).
+
 ## 0.32 — bloco 3D: RBF, qual método usar, aparência dos poços
 
 - [ ] Interpretação › Bloco 3D: o painel tem os passos **1 Poços → 2 Interpolação → 3 Grade e unidades → 4 Montar**.

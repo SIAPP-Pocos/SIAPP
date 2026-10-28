@@ -155,6 +155,12 @@ function desenharTabelaSecao(pocos) {
       t.appendChild(tr);
     });
   }
+  const cap = el("caption", "nota-agp-cap");
+  const nota = el("details", "nota-agp");
+  nota.append(el("summary", "", "O que são \"fonte\" e \"qualidade\" (ex.: \"AGP antigo\", \"questionável\")?"),
+              notaFonteAgp(el("div", "nota-agp-texto")));
+  cap.appendChild(nota);
+  t.appendChild(cap);
 }
 
 async function carregarHistoricoSecao() {

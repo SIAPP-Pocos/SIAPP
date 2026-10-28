@@ -315,6 +315,47 @@ def curvas_padrao(inventario: dict, classificador: Classificador) -> list[dict]:
     return [v[1] for v in melhor.values()]
 
 
+# Conjuntos de curvas por objetivo (aba Perfis › "Sugerir para"): famílias em ordem de
+# importância e por que cada conjunto serve. Só entram as que o arquivo tem.
+OBJETIVOS = {
+    "litologia": {"nome": "Litologia e correlação", "familias": ["GR", "SP", "PE", "RHOB", "NPHI", "CALI"],
+                  "porque": "GR e SP separam reservatório de folhelho e correlacionam entre poços; densidade × neutrão "
+                            "e o fator fotoelétrico (PE) indicam a rocha (arenito, calcário, dolomito); o cáliper mostra "
+                            "onde o poço arrombou e a leitura não é confiável."},
+    "porosidade": {"nome": "Porosidade", "familias": ["RHOB", "NPHI", "DT", "PE", "DRHO", "CALI"],
+                   "porque": "Densidade, neutrão e sônico dão a porosidade; o PE ajuda a escolher a matriz; DRHO e "
+                             "cáliper dizem onde a densidade é confiável."},
+    "saturacao": {"nome": "Saturação de água (Sw)", "familias": ["RES_PROF", "RES_MED", "RES_RASA", "GR", "RHOB", "NPHI"],
+                  "porque": "Archie usa a resistividade profunda (Rt) e a porosidade; a separação entre as "
+                            "resistividades profunda, média e rasa indica invasão do filtrado (zona permeável); o GR, "
+                            "a argilosidade."},
+    "avaliacao": {"nome": "Avaliação de formação (o que o SIAPP usa)",
+                  "familias": ["GR", "RES_PROF", "RHOB", "NPHI", "DT", "CALI", "BS", "DRHO"],
+                  "porque": "As curvas do cálculo de argilosidade, porosidade, Sw e net pay, e as do controle de "
+                            "qualidade (cáliper × broca, DRHO)."},
+    "qualidade": {"nome": "Qualidade do poço", "familias": ["CALI", "BS", "DRHO", "GR"],
+                  "porque": "Cáliper maior que a broca = arrombamento; DRHO alto = densidade suspeita. Use antes de "
+                            "confiar em qualquer cálculo."},
+    "geomecanica": {"nome": "Geomecânica", "familias": ["DT", "DTS", "RHOB", "CALI"],
+                    "porque": "Sônico compressional e cisalhante com a densidade dão os módulos elásticos (Young, "
+                              "Poisson); o cáliper mostra onde o poço já deformou."},
+}
+
+
+def sugerir_curvas(inventario: dict, classificador: "Classificador", objetivo: str) -> dict:
+    """A melhor curva de cada família do objetivo que o arquivo tem (mesma escolha da visão
+    padrão), as famílias que faltam e o porquê."""
+    if objetivo not in OBJETIVOS:
+        raise ValueError(f"Objetivo desconhecido: {objetivo}")
+    ob = OBJETIVOS[objetivo]
+    melhores = {c["familia"]: c for c in curvas_padrao(inventario, classificador)}
+    curvas = [melhores[f] for f in ob["familias"] if f in melhores]
+    faltam = [f for f in ob["familias"] if f not in melhores]
+    nomes = {f: (classificador.familias.get(f) or {}).get("nome", f) for f in ob["familias"]}
+    return {"objetivo": objetivo, "nome": ob["nome"], "porque": ob["porque"], "curvas": curvas,
+            "faltam": [{"familia": f, "nome": nomes[f]} for f in faltam]}
+
+
 # ========================================================= visualização
 def _decimar(prof, valores, max_pontos):
     """Reduz para o gráfico preservando picos (mínimo e máximo de cada bloco)."""

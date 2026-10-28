@@ -62,6 +62,14 @@ existe e a validação científica ficam **para o final**, antes do lançamento 
 - [ ] Avaliação em lote por formação (tabela poço × formação) — depende do download em lote.
 - [ ] Esquemas: conferir uma amostra maior (ex.: 100 esquemas sorteados) contra o PDF.
 
+## No final — por último (decidido em 28/10/2026)
+
+- [ ] **Análise de um perfil no SIAPP × feita à mão**: escolher o poço juntos e comparar os
+      resultados da avaliação de formação com a análise manual (validação científica).
+- [ ] **Bibliografia de tudo**: métodos (Archie, Larionov, krigagem, RBF de Hardy, Rippa,
+      Dubrule, Clark e Evans…), fontes de dados (ANP/REATE, EPE, IBGE) e softwares e
+      bibliotecas usados, com as referências completas.
+
 ## Antes do lançamento
 
 - [ ] Termos de uso dos dados da ANP; DOI (Zenodo); publicar no GitHub (SIAPP-Pocos).

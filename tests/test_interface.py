@@ -1356,3 +1356,59 @@ def test_bloco_aparencia_dos_pocos_vale_na_hora(janela, tmp_path):
     svg = next((tmp_path / "ambiente_teste" / "exportacoes" / "blocos").glob("*_figura.svg")).read_text("utf-8")
     assert "poço (cabeça)" not in svg
     assert not janela.erros_js, janela.erros_js
+
+
+# ---------------------------------------------------------------- 0.33: perfis e modo escuro
+def test_perfis_busca_sugestao_cabecalho_e_faixa(janela, tmp_path):
+    from test_perfis import las_exemplo
+    p = janela.page
+    abrir_projeto(janela)
+    pasta = tmp_path / "ambiente_teste" / "bruto" / "Potiguar" / "7-GMR-13-RN" / "Perfis"
+    pasta.mkdir(parents=True)
+    las_exemplo(pasta / "7gmr13.las")
+    janela.api._abrir_projeto(str(tmp_path / "ambiente_teste"))
+    p.click("#aba-perfis")
+    janela.esperar("document.querySelectorAll('#lista-perfis button').length === 1")
+    p.click("#lista-perfis button")
+    janela.esperar("document.querySelectorAll('#pf-trilhas canvas').length === 3", 30)
+    # cabeçalhos da mesma altura: as trilhas começam todas na mesma linha
+    alturas = p.evaluate("[...document.querySelectorAll('.pf-cab-trilha')].map(c => c.offsetHeight)")
+    assert len(set(alturas)) == 1
+    topos = p.evaluate("[...document.querySelectorAll('#pf-trilhas canvas')].map(c => Math.round(c.getBoundingClientRect().top))")
+    assert len(set(topos)) == 1
+    # buscar curva por descrição da família
+    p.fill("#pf-busca", "resistividade")
+    janela.esperar("document.querySelectorAll('#pf-curvas li').length === 1")
+    assert "ILD" in p.text_content("#pf-curvas") and "1 curva(s)" in p.text_content("#pf-busca-n")
+    p.fill("#pf-busca", "nada disso")
+    janela.esperar("document.querySelectorAll('#pf-curvas li').length === 0")
+    assert "Nenhuma curva" in p.text_content("#pf-busca-n")
+    # sugerir para um objetivo
+    p.select_option("#pf-objetivo", "saturacao")
+    janela.esperar("!document.getElementById('pf-sugestao').hidden")
+    assert "Archie" in p.text_content("#pf-sugestao") and "não tem" in p.text_content("#pf-sugestao")
+    assert p.evaluate("pf.selecao.map(s => s.mnemonico)") == ["ILD", "GR"]
+    assert p.input_value("#pf-busca") == ""
+    # arrastar: a faixa aparece com as profundidades enquanto arrasta
+    janela.esperar("document.querySelectorAll('#pf-trilhas canvas').length === 3", 30)
+    cv = p.locator("#pf-trilhas canvas").nth(1)
+    caixa = cv.bounding_box()
+    p.mouse.move(caixa["x"] + 30, caixa["y"] + 100)
+    p.mouse.down()
+    p.mouse.move(caixa["x"] + 30, caixa["y"] + 180)
+    assert p.is_visible("#pf-faixa-sel") and " m" in p.text_content("#pf-faixa-sel")
+    p.mouse.up()
+    assert p.is_hidden("#pf-faixa-sel") and p.input_value("#pf-int-topo")
+    assert not janela.erros_js, janela.erros_js
+
+
+def test_modo_escuro_texto_escuro_nas_figuras(janela, tmp_path):
+    p = janela.page
+    abrir_projeto(janela)
+    p.evaluate("document.documentElement.dataset.tema = 'escuro'")
+    cor = lambda sel: p.evaluate(f"getComputedStyle(document.querySelector('{sel}')).color")
+    claro = "rgb(28, 34, 39)"                                   # --tinta do papel
+    assert cor(".mapa-legenda") == claro
+    assert p.evaluate("getComputedStyle(document.body).color") != claro       # fora das figuras, o tema escuro
+    for sel in ("#bl-visor", "#sec-figura", "#pf-trilhas", "#pg-quadro"):
+        assert cor(sel) == claro, sel

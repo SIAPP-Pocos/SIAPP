@@ -503,15 +503,17 @@ input[type=text], input[type=number] {
 .pf-cab .ajuda { margin: 0; }
 .pf-faixa { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; font-size: 12.5px; }
 .pf-faixa input { width: 84px; font: 12.5px var(--mono); padding: 5px 7px; }
-.pf-trilhas { display: flex; gap: 0; border: 1px solid var(--linha); border-radius: 6px; overflow-x: auto; overflow-y: hidden; background: #fff; }
+.pf-trilhas { position: relative; display: flex; gap: 0; border: 1px solid var(--linha); border-radius: 6px; overflow-x: auto; overflow-y: hidden; background: #fff; }
 .pf-trilha.pf-trilha-flags { flex: 0 0 84px; min-width: 84px; }
 .pf-trilha-flags .pf-legenda { font-size: 10px; }
 .pf-trilha { flex: 1 1 0; min-width: 120px; border-left: 1px solid var(--linha); display: flex; flex-direction: column; }
 .pf-trilha:first-child { border-left: 0; }
 .pf-eixo { flex: 0 0 64px; min-width: 64px; }
-.pf-cab-trilha { min-height: 64px; padding: 4px 6px; border-bottom: 1px solid var(--linha); display: flex; flex-direction: column; justify-content: flex-end; gap: 2px; font-size: 11px; color: var(--suave); background: var(--fundo); }
-.pf-legenda { display: flex; justify-content: space-between; gap: 4px; font: 10.5px var(--mono); padding-bottom: 1px; }
-.pf-legenda strong { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pf-cab-trilha { min-height: 64px; box-sizing: border-box; padding: 4px 6px; border-bottom: 1px solid var(--linha); display: flex; flex-direction: column; justify-content: flex-end; gap: 2px; font-size: 11px; color: var(--suave); background: var(--fundo); }
+.pf-legenda { display: grid; gap: 0; font: 10.5px var(--mono); padding-bottom: 1px; }
+.pf-legenda strong { font-weight: 600; text-align: center; overflow-wrap: anywhere; line-height: 1.25; }
+.pf-escala { display: flex; justify-content: space-between; gap: 4px; font-size: 10px; opacity: .9; }
+.pf-trilha-flags .pf-legenda strong { text-align: left; }
 .pf-trilha canvas { display: block; cursor: crosshair; }
 .pf-dica { margin: 6px 0 14px; font-size: 12px; }
 .pf-leitura { position: fixed; z-index: 1000; pointer-events: none; background: rgba(28, 34, 39, .9); color: #fff; font: 11.5px var(--mono); padding: 4px 8px; border-radius: 4px; max-width: 520px; }
@@ -1036,3 +1038,32 @@ html[data-tema="escuro"] .pal:hover { background: #26324a; }
 .bl-leg-trilha[hidden] { display: none; }
 .bl-guia-lista .g-cab strong { flex: 1; text-align: left; }
 .bl-guia .linha { flex-direction: column; align-items: flex-start; gap: 4px; }
+
+/* ---------- figuras como papel (0.33) ----------
+   Visor do bloco, figura da seção, trilhas dos perfis, página do documento e legendas do mapa
+   ficam em fundo branco em qualquer tema, como as figuras exportadas. Dentro delas, as cores
+   de texto e linha voltam às do tema claro — no escuro o texto ficava claro sobre branco. */
+.bl-visor, .sec-figura, .pf-trilhas, .v-folha, .pg-quadro, .mapa-legenda, .bl-leg-trilha, .bl-escala, .sec-mini {
+  --fundo: #f6f5f1; --painel: #ffffff; --painel2: #f5f7f9; --tinta: #1c2227; --suave: #5f6b73; --linha: #dcdad3;
+  --campo: #ffffff; --destaque: #0e5a62; --destaque-claro: #e3efef; --erro: #a3342b; --ok: #2f7d4f;
+  color: var(--tinta); color-scheme: light;
+}
+
+/* ---------- perfis: seleção, busca, sugestão, nota do AGP (0.33) ---------- */
+.pf-faixa-sel { position: absolute; left: 0; z-index: 3; pointer-events: none; background: rgba(255, 200, 40, .22);
+  border-top: 1.5px solid #c99400; border-bottom: 1.5px solid #c99400; }
+.pf-faixa-sel[hidden] { display: none; }
+.pf-faixa-rotulo { position: sticky; left: 70px; display: inline-block; margin: 2px 0 0 70px; font: 600 11px var(--mono);
+  color: #5c4300; background: rgba(255, 255, 255, .9); padding: 1px 6px; border-radius: 3px; white-space: nowrap; }
+#pf-busca { width: 100%; margin: 8px 0 2px; font: 12.5px var(--sans); padding: 6px 9px; border: 1px solid var(--linha); border-radius: 6px; background: var(--campo); color: var(--tinta); }
+#pf-busca-n { margin: 2px 0 4px; }
+.pf-sugerir { display: grid; gap: 4px; margin: 6px 0 8px; }
+.pf-sugerir label { display: grid; gap: 3px; font-size: 12px; color: var(--suave); }
+.pf-sugerir select { font: 12.5px var(--sans); padding: 5px 6px; border: 1px solid var(--linha); border-radius: 6px; background: var(--campo); color: var(--tinta); }
+.pf-sugerir p { margin: 0; font-size: 11.5px; }
+.nota-agp { font-size: 12px; margin: 4px 0 10px; }
+.nota-agp > summary { cursor: pointer; color: var(--destaque); }
+.nota-agp-texto p, .nota-agp-texto ul { margin: 6px 0; }
+.nota-agp-texto ul { padding-left: 18px; display: grid; gap: 4px; }
+.nota-agp-cap { caption-side: bottom; text-align: left; padding-top: 6px; }
+td.ql-questionavel { color: var(--erro); font-weight: 600; }

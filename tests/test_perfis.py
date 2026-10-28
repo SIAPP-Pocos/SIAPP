@@ -133,3 +133,18 @@ def test_ponte_perfil(api, tmp_path):
     assert api.curvas_perfil(rel)["fatos"][0]["nome"] == "Açu"
     assert api.ficha_poco("7-GMR-13-RN")["curvas"]
     assert api.remover_fato(s["fato"]["id"])["ok"]
+
+
+def test_sugerir_curvas_por_objetivo(tmp_path, cl):
+    f = tmp_path / "poco.las"
+    las_exemplo(f)
+    inv = mpf.inventariar(str(f), cl, str(tmp_path / "cache"))
+    s = mpf.sugerir_curvas(inv, cl, "saturacao")
+    assert [c["mnemonico"] for c in s["curvas"]] == ["ILD", "GR"]          # na ordem do objetivo
+    assert {x["familia"] for x in s["faltam"]} == {"RES_MED", "RES_RASA", "RHOB", "NPHI"}
+    assert "Archie" in s["porque"] and s["nome"].startswith("Saturação")
+    assert [c["mnemonico"] for c in mpf.sugerir_curvas(inv, cl, "porosidade")["curvas"]] == []
+    with pytest.raises(ValueError):
+        mpf.sugerir_curvas(inv, cl, "magia")
+    for ob in mpf.OBJETIVOS.values():
+        assert all(f in cl.familias for f in ob["familias"]), ob["nome"]

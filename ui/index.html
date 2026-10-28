@@ -715,10 +715,17 @@
       <section class="etapa" id="pf-curvas-box" hidden>
         <h2>Curvas <span class="contagem" id="pf-n-sel">0</span></h2>
         <p class="ajuda">Marque as curvas para o gráfico e a exportação. Com cor: famílias reconhecidas.</p>
+        <div class="pf-sugerir">
+          <label>Sugerir para
+            <select id="pf-objetivo"><option value="">— escolha um objetivo —</option></select></label>
+          <p class="ajuda" id="pf-sugestao" hidden></p>
+        </div>
         <div class="linha">
           <button class="btn secundario pequeno" id="pf-padrao" title="Uma curva de cada família">Visão padrão</button>
           <button class="btn secundario pequeno" id="pf-limpar">Desmarcar</button>
         </div>
+        <input id="pf-busca" type="search" autocomplete="off" placeholder="Buscar curva: mnemônico ou descrição (ex.: GR, densidade)">
+        <p class="ajuda" id="pf-busca-n" hidden></p>
         <div id="pf-curvas"></div>
       </section>
     </aside>
@@ -746,7 +753,12 @@
         </div>
         <p class="pg-aviso" id="pf-aviso" hidden></p>
         <div class="pf-trilhas" id="pf-trilhas"></div>
-        <p class="ajuda pf-dica">Roda do mouse: rolar · Ctrl + roda: aproximar · arraste na vertical: marcar um intervalo.</p>
+        <p class="ajuda pf-dica">Roda do mouse: rolar · Ctrl + roda: aproximar · arraste na vertical: marcar um intervalo.
+          Linhas verdes tracejadas: topos do AGP (passe o mouse no eixo de profundidade).</p>
+        <details class="nota-agp" id="pf-nota-agp" hidden>
+          <summary>O que são "fonte" e "qualidade" dos topos do AGP (ex.: "AGP antigo", "questionável")?</summary>
+          <div class="nota-agp-texto"></div>
+        </details>
         <div class="pf-ferramentas">
           <section class="cartao">
             <h3>Intervalo-alvo ou topo de formação</h3>

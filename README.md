@@ -2,7 +2,7 @@
 
 [![testes](https://github.com/SIAPP-Pocos/siapp/actions/workflows/testes.yml/badge.svg)](https://github.com/SIAPP-Pocos/siapp/actions/workflows/testes.yml)
 [![licença: AGPL-3.0](https://img.shields.io/badge/licen%C3%A7a-AGPL--3.0-blue)](LICENSE)
-![versão](https://img.shields.io/badge/vers%C3%A3o-0.32.0-informational)
+![versão](https://img.shields.io/badge/vers%C3%A3o-0.33.0-informational)
 
 Ferramenta aberta para transformar o acervo **público** de dados de poços da ANP
 (portal [REATE](https://reate.cprm.gov.br/anp/TERRESTRE), ANP/CPRM) em dados
@@ -130,6 +130,8 @@ Os testes não acessam a internet: o portal REATE, o GitHub e a ANP são simulad
 inclusive com falhas (conexão caindo, servidor que ignora retomada, arquivo truncado).
 Os testes da interface abrem `ui/` num Chromium sem tela, ligado à API Python de verdade;
 rodam se o Playwright estiver instalado (`pip install playwright && playwright install chromium`).
+Para conferir o modo escuro tela por tela: `SIAPP_ESCURO=pasta pytest tests/test_interface.py` roda a interface no
+tema escuro e salva uma captura de cada teste na pasta.
 Para conferir a leitura de um DLIS real: `SIAPP_DLIS_REAL=caminho/do/arquivo.dlis pytest -k real`. Contribuições:
 [`CONTRIBUTING.md`](CONTRIBUTING.md). Histórico: [`CHANGELOG.md`](CHANGELOG.md).
 

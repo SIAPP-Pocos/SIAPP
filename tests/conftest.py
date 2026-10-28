@@ -96,7 +96,7 @@ def navegador():
 
 
 @pytest.fixture
-def janela(tmp_path, monkeypatch, navegador):
+def janela(tmp_path, monkeypatch, navegador, request):
     """Interface real (ui/) num Chromium sem tela, ligada à API Python."""
     import siapp
     from ponte import base
@@ -104,9 +104,17 @@ def janela(tmp_path, monkeypatch, navegador):
 
     pasta = tmp_path / "ambiente_teste"
     monkeypatch.setattr(base, "PASTA_PROJETO", str(pasta))
+    if os.environ.get("SIAPP_ESCURO"):
+        pasta.mkdir(parents=True, exist_ok=True)
+        (pasta / "preferencias.json").write_text('{"tema": "escuro", "abrir_ao_iniciar": false}', encoding="utf-8")
     a = siapp.API()
     a._janela = JanelaFalsa(str(pasta))
     jt, srv = abrir(a, navegador)
     yield jt
+    if os.environ.get("SIAPP_ESCURO"):
+        try:
+            jt.page.screenshot(path=os.path.join(os.environ["SIAPP_ESCURO"], request.node.name + ".png"))
+        except Exception:
+            pass
     jt.page.close()
     srv.httpd.shutdown()
