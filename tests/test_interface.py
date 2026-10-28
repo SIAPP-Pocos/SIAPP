@@ -1412,3 +1412,50 @@ def test_modo_escuro_texto_escuro_nas_figuras(janela, tmp_path):
     assert p.evaluate("getComputedStyle(document.body).color") != claro       # fora das figuras, o tema escuro
     for sel in ("#bl-visor", "#sec-figura", "#pf-trilhas", "#pg-quadro"):
         assert cor(sel) == claro, sel
+
+
+# ---------------------------------------------------------------- 0.34: mapa e seção
+def test_mapa_legenda_destaque_producao_e_secao_pela_linha(janela):
+    from test_pocos import csv_exemplo
+    from test_secao import poco
+    p = janela.page
+    abrir_projeto(janela)
+    janela.api._importar_cadastro(csv_exemplo(), "anp:teste")
+    b = janela.api._banco
+    for pid, lon in [("1-OES-1-RN", -36.80), ("1-MEI-1-RN", -36.75), ("1-LES-1-RN", -36.70)]:
+        poco(b, pid, -5.30, lon, 40.0, [("F", "JANDAI", 10, 300), ("F", "ACU", 300, 700)], prof_final=900)
+    p.click("#aba-mapa")
+    janela.esperar("document.getElementById('mapa-resumo').textContent.includes('poço')")
+    p.select_option("#f-bacia", "")
+    janela.esperar("document.getElementById('mapa-resumo').textContent.includes('6 poço')")
+    assert p.evaluate("camadaPocos.getLayers().length") == 6
+    # legenda: um clique esconde a categoria; a lista diz quantos ficaram escondidos
+    assert "(6)" in p.text_content("#legenda-pasta [data-cat='cad']")
+    p.click("#legenda-pasta [data-cat='cad']")
+    janela.esperar("camadaPocos.getLayers().length === 0")
+    assert "desligado" in p.get_attribute("#legenda-pasta [data-cat='cad']", "class")
+    assert "escondido" in p.text_content("#lista-mapa")
+    p.click("#legenda-pasta [data-cat='cad']")
+    janela.esperar("camadaPocos.getLayers().length === 6")
+    # destacar poços
+    p.fill("#dq-poco", "1-OES-1-RN, 1-NAO-9-XX")
+    p.click("#dq-form button[type=submit]")
+    janela.esperar("camadaDestaques.getLayers().length === 1")
+    assert "1-OES-1-RN" in p.text_content("#dq-chips") and "1-NAO-9-XX" in janela.status()
+    # ficha: produção (campo ainda não baixado → atalho para Dados › Produção)
+    p.evaluate("abrirFicha('1-OES-1-RN')")
+    janela.esperar("document.getElementById('fi-corpo').textContent.includes('Produção (ANP)')")
+    assert "ainda não foi baixada" in p.text_content("#fi-corpo")
+    p.click("#fi-fechar")
+    # seção por uma linha desenhada no mapa
+    p.click("#btn-mapa-linha")
+    assert p.is_visible("#mapa-linha")
+    p.evaluate("mapa.fire('click', {latlng: L.latLng(-5.30, -36.81)}); mapa.fire('click', {latlng: L.latLng(-5.30, -36.69)})")
+    p.click("#ml-concluir")
+    janela.esperar("document.getElementById('ml-resumo').textContent.includes('3 poço')")
+    assert p.locator("#ml-lista li").count() == 3 and not p.is_disabled("#ml-abrir")
+    p.click("#ml-abrir")
+    janela.esperar("!document.getElementById('sec-painel').hidden", 30)
+    assert p.evaluate("sec.pocos") == ["1-OES-1-RN", "1-MEI-1-RN", "1-LES-1-RN"]
+    assert "linha desenhada no mapa" in p.text_content("#sec-corredor-res")
+    assert not janela.erros_js, janela.erros_js

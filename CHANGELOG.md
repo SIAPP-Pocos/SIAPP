@@ -6,6 +6,21 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 
 ## [Não lançado]
 
+## [0.34.0] — 2026-10-28
+Bloco 6 do teste da 0.29: Mapa e Seção.
+### Adicionado
+- **Legenda do mapa clicável**: um clique esconde ou mostra a categoria (só no cadastro, pasta no REATE, arquivos
+  baixados; ou as do levantamento do acervo), dois cliques mostram só ela; "com dados transcritos" filtra só esses.
+  A legenda mostra quantos poços há em cada categoria, e a lista avisa quantos estão escondidos.
+- **Destacar poços**: um ou vários (pela barra lateral ou "Destacar no mapa" na ficha), com a cor escolhida,
+  maiores e com o nome sempre à vista — mesmo fora do filtro. Enquadrar e limpar.
+- **Produção na ficha do poço** (dados abertos da ANP já baixados do campo): período, primeiro e último mês
+  produzindo, acumulados de óleo, gás, água e condensado, injeção, último mês, zonas e uma linha mensal de cada
+  fluido. Sem a produção do campo, a ficha leva a Dados › Produção da ANP já no campo.
+- **Seção pela linha desenhada no mapa**: cliques marcam A, os pontos intermediários (com curvas) e B; o mapa mostra
+  a faixa de busca e numera os poços com topos no AGP ao longo da linha; "Abrir na Seção" monta a seção nessa ordem.
+  Atalho também na aba Seção.
+
 ## [0.33.0] — 2026-10-28
 Bloco 5 do teste da 0.29 (Perfis) e as cores do modo escuro.
 ### Adicionado

@@ -480,6 +480,49 @@ def resumo(banco: Banco, campo: str) -> dict:
             "zona": dict(z) if z and z["linhas"] else None, "zonas": zonas, "ficha": campo_guardado(banco, campo)}
 
 
+def do_poco(banco: Banco, poco_id: str, campo: str | None = None) -> dict:
+    """Produção e injeção de um poço (ficha do Mapa), com os dados abertos da ANP já baixados:
+    série mensal (somando as instalações), acumulados, primeiro e último mês com produção e
+    as zonas. `situacao`: "ok" | "campo_sem_poco" (o campo foi baixado, o poço não aparece) |
+    "campo_nao_baixado" | "sem_campo"."""
+    soma = ", ".join(f"SUM({k}) AS {k}" for k in VOLUMES_POCO)
+    with banco.conexao() as c:
+        meses = [dict(r) for r in c.execute(
+            f"SELECT periodo, {soma} FROM producao_poco WHERE poco_id = ? GROUP BY periodo ORDER BY periodo",
+            (poco_id,))]
+        campos = [r[0] for r in c.execute("SELECT DISTINCT campo FROM producao_poco WHERE poco_id = ?", (poco_id,))]
+        zonas = [dict(r) for r in c.execute(
+            "SELECT zona, MIN(periodo) AS de, MAX(periodo) AS ate, SUM(oleo_m3) AS oleo_m3, "
+            "SUM(COALESCE(gas_assoc_mil_m3, 0) + COALESCE(gas_nassoc_mil_m3, 0)) AS gas_mil_m3, SUM(agua_m3) AS agua_m3 "
+            "FROM producao_zona WHERE poco_id = ? GROUP BY zona ORDER BY oleo_m3 DESC", (poco_id,))]
+    if not meses:
+        if not campo:
+            situacao = "sem_campo"
+        else:
+            situacao = "campo_sem_poco" if campo_guardado(banco, campo) or _tem_producao(banco, campo) else "campo_nao_baixado"
+        return {"situacao": situacao, "campo": campo or "", "meses": [], "zonas": zonas}
+
+    def total(k):
+        v = [m[k] for m in meses if m[k] is not None]
+        return round(sum(v), 3) if v else None
+    prod = [m for m in meses if (m["oleo_m3"] or 0) + (m["condensado_m3"] or 0) + (m["gas_assoc_mil_m3"] or 0)
+            + (m["gas_nassoc_mil_m3"] or 0) > 0]
+    inj = [m for m in meses if any((m[k] or 0) > 0 for k in VOLUMES_POCO if k.startswith("inj_"))]
+    acum = {k: total(k) for k in VOLUMES_POCO}
+    gas = sum(v for v in (acum["gas_assoc_mil_m3"], acum["gas_nassoc_mil_m3"]) if v) or None
+    return {"situacao": "ok", "campo": campo or (campos[0] if campos else ""), "campos": campos,
+            "de": meses[0]["periodo"], "ate": meses[-1]["periodo"], "n_meses": len(meses),
+            "primeira_producao": prod[0]["periodo"] if prod else None,
+            "ultima_producao": prod[-1]["periodo"] if prod else None,
+            "injetor": bool(inj), "acumulado": {**acum, "gas_total_mil_m3": gas},
+            "ultimo_mes": meses[-1], "meses": meses, "zonas": zonas}
+
+
+def _tem_producao(banco: Banco, campo: str) -> bool:
+    with banco.conexao() as c:
+        return c.execute("SELECT 1 FROM producao_poco WHERE campo = ? LIMIT 1", (chave_campo(campo),)).fetchone() is not None
+
+
 def linhas_csv(banco: Banco, campo: str) -> tuple[list[str], list[list]]:
     cols = ["poco_anp", "poco_id", "periodo", "instalacao", *VOLUMES_POCO, "arquivo"]
     with banco.conexao() as c:

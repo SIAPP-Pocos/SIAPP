@@ -131,6 +131,20 @@ Precisa de internet. Comece por uma categoria pequena para ver o tempo.
 - [ ] Sem intervalo marcado, **Calcular** explica que precisa de um intervalo-alvo.
 - [ ] Repetir no `5PX__0011__RN_5PX__0011__RN.tif` (DLIS de 2020).
 
+## 0.34 — mapa e seção
+
+- [ ] Mapa, bacia Potiguar: clique em "só no cadastro" na legenda — esses poços somem (a legenda fica riscada e a lista
+      diz quantos estão escondidos). Clique de novo: voltam. Dois cliques em "pasta no REATE": só esses. Clique em
+      "com dados transcritos": só os que têm dados.
+- [ ] **Destacar poços**: digite `7-GMR-13-RN, 1-AURI-12-RN`, escolha uma cor e "Destacar": ficam grandes, com o nome.
+      Mude o filtro: continuam. "Enquadrar" e "Limpar".
+- [ ] Ficha de um poço de Guamaré (com a produção do campo baixada em Dados › Produção da ANP): **Produção (ANP)** com
+      acumulados e as linhas mensais de óleo, gás e água. Num poço de campo sem produção baixada: o atalho para baixar.
+- [ ] **Desenhar a linha da seção**: clique A, um ponto no meio (faça uma curva) e B; dois cliques terminam. Os poços com
+      topos aparecem numerados ao longo da linha. Mude a distância (km): a lista muda. **Abrir na Seção**: a seção monta
+      na ordem da linha.
+- [ ] Aba Seção › "desenhe a linha no mapa": vai para o Mapa já no modo de desenhar. Esc cancela.
+
 ## 0.33 — perfis e modo escuro
 
 - [ ] Configurações › modo **escuro**. Mapa (legenda embaixo), Seção (figura e tabela), Bloco 3D (nomes dos poços,

@@ -24,6 +24,14 @@ async function carregarProducao() {
   if ($("pr-campo").value) mostrarResumoProducao();
 }
 
+// Da ficha do poço (Mapa): abre Dados › Produção da ANP já no campo do poço.
+function abrirProducaoCampo(campo) {
+  if (!campo) return;
+  $("pr-campo").value = campo;
+  $("pr-campo").dataset.doBloco = "0";
+  mostrarResumoProducao();
+}
+
 async function mostrarResumoProducao() {
   const campo = $("pr-campo").value.trim();
   if (!campo) { limpar($("pr-resumo")); $("pr-csv").hidden = true; return; }

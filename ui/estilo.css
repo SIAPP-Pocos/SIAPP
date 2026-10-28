@@ -467,6 +467,12 @@ input[type=text], input[type=number] {
   background: rgba(255, 255, 255, .92); border: 1px solid var(--linha); border-radius: 6px; padding: 6px 10px; font-size: 12px;
 }
 .mapa-legenda span { display: inline-flex; align-items: center; gap: 5px; }
+.mapa-legenda button { display: inline-flex; align-items: center; gap: 5px; border: 0; background: none; padding: 2px 4px;
+  border-radius: 4px; cursor: pointer; font: inherit; color: var(--tinta); }
+.mapa-legenda button:hover { background: var(--fundo); }
+.mapa-legenda button.desligado { opacity: .38; text-decoration: line-through; }
+.mapa-legenda button.ligado { outline: 1.5px solid #5b2f8f; }
+.mapa-legenda .n { color: var(--suave); font-size: 11px; }
 .bola { display: inline-block; width: 10px; height: 10px; border-radius: 50%; flex: none; }
 .bola.cad { background: #9aa3a8; }
 .bola.reate { background: #0e5a62; }
@@ -1067,3 +1073,39 @@ html[data-tema="escuro"] .pal:hover { background: #26324a; }
 .nota-agp-texto ul { padding-left: 18px; display: grid; gap: 4px; }
 .nota-agp-cap { caption-side: bottom; text-align: left; padding-top: 6px; }
 td.ql-questionavel { color: var(--erro); font-weight: 600; }
+
+/* ---------- mapa: destaque, linha da seção, produção na ficha (0.34) ---------- */
+.rot-destaque { font: 600 11px var(--sans); padding: 1px 5px; }
+.mapa-div.desenhando, .mapa-div.desenhando .leaflet-interactive { cursor: crosshair; }
+.mapa-linha {
+  position: absolute; right: 12px; top: 64px; z-index: 460; width: 300px; max-height: calc(100% - 100px); overflow: auto;
+  background: var(--painel); color: var(--tinta); border: 1px solid var(--linha); border-radius: 8px; padding: 10px 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, .18); display: block; font-size: 12.5px; overflow-x: hidden;
+}
+.mapa-linha > * + * { margin-top: 6px; }
+.mapa-linha label { display: inline-flex; gap: 4px; align-items: center; font-size: 12px; color: var(--suave); }
+.mapa-linha .linha { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.mapa-linha .btn { width: auto; }
+#ml-abrir { width: 100%; }
+.mapa-linha[hidden] { display: none; }
+.ml-cab { display: flex; align-items: center; gap: 8px; }
+.ml-cab .fechar { margin-left: auto; }
+.mapa-linha p { margin: 0; }
+.ml-lista { margin: 0; padding-left: 22px; font: 11px var(--mono); max-height: 220px; overflow: auto; overflow-wrap: anywhere; }
+.ml-lista li + li { margin-top: 2px; }
+.ml-ponto span, .ml-poco span {
+  display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; font: 700 11px var(--sans);
+  background: #1c2227; color: #fff; border: 2px solid #fff; box-shadow: 0 0 0 1px #1c2227;
+}
+.ml-poco span { width: 18px; height: 18px; background: #e0218a; font-size: 10px; }
+.ficha-producao { display: grid; gap: 4px; margin: 6px 0; padding: 8px; border: 1px solid var(--linha); border-radius: 6px;
+  background: #fff; color: #1c2227; }
+.ficha-producao .ajuda { color: #5f6b73; margin: 2px 0 0; font-size: 11px; }
+.fp-linha { display: grid; grid-template-columns: 110px minmax(0, 1fr) auto; gap: 8px; align-items: center; font-size: 11.5px; }
+.fp-max { font: 11px var(--mono); color: #5f6b73; }
+.spark { width: 100%; height: 46px; display: block; border-bottom: 1px solid #e6e4dd; }
+#dq-form input[type=text] { flex: 1; min-width: 0; }
+#dq-form input[type=color] { width: 34px; height: 30px; padding: 0; border: 1px solid var(--linha); border-radius: 6px; background: none; }
+#dq-chips .chip-dic { gap: 6px; }
+#dq-chips .link { font-size: 12px; }
+#ml-largura { width: 56px; flex: none; }

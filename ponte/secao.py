@@ -36,6 +36,15 @@ class SecaoAPI:
         return r
 
     @resposta_segura
+    def secao_linha(self, pontos: list, largura_km=2.0):
+        """Poços com topos perto de uma linha desenhada no mapa ([[lat, lon], …])."""
+        self._exigir_projeto()
+        try:
+            return msc.corredor_linha(self._banco, pontos, float(str(largura_km).replace(",", ".")))
+        except (msc.ErroSecao, ValueError, TypeError) as e:
+            raise ErroUsuario(str(e)) from e
+
+    @resposta_segura
     def secao_unidades(self, pocos: list):
         """Unidades litoestratigráficas dos poços (para escolher o datum)."""
         self._exigir_projeto()

@@ -84,7 +84,7 @@ function preferenciasMudaram(p) {
 
 // ---------------------------------------------------------------- abas e layout
 function normalizarAba(qual) {
-  if (qual === "catalogo") { ui.subDados = "catalogo"; return "dados"; }
+  if (["catalogo", "cadastro", "levantamento", "producao", "camadas"].includes(qual)) { ui.subDados = qual; return "dados"; }
   if (qual === "secao" || qual === "bloco") { ui.subInterp = qual; return "interp"; }
   if (qual === "inicio") return "projeto";
   return ABAS_SIAPP.includes(qual) ? qual : "projeto";

@@ -327,6 +327,26 @@
         <p class="ajuda" id="mapa-resumo"></p>
       </section>
       <section class="etapa">
+        <h2>Destacar poços</h2>
+        <p class="ajuda">Poços escolhidos ficam maiores, com a cor e o nome sempre à vista (também pela ficha: "Destacar").</p>
+        <form class="linha" id="dq-form">
+          <input type="text" id="dq-poco" list="dq-lista-pocos" placeholder="poço(s): ex.: 7-GMR-13-RN, 1-AURI-12-RN" autocomplete="off">
+          <input type="color" id="dq-cor" value="#e0218a" title="Cor do destaque">
+          <button class="btn secundario pequeno" type="submit">Destacar</button>
+        </form>
+        <datalist id="dq-lista-pocos"></datalist>
+        <div class="chips" id="dq-chips"></div>
+        <div class="linha" id="dq-acoes" hidden>
+          <button type="button" class="btn secundario pequeno" id="dq-enquadrar">Enquadrar</button>
+          <button type="button" class="btn secundario pequeno" id="dq-limpar">Limpar</button>
+        </div>
+      </section>
+      <section class="etapa">
+        <h2>Seção pelo mapa</h2>
+        <p class="ajuda">Desenhe uma linha no mapa: o SIAPP mostra os poços com topos no AGP perto dela e abre a seção.</p>
+        <button type="button" class="btn secundario" id="btn-mapa-linha">Desenhar a linha da seção</button>
+      </section>
+      <section class="etapa">
         <h2>Camadas no mapa</h2>
         <p class="ajuda">As camadas baixadas na aba Dados › Camadas geográficas.</p>
         <div class="cm-mapa" id="cm-mapa"></div>
@@ -335,18 +355,34 @@
     </aside>
     <section class="principal mapa-principal">
       <div id="mapa" class="mapa-div"></div>
-      <div class="mapa-legenda" id="legenda-pasta">
-        <span><i class="bola cad"></i>só no cadastro</span>
-        <span><i class="bola reate"></i>pasta no REATE</span>
-        <span><i class="bola baixado"></i>arquivos baixados</span>
-        <span><i class="bola fatos"></i>com dados transcritos</span>
+      <div class="mapa-legenda" id="legenda-pasta" title="Clique para esconder ou mostrar; dois cliques: só esta">
+        <button type="button" data-cat="cad"><i class="bola cad"></i>só no cadastro <span class="n"></span></button>
+        <button type="button" data-cat="reate"><i class="bola reate"></i>pasta no REATE <span class="n"></span></button>
+        <button type="button" data-cat="baixado"><i class="bola baixado"></i>arquivos baixados <span class="n"></span></button>
+        <button type="button" data-cat="fatos" title="Clique: só os poços com dados transcritos"><i class="bola fatos"></i>com dados transcritos <span class="n"></span></button>
       </div>
-      <div class="mapa-legenda" id="legenda-acervo" hidden>
-        <span><i class="bola ac-digital"></i>perfil digital</span>
-        <span><i class="bola ac-imagem"></i>só imagem</span>
-        <span><i class="bola ac-sem_perfil"></i>sem perfil</span>
-        <span><i class="bola ac-pendente"></i>falta conferir</span>
-        <span><i class="bola cad"></i>não levantado</span>
+      <div class="mapa-legenda" id="legenda-acervo" hidden title="Clique para esconder ou mostrar; dois cliques: só esta">
+        <button type="button" data-cat="digital"><i class="bola ac-digital"></i>perfil digital <span class="n"></span></button>
+        <button type="button" data-cat="imagem"><i class="bola ac-imagem"></i>só imagem <span class="n"></span></button>
+        <button type="button" data-cat="sem_perfil"><i class="bola ac-sem_perfil"></i>sem perfil <span class="n"></span></button>
+        <button type="button" data-cat="pendente"><i class="bola ac-pendente"></i>falta conferir <span class="n"></span></button>
+        <button type="button" data-cat="nao"><i class="bola cad"></i>não levantado <span class="n"></span></button>
+      </div>
+      <div class="mapa-linha" id="mapa-linha" hidden>
+        <div class="ml-cab">
+          <strong>Seção por uma linha no mapa</strong>
+          <button type="button" class="fechar" id="ml-fechar" aria-label="Fechar">×</button>
+        </div>
+        <p class="ajuda" id="ml-instrucao">Clique no mapa para marcar os pontos da linha (A, depois B; pode fazer curvas).
+          Dois cliques ou "Concluir" terminam. Esc cancela.</p>
+        <div class="linha">
+          <label>Até <input type="text" id="ml-largura" class="curto" value="2" inputmode="decimal"> km da linha</label>
+          <button type="button" class="btn secundario pequeno" id="ml-concluir">Concluir</button>
+          <button type="button" class="btn secundario pequeno" id="ml-refazer">Refazer</button>
+        </div>
+        <p class="ajuda" id="ml-resumo"></p>
+        <ol class="ml-lista" id="ml-lista"></ol>
+        <button type="button" class="btn" id="ml-abrir" disabled>Abrir na Seção</button>
       </div>
       <div class="vazio mapa-vazio" id="mapa-vazio">
         <p class="vazio-titulo">Mapa dos poços</p>
@@ -882,6 +918,8 @@
         </div>
         <button class="btn secundario" id="sec-corredor">Buscar poços na linha</button>
         <p class="ajuda resultado" id="sec-corredor-res"></p>
+        <p class="ajuda">Ou <button type="button" class="link" id="sec-no-mapa">desenhe a linha no mapa</button>
+          — com curvas, se precisar.</p>
       </section>
       <section class="etapa">
         <h2>Desenho</h2>

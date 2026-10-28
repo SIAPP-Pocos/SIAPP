@@ -41,6 +41,16 @@ O quadro mostra o que foi guardado, sem contas: soma do período por fluido, o �
 publicado (poços produzindo e injetando), as zonas e os números do PD (in place, acumulada,
 poços, reservatórios).
 
+## Produção na ficha do poço (0.34)
+
+A ficha do poço (aba Mapa) mostra a produção dele com o que já foi baixado do campo: período,
+primeiro e último mês produzindo, acumulados de óleo, gás (associado + não associado), água e
+condensado, injeção acumulada (se for injetor), o último mês e as zonas, com uma linha mensal
+de cada fluido. Os números são os da ANP somados por mês (as instalações de um mesmo mês se
+somam), sem outra conta (`motor/producao.py:do_poco`). Se o campo ainda não foi baixado, a
+ficha diz isso e leva a Dados › Produção da ANP já no campo; se foi baixado e o poço não
+aparece, é porque não produziu no período baixado.
+
 ## Um campo, um clique
 
 Em **Poços do bloco**, com "os poços de um campo": escolher o campo já traz os poços, e

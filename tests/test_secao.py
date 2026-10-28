@@ -201,3 +201,19 @@ def test_padroes_litologicos():
     assert cl.marcas("pontos", 0, 0, 26, 1.0) == ("", "")       # camada fina: só a cor
     assert cl.simbolo_poco(0, 0, "seco").count("<line") == 4 and cl.simbolo_poco(0, 0, "gas").count("<line") == 8
     assert ms._classe_poco("PRODUTOR DE OLEO E GAS") == "oleo_gas" and ms._classe_poco("SECO") == "seco"
+
+
+def test_corredor_por_linha_desenhada_no_mapa(banco):
+    # linha O→L pela latitude dos três poços: os três, na ordem; o do sul fica de fora
+    r = ms.corredor_linha(banco, [[-5.30, -36.81], [-5.30, -36.69]], largura_km=2.0)
+    assert [p["id"] for p in r["pocos"]] == ["1-OES-1-RN", "1-MEI-1-RN", "1-LES-1-RN"]
+    assert r["encontrados"] == 3 and r["comprimento_km"] == pytest.approx(13.3, abs=0.2)
+    assert [p["id"] for p in r["todos"]] == [p["id"] for p in r["pocos"]]
+    # com uma curva: desce até o poço do sul depois do do meio
+    r = ms.corredor_linha(banco, [[-5.30, -36.81], [-5.30, -36.75], [-5.41, -36.75]], largura_km=1.0)
+    assert [p["id"] for p in r["pocos"]] == ["1-OES-1-RN", "1-MEI-1-RN", "1-LON-1-RN"]
+    for ruim in ([[-5.3, -36.8]], [[-5.3, -36.8], [-5.3, -36.8]]):
+        with pytest.raises(ms.ErroSecao):
+            ms.corredor_linha(banco, ruim)
+    with pytest.raises(ms.ErroSecao):
+        ms.corredor_linha(banco, [[-5.30, -36.81], [-5.30, -36.69]], largura_km=0)

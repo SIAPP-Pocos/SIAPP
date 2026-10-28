@@ -333,3 +333,15 @@ def test_distancia_area_bate_com_forca_bruta():
     A, B = densa(anel), densa(linha)
     bruto = min(mvi.haversine_km(a[1], a[0], b[1], b[0]) for a in A[::3] for b in B[::3])
     assert not toca and km == pytest.approx(bruto, abs=0.5) and km <= bruto + 1e-6
+
+
+def test_producao_de_um_poco_para_a_ficha(tmp_path):
+    b = Banco(str(tmp_path / "p.sqlite"))
+    assert mpr.do_poco(b, "1-AA-1-RN", None)["situacao"] == "sem_campo"
+    assert mpr.do_poco(b, "1-AA-1-RN", "CAMPO TESTE")["situacao"] == "campo_nao_baixado"
+    mpr.baixar(b, str(tmp_path), "Campo Teste", sessao=SessaoFalsa())
+    d = mpr.do_poco(b, "1-AA-1-RN", "CAMPO TESTE")
+    assert d["situacao"] == "ok" and d["meses"] and d["de"] <= d["ate"]
+    assert d["acumulado"]["oleo_m3"] == pytest.approx(sum(m["oleo_m3"] or 0 for m in d["meses"]))
+    assert d["ultimo_mes"]["periodo"] == d["ate"] and d["n_meses"] == len(d["meses"])
+    assert mpr.do_poco(b, "9-NAO-9-RN", "CAMPO TESTE")["situacao"] == "campo_sem_poco"

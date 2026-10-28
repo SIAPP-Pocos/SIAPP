@@ -98,6 +98,18 @@ async function buscarCorredorSecao() {
     (r.encontrados > r.pocos.length ? `; ${r.pocos.length} escolhidos, espaçados por igual.` : ".");
 }
 
+// Da linha desenhada no mapa: os poços já vêm na ordem ao longo da linha.
+async function receberPocosSecao(ids, comprimento) {
+  if (!Array.isArray(ids) || ids.length < 2) return;
+  if (!sec.disponiveis.size) await carregarSecao();
+  sec.pocos = ids.slice(0, 20);
+  $("sec-ordem").value = "lista";
+  desenharListaSecao();
+  $("sec-corredor-res").textContent = `${sec.pocos.length} poço(s) da linha desenhada no mapa` +
+    (comprimento ? ` (${numero(comprimento, 1)} km), na ordem ao longo dela.` : ".");
+  await montarSecao();
+}
+
 function opcoesSecao() {
   return {
     estilo: $("sec-estilo").value,
@@ -211,6 +223,7 @@ function ligarSecao() {
   });
   ligar("sec-limpar", "onclick", () => { sec.pocos = []; desenharListaSecao(); });
   ligar("sec-corredor", "onclick", buscarCorredorSecao);
+  ligar("sec-no-mapa", "onclick", () => irPara("mapa", "iniciarLinhaMapa"));
   ligar("sec-montar", "onclick", montarSecao);
   ligar("sec-eixo", "onchange", () => {
     $("sec-datum-box").hidden = $("sec-eixo").value !== "nivelado";

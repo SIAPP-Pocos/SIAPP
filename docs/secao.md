@@ -15,6 +15,12 @@ cadastro da ANP no mapa (coordenadas e mesa rotativa).
 - **Ao longo de uma linha**: escolha as pontas A e B e a distância máxima da linha (km).
   Entram os poços com topos que ficam entre A e B e a até essa distância; passando de 20,
   ficam 20 espaçados por igual (sempre com as pontas).
+- **Pela linha desenhada no mapa** (0.34): aba Mapa › **Desenhar a linha da seção** (ou o
+  atalho "desenhe a linha no mapa" aqui). Cliques marcam A, os pontos intermediários (a linha
+  pode fazer curvas) e B; dois cliques ou "Concluir" terminam. A faixa de busca aparece no
+  mapa; os poços com topos ficam numerados na ordem ao longo da linha (cada poço vai para o
+  trecho mais perto; fora das pontas não entra). **Abrir na Seção** leva a lista, na ordem da
+  linha, e monta a seção (`motor/secao.py:corredor_linha`).
 
 ## Opções do desenho
 

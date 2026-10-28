@@ -6,6 +6,7 @@ import os
 
 import webview
 
+from motor import producao as mprod
 from motor import agp as magp
 from motor import levantamento as mlv
 from motor import pocos as mpo
@@ -98,10 +99,26 @@ class PocosAPI:
             raise ErroUsuario(f"Poço {poco} não está no cadastro nem no catálogo deste projeto.")
         d["acervo"] = mlv.arquivos_do_poco(self._banco, pid)
         d["esquemas"] = self._esquemas(pid)
+        d["producao"] = mprod.do_poco(self._banco, pid, (d.get("poco") or {}).get("campo"))
         d["agp"] = [{"caminho": g["caminho"], "poco_pasta": g["poco_pasta"], "confere": g["confere"],
                      "arquivo_local": g["arquivo_local"], "lido_em": g["lido_em"], **g["dados"]}
                     for g in magp.do_poco(self._banco, pid)]
         return d
+
+    @resposta_segura
+    def pocos_posicoes(self, ids: list):
+        """Coordenadas de poços pelo nome (qualquer grafia): para destacar no mapa mesmo fora do filtro."""
+        self._exigir_projeto()
+        saida, faltam = [], []
+        with self._banco.conexao() as c:
+            for nome in ids[:200]:
+                pid = mpo.resolver(self._banco, str(nome).strip())
+                r = c.execute("SELECT id, lat, lon, campo FROM pocos WHERE id = ?", (pid,)).fetchone()
+                if r and r["lat"] is not None:
+                    saida.append(dict(r))
+                else:
+                    faltam.append(str(nome).strip())
+        return {"pocos": saida, "faltam": faltam}
 
     @resposta_segura
     def catalogar_bacia(self):

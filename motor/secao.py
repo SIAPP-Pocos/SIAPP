@@ -194,6 +194,53 @@ def corredor(banco: Banco, poco_a: str, poco_b: str, largura_km: float = 2.0,
     return {"pocos": escolhidos, "encontrados": len(achados), "comprimento_km": round(comp, 3)}
 
 
+def corredor_linha(banco: Banco, pontos: list, largura_km: float = 2.0, bacia: str | None = None,
+                   maximo: int = MAX_POCOS) -> dict:
+    """Poços com topos a até `largura_km` de uma linha desenhada no mapa (polilinha de
+    [lat, lon], pode ter curvas), na ordem ao longo dela. Cada poço vai para o trecho mais
+    perto; fora das pontas (projeção antes do primeiro ou depois do último ponto) não entra."""
+    pts = [(float(a), float(b)) for a, b in (pontos or [])]
+    if len(pts) < 2:
+        raise ErroSecao("Marque ao menos dois pontos (A e B).")
+    if not 0 < largura_km <= 50:
+        raise ErroSecao("Distância da linha entre 0 e 50 km.")
+    todos = pocos_com_topos(banco, bacia)
+    lats = [p["lat"] for p in todos] + [a for a, _ in pts]
+    lons = [p["lon"] for p in todos] + [b for _, b in pts]
+    x, y = _plano(lats, lons)
+    n = len(todos)
+    vx, vy = x[n:], y[n:]
+    segs, acum = [], 0.0
+    for k in range(len(pts) - 1):
+        dx, dy = float(vx[k + 1] - vx[k]), float(vy[k + 1] - vy[k])
+        comp = math.hypot(dx, dy)
+        if comp > 1e-9:
+            segs.append((float(vx[k]), float(vy[k]), dx / comp, dy / comp, comp, acum))
+            acum += comp
+    if not segs:
+        raise ErroSecao("Os pontos da linha estão no mesmo lugar.")
+    achados = []
+    for i, p in enumerate(todos):
+        melhor = None
+        for j, (ax, ay, ux, uy, comp, base) in enumerate(segs):
+            t = (x[i] - ax) * ux + (y[i] - ay) * uy
+            # pontas da linha: só dentro; entre trechos, a curva pode deixar o poço de lado
+            lo = -largura_km if 0 < j else -0.05
+            hi = comp + (largura_km if j < len(segs) - 1 else 0.05)
+            if not lo <= t <= hi:
+                continue
+            tc = min(max(t, 0.0), comp)
+            d = math.hypot(x[i] - (ax + ux * tc), y[i] - (ay + uy * tc))
+            if melhor is None or d < melhor[0]:
+                melhor = (d, base + tc)
+        if melhor and melhor[0] <= largura_km:
+            achados.append({**p, "t_km": round(melhor[1], 3), "dist_linha_km": round(melhor[0], 3)})
+    achados.sort(key=lambda p: p["t_km"])
+    escolhidos = _subamostrar(achados, maximo)
+    return {"pocos": escolhidos, "encontrados": len(achados), "comprimento_km": round(acum, 3),
+            "todos": [{k: p[k] for k in ("id", "lat", "lon", "t_km", "dist_linha_km")} for p in achados]}
+
+
 def _mesa(cab: dict, cadastro: dict | None, unidades: list[dict]) -> float | None:
     for v in (cab.get("mesa_rotativa"), (cadastro or {}).get("mesa_rotativa")):
         if v is not None:
