@@ -27,6 +27,58 @@ const v = {
 };
 const ESP_MIN = 0.5;    // m: camada mais fina que isso não é desenhada (acunhamento)
 
+// Aparência dos poços (Bloco 7 do teste da 0.29): marcador da cabeça, linha, discos dos topos,
+// trilhas (espessura e cor de cada classe), legenda e "por cima do bloco". Guardada nas
+// preferências (preferencias.json → bloco.aparencia); a figura (bloco_figura.py) usa a mesma.
+const APARENCIA_PADRAO = {
+  marcador: { forma: "esfera", cor: "#1c2227", tamanho: 1 },
+  linha: { cor: "#3a4148" },
+  topos: true,
+  trilha: { espessura: 1, cores: {} },     // cores: "classe:2" | "fluido:óleo" → "#rrggbb"
+  legenda: true,
+  por_cima: "fechado",                     // "fechado" (só no bloco fechado) | "sempre" | "nunca"
+};
+v.aparencia = JSON.parse(JSON.stringify(APARENCIA_PADRAO));
+
+function aparenciaCompleta(ap) {
+  const a = JSON.parse(JSON.stringify(APARENCIA_PADRAO));
+  if (!ap) return a;
+  Object.assign(a.marcador, ap.marcador || {});
+  Object.assign(a.linha, ap.linha || {});
+  a.trilha.espessura = (ap.trilha && ap.trilha.espessura) || 1;
+  a.trilha.cores = { ...((ap.trilha && ap.trilha.cores) || {}) };
+  for (const k of ["topos", "legenda"]) if (typeof ap[k] === "boolean") a[k] = ap[k];
+  if (["fechado", "sempre", "nunca"].includes(ap.por_cima)) a.por_cima = ap.por_cima;
+  return a;
+}
+
+function geometriaMarcador(forma, r) {
+  if (forma === "cubo") return new THREE.BoxGeometry(r * 2, r * 2, r * 2);
+  if (forma === "cone") return new THREE.ConeGeometry(r * 1.2, r * 2.4, 16).rotateX(Math.PI);   // ponta para baixo
+  if (forma === "losango") return new THREE.OctahedronGeometry(r * 1.4);
+  if (forma === "cilindro") return new THREE.CylinderGeometry(r, r, r * 2.2, 16);
+  return new THREE.SphereGeometry(r * 1.3, 16, 12);
+}
+
+// "por cima do bloco": os poços aparecem mesmo dentro do bloco fechado ou atrás das superfícies
+function emCima() {
+  const pc = v.aparencia.por_cima;
+  return pc === "sempre" || (pc === "fechado" && v.modo === "fechado" && !!v.sm);
+}
+
+function porCima(obj) {
+  const sim = emCima();
+  const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+  for (const mt of mats) { if (mt) { mt.depthTest = !sim; mt.needsUpdate = true; } }
+  obj.renderOrder = sim ? 10 : 0;
+}
+
+function aplicarPorCima() {
+  if (v.gPocos) for (const o of v.gPocos.children) porCima(o);
+  if (v.trilhas) for (const o of v.trilhas.children) porCima(o);
+  for (const mk of v.marcas) if (mk.doPoco) porCima(mk.obj);
+}
+
 function cenaDeY(cota) { return (cota - v.centro.cota) * v.exagero / 1000; }
 
 function limparCena() {
@@ -186,17 +238,27 @@ function geometriaGrade(s, g, X, Z) {
   }
 }
 
-function desenharPocosECaixa(m, g, X, Z) {
-
-  // poços: linha da mesa ao fundo; esfera na cabeça; disco em cada topo
+// poços: linha da mesa ao fundo; marcador na cabeça; disco em cada topo (refeitos ao mudar a aparência)
+function desenharPocos(m) {
+  const X = v.X, Z = v.Z, ap = v.aparencia;
+  if (v.gPocos) {
+    v.gPocos.traverse((o) => { if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); });
+    v.mundo.remove(v.gPocos);
+  }
+  for (const mk of v.marcas.filter((q) => q.doPoco)) {
+    v.scene.remove(mk.obj);
+    mk.obj.geometry.dispose();
+    mk.obj.material.dispose();
+  }
+  v.marcas = v.marcas.filter((q) => !q.doPoco);
+  v.topos = {};
   const r = v.lado * 0.006;
-  const geoCabeca = new THREE.SphereGeometry(r * 1.3, 12, 8);
   const geoTopo = new THREE.CylinderGeometry(r * 1.6, r * 1.6, r * 0.5, 16);
-  const matCabeca = new THREE.MeshLambertMaterial({ color: 0x1c2227 });
-  const matLinha = new THREE.LineBasicMaterial({ color: 0x3a4148 });
-  const matTraj = new THREE.LineBasicMaterial({ color: 0x1c2227 });
+  const matLinha = new THREE.LineBasicMaterial({ color: ap.linha.cor });
+  const matTraj = new THREE.LineBasicMaterial({ color: ap.linha.cor });
   v.gPocos = new THREE.Group();
   v.mundo.add(v.gPocos);
+  const forma = ap.marcador.forma;
   for (const p of m.pocos) {
     const cotas = p.unidades.flatMap((u) => [u.cota_topo, u.cota_base]);
     const topo = p.mesa ?? Math.max(...cotas, 0);
@@ -205,20 +267,32 @@ function desenharPocosECaixa(m, g, X, Z) {
       ? p.caminho.map(([, x, y, c]) => new THREE.Vector3(X(x), c - v.centro.cota, Z(y)))
       : [new THREE.Vector3(X(p.x), topo - v.centro.cota, Z(p.y)), new THREE.Vector3(X(p.x), fundo - v.centro.cota, Z(p.y))];
     v.gPocos.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(caminho), p.trajetoria ? matTraj : matLinha));
-    const cab = new THREE.Mesh(geoCabeca, matCabeca);
-    cab.userData = { tipo: "poco", poco: p };
-    v.scene.add(cab);
-    v.marcas.push({ obj: cab, x: X(p.x), cota: topo, z: Z(p.y) });
-    rotulo(p.id, X(p.x), topo, Z(p.y), "poco");
+    if (forma !== "nenhum") {
+      const cab = new THREE.Mesh(geometriaMarcador(forma, r * ap.marcador.tamanho),
+                                 new THREE.MeshLambertMaterial({ color: ap.marcador.cor }));
+      cab.userData = { tipo: "poco", poco: p };
+      v.scene.add(cab);
+      v.marcas.push({ obj: cab, x: X(p.x), cota: topo, z: Z(p.y), doPoco: true });
+    }
     for (const u of p.unidades) {
       const disco = new THREE.Mesh(geoTopo, new THREE.MeshLambertMaterial({ color: u.cor }));
       disco.userData = { tipo: "topo", poco: p, unidade: u };
+      disco.visible = ap.topos;
       v.scene.add(disco);
-      v.marcas.push({ obj: disco, x: X(u.x ?? p.x), cota: u.cota_topo, z: Z(u.y ?? p.y), chave: u.chave });
+      v.marcas.push({ obj: disco, x: X(u.x ?? p.x), cota: u.cota_topo, z: Z(u.y ?? p.y), chave: u.chave, doPoco: true,
+                      topo: true });
       (v.topos[u.chave] = v.topos[u.chave] || []).push(disco);
     }
   }
+}
 
+function desenharPocosECaixa(m, g, X, Z) {
+  v.X = X; v.Z = Z;
+  desenharPocos(m);
+  for (const p of m.pocos) {
+    const cotas = p.unidades.flatMap((u) => [u.cota_topo, u.cota_base]);
+    rotulo(p.id, X(p.x), p.mesa ?? Math.max(...cotas, 0), Z(p.y), "poco");
+  }
   // caixa com marcas: distância (km) a partir do canto SW e cota (m)
   v.caixa = new THREE.Group();
   v.mundo.add(v.caixa);
@@ -480,6 +554,7 @@ function aplicarModo() {
   const fechado = v.modo === "fechado" && v.sm;
   for (const [ch, mesh] of Object.entries(v.superficies)) mesh.visible = !fechado && v.visivel[ch] !== false;
   if (v.solido) v.solido.visible = !!fechado;
+  aplicarPorCima();
   aplicarVisibilidade();
   aplicarOpacidade(v.drape && v.drape.chave);
   desenhar();
@@ -490,7 +565,9 @@ function aplicarVisibilidade() {
   const afastado = v.modo === "fechado" && v.sm && v.afastar > 0;
   if (v.gPocos) v.gPocos.visible = !afastado;
   if (v.trilhas) v.trilhas.visible = !afastado;
-  for (const mk of v.marcas) mk.obj.visible = !afastado && (mk.chave == null || v.visivel[mk.chave] !== false);
+  for (const mk of v.marcas) {
+    mk.obj.visible = !afastado && (mk.chave == null || v.visivel[mk.chave] !== false) && !(mk.topo && !v.aparencia.topos);
+  }
   for (const [ch, cam] of Object.entries(v.camadas)) cam.grupo.visible = v.visivel[ch] !== false;
 }
 
@@ -525,34 +602,42 @@ function tubo(p, a, b, cor, raio, dados) {
 function desenharTrilhas() {
   for (const o of [...v.trilhas.children]) { o.geometry.dispose(); o.material.dispose(); v.trilhas.remove(o); }
   v.alvosTrilha = [];
-  const r = v.lado * 0.0045;
+  const r = v.lado * 0.0045 * (v.aparencia.trilha.espessura || 1);
   const m = v.modelo;
   for (const p of m.pocos) {
     if (v.trilha === "avaliacao") {
       for (const [a, b, c] of p.classes || []) {
         const cl = m.classes[c] || m.classes[String(c)];
-        tubo(p, a, b, cl.cor, r, { rotulo: cl.nome });
+        tubo(p, a, b, corTrilha(`classe:${c}`, cl.cor), r, { rotulo: cl.nome });
       }
     } else if (v.trilha === "indicios") {
       for (const i of p.indicios || []) {
-        tubo(p, i.md_topo, i.md_base, CORES_FLUIDO[i.fluido] || "#898781", r, { rotulo: `indício de ${i.fluido}` });
+        tubo(p, i.md_topo, i.md_base, corTrilha(`fluido:${i.fluido}`, CORES_FLUIDO[i.fluido] || "#898781"), r,
+             { rotulo: `indício de ${i.fluido}` });
       }
     }
   }
+  for (const o of v.trilhas.children) porCima(o);
   desenharLegendaTrilha();
+}
+
+function corTrilha(chave, padrao) {
+  return (v.aparencia.trilha.cores || {})[chave] || padrao;
 }
 
 const CORES_FLUIDO = { "óleo": "#008300", "gás": "#e34948", "outro": "#898781" };
 
+// [cor, nome, chave da cor] de cada classe que aparece na trilha
 function itensTrilha() {
   const m = v.modelo;
   if (v.trilha === "avaliacao") {
     const usadas = new Set(m.pocos.flatMap((p) => (p.classes || []).map((c) => c[2])));
-    return Object.entries(m.classes).filter(([k]) => usadas.has(Number(k))).map(([, c]) => [c.cor, c.nome]);
+    return Object.entries(m.classes).filter(([k]) => usadas.has(Number(k)))
+      .map(([k, c]) => [corTrilha(`classe:${k}`, c.cor), c.nome, `classe:${k}`]);
   }
   if (v.trilha === "indicios") {
     const usados = new Set(m.pocos.flatMap((p) => (p.indicios || []).map((i) => i.fluido)));
-    return [...usados].map((f) => [CORES_FLUIDO[f] || "#898781", `indício de ${f} (AGP)`]);
+    return [...usados].map((f) => [corTrilha(`fluido:${f}`, CORES_FLUIDO[f] || "#898781"), `indício de ${f} (AGP)`, `fluido:${f}`]);
   }
   return [];
 }
@@ -565,7 +650,16 @@ function desenharLegendaTrilha() {
   }
   v.legTrilha.textContent = "";
   const itens = itensTrilha();
-  v.legTrilha.hidden = !itens.length;
+  const ap = v.aparencia;
+  v.legTrilha.hidden = !ap.legenda || (!itens.length && ap.marcador.forma === "nenhum");
+  if (ap.marcador.forma !== "nenhum") {
+    const li = document.createElement("div");
+    const i = document.createElement("i");
+    i.className = "marcador " + ap.marcador.forma;
+    i.style.background = ap.marcador.cor;
+    li.append(i, document.createTextNode("poço (cabeça)"));
+    v.legTrilha.appendChild(li);
+  }
   for (const [cor, nome] of itens) {
     const li = document.createElement("div");
     const i = document.createElement("i");
@@ -1020,6 +1114,7 @@ window.BlocoVisor = {
     v.mostrarNomes = op.nomes !== false;
     v.mostrarCaixa = op.caixa !== false;
     v.trilha = op.trilha || "nenhuma";
+    if (op.aparencia) v.aparencia = aparenciaCompleta(op.aparencia);
     v.drape = op.drape || null;
     v.drapeAnterior = null;
     v.modo = op.modo || "superficies";
@@ -1028,6 +1123,7 @@ window.BlocoVisor = {
     v.parede = null;
     v.visivel = {};
     montarCena(modelo);
+    aplicarPorCima();
     if (v.afastar) aplicarAfastar();
     redimensionar();
     vista("obliqua");
@@ -1074,17 +1170,31 @@ window.BlocoVisor = {
     const visiveis = v.modelo.legenda.map((u) => u.chave).filter((k) => v.visivel[k] !== false);
     return { azimute: v.controls.getAzimuthalAngle(), elevacao: Math.PI / 2 - v.controls.getPolarAngle(),
              exagero: v.exagero, visiveis, trilha: v.trilha, drape: v.drape, opacidade: v.opacidade,
+             aparencia: v.aparencia,
              nomes: v.mostrarNomes, modo: v.modo,
              camadas: Object.keys(v.camadas).filter((k) => v.visivel[k] !== false),
              corte: v.corte.ativo ? { ...v.corte } : null, afastar: v.afastar,
              parede: v.parede ? v.parede.pocos : null };
   },
   trilha(modo) { v.trilha = modo; if (v.modelo) { desenharTrilhas(); desenhar(); } },
+  // aparência dos poços: vale na hora, sem montar de novo
+  aparencia(ap) {
+    v.aparencia = aparenciaCompleta(ap);
+    if (!v.modelo) return;
+    desenharPocos(v.modelo);
+    desenharTrilhas();
+    aplicarPorCima();
+    aplicarVisibilidade();
+    aplicarExagero();
+  },
+  itensTrilha: () => (v.modelo ? itensTrilha() : []),
   drape(chave, prop) { v.drape = chave ? { chave, prop } : null; if (v.modelo) aplicarDrape(); },
   estado() {
     return { superficies: Object.keys(v.superficies).length, pocos: v.modelo ? v.modelo.pocos.length : 0,
              rotulos: v.rotulos.filter((r) => !r.el.hidden).length, exagero: v.exagero,
              trilhas: (v.alvosTrilha || []).length, drape: v.drapeAnterior, modo: v.modo,
+             marcadores: v.marcas.filter((q) => q.doPoco && !q.topo).length,
+             forma: v.aparencia.marcador.forma, porCima: emCima(),
              camadas: Object.keys(v.camadas).length,
              tampas: Object.values(v.camadas).filter((c) => c.tampa).length,
              paredes: Object.values(v.camadas).filter((c) => c.parede).length,

@@ -32,6 +32,9 @@ def _dentro_de_todos(obs, sem, x, y):
     {"metodo": "idw", "potencia": 1.0, "vizinhos": 0},
     {"metodo": "spline", "_lambda": 0.0},
     {"metodo": "spline", "_lambda": 0.5},
+    {"metodo": "rbf", "funcao": "multiquadrica", "_raio": 3.0, "_lambda": 0.0},
+    {"metodo": "rbf", "funcao": "inversa", "_raio": 5.0, "_lambda": 0.01},
+    {"metodo": "rbf", "funcao": "gaussiana", "_raio": 4.0, "_lambda": 0.001},
     {"metodo": "krigagem", "_vario": {"modelo": "esferico", "alcance_km": 9.0, "patamar": 900.0, "pepita": 20.0}},
     {"metodo": "krigagem", "_vario": {"modelo": "exponencial", "alcance_km": 6.0, "patamar": 700.0, "pepita": 0.0},
      "azimute": 30.0, "razao": 0.5},
@@ -127,7 +130,7 @@ def test_metodos_lisos_ficam_na_faixa_dos_dados_fora_do_contorno():
     obs = _obs(30, repetido=False)
     zs = [o[2] for o in obs]
     lo, hi = min(zs) - 0.1 * (max(zs) - min(zs)), max(zs) + 0.1 * (max(zs) - min(zs))
-    for m in ("spline", "krigagem", "tendencia", "idw"):
+    for m in ("spline", "rbf", "krigagem", "tendencia", "idw"):
         f = mint.ajustar(mint.configuracao({"estrutura": m})["estrutura"], obs)
         v = f.valores(np.array([-60.0, 90.0]), np.array([-60.0, 90.0]))
         assert (v >= lo - 1e-6).all() and (v <= hi + 1e-6).all(), m
@@ -183,3 +186,32 @@ def test_comparar_metodos_figura_e_csv(banco, tmp_path):
     assert len(c2["candidatos"]) == 3
     assert c2["candidatos"][2]["interpolacao"]["estrutura"]["potencia"] == 3.0
     assert not math.isnan(c2["candidatos"][0]["global"]["fechado"]["mediana"])
+
+
+@pytest.mark.parametrize("funcao", ["multiquadrica", "inversa", "gaussiana"])
+def test_rbf_exata_nos_pocos_e_raio_automatico(funcao):
+    obs = _obs(30, repetido=False)
+    c = mint.configuracao({"estrutura": {"metodo": "rbf", "funcao": funcao, "suavidade": 0}})["estrutura"]
+    f = mint.ajustar(c, obs)
+    pts = np.array([[o[0], o[1]] for o in obs])
+    z = np.array([o[2] for o in obs])
+    assert np.allclose(f.valores(pts[:, 0], pts[:, 1]), z, atol=1e-4)
+    assert f.info["raio_auto"] and f.info["raio_km"] > 0 and f.descricao().startswith("RBF")
+    fixo = mint.ajustar(mint.configuracao({"estrutura": {"metodo": "rbf", "funcao": funcao, "raio_km": 2.5}})["estrutura"], obs)
+    assert fixo.info["raio_km"] == 2.5 and not fixo.info["raio_auto"]
+
+
+def test_rbf_na_configuracao_e_na_comparacao():
+    c = mint.configuracao({"estrutura": {"metodo": "rbf", "raio_km": "1,5", "funcao": "gaussiana"}})
+    assert c["estrutura"]["raio_km"] == 1.5 and c["estrutura"]["funcao"] == "gaussiana"
+    for ruim in ({"estrutura": {"metodo": "rbf", "funcao": "cubica"}}, {"estrutura": {"metodo": "rbf", "raio_km": -1}}):
+        with pytest.raises(mint.ErroInterpolacao):
+            mint.configuracao(ruim)
+    assert {"rbf", "rbf_inversa"} <= {c[0] for c in mbv.CANDIDATOS}
+    assert any(i["id"] == "rbf" for i in mint.INFO)
+
+
+def test_rbf_pocos_alinhados_usa_o_mais_proximo():
+    obs = [(float(i), 0.0, -100.0 - i, f"P{i}") for i in range(6)]
+    f = mint.ajustar(mint.configuracao({"estrutura": "rbf"})["estrutura"], obs)
+    assert not f.espacial and f.avisos

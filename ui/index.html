@@ -956,7 +956,7 @@
         <button data-interp="bloco">Bloco 3D</button>
       </div>
       <section class="etapa">
-        <h2>Poços do bloco <span class="contagem" id="bl-n">0</span></h2>
+        <h2><span class="bl-passo">1</span> Poços do bloco <span class="contagem" id="bl-n">0</span></h2>
         <p class="ajuda" id="bl-disponiveis">Poços com topos de formação no AGP (leia os AGPs no Levantamento do acervo, aba Dados).</p>
         <div class="filtros">
           <label>Escolher
@@ -977,11 +977,6 @@
           <button class="btn secundario" id="bl-selecionar">Trazer os poços</button>
           <button class="btn secundario pequeno" id="bl-limpar">Limpar</button>
         </div>
-        <div class="linha" id="bl-campo-um">
-          <button class="btn" id="bl-montar-campo"
-                  title="Traz os poços do campo escolhido e monta o bloco com a escala de reservatório">Montar este campo</button>
-          <span class="ajuda">traz os poços e monta</span>
-        </div>
         <form class="linha" id="bl-form-poco">
           <input type="text" id="bl-poco" list="bl-lista-pocos" placeholder="mais um poço…" autocomplete="off">
           <button class="btn secundario pequeno" type="submit">Adicionar</button>
@@ -990,7 +985,7 @@
         <p class="ajuda bl-lista" id="bl-lista"></p>
       </section>
       <section class="etapa">
-        <h2>Superfícies e interpolação</h2>
+        <h2><span class="bl-passo">2</span> Interpolação</h2>
         <div class="filtros">
           <label>Escala
             <select id="bl-escala">
@@ -999,21 +994,19 @@
               <option value="">personalizada</option>
             </select></label>
           <p class="ajuda" id="bl-escala-ajuda"></p>
-          <label>Unidades
-            <select id="bl-nivel">
-              <option value="formacoes">formações</option>
-              <option value="membros">membros e camadas</option>
-              <option value="grupos">grupos</option>
-            </select></label>
-          <label>Margem além do contorno dos poços (km) <input type="text" id="bl-margem" value="0" inputmode="decimal"></label>
-          <label>Esconder onde o poço mais próximo está a mais de (km)
-            <input type="text" id="bl-distmax" inputmode="decimal" placeholder="sem limite"></label>
-          <label>Resolução da grade (células no lado maior) <input type="text" id="bl-celulas" value="160" inputmode="numeric"></label>
-          <label>Base do bloco fechado (cota, m) <input type="text" id="bl-base" inputmode="decimal" placeholder="automática (abaixo do poço mais fundo)"></label>
-          <label>Título da figura <input type="text" id="bl-titulo" placeholder="opcional"></label>
+        </div>
+        <div class="bl-guia" id="bl-guia">
+          <h3>Qual método usar?</h3>
+          <label>Ambiente do reservatório <select id="bl-ambiente"></select></label>
+          <p class="ajuda" id="bl-ambiente-resumo"></p>
+          <ol class="bl-guia-lista" id="bl-guia-lista"></ol>
+          <p class="ajuda" id="bl-guia-nota"></p>
+          <div class="linha">
+            <button class="btn secundario pequeno" id="bl-guia-usar" title="Preenche os métodos abaixo com o indicado (não monta)">Usar o indicado</button>
+            <span class="ajuda" id="bl-guia-fontes"></span>
+          </div>
         </div>
         <fieldset class="bl-interp" id="bl-interp">
-          <legend>Interpolação</legend>
           <label>Topos (estrutura) <select id="bl-m-estrutura" data-campo="estrutura"></select></label>
           <label>Espessuras <select id="bl-m-espessura" data-campo="espessura"></select></label>
           <label>Propriedades (φ, N/G, Sw) <select id="bl-m-propriedades" data-campo="propriedades"></select></label>
@@ -1040,19 +1033,50 @@
             <label data-param="alcance_km">Alcance (km) <input type="text" id="bl-p-alcance_km" class="curto" inputmode="decimal" placeholder="ajustado"></label>
             <label data-param="azimute">Azimute (°) <input type="text" id="bl-p-azimute" class="curto" inputmode="decimal" value="0"></label>
             <label data-param="razao">Razão de anisotropia <input type="text" id="bl-p-razao" class="curto" inputmode="decimal" value="1"></label>
+            <label data-param="funcao">Função (RBF)
+              <select id="bl-p-funcao">
+                <option value="multiquadrica">multiquádrica</option><option value="inversa">multiquádrica inversa</option>
+                <option value="gaussiana">gaussiana</option>
+              </select></label>
+            <label data-param="raio_km">Raio da RBF (km) <input type="text" id="bl-p-raio_km" class="curto" inputmode="decimal" placeholder="automático"></label>
             <label data-param="grau">Grau da tendência
               <select id="bl-p-grau"><option value="1">1 (plano)</option><option value="2">2 (curva)</option></select></label>
             <p class="ajuda" id="bl-param-ajuda">Passe o mouse num parâmetro para ver o que ele faz.</p>
           </details>
         </fieldset>
+      </section>
+      <section class="etapa">
+        <h2><span class="bl-passo">3</span> Grade e unidades</h2>
+        <div class="filtros">
+          <label>Unidades
+            <select id="bl-nivel">
+              <option value="formacoes">formações</option>
+              <option value="membros">membros e camadas</option>
+              <option value="grupos">grupos</option>
+            </select></label>
+          <label>Margem além do contorno dos poços (km) <input type="text" id="bl-margem" value="0" inputmode="decimal"></label>
+          <label>Esconder onde o poço mais próximo está a mais de (km)
+            <input type="text" id="bl-distmax" inputmode="decimal" placeholder="sem limite"></label>
+          <label>Resolução da grade (células no lado maior) <input type="text" id="bl-celulas" value="160" inputmode="numeric"></label>
+          <label>Base do bloco fechado (cota, m) <input type="text" id="bl-base" inputmode="decimal" placeholder="automática (abaixo do poço mais fundo)"></label>
+          <label>Título da figura <input type="text" id="bl-titulo" placeholder="opcional"></label>
+        </div>
         <p class="ajuda">Fora do contorno dos poços que têm a unidade, o valor da borda; os métodos lisos ficam
           presos à faixa dos dados. Campo isolado: margem 0. A mesma montagem faz o bloco fechado, do terreno
-          à base. Na dúvida, monte e use <strong>Comparar métodos</strong>: a validação cruzada diz qual erra menos
-          nos seus poços.</p>
+          à base.</p>
+      </section>
+      <section class="etapa bl-etapa-montar">
+        <h2><span class="bl-passo">4</span> Montar</h2>
         <div class="linha">
           <button class="btn" id="bl-montar">Montar o bloco</button>
-          <button class="btn secundario" id="bl-direcionais" title="Baixa os dados direcionais que faltam (~5 KB por poço)">Ler as trajetórias</button>
+          <button class="btn secundario" id="bl-montar-campo" title="Traz os poços do campo escolhido e monta com a escala de reservatório">Trazer o campo e montar</button>
         </div>
+        <div class="linha">
+          <button class="btn secundario pequeno" id="bl-direcionais" title="Baixa os dados direcionais que faltam (~5 KB por poço)">Ler as trajetórias</button>
+          <span class="ajuda">poços desviados; monte de novo depois</span>
+        </div>
+        <p class="ajuda">Depois de montar, <strong>Comparar métodos</strong> (acima do bloco) mostra qual erra menos
+          nos seus poços — e a lista "Qual método usar?" passa a levar isso em conta.</p>
       </section>
       <section class="etapa">
         <h2>Blocos anteriores</h2>
@@ -1104,6 +1128,26 @@
                    inputmode="decimal">
             <button class="btn secundario pequeno" id="bl-prog-ir">Prever</button>
           </div>
+          <details class="bl-explica" id="bl-explica">
+            <summary>O que é "deixar um poço de fora" e "comparar métodos"?</summary>
+            <p><strong>Deixar um poço de fora</strong> (validação cruzada) mede quanto o bloco erra <em>entre</em> os
+              poços, onde não há dado. Para cada poço:</p>
+            <ol>
+              <li>o SIAPP tira o poço da lista;</li>
+              <li>refaz o bloco só com os outros, com o mesmo método;</li>
+              <li>lê, na posição do poço tirado, a cota prevista de cada topo;</li>
+              <li>compara com a cota que o AGP registrou: <strong>erro = previsto − AGP</strong>.</li>
+            </ol>
+            <p><em>Exemplo (números ilustrativos):</em> num campo de 14 poços, sem o poço A o bloco prevê o topo da
+              Formação Açu a −612 m; o AGP de A diz −605 m. Erro: −7 m (previu 7 m mais fundo). Repetido para os 14
+              poços, a <strong>mediana</strong> diz que metade dos erros é menor que ela, e o <strong>68%</strong>, que
+              dois terços são menores. O erro cresce com a distância ao poço mais próximo: a tabela por faixa mostra
+              isso, e o prognóstico num ponto usa essa faixa como incerteza.</p>
+            <p><strong>Comparar métodos</strong> faz a mesma validação com cada método (linear, IDW, spline, RBF,
+              krigagem, tendência + krigagem), nos mesmos poços. O que tem a menor mediana errou menos nos seus dados —
+              é o melhor argumento para escolher o método, mais forte que a regra do ambiente em "Qual método usar?".
+              Diferenças de poucos metros ficam dentro do ruído dos topos do AGP.</p>
+          </details>
         </div>
         <p class="ajuda resultado" id="bl-exportado"></p>
         <div class="bl-visor-box">
@@ -1133,6 +1177,30 @@
               <label class="opcao" title="Parede vertical ao longo dos poços da aba Seção, na ordem de lá">
                 <input type="checkbox" id="bl-parede"> <span>Seção A–A′ (poços da aba Seção)</span></label>
             </span>
+            <details class="bl-aparencia" id="bl-aparencia">
+              <summary>Aparência dos poços — marcador, cores, legenda</summary>
+              <div class="bl-ap-grade">
+                <label>Marcador
+                  <select id="bl-ap-forma">
+                    <option value="esfera">bolinha</option><option value="cubo">cubo</option>
+                    <option value="losango">losango</option><option value="cone">cone (ponta para baixo)</option>
+                    <option value="cilindro">cilindro</option><option value="nenhum">nenhum</option>
+                  </select></label>
+                <label>cor <input type="color" id="bl-ap-cor" value="#1c2227"></label>
+                <label>tamanho <input type="range" id="bl-ap-tamanho" min="0.3" max="4" step="0.1" value="1"></label>
+                <label>Linha do poço <input type="color" id="bl-ap-linha" value="#3a4148"></label>
+                <label>Espessura da trilha <input type="range" id="bl-ap-espessura" min="0.3" max="5" step="0.1" value="1"></label>
+                <label class="opcao"><input type="checkbox" id="bl-ap-topos" checked> <span>discos nos topos</span></label>
+                <label class="opcao"><input type="checkbox" id="bl-ap-legenda" checked> <span>legenda</span></label>
+                <label title="Desenha os poços e as trilhas por cima de tudo: aparecem mesmo dentro do bloco fechado">Poços por cima do bloco
+                  <select id="bl-ap-porcima">
+                    <option value="fechado">só no bloco fechado</option><option value="sempre">sempre</option>
+                    <option value="nunca">nunca</option>
+                  </select></label>
+                <button type="button" class="btn secundario pequeno" id="bl-ap-padrao">Voltar ao padrão</button>
+              </div>
+              <div class="bl-ap-cores" id="bl-ap-cores"></div>
+            </details>
           </div>
         </div>
         <section class="bl-quadro" id="bl-prog" hidden>

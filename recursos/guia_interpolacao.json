@@ -1,0 +1,100 @@
+{
+  "_sobre": "Guia de qual método de interpolação usar em cada ambiente do reservatório (aba Interpretação › Bloco 3D). São regras práticas para COMEÇAR, não leis: a evidência é a comparação dos métodos nos seus poços (deixar um poço de fora). Pode editar este arquivo (com o orientador, por exemplo): 'recomendados' em ordem de preferência; 'evitar'; 'parametros' sugere um ponto de partida para o método; 'porque' aparece na tela. Métodos: linear, idw, spline, rbf, krigagem, tendencia.",
+  "versao": 1,
+  "ambientes": [
+    {
+      "id": "nao_sei",
+      "nome": "Não sei / misto",
+      "resumo": "Sem preferência pelo ambiente: a sugestão vem só dos dados (quantos poços, espaçamento, mergulho regional) e da comparação dos métodos.",
+      "recomendados": [],
+      "evitar": [],
+      "porque": {}
+    },
+    {
+      "id": "leque",
+      "nome": "Leque (aluvial, deltaico ou submarino; lobos)",
+      "resumo": "Corpos em forma de lobo, que afinam do ápice para as bordas. A superfície é lisa em grande escala, sem degraus.",
+      "recomendados": ["rbf", "spline", "krigagem"],
+      "evitar": ["idw"],
+      "parametros": {"rbf": {"funcao": "multiquadrica"}},
+      "porque": {
+        "rbf": "superfície lisa que passa nos poços, boa para a forma de lobo com poços espalhados de forma irregular; a multiquádrica é a mais usada em superfícies geológicas",
+        "spline": "a superfície mais lisa pelos poços; com poços distantes pode exagerar o alto ou o baixo entre eles",
+        "krigagem": "com 20 ou mais poços, a anisotropia (azimute = direção do aporte, do ápice para a borda) representa o alongamento do leque",
+        "idw": "faz 'olhos de boi' em volta de cada poço, que não existem num lobo contínuo"
+      },
+      "nota": "A espessura de um leque tem tendência radial (afina para longe do ápice). Se o ápice está dentro da área, compare também 'Tendência + krigagem' (grau 2)."
+    },
+    {
+      "id": "fluvial",
+      "nome": "Fluvial (canais)",
+      "resumo": "Areias em faixas alongadas na direção da paleocorrente, cortadas por finos; muito contínuas ao longo do canal e pouco de lado.",
+      "recomendados": ["krigagem", "linear"],
+      "evitar": ["spline", "rbf"],
+      "parametros": {"krigagem": {"razao": 0.4}},
+      "porque": {
+        "krigagem": "a anisotropia (azimute = paleocorrente, razão 0,3–0,5) segue a continuidade dos canais; preencha o azimute em Parâmetros avançados",
+        "linear": "com poucos poços, não inventa areia contínua entre canais",
+        "spline": "liga os poços com uma superfície lisa que atravessa os canais (espalha areia onde não há)",
+        "rbf": "mesmo problema da spline: liso demais para corpos em faixas"
+      },
+      "nota": "Para espessura de areia e propriedades, a diferença entre os métodos é maior que no topo estrutural."
+    },
+    {
+      "id": "costeiro",
+      "nome": "Costeiro ou plataforma siliciclástica (barras, shoreface)",
+      "resumo": "Camadas extensas e paralelas à linha de costa, com mergulho regional para a bacia.",
+      "recomendados": ["tendencia", "krigagem", "spline"],
+      "evitar": [],
+      "parametros": {"tendencia": {"grau": 1}},
+      "porque": {
+        "tendencia": "tira o mergulho regional e kriga o resto: separa a estrutura da bacia da variação local",
+        "krigagem": "camadas contínuas, variograma bem comportado quando há 20+ poços; anisotropia paralela à costa",
+        "spline": "boa com poucos poços em camadas contínuas"
+      }
+    },
+    {
+      "id": "carbonato",
+      "nome": "Carbonato de plataforma",
+      "resumo": "Camadas extensas com mergulho regional; propriedades (φ) muito variáveis de poço para poço.",
+      "recomendados": ["tendencia", "krigagem", "linear"],
+      "evitar": ["spline"],
+      "parametros": {"tendencia": {"grau": 1}},
+      "porque": {
+        "tendencia": "o mergulho regional domina a estrutura",
+        "krigagem": "a pepita do variograma absorve a variação de poço para poço",
+        "linear": "honesto com poucos poços",
+        "spline": "inventa picos de espessura e propriedade entre poços"
+      }
+    },
+    {
+      "id": "rifte",
+      "nome": "Rifte com falhas (blocos basculados)",
+      "resumo": "Degraus de falha entre poços. O SIAPP não modela falhas: toda interpolação atravessa a falha como se fosse contínua.",
+      "recomendados": ["linear", "idw"],
+      "evitar": ["spline", "rbf", "tendencia"],
+      "porque": {
+        "linear": "o menos ruim: nunca cria alto ou baixo além dos poços, e a quina fica no poço",
+        "idw": "local: cada poço pesa só perto dele, então o degrau não se espalha pela área toda",
+        "spline": "suaviza o degrau e pode criar altos e baixos falsos perto da falha",
+        "rbf": "mesmo problema da spline",
+        "tendencia": "um plano regional não representa blocos basculados em sentidos diferentes"
+      },
+      "nota": "Monte um bloco por bloco de falha (poços de um lado só) quando der."
+    },
+    {
+      "id": "dobra",
+      "nome": "Estrutura dobrada suave ou domo",
+      "resumo": "Superfície curva e contínua, sem degraus (anticlinal, domo de sal suave).",
+      "recomendados": ["spline", "rbf", "krigagem"],
+      "evitar": ["idw"],
+      "parametros": {"rbf": {"funcao": "multiquadrica"}},
+      "porque": {
+        "spline": "mínima curvatura: a forma natural de uma dobra suave",
+        "rbf": "também lisa; a multiquádrica inversa volta à tendência longe dos poços (não extrapola a dobra)",
+        "krigagem": "com muitos poços; o variograma gaussiano representa superfícies lisas",
+        "idw": "achata o alto da dobra entre os poços"
+      }
+    }
+  ]
+}

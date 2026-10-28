@@ -6,6 +6,33 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 
 ## [Não lançado]
 
+## [0.32.0] — 2026-10-28
+Bloco 7 do teste da 0.29: Bloco 3D.
+### Adicionado
+- **Interpolação RBF** (funções de base radial): multiquádrica, multiquádrica inversa e gaussiana, com o
+  plano de tendência. Raio (parâmetro de forma) e suavidade automáticos pela validação cruzada, ou fixos em
+  Parâmetros avançados. Deixar um poço de fora atualiza os coeficientes sem refazer o sistema, como na spline.
+  Entra na comparação dos métodos (multiquádrica e inversa).
+- **Qual método usar?** no passo de interpolação: escolha o ambiente do reservatório (leque, fluvial,
+  costeiro, carbonato, rifte com falhas, dobra suave ou "não sei") e a lista mostra cada método como
+  indicado, possível ou evitar, com o motivo de cada um — pelo ambiente, pelos dados (quantos poços,
+  espaçamento, agrupamento, mergulho regional) e, depois de "Comparar métodos", pelo erro nos seus poços
+  (pesa mais que as regras). "Usar o indicado" preenche o formulário. As regras ficam em
+  `recursos/guia_interpolacao.json`, editável.
+- **Aparência dos poços** no visor: marcador da cabeça (forma, cor, tamanho), cor da linha, espessura e cores
+  da trilha, discos nos topos, legenda e "poços por cima do bloco". Vale na hora, fica guardada e a figura
+  estilo artigo usa a mesma.
+- **O que é "deixar um poço de fora" e "comparar métodos"**: explicação na tela, passo a passo e com exemplo.
+### Mudado
+- Painel do bloco em quatro passos, na ordem do trabalho: 1 Poços → 2 Interpolação → 3 Grade e unidades →
+  4 Montar ("Trazer o campo e montar" saiu do meio da escolha dos poços).
+- No bloco fechado, os poços e as trilhas (pay, indícios) aparecem por cima do bloco: antes ficavam
+  escondidos dentro dele, e trocar "Nos poços" parecia não fazer nada.
+- A escolha de "Nos poços" (só a linha, pay, indícios) continua ao montar de novo.
+- Legenda das trilhas no canto de baixo (cobria o nome de um poço).
+### Corrigido
+- A legenda das trilhas não sumia quando devia (o atributo `hidden` era ignorado pelo CSS).
+
 ## [0.31.0] — 2026-10-27
 Blocos 3 e 4 do teste da 0.29: navegação nos documentos e texto do OCR.
 ### Adicionado

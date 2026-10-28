@@ -43,6 +43,45 @@ def _hex(c: str) -> np.ndarray:
     return np.array([int(c[i:i + 2], 16) for i in (0, 2, 4)], float)
 
 
+CORES_FLUIDO = {"óleo": "#008300", "gás": "#e34948", "outro": "#898781"}
+
+
+def _aparencia(a: dict | None) -> dict:
+    """A aparência dos poços escolhida no visor (mesmas chaves de preferencias.bloco.aparencia)."""
+    a = a or {}
+    m, t = a.get("marcador") or {}, a.get("trilha") or {}
+
+    def cor(c, padrao):
+        return c if isinstance(c, str) and len(c) == 7 and c.startswith("#") else padrao
+
+    def num(x, padrao, lo, hi):
+        try:
+            return min(hi, max(lo, float(x)))
+        except (TypeError, ValueError):
+            return padrao
+    return {"forma": m.get("forma") if m.get("forma") in ("esfera", "cubo", "losango", "cone", "cilindro", "nenhum")
+            else "esfera",
+            "cor": cor(m.get("cor"), TINTA), "tamanho": num(m.get("tamanho"), 1.0, 0.3, 4),
+            "linha": cor((a.get("linha") or {}).get("cor"), TINTA),
+            "espessura": num(t.get("espessura"), 1.0, 0.3, 5),
+            "cores": {str(k): cor(c, None) for k, c in (t.get("cores") or {}).items() if cor(c, None)},
+            "topos": a.get("topos") is not False}
+
+
+def _marcador(forma: str, X: float, Y: float, r: float, cor: str) -> str:
+    if forma == "nenhum":
+        return ""
+    if forma in ("cubo", "cilindro"):
+        return f'<rect x="{X - r:.1f}" y="{Y - r:.1f}" width="{2 * r:.1f}" height="{2 * r:.1f}" fill="{cor}"/>'
+    if forma == "losango":
+        return (f'<polygon points="{X:.1f},{Y - 1.3 * r:.1f} {X + 1.3 * r:.1f},{Y:.1f} {X:.1f},{Y + 1.3 * r:.1f} '
+                f'{X - 1.3 * r:.1f},{Y:.1f}" fill="{cor}"/>')
+    if forma == "cone":
+        return (f'<polygon points="{X - 1.2 * r:.1f},{Y - r:.1f} {X + 1.2 * r:.1f},{Y - r:.1f} {X:.1f},{Y + 1.4 * r:.1f}" '
+                f'fill="{cor}"/>')
+    return f'<circle cx="{X:.1f}" cy="{Y:.1f}" r="{r:.1f}" fill="{cor}"/>'
+
+
 def _cor(rgb) -> str:
     r, g, b = (int(max(0, min(255, round(v)))) for v in rgb)
     return f"#{r:02x}{g:02x}{b:02x}"
@@ -97,13 +136,15 @@ def desenhar(modelo: dict, *, azimute: float = -0.61, elevacao: float = 0.61, ex
              visiveis: list[str] | None = None, trilha: str = "nenhuma", drape: dict | None = None,
              titulo: str = "", autor: str = "", data: str = "", nomes: bool = True,
              opacidade: float = 0.7, modo: str = "superficies", camadas: list[str] | None = None,
-             corte: dict | None = None, afastar: float = 0.0, parede: list[str] | None = None) -> str:
+             corte: dict | None = None, afastar: float = 0.0, parede: list[str] | None = None,
+             aparencia: dict | None = None) -> str:
     """SVG da vista. `azimute` e `elevacao` em radianos (os do visor). `modo` "fechado": o
     bloco fechado, com `camadas` ligadas, `corte` ({quadrante, fx, fy}), camadas afastadas
     (`afastar`, 0–1) e a parede da seção A–A′ pelos poços `parede`."""
     m = modelo
     g = m["grade"]
     sol = m.get("solido") or {}
+    ap = _aparencia(aparencia)
     fechado = modo == "fechado" and sol.get("ok")
     if modo == "fechado" and not fechado:
         raise ErroFigura("Este bloco não tem bloco fechado (monte de novo nesta versão).")
@@ -215,14 +256,14 @@ def desenhar(modelo: dict, *, azimute: float = -0.61, elevacao: float = 0.61, ex
             if not visivel_no_bloco((x1 + x2) / 2, (y1 + y2) / 2, (c1 + c2) / 2):
                 continue
             a, b = cam.proj(W(x1, y1, c1)), cam.proj(W(x2, y2, c2))
-            prims.append(((a[2] + b[2]) / 2, ("linha", a, b, TINTA, 0.9)))
+            prims.append(((a[2] + b[2]) / 2, ("linha", a, b, ap["linha"], 0.9)))
         trechos = []
         if trilha == "avaliacao":
-            trechos = [(t0, t1, (classes.get(str(c)) or classes.get(c) or {}).get("cor", TINTA2))
+            trechos = [(t0, t1, ap["cores"].get(f"classe:{c}") or (classes.get(str(c)) or classes.get(c) or {}).get("cor", TINTA2))
                        for t0, t1, c in p.get("classes", [])]
         elif trilha == "indicios":
-            cores = {"óleo": "#008300", "gás": "#e34948"}
-            trechos = [(i["md_topo"], i["md_base"], cores.get(i["fluido"], "#898781")) for i in p.get("indicios", [])]
+            trechos = [(i["md_topo"], i["md_base"], ap["cores"].get(f"fluido:{i['fluido']}") or
+                        CORES_FLUIDO.get(i["fluido"], "#898781")) for i in p.get("indicios", [])]
         for t0, t1, cor in trechos:
             mds = [t0] + [q[0] for q in cam_p if t0 < q[0] < t1] + [t1]
             pts = [_no_caminho(p, md) for md in mds]
@@ -230,9 +271,9 @@ def desenhar(modelo: dict, *, azimute: float = -0.61, elevacao: float = 0.61, ex
                 if not visivel_no_bloco((xa + xb) / 2, (ya + yb) / 2, (ca + cb) / 2):
                     continue
                 a, b = cam.proj(W(xa, ya, ca)), cam.proj(W(xb, yb, cb))
-                prims.append(((a[2] + b[2]) / 2 + 1e-4, ("linha", a, b, cor, 3.6)))
+                prims.append(((a[2] + b[2]) / 2 + 1e-4, ("linha", a, b, cor, 3.6 * ap["espessura"])))
         for u in p["unidades"]:
-            if u["chave"] in visiveis and visivel_no_bloco(u.get("x", p["x"]), u.get("y", p["y"]), u["cota_topo"]):
+            if ap["topos"] and u["chave"] in visiveis and visivel_no_bloco(u.get("x", p["x"]), u.get("y", p["y"]), u["cota_topo"]):
                 q = cam.proj(W(u.get("x", p["x"]), u.get("y", p["y"]), u["cota_topo"]))
                 prims.append((q[2] + 2e-4, ("disco", q, u["cor"], 3.2)))
         topo = p["mesa"] if p["mesa"] is not None else (cam_p[0][3] if cam_p else 0)
@@ -308,7 +349,7 @@ def desenhar(modelo: dict, *, azimute: float = -0.61, elevacao: float = 0.61, ex
             rotulos.append(_t(X, Y, pr[2], 13, TINTA, "middle", "bold"))
         elif tipo == "cabeca":
             X, Y = T(pr[1][0], pr[1][1])
-            corpo.append(f'<circle cx="{X:.1f}" cy="{Y:.1f}" r="2.6" fill="{TINTA}"/>')
+            corpo.append(_marcador(ap["forma"], X, Y, 2.6 * ap["tamanho"], ap["cor"]))
             if pr[2]:
                 rotulos.append(_t(X + 4, Y - 4, pr[2], 8.5, TINTA))
 
@@ -368,6 +409,11 @@ def desenhar(modelo: dict, *, azimute: float = -0.61, elevacao: float = 0.61, ex
                    f'stroke="{TINTA}" stroke-width="0.4"/>')
         leg.append(_t(lx + 20, ly, "mais claro: extrapolado", 10.5, TINTA2, estilo="italic"))
         ly += 16
+    if ap["forma"] != "nenhum" and not (fechado and afastar):
+        ly += 4
+        leg.append(_marcador(ap["forma"], lx + 7, ly - 4, 4.0, ap["cor"]))
+        leg.append(_t(lx + 20, ly, "poço (cabeça)", 10.5))
+        ly += 14
     if trilha in ("avaliacao", "indicios") and not (fechado and afastar):
         ly += 8
         leg.append(_t(lx, ly, "Nos poços" + (" (avaliação)" if trilha == "avaliacao" else " (AGP)"), 11, TINTA,
@@ -375,14 +421,15 @@ def desenhar(modelo: dict, *, azimute: float = -0.61, elevacao: float = 0.61, ex
         ly += 18
         if trilha == "avaliacao":
             usadas = {c for p in m["pocos"] for _, _, c in p.get("classes", [])}
-            itens = [(c["cor"], c["nome"]) for k, c in sorted(classes.items(), key=lambda t: int(t[0]))
-                     if int(k) in usadas]
+            itens = [(ap["cores"].get(f"classe:{k}") or c["cor"], c["nome"])
+                     for k, c in sorted(classes.items(), key=lambda t: int(t[0])) if int(k) in usadas]
         else:
             usados = {i["fluido"] for p in m["pocos"] for i in p.get("indicios", [])}
-            cores = {"óleo": "#008300", "gás": "#e34948", "outro": "#898781"}
-            itens = [(cores[f], f"indício de {f}") for f in ("óleo", "gás", "outro") if f in usados]
+            itens = [(ap["cores"].get(f"fluido:{f}") or CORES_FLUIDO[f], f"indício de {f}")
+                     for f in ("óleo", "gás", "outro") if f in usados]
         for cor, nome in itens:
-            leg.append(f'<line x1="{lx}" y1="{ly - 4}" x2="{lx + 14}" y2="{ly - 4}" stroke="{cor}" stroke-width="3.6"/>')
+            leg.append(f'<line x1="{lx}" y1="{ly - 4}" x2="{lx + 14}" y2="{ly - 4}" stroke="{cor}" '
+                       f'stroke-width="{min(3.6 * ap["espessura"], 9):.1f}"/>')
             leg.append(_t(lx + 20, ly, nome, 10.5))
             ly += 16
     if faixa:

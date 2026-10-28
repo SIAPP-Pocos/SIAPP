@@ -35,6 +35,7 @@ async function carregarBloco() {
     }
     if (atualB) sb.value = atualB;
     if (r.interpolacao) prepararInterpolacao(r.interpolacao);
+    pedirGuia();
     $("bl-disponiveis").textContent = r.total
       ? `${numero(r.total, 0)} poço(s) com topos de formação no AGP e coordenadas no cadastro.`
       : "Nenhum poço com topos ainda: leia os AGPs no Levantamento do acervo (aba Dados).";
@@ -48,7 +49,7 @@ function trocarModoBloco() {
   $("bl-campo-box").hidden = m !== "campo";
   $("bl-raio-box").hidden = m !== "raio";
   $("bl-bacia-box").hidden = m !== "todos";
-  $("bl-campo-um").hidden = m !== "campo";
+  $("bl-montar-campo").hidden = m !== "campo";
 }
 
 // um campo, um clique: escolher o campo já traz os poços; "Montar este campo" traz e monta
@@ -83,6 +84,7 @@ async function selecionarPocosBloco() {
     bl.pocos = (sec.pocos || []).slice();
     bl.isolado = false;
     desenharListaBloco();
+    pedirGuia();
     status(bl.pocos.length ? `${bl.pocos.length} poço(s) da aba Seção.` : "A lista da aba Seção está vazia.",
            bl.pocos.length ? "ok" : "erro");
     return;
@@ -92,6 +94,7 @@ async function selecionarPocosBloco() {
   if (!r.ok) return;
   bl.pocos = r.pocos;
   bl.isolado = r.isolado;
+  pedirGuia();
   // campo isolado: margem 0 (a margem infla a área de um campo delimitado)
   if (r.isolado) $("bl-margem").value = "0";
   desenharListaBloco();
@@ -104,6 +107,7 @@ function adicionarPocoBloco(id) {
   if (bl.pocos.includes(id)) { status(`${id} já está no bloco.`); return; }
   bl.pocos.push(id);
   desenharListaBloco();
+  pedirGuia();
 }
 
 function desenharListaBloco() {
@@ -116,13 +120,13 @@ function desenharListaBloco() {
 function opcoesBloco() {
   return { nivel: $("bl-nivel").value, margem: $("bl-margem").value, dist_max: $("bl-distmax").value,
            celulas: $("bl-celulas").value, titulo: $("bl-titulo").value, base: $("bl-base").value,
-           escala: $("bl-escala").value, interpolacao: lerInterpolacao() };
+           escala: $("bl-escala").value, interpolacao: lerInterpolacao(), ambiente: $("bl-ambiente").value };
 }
 
 // ---------------------------------------------------------------- interpolação e escala
 // Os textos (métodos, parâmetros, escalas) vêm do motor (motor/interpolacao.py), pela ponte.
 const CAMPOS_INTERP = ["estrutura", "espessura", "propriedades"];
-const PARAMS_INTERP = ["potencia", "vizinhos", "modelo", "alcance_km", "azimute", "razao", "grau"];
+const PARAMS_INTERP = ["potencia", "vizinhos", "modelo", "alcance_km", "azimute", "razao", "grau", "funcao", "raio_km"];
 const blI = { info: null, aplicado: false, campoAjuda: "estrutura" };
 
 function prepararInterpolacao(info) {
@@ -141,6 +145,10 @@ function prepararInterpolacao(info) {
     lab.title = info.parametros[lab.dataset.param] || "";
   }
   $("bl-empilhamento").title = info.parametros.empilhamento || "";
+  const sa = $("bl-ambiente"), atualA = sa.value || lerAmbienteSalvo();
+  limpar(sa);
+  for (const a of info.ambientes || []) sa.appendChild(new Option(a.nome, a.id));
+  sa.value = (info.ambientes || []).some((a) => a.id === atualA) ? atualA : "nao_sei";
   $("bl-suavidade").title = info.parametros.suavidade || "";
   if (!blI.aplicado) {                    // a escala só preenche o formulário uma vez (depois, é do usuário)
     blI.aplicado = true;
@@ -202,9 +210,9 @@ function atualizarInterpolacao() {
   const tem = (...ms) => ms.some((m) => usados.has(m));
   const vis = { potencia: tem("idw"), vizinhos: tem("idw"), modelo: tem("krigagem", "tendencia"),
                 alcance_km: tem("krigagem", "tendencia"), azimute: tem("krigagem", "tendencia"),
-                razao: tem("krigagem", "tendencia"), grau: tem("tendencia") };
+                razao: tem("krigagem", "tendencia"), grau: tem("tendencia"), funcao: tem("rbf"), raio_km: tem("rbf") };
   for (const lab of document.querySelectorAll("#bl-interp [data-param]")) lab.hidden = !vis[lab.dataset.param];
-  const liso = tem("spline", "krigagem", "tendencia");
+  const liso = tem("spline", "rbf", "krigagem", "tendencia");
   $("bl-suavidade-auto").disabled = !liso;
   $("bl-suavidade").disabled = !liso || $("bl-suavidade-auto").checked;
   $("bl-suavidade-v").textContent = !liso ? "—" : $("bl-suavidade-auto").checked ? "auto"
@@ -223,6 +231,82 @@ function interpolacaoMudou() {
   $("bl-escala").value = "";                // mexeu à mão: personalizada
   $("bl-escala-ajuda").textContent = "Cada opção à sua escolha. A escala só preenche o formulário: tudo continua editável.";
   atualizarInterpolacao();
+}
+
+// ---------------------------------------------------------------- qual método usar (guia)
+// Ambiente do reservatório + os dados + a comparação dos métodos (se já feita): motor/guia_interpolacao.py
+const NOTA_GUIA = { indicado: "indicado", possivel: "possível", evitar: "evitar" };
+const FONTE_GUIA = { ambiente: "ambiente", dados: "dados", comparacao: "seus poços", geral: "geral" };
+let guiaAtual = null, guiaPedido = 0, guiaTimer = null;
+
+function lerAmbienteSalvo() {
+  return (prefs && prefs.bloco && prefs.bloco.ambiente) || "";
+}
+
+function pedirGuia() {
+  clearTimeout(guiaTimer);
+  guiaTimer = setTimeout(atualizarGuia, 150);
+}
+
+async function atualizarGuia() {
+  if (!projetoAberto || !$("bl-ambiente").options.length) return;
+  const meu = ++guiaPedido;
+  const montado = bl.ultimo && bl.modelo && (bl.modelo.parametros || {}).pocos &&
+    bl.modelo.parametros.pocos.length === bl.pocos.length && bl.modelo.parametros.pocos.every((p) => bl.pocos.includes(p));
+  const r = await chamar(null, "bloco_guia", $("bl-ambiente").value, montado ? [] : bl.pocos, montado ? bl.ultimo : "");
+  if (meu !== guiaPedido || !r.ok) return;
+  guiaAtual = r;
+  desenharGuia(r);
+}
+
+function desenharGuia(r) {
+  $("bl-ambiente-resumo").textContent = r.ambiente.resumo || "";
+  const ol = limpar($("bl-guia-lista"));
+  for (const m of r.metodos) {
+    const li = el("li", "nota-" + m.nota);
+    const cab = el("div", "g-cab");
+    cab.append(el("span", "g-selo " + m.nota, NOTA_GUIA[m.nota]), el("strong", "", m.nome));
+    li.appendChild(cab);
+    const ul = el("ul", "g-motivos");
+    for (const mo of m.motivos) {
+      const it = el("li", mo.sinal > 0 ? "mais" : mo.sinal < 0 ? "menos" : "");
+      it.append(el("span", "g-fonte", FONTE_GUIA[mo.fonte] || mo.fonte), document.createTextNode(mo.texto));
+      ul.appendChild(it);
+    }
+    li.appendChild(ul);
+    if (m.nota === "evitar") li.classList.add("recolhido");
+    cab.onclick = () => li.classList.toggle("recolhido");
+    ol.appendChild(li);
+  }
+  $("bl-guia-nota").textContent = r.ambiente.nota || "";
+  $("bl-guia-nota").hidden = !r.ambiente.nota;
+  const d = r.dados || {};
+  const partes = [];
+  if (d.n) partes.push(`${d.n} poço(s)`);
+  if (d.espacamento_km != null) partes.push(`espaçamento típico ${numero(d.espacamento_km, 1)} km`);
+  partes.push(r.com_comparacao ? "com a comparação dos métodos" : "sem comparação ainda (monte e use Comparar métodos)");
+  $("bl-guia-fontes").textContent = "Pesa: " + partes.join(" · ") + ".";
+  const ind = r.indicado;
+  const curto = { linear: "linear", idw: "IDW", spline: "spline", rbf: "RBF", krigagem: "krigagem",
+                  tendencia: "tendência + krigagem" };
+  $("bl-guia-usar").textContent = `Usar o indicado: ${curto[ind.metodo] || ind.metodo}`;
+}
+
+function usarIndicado() {
+  if (!guiaAtual) return;
+  const ind = guiaAtual.indicado;
+  const est = { metodo: ind.metodo, ...(ind.parametros || {}) };
+  // tendência só nos topos: a espessura vai por krigagem (como na comparação dos métodos)
+  const esp = ind.metodo === "tendencia" ? { metodo: "krigagem" } : { metodo: ind.metodo };
+  const empilhamento = ["spline", "rbf", "krigagem", "tendencia"].includes(ind.metodo) ? "topos" : $("bl-empilhamento").value;
+  aplicarInterpolacao({ estrutura: est, espessura: esp, empilhamento });
+  for (const [k, v] of Object.entries(ind.parametros || {})) {
+    const c = $(`bl-p-${k}`);
+    if (c) c.value = c.tagName === "SELECT" ? String(v) : decimal(v);
+  }
+  blI.campoAjuda = "estrutura";
+  interpolacaoMudou();
+  status(`Métodos preenchidos com ${ind.nome}. Monte o bloco para ver.`, "ok");
 }
 
 function nomeMetodo(id) {
@@ -282,6 +366,7 @@ function mostrarBloco(r) {
   }
   mostrarValidacao(m.validacao || null);
   mostrarComparacao(m.comparacao || null);
+  pedirGuia();
   prepararSaidas(temSolido);
   // exagero inicial: o relevo das superfícies ocupa ~1/4 da largura do bloco
   const g = m.grade, lado = Math.max(g.nx, g.ny) * g.passo;
@@ -303,13 +388,85 @@ function mostrarBloco(r) {
   // trilha padrão: pay se algum poço foi avaliado; senão, indícios do AGP se houver
   const temPay = m.pocos.some((p) => (p.classes || []).length);
   const temInd = m.pocos.some((p) => (p.indicios || []).length);
-  $("bl-trilha").value = temPay ? "avaliacao" : temInd ? "indicios" : "nenhuma";
+  // a escolha do usuário fica de um bloco para o outro (se o bloco novo tiver esse dado)
+  const tem = { avaliacao: temPay, indicios: temInd, nenhuma: true };
+  $("bl-trilha").value = bl.trilhaEscolhida && tem[bl.trilhaEscolhida] ? bl.trilhaEscolhida
+    : temPay ? "avaliacao" : temInd ? "indicios" : "nenhuma";
   window.BlocoVisor.mostrar($("bl-visor"), m, { exagero: ex, opacidade: Number($("bl-opacidade").value),
                                                nomes: $("bl-nomes").checked, caixa: $("bl-caixa").checked,
                                                trilha: $("bl-trilha").value, drape: drapeEscolhido(),
-                                               modo: bl.modo, corte: opcoesCorte() });
+                                               modo: bl.modo, corte: opcoesCorte(), aparencia: aparenciaAtual() });
+  desenharCoresTrilha();
   window.BlocoVisor.validacao(m.validacao || null);
   trocarModo3d(bl.modo);
+}
+
+// ------------------------------------------------ aparência dos poços (vale na hora; guardada nas preferências)
+// bl.aparencia: a última escolhida nesta janela (a resposta de uma gravação antiga não a desfaz)
+function aparenciaAtual() {
+  const salva = bl.aparencia || (prefs && prefs.bloco && prefs.bloco.aparencia) || {};
+  return JSON.parse(JSON.stringify(salva));
+}
+
+function preencherAparencia() {
+  const a = aparenciaAtual(), m = a.marcador || {}, t = a.trilha || {};
+  $("bl-ap-forma").value = m.forma || "esfera";
+  $("bl-ap-cor").value = m.cor || "#1c2227";
+  $("bl-ap-tamanho").value = m.tamanho || 1;
+  $("bl-ap-linha").value = (a.linha && a.linha.cor) || "#3a4148";
+  $("bl-ap-espessura").value = t.espessura || 1;
+  $("bl-ap-topos").checked = a.topos !== false;
+  $("bl-ap-legenda").checked = a.legenda !== false;
+  $("bl-ap-porcima").value = a.por_cima || "fechado";
+}
+
+function lerAparencia() {
+  const atual = aparenciaAtual();
+  const cores = { ...((atual.trilha || {}).cores || {}) };
+  for (const inp of document.querySelectorAll("#bl-ap-cores input[type=color]")) cores[inp.dataset.chave] = inp.value;
+  return { marcador: { forma: $("bl-ap-forma").value, cor: $("bl-ap-cor").value, tamanho: Number($("bl-ap-tamanho").value) },
+           linha: { cor: $("bl-ap-linha").value },
+           trilha: { espessura: Number($("bl-ap-espessura").value), cores },
+           topos: $("bl-ap-topos").checked, legenda: $("bl-ap-legenda").checked, por_cima: $("bl-ap-porcima").value };
+}
+
+let _guardarAparencia = null;
+function aparenciaMudou() {
+  const ap = lerAparencia();
+  bl.aparencia = ap;
+  if (window.BlocoVisor) window.BlocoVisor.aparencia(ap);
+  clearTimeout(_guardarAparencia);
+  _guardarAparencia = setTimeout(() => guardarPreferencias({ bloco: { aparencia: ap } }), 400);
+}
+
+// uma cor para cada classe da trilha que aparece no bloco (pay, reservatório sem pay, indício de óleo…)
+function desenharCoresTrilha() {
+  const box = limpar($("bl-ap-cores"));
+  const itens = window.BlocoVisor && window.BlocoVisor.itensTrilha ? window.BlocoVisor.itensTrilha() : [];
+  for (const [cor, nome, chave] of itens) {
+    const lab = el("label");
+    const inp = document.createElement("input");
+    inp.type = "color";
+    inp.value = cor;
+    inp.dataset.chave = chave;
+    inp.oninput = aparenciaMudou;
+    lab.append(inp, document.createTextNode(nome));
+    box.appendChild(lab);
+  }
+}
+
+function ligarAparencia() {
+  preencherAparencia();
+  for (const id of ["bl-ap-forma", "bl-ap-topos", "bl-ap-legenda", "bl-ap-porcima"]) ligar(id, "onchange", aparenciaMudou);
+  for (const id of ["bl-ap-cor", "bl-ap-tamanho", "bl-ap-linha", "bl-ap-espessura"]) ligar(id, "oninput", aparenciaMudou);
+  ligar("bl-ap-padrao", "onclick", () => {
+    bl.aparencia = {};
+    preencherAparencia();
+    if (window.BlocoVisor) window.BlocoVisor.aparencia({});
+    desenharCoresTrilha();
+    clearTimeout(_guardarAparencia);
+    guardarPreferencias({ bloco: { aparencia: {} } });
+  });
 }
 
 // ------------------------------------------------ saídas: mapas, simulador, volumetria, 3D
@@ -479,6 +636,7 @@ async function compararMetodos() {
   if (!r.ok) return;
   bl.modelo.comparacao = r.comparacao;
   mostrarComparacao(r.comparacao);
+  pedirGuia();
   const c = r.comparacao, b = c.candidatos.find((x) => x.id === c.melhor);
   status(`Métodos comparados: o que menos errou foi ${b.nome} (metade dos erros até ` +
          `${numero(b.global[c.criterio].mediana, 0)} m).`, "ok");
@@ -857,6 +1015,9 @@ async function abrirBlocoAnterior(ident) {
   aplicarInterpolacao(p.interpolacao || { estrutura: "linear", espessura: "linear", propriedades: "linear",
                                           empilhamento: "espessuras" }, true);
   $("bl-escala").value = p.escala || "";
+  if (r.modelo.ambiente && [...$("bl-ambiente").options].some((o) => o.value === r.modelo.ambiente)) {
+    $("bl-ambiente").value = r.modelo.ambiente;
+  }
   $("bl-escala-ajuda").textContent = (blI.info && blI.info.escalas[p.escala] || {}).resumo ||
     "Cada opção à sua escolha. A escala só preenche o formulário: tudo continua editável.";
   desenharListaBloco();
@@ -908,7 +1069,13 @@ function ligarBloco() {
   ligar("bl-campo", "onchange", campoEscolhidoBloco);
   ligar("bl-montar-campo", "onclick", montarCampoBloco);
   ligar("bl-selecionar", "onclick", selecionarPocosBloco);
-  ligar("bl-limpar", "onclick", () => { bl.pocos = []; desenharListaBloco(); });
+  ligar("bl-limpar", "onclick", () => { bl.pocos = []; desenharListaBloco(); pedirGuia(); });
+  ligar("bl-ambiente", "onchange", () => {
+    guardarPreferencias({ bloco: { ambiente: $("bl-ambiente").value } });
+    atualizarGuia();
+  });
+  ligarAparencia();
+  ligar("bl-guia-usar", "onclick", usarIndicado);
   ligar("bl-form-poco", "onsubmit", (ev) => {
     ev.preventDefault();
     adicionarPocoBloco($("bl-poco").value);
@@ -924,7 +1091,11 @@ function ligarBloco() {
     if (window.BlocoVisor) window.BlocoVisor.exagero(Number($("bl-exagero").value));
   });
   ligar("bl-opacidade", "oninput", () => window.BlocoVisor && window.BlocoVisor.opacidade(Number($("bl-opacidade").value)));
-  ligar("bl-trilha", "onchange", () => window.BlocoVisor && window.BlocoVisor.trilha($("bl-trilha").value));
+  ligar("bl-trilha", "onchange", () => {
+    bl.trilhaEscolhida = $("bl-trilha").value;
+    if (window.BlocoVisor) window.BlocoVisor.trilha($("bl-trilha").value);
+    desenharCoresTrilha();
+  });
   const drape = () => {
     const d = drapeEscolhido();
     if (window.BlocoVisor) window.BlocoVisor.drape(d && d.chave, d && d.prop);

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import base64
 import csv
+import math
 import os
 import re
 from datetime import datetime
@@ -18,6 +19,7 @@ from motor import bloco_solido as mbs
 from motor import bloco_validacao as mbv
 from motor import bloco_volumetria as mbvol
 from motor import direcionais as mdi
+from motor import guia_interpolacao as mguia
 from motor import interpolacao as mint
 from motor import reate
 from motor import secao as msc
@@ -61,7 +63,39 @@ class BlocoAPI:
     def _info_interpolacao() -> dict:
         """Textos e pontos de partida da interpolação (uma fonte só: motor/interpolacao.py)."""
         return {"metodos": mint.INFO, "parametros": mint.PARAMETROS_INFO, "escalas": mint.ESCALAS,
-                "padrao": mint.PADRAO, "min_krigagem": mint.MIN_KRIGAGEM}
+                "padrao": mint.PADRAO, "min_krigagem": mint.MIN_KRIGAGEM, "funcoes_rbf": mint.NOMES_RBF,
+                "ambientes": [{k: a.get(k) for k in ("id", "nome", "resumo")} for a in mguia.ler_guia()["ambientes"]]}
+
+    @resposta_segura
+    def bloco_guia(self, ambiente: str = "nao_sei", pocos: list | None = None, ident: str = ""):
+        """Qual método usar: pelo ambiente do reservatório, pelos dados (poços do bloco montado
+        ou, antes de montar, os poços escolhidos) e pela comparação dos métodos, se já feita."""
+        self._exigir_projeto()
+        valores, comparacao = None, None
+        if ident:
+            reg = self._registro_bloco(ident)
+            cont: dict = {}
+            for p in reg.get("pocos", []):
+                for u in p.get("unidades", []):
+                    cont[u["chave"]] = cont.get(u["chave"], 0) + 1
+            ref = max(cont, key=cont.get) if cont else None
+            com = [(p["x"], p["y"], next(u["cota_topo"] for u in p["unidades"] if u["chave"] == ref))
+                   for p in reg.get("pocos", []) if any(u["chave"] == ref for u in p.get("unidades", []))]
+            pts = [(x, y) for x, y, _ in com]
+            valores = [v for *_, v in com]
+            comparacao = reg.get("comparacao")
+        else:
+            ids = [self._id_poco(p) for p in (pocos or []) if str(p).strip()]
+            pts = []
+            if ids:
+                with self._banco.conexao() as c:
+                    q = ",".join("?" * len(ids))
+                    linhas = c.execute(f"SELECT lat, lon FROM pocos WHERE id IN ({q}) AND lat IS NOT NULL", ids).fetchall()
+                if linhas:
+                    lat0 = sum(r[0] for r in linhas) / len(linhas)
+                    pts = [(r[1] * 111.32 * math.cos(math.radians(lat0)), r[0] * 110.57) for r in linhas]
+        dados = mguia.diagnostico(pts, valores)
+        return mguia.recomendar(ambiente or "nao_sei", dados, comparacao)
 
     @resposta_segura
     def bloco_selecionar(self, modo: str, campo: str = "", poco: str = "", raio_km=5.0, bacia: str = ""):
@@ -109,6 +143,8 @@ class BlocoAPI:
         except mbl.ErroBloco as e:
             raise ErroUsuario(str(e)) from e
         modelo["titulo"] = (op.get("titulo") or "").strip()
+        if op.get("ambiente"):
+            modelo["ambiente"] = str(op["ambiente"])
         ident, _ = mbl.registrar(self._projeto.pasta_de("execucoes"), modelo, autor=self._autor())
         self._projeto.registrar("montou_bloco", execucao=ident, pocos=len(modelo["pocos"]),
                                 area_km2=modelo["area_km2"], parametros=modelo["parametros"])
@@ -438,7 +474,7 @@ class BlocoAPI:
                 data=datetime.now().strftime("%d/%m/%Y"), nomes=vi.get("nomes", True) is not False,
                 opacidade=float(vi.get("opacidade", 0.7)), modo=vi.get("modo") or "superficies",
                 camadas=vi.get("camadas"), corte=vi.get("corte") or None, afastar=float(vi.get("afastar") or 0),
-                parede=vi.get("parede") or None)
+                parede=vi.get("parede") or None, aparencia=vi.get("aparencia") or None)
         except mbf.ErroFigura as e:
             raise ErroUsuario(str(e)) from e
         saida = os.path.join(self._projeto.pasta, PASTA_EXPORTACAO, f"{ident}_figura.{formato}")

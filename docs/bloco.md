@@ -62,6 +62,13 @@ a mesma da seção, e a **cor** é a mesma da seção (`slot` em `recursos/estra
   km a partir do canto SW; cota em m), seta do norte.
 - Cada unidade liga e desliga (superfície e marcas nos poços). Passar o mouse num poço ou
   num topo mostra o poço, a unidade, a profundidade e a cota.
+- **Aparência dos poços** (0.32): forma do marcador da cabeça (bolinha, cubo, losango, cone,
+  cilindro ou nenhum), cor e tamanho; cor da linha do poço; espessura da trilha e a cor de
+  cada classe (pay, reservatório sem pay, indício de óleo…); discos nos topos; legenda; e
+  **poços por cima do bloco** (só no bloco fechado, sempre ou nunca) — no bloco fechado, os
+  poços de dentro ficam visíveis. Tudo vale na hora, sem montar de novo, fica nas preferências
+  (`preferencias.json › bloco.aparencia`) e a figura estilo artigo usa a mesma aparência. A
+  escolha de "Nos poços" continua ao montar de novo.
 
 ## Saídas
 
@@ -164,6 +171,7 @@ próprio motor (uma fonte só).
 | **Linear** (triângulos) | passa exatamente nos poços, nunca inventa alto ou baixo além dos dados; facetada | poucos poços, campos densos, controle de qualidade, rifte com falhas |
 | **Inverso da distância** (IDW) | média dos vizinhos pesada por 1/dᵖ; exata nos poços, "olhos de boi" | olhada rápida, propriedades; fraco para topo |
 | **Spline de placa fina** (mínima curvatura) | a superfície mais lisa pelos poços; com **suavidade**, aceita errar no poço para ficar lisa (filtra topo mal marcado) | estruturas contínuas, dobras suaves, leques |
+| **Funções de base radial** (RBF, 0.32) | soma de "montes" φ(r) em volta de cada poço + plano: multiquádrica √(1+(r/c)²) (Hardy, 1971), multiquádrica inversa 1/√(1+(r/c)²) ou gaussiana exp(−(r/c)²); raio c e suavidade automáticos pela validação cruzada | superfícies lisas com poços irregulares; leques e lobos com poucos poços; a inversa e a gaussiana voltam ao plano longe dos poços |
 | **Krigagem ordinária** | correlação espacial medida nos poços (variograma: alcance, pepita, patamar; anisotropia); dá o **mapa de incerteza** (σ) | muitos poços (20+), sistemas com direção (fluvial, leque), bacia |
 | **Tendência + krigagem** | tira o mergulho regional (plano ou superfície de 2º grau) e kriga o resto | bacia com mergulho para o depocentro, carbonato de plataforma |
 
@@ -174,6 +182,7 @@ próprio motor (uma fonte só).
 | Variograma, alcance | esférico, exponencial ou gaussiano; automático = o melhor entre esférico e exponencial, ajustado por mínimos quadrados (pares/distância) até 15× o espaçamento típico dos poços |
 | Azimute, razão | anisotropia: direção de maior continuidade e alcance perpendicular ÷ alcance no azimute |
 | Grau | tendência: 1 = plano; 2 = superfície curva |
+| Função, raio (RBF) | forma do "monte" e a distância em que ela muda (1/ε); vazio = automático: entre 0,5× e 20× o espaçamento típico dos poços, com suavidade 0–0,6, o par com a menor mediana do erro deixando cada poço de fora (fórmula de Rippa, 1999) |
 
 Regras comuns:
 
@@ -189,10 +198,37 @@ Regras comuns:
   com os hiperparâmetros (λ, variograma) fixos; os testes conferem com o ajuste refeito do
   zero. A tendência fica a de todos os poços.
 
+### Qual método usar? (0.32)
+
+Quadro no passo **2 Interpolação** (`motor/guia_interpolacao.py`). Cada método recebe pontos
+de três fontes, e cada ponto aparece na tela com o motivo:
+
+1. **Ambiente do reservatório** — regras práticas em `recursos/guia_interpolacao.json`
+   (editável, por exemplo com o orientador): leque → RBF, spline, krigagem com anisotropia
+   (evitar IDW); fluvial → krigagem com azimute na paleocorrente (evitar spline e RBF, que
+   espalham areia entre canais); costeiro e carbonato → tendência + krigagem; rifte → linear
+   (o SIAPP não modela falhas: os lisos suavizam o degrau); dobra suave → spline, RBF.
+2. **Os dados** — menos de 8 poços: sem krigagem; 8–19: variograma pouco confiável; 20+:
+   krigagem com mapa de incerteza; poços agrupados (índice de Clark e Evans < 0,6): IDW faz
+   olhos de boi; um plano explica 70%+ da variação do topo de referência: mergulho regional
+   forte, tendência.
+3. **A comparação dos métodos** nos poços do bloco, se já feita: o que menos errou ganha
+   mais pontos que qualquer regra; empate (até 10% + 1 m) também soma; 50% pior perde.
+
+Soma ≥ 3 = **indicado**, ≥ 0 = possível, < 0 = evitar. **Usar o indicado** só preenche o
+formulário (com os parâmetros sugeridos pelo ambiente); montar continua sendo do usuário. O
+ambiente escolhido fica guardado nas preferências e no registro do bloco (`ambiente`).
+
+As regras do ambiente são ponto de partida, não lei: a evidência é a comparação nos seus
+poços. Ex.: "RBF em leque" vale para a superfície lisa de um lobo com poucos poços; a
+espessura de um leque tem tendência radial (afina do ápice para a borda), e com o ápice dentro
+da área a tendência + krigagem (grau 2) pode errar menos — a comparação diz.
+
 ### Comparar métodos
 
-Botão **Comparar métodos** (num bloco montado): a validação cruzada com seis combinações —
-linear por espessuras, linear, IDW, spline, krigagem e tendência + krigagem topo a topo —, com
+Botão **Comparar métodos** (num bloco montado): a validação cruzada com oito combinações —
+linear por espessuras, linear, IDW, spline, RBF multiquádrica, RBF multiquádrica inversa,
+krigagem e tendência + krigagem topo a topo —, com
 os parâmetros avançados do bloco. Tabela por unidade (mediana / 68% do erro, o menor de cada
 unidade em negrito), o **sugerido** (menor mediana no bloco fechado; sem bloco fechado, nas
 superfícies) e **Usar o melhor e montar de novo** (troca topos, espessuras e empilhamento;

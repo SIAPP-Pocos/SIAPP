@@ -1,5 +1,6 @@
 """Métodos de interpolação do bloco: linear, inverso da distância, spline de placa fina,
-krigagem ordinária e tendência + krigagem.
+funções de base radial (RBF: multiquádrica, multiquádrica inversa, gaussiana), krigagem
+ordinária e tendência + krigagem.
 
 Todos seguem o mesmo contrato, para o bloco (superfícies, bloco fechado, propriedades), a
 validação cruzada e o prognóstico usarem o mesmo método:
@@ -36,7 +37,9 @@ CAMPOS = ("estrutura", "espessura", "propriedades")
 #  - topos: cada limite interpolado direto dos poços e cortado para não passar acima do de
 #    cima — o erro não se acumula; onde dois topos se cruzariam, a camada acunha.
 EMPILHAMENTOS = ("espessuras", "topos")
-METODOS = ("linear", "idw", "spline", "krigagem", "tendencia")
+METODOS = ("linear", "idw", "spline", "rbf", "krigagem", "tendencia")
+FUNCOES_RBF = ("multiquadrica", "inversa", "gaussiana")
+NOMES_RBF = {"multiquadrica": "multiquádrica", "inversa": "multiquádrica inversa", "gaussiana": "gaussiana"}
 MODELOS_VARIOGRAMA = ("esferico", "exponencial", "gaussiano")
 MIN_KRIGAGEM = 8                # menos poços que isso: variograma sem sentido → linear, com aviso
 
@@ -55,6 +58,13 @@ INFO = [
                "distantes. Suavidade 0 = exata nos poços; maior = aceita errar no poço para ficar lisa "
                "(filtra topo mal marcado). \"Auto\" escolhe pela validação cruzada.",
      "quando": "estruturas contínuas, dobras suaves, leques; evite na espessura (inventa picos)"},
+    {"id": "rbf", "nome": "Funções de base radial (RBF)",
+     "resumo": "Soma de \"montes\" em volta de cada poço, com a forma escolhida: multiquádrica (lisa, a mais "
+               "usada em superfícies geológicas), multiquádrica inversa ou gaussiana (mais locais). O raio diz até "
+               "onde cada poço pesa; \"auto\" escolhe raio e suavidade pela validação cruzada. A spline de placa "
+               "fina é um caso particular de RBF.",
+     "quando": "superfícies lisas com poços irregulares; leques e lobos com poucos poços; quando a spline exagera "
+               "entre poços distantes (a inversa e a gaussiana voltam à tendência longe dos poços)"},
     {"id": "krigagem", "nome": "Krigagem ordinária",
      "resumo": "Usa a correlação espacial medida nos próprios poços (variograma: alcance = até onde um poço "
                "\"influencia\"; pepita = ruído/suavização) e dá o mapa de incerteza. Anisotropia: direção e "
@@ -82,9 +92,13 @@ PARAMETROS_INFO = {
     "razao": "Krigagem: alcance na direção perpendicular ÷ alcance na direção do azimute (1 = sem "
              "anisotropia; 0,3 = três vezes mais contínuo na direção do azimute).",
     "grau": "Tendência: 1 = plano (mergulho regional); 2 = superfície curva (bacia em forma de prato).",
+    "funcao": "RBF: multiquádrica = lisa e regional (a usual); multiquádrica inversa e gaussiana = cada poço pesa "
+              "só perto dele, e longe dos poços a superfície volta ao plano de tendência.",
+    "raio_km": "RBF: distância em que a forma do \"monte\" de cada poço muda (o parâmetro de forma, 1/ε). Vazio = "
+               "automático, pela validação cruzada. Maior = mais liso e regional; menor = mais local.",
 }
 PADRAO = {"metodo": "linear", "suavidade": None, "potencia": 2.0, "vizinhos": 12, "modelo": "auto",
-          "alcance_km": None, "azimute": 0.0, "razao": 1.0, "grau": 1}
+          "alcance_km": None, "azimute": 0.0, "razao": 1.0, "grau": 1, "funcao": "multiquadrica", "raio_km": None}
 
 # Escala do modelo: ponto de partida (a janela preenche o formulário; tudo continua editável).
 # Escolhidos pela validação cruzada em dois casos reais (docs/bloco.md, "Interpolação e escala"):
@@ -138,7 +152,9 @@ def configuracao(cfg: dict | None) -> dict:
             raise ErroInterpolacao(f"Método desconhecido: {c['metodo']}")
         if c["modelo"] not in ("auto",) + MODELOS_VARIOGRAMA:
             raise ErroInterpolacao(f"Modelo de variograma desconhecido: {c['modelo']}")
-        for k in ("suavidade", "potencia", "alcance_km", "azimute", "razao"):
+        if c["funcao"] not in FUNCOES_RBF:
+            raise ErroInterpolacao(f"Função de base radial desconhecida: {c['funcao']}")
+        for k in ("suavidade", "potencia", "alcance_km", "azimute", "razao", "raio_km"):
             if c.get(k) not in (None, ""):
                 c[k] = float(str(c[k]).replace(",", "."))
         c["vizinhos"] = int(float(c.get("vizinhos") or 0))
@@ -149,6 +165,8 @@ def configuracao(cfg: dict | None) -> dict:
             raise ErroInterpolacao("Razão de anisotropia entre 0,05 e 1.")
         if c["grau"] not in (1, 2):
             raise ErroInterpolacao("Grau da tendência: 1 ou 2.")
+        if c["raio_km"] is not None and c["raio_km"] <= 0:
+            raise ErroInterpolacao("Raio da RBF maior que zero (ou vazio, para automático).")
         out[campo] = c
     return out
 
@@ -617,6 +635,99 @@ class Spline(_Dual):
         return f"spline de placa fina (suavidade {s:.1f}{', automática' if self.info.get('suavidade_auto') else ''})"
 
 
+class RBF(_Dual):
+    """Funções de base radial com o plano (1, x, y):
+        multiquádrica           φ(r) = √(1 + (r/c)²)      (Hardy, 1971)
+        multiquádrica inversa   φ(r) = 1 / √(1 + (r/c)²)
+        gaussiana               φ(r) = exp(−(r/c)²)
+    c = raio (parâmetro de forma, 1/ε). Raio e suavidade automáticos: o par com a menor mediana
+    do erro deixando cada poço de fora (fórmula de Rippa, 1999 — sem refazer o ajuste)."""
+
+    metodo = "rbf"
+
+    def __init__(self, obs, cfg=None):
+        super().__init__(obs, cfg)
+        self.funcao = self.cfg.get("funcao") or "multiquadrica"
+        if not self.espacial:
+            self.avisos.append("poucos poços ou alinhados: valor do poço mais próximo")
+            return
+        x, y = self.pts[:, 0], self.pts[:, 1]
+        d = np.hypot(x[:, None] - x[None], y[:, None] - y[None])
+        dd = d + np.diag(np.full(len(d), np.inf))
+        self.espac = float(np.median(dd.min(1))) or float(np.mean(d)) or 1.0
+        if self.cfg.get("_lambda") is not None and self.cfg.get("_raio") is not None:   # fixos (testes, sem um poço)
+            self.raio = float(self.cfg["_raio"])
+            self.info.update(raio_km=self.raio, suavidade=float(self.cfg.get("suavidade") or 0))
+            self._preparar(float(self.cfg["_lambda"]))
+            return
+        raios = [float(self.cfg["raio_km"])] if self.cfg.get("raio_km") else \
+            list(self.espac * np.geomspace(0.5, 20, 6 if len(self.pts) > 400 else 12))
+        s_fixa = self.cfg.get("suavidade")
+        suavs = [float(s_fixa)] if s_fixa is not None else ([0.0] if len(self.pts) > 400 else [0.0, 0.2, 0.4, 0.6])
+        melhor = None
+        for r in raios:
+            self.raio = r
+            esc = self._escala()
+            for sv in suavs:
+                try:
+                    self._preparar(self._lambda(sv, esc))
+                    with np.errstate(divide="ignore", invalid="ignore"):
+                        e = float(np.median(np.abs(self.loo_nos() - self.val)))
+                except np.linalg.LinAlgError:
+                    continue
+                if not np.isfinite(e):
+                    continue
+                if melhor is None or e < melhor[0] - 1e-9:
+                    melhor = (e, r, sv)
+        if melhor is None:      # poucos poços: deixar um de fora não tem como avaliar → raio típico, exata
+            melhor = (None, float(self.cfg.get("raio_km") or 3 * self.espac), 0.0 if s_fixa is None else float(s_fixa))
+            self.avisos.append("poucos poços para escolher o raio pela validação cruzada: 3× o espaçamento")
+        _, self.raio, sv = melhor
+        self.info.update(raio_km=float(self.raio), suavidade=float(sv),
+                         raio_auto=not self.cfg.get("raio_km"), suavidade_auto=s_fixa is None)
+        self._preparar(self._lambda(sv, self._escala()))
+
+    def _escala(self):
+        x, y = self.pts[:, 0], self.pts[:, 1]
+        return float(np.mean(np.abs(self._phi(np.hypot(x[:, None] - x[None], y[:, None] - y[None]))))) or 1.0
+
+    @staticmethod
+    def _lambda(s, escala):
+        return 0.0 if s <= 0 else escala * 10 ** (-5 + 5 * s)
+
+    def _phi(self, r):
+        t = (r / self.raio) ** 2
+        if self.funcao == "multiquadrica":
+            return np.sqrt(1 + t)
+        if self.funcao == "inversa":
+            return 1 / np.sqrt(1 + t)
+        return np.exp(-t)
+
+    def _kernel(self, qx, qy, px, py, diagonal=False):
+        return self._phi(np.hypot(np.asarray(qx)[:, None] - px[None], np.asarray(qy)[:, None] - py[None]))
+
+    def _poli(self, x, y):
+        x, y = np.asarray(x, float), np.asarray(y, float)
+        return np.column_stack([np.ones(len(x)), x, y])
+
+    def descricao(self):
+        if not self.espacial:
+            return "RBF (poucos poços: poço mais próximo)"
+        auto = ", automáticos" if self.info.get("raio_auto") else ""
+        return (f"RBF {NOMES_RBF[self.funcao]} (raio {self.info['raio_km']:.2f} km, suavidade "
+                f"{self.info['suavidade']:.1f}{auto})")
+
+    def _refeito(self, x, y, sem_poco):
+        cfg = dict(self.cfg, _raio=self.raio, _lambda=self.lam) if self.espacial else self.cfg   # mesmo raio e λ
+        obs = [o for o in self.obs if o[3] != sem_poco]
+        if not obs:
+            return None, False, math.inf
+        aj = type(self)(obs, cfg)
+        v = float(np.ravel(aj.valores(np.array([x]), np.array([y])))[0])
+        dentro, dist = aj._dentro_dist(x, y, list(range(len(aj.pts))), aj.hull)
+        return v, dentro, dist
+
+
 class Krigagem(_Dual):
     """Krigagem ordinária (média desconhecida), forma dual. Covariância C(h) = patamar·(1 − g(h/a));
     a pepita vai na diagonal (filtra: o valor no poço pode diferir do medido)."""
@@ -723,7 +834,7 @@ class Tendencia(_Base):
         return f"tendência de grau {self.cfg['grau']} + " + self.residuo.descricao()
 
 
-CLASSES = {"linear": Linear, "idw": IDW, "spline": Spline, "krigagem": Krigagem, "tendencia": Tendencia}
+CLASSES = {"linear": Linear, "idw": IDW, "spline": Spline, "rbf": RBF, "krigagem": Krigagem, "tendencia": Tendencia}
 
 
 class ComPresenca:

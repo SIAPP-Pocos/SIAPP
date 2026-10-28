@@ -240,3 +240,21 @@ def test_figura_estilo_artigo(banco, tmp_path):
         assert os.path.getsize(f) > 2000
     # de cima (elevação 90°): continua desenhando
     assert "<polygon" in bf.desenhar(m, azimute=0, elevacao=math.radians(89.9), exagero=1)
+
+
+def test_figura_com_a_aparencia_dos_pocos(banco, tmp_path):
+    from motor import bloco_figura as bf
+    ex = str(tmp_path / "execucoes")
+    ids = ["1-AA-1-RN", "1-AA-2-RN", "1-AA-3-RN", "1-AA-4-RN", "1-AA-5-RN"]
+    for pid in ids[:3]:
+        _avaliacao(ex, pid, f"avaliacao_{pid}_1", np.arange(300, 700, 0.5), np.ones(800), np.ones(800),
+                   [{"nome": "Açu", "topo": 300, "base": 700, "hpv_m": 3.0, "net_pay_m": 9.0,
+                     "ntg": 0.5, "phi_media_pay": 0.2, "sw_media_pay": 0.3}])
+    m = mb.montar(banco, ids, pasta_execucoes=ex)
+    chave_pay = next(k for k, c in m["classes"].items() if c["nome"] == "pay")
+    ap = {"marcador": {"forma": "losango", "cor": "#ff00aa", "tamanho": 2}, "linha": {"cor": "#00aa00"},
+          "trilha": {"espessura": 2, "cores": {f"classe:{chave_pay}": "#123456"}}, "topos": False}
+    svg = bf.desenhar(m, trilha="avaliacao", aparencia=ap)
+    assert 'fill="#ff00aa"' in svg and "poço (cabeça)" in svg and 'stroke="#00aa00"' in svg
+    assert 'stroke="#123456"' in svg and "<ellipse" not in svg          # sem discos nos topos
+    assert "poço (cabeça)" not in bf.desenhar(m, aparencia={"marcador": {"forma": "nenhum"}})

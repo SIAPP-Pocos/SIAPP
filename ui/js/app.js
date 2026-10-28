@@ -147,6 +147,7 @@ async function iniciar() {
 
   // preferências (cores, arranjo) antes de mostrar a primeira aba
   await carregarPreferencias();
+  if (typeof preencherAparencia === "function") preencherAparencia();
   const est = await chamar(null, "estado");
   if (est.ok && est.projeto_aberto) {
     liberarProjeto({ pasta: est.pasta });          // janela destacada (ou recarregada): o projeto já está aberto

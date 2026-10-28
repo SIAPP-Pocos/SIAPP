@@ -231,6 +231,12 @@ CANDIDATOS = [
     ("linear_topos", "Linear, topo a topo", {"estrutura": "linear", "espessura": "linear", "empilhamento": "topos"}),
     ("idw", "Inverso da distância, topo a topo", {"estrutura": "idw", "espessura": "idw", "empilhamento": "topos"}),
     ("spline", "Spline (automática), topo a topo", {"estrutura": "spline", "espessura": "spline", "empilhamento": "topos"}),
+    ("rbf", "RBF multiquádrica (automática), topo a topo", {"estrutura": {"metodo": "rbf", "funcao": "multiquadrica"},
+                                                            "espessura": {"metodo": "rbf", "funcao": "multiquadrica"},
+                                                            "empilhamento": "topos"}),
+    ("rbf_inversa", "RBF multiquádrica inversa (automática), topo a topo",
+     {"estrutura": {"metodo": "rbf", "funcao": "inversa"}, "espessura": {"metodo": "rbf", "funcao": "inversa"},
+      "empilhamento": "topos"}),
     ("krigagem", "Krigagem, topo a topo", {"estrutura": "krigagem", "espessura": "krigagem", "empilhamento": "topos"}),
     ("tendencia", "Tendência + krigagem, topo a topo", {"estrutura": "tendencia", "espessura": "krigagem",
                                                         "empilhamento": "topos"}),
@@ -556,7 +562,7 @@ def linhas_csv_comparacao(cmp: dict) -> list[list]:
 
 # um símbolo por método (sem depender de cor): círculo, quadrado, triângulo, losango, triângulo
 # invertido, estrela; cheio = o melhor da linha
-_SIMBOLOS = ("circulo", "quadrado", "triangulo", "losango", "invertido", "cruz")
+_SIMBOLOS = ("circulo", "quadrado", "triangulo", "losango", "invertido", "cruz", "pentagono", "mais")
 
 
 def _simbolo(tipo: str, x: float, y: float, r: float, cheio: bool, cor: str) -> str:
@@ -566,11 +572,16 @@ def _simbolo(tipo: str, x: float, y: float, r: float, cheio: bool, cor: str) -> 
         return f'<circle cx="{x:.1f}" cy="{y:.1f}" r="{r:.1f}" {a}/>'
     if tipo == "quadrado":
         return f'<rect x="{x - r * 0.9:.1f}" y="{y - r * 0.9:.1f}" width="{r * 1.8:.1f}" height="{r * 1.8:.1f}" {a}/>'
+    if tipo == "mais":
+        d = r * 1.05
+        return (f'<path d="M{x - d:.1f},{y:.1f} L{x + d:.1f},{y:.1f} M{x:.1f},{y - d:.1f} L{x:.1f},{y + d:.1f}" '
+                f'stroke="{cor}" stroke-width="{2.4 if cheio else 1.2}"/>')
     if tipo == "cruz":
         d = r * 0.95
         return (f'<path d="M{x - d:.1f},{y - d:.1f} L{x + d:.1f},{y + d:.1f} M{x - d:.1f},{y + d:.1f} '
                 f'L{x + d:.1f},{y - d:.1f}" stroke="{cor}" stroke-width="{2.2 if cheio else 1.1}"/>')
-    pts = {"triangulo": [(0, -1.15), (1.05, 0.75), (-1.05, 0.75)],
+    pts = {"pentagono": [(math.sin(2 * math.pi * k / 5) * 1.1, -math.cos(2 * math.pi * k / 5) * 1.1) for k in range(5)],
+           "triangulo": [(0, -1.15), (1.05, 0.75), (-1.05, 0.75)],
            "invertido": [(0, 1.15), (1.05, -0.75), (-1.05, -0.75)],
            "losango": [(0, -1.25), (1.0, 0), (0, 1.25), (-1.0, 0)]}[tipo]
     caminho = " ".join(f"{x + px * r:.1f},{y + py * r:.1f}" for px, py in pts)

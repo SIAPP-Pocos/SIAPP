@@ -131,6 +131,23 @@ Precisa de internet. Comece por uma categoria pequena para ver o tempo.
 - [ ] Sem intervalo marcado, **Calcular** explica que precisa de um intervalo-alvo.
 - [ ] Repetir no `5PX__0011__RN_5PX__0011__RN.tif` (DLIS de 2020).
 
+## 0.32 — bloco 3D: RBF, qual método usar, aparência dos poços
+
+- [ ] Interpretação › Bloco 3D: o painel tem os passos **1 Poços → 2 Interpolação → 3 Grade e unidades → 4 Montar**.
+- [ ] Escolha os poços de um campo. Em **Qual método usar?**, troque o ambiente: em **Leque**, a RBF aparece como
+      indicada; em **Fluvial**, a spline e a RBF como "evitar"; em **Rifte**, a linear. Clique num método para ver ou
+      esconder os motivos.
+- [ ] **Usar o indicado**: os métodos abaixo mudam (sem montar). Monte.
+- [ ] **Comparar métodos**: a tabela tem RBF multiquádrica e inversa. Depois, a lista "Qual método usar?" passa a ter
+      motivos "seus poços" (o que menos errou sobe).
+- [ ] Parâmetros avançados com RBF: **Função** e **Raio**. Vazio = automático (o resumo do bloco diz o raio escolhido).
+- [ ] **Aparência dos poços** (abaixo do visor): troque o marcador para cubo, a cor, a espessura e a cor do pay — muda na
+      hora. Desligue a legenda. Feche e abra o SIAPP: a aparência continua. Exporte a figura PDF: com a mesma aparência.
+- [ ] **Bloco fechado** com "Nos poços: pay": as trilhas dos poços de dentro aparecem por cima do bloco. Em "Poços por
+      cima do bloco: nunca", voltam a ficar escondidas.
+- [ ] Troque "Nos poços" para "só a linha" e monte de novo: continua "só a linha".
+- [ ] Abra **O que é "deixar um poço de fora" e "comparar métodos"?** e confira se a explicação está clara.
+
 ## 0.31 — texto arrumado, revisão de página e busca por escopo
 
 - [ ] Ao abrir o projeto, o índice de texto é refeito (passo "Refazendo o índice de texto"). Pode levar alguns segundos.

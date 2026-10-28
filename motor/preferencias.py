@@ -37,7 +37,57 @@ PADRAO = {
     "principal": {},           # geometria da janela principal {x, y, largura, altura, maximizada}
     "janelas": {},             # {aba: geometria} das janelas destacadas
     "abertas": [],             # abas que estavam em janela própria ao fechar o SIAPP
+    "bloco": {},               # bloco 3D: {ambiente, aparencia} (guia de interpolação, aparência dos poços)
 }
+
+FORMAS_MARCADOR = ("esfera", "cubo", "losango", "cone", "cilindro", "nenhum")
+POR_CIMA = ("fechado", "sempre", "nunca")
+
+
+def _cor(c) -> str | None:
+    return c.lower() if isinstance(c, str) and len(c) == 7 and c[0] == "#" and all(
+        ch in "0123456789abcdefABCDEF" for ch in c[1:]) else None
+
+
+def _faixa(v, lo, hi):
+    if isinstance(v, (int, float)) and not isinstance(v, bool):
+        return round(min(hi, max(lo, float(v))), 2)
+    return None
+
+
+def _aparencia(a) -> dict:
+    """Aparência dos poços no bloco 3D (só o que vale; o resto fica no padrão do visor)."""
+    if not isinstance(a, dict):
+        return {}
+    out: dict = {}
+    m = a.get("marcador")
+    if isinstance(m, dict):
+        mm = {}
+        if m.get("forma") in FORMAS_MARCADOR:
+            mm["forma"] = m["forma"]
+        if _cor(m.get("cor")):
+            mm["cor"] = _cor(m["cor"])
+        if _faixa(m.get("tamanho"), 0.3, 4) is not None:
+            mm["tamanho"] = _faixa(m["tamanho"], 0.3, 4)
+        if mm:
+            out["marcador"] = mm
+    if isinstance(a.get("linha"), dict) and _cor(a["linha"].get("cor")):
+        out["linha"] = {"cor": _cor(a["linha"]["cor"])}
+    t = a.get("trilha")
+    if isinstance(t, dict):
+        tt = {}
+        if _faixa(t.get("espessura"), 0.3, 5) is not None:
+            tt["espessura"] = _faixa(t["espessura"], 0.3, 5)
+        if isinstance(t.get("cores"), dict):
+            tt["cores"] = {str(k)[:40]: _cor(c) for k, c in list(t["cores"].items())[:40] if _cor(c)}
+        if tt:
+            out["trilha"] = tt
+    for k in ("topos", "legenda"):
+        if isinstance(a.get(k), bool):
+            out[k] = a[k]
+    if a.get("por_cima") in POR_CIMA:
+        out["por_cima"] = a["por_cima"]
+    return out
 
 
 def _geometria(g) -> dict:
@@ -88,6 +138,14 @@ def normalizar(d) -> dict:
         p["janelas"] = {a: g for a, g in ((a, _geometria(g)) for a, g in d["janelas"].items() if a in ABAS) if g}
     if isinstance(d.get("abertas"), list):
         p["abertas"] = [a for a in dict.fromkeys(d["abertas"]) if a in ABAS and a != "projeto"]
+    b = d.get("bloco")
+    if isinstance(b, dict):
+        amb = b.get("ambiente")
+        if isinstance(amb, str) and 0 < len(amb) <= 40 and amb.replace("_", "").isalnum():
+            p["bloco"]["ambiente"] = amb
+        ap = _aparencia(b.get("aparencia"))
+        if ap:
+            p["bloco"]["aparencia"] = ap
     return p
 
 
@@ -97,7 +155,7 @@ def mesclar(atual: dict, mudancas) -> dict:
     if not isinstance(mudancas, dict):
         return normalizar(novo)
     for k, v in mudancas.items():
-        if k in ("layout", "janelas", "recolhidas") and isinstance(v, dict) and isinstance(novo.get(k), dict):
+        if k in ("layout", "janelas", "recolhidas", "bloco") and isinstance(v, dict) and isinstance(novo.get(k), dict):
             novo[k] = {**novo[k], **v}
         else:
             novo[k] = v

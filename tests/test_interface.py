@@ -732,7 +732,7 @@ def test_bloco_escala_interpolacao_e_comparacao(janela, tmp_path):
     ir(p, "interp", "bloco")
     janela.esperar("document.getElementById('bl-disponiveis').textContent.includes('9 poço')")
     # escala: reservatório preenche o formulário (spline topo a topo, sem margem)
-    janela.esperar("document.getElementById('bl-m-estrutura').options.length === 5")
+    janela.esperar("document.getElementById('bl-m-estrutura').options.length === 6")
     assert p.input_value("#bl-escala") == "reservatorio"
     assert p.input_value("#bl-m-estrutura") == "spline" and p.input_value("#bl-empilhamento") == "topos"
     assert "spline" in p.text_content("#bl-escala-ajuda")
@@ -755,9 +755,21 @@ def test_bloco_escala_interpolacao_e_comparacao(janela, tmp_path):
     assert p.text_content("#bl-suavidade-v") in ("0,3", "0,30")
     p.click("#bl-selecionar")
     janela.esperar("document.getElementById('bl-n').textContent === '9'")
+    # qual método usar: leque, 9 poços → RBF indicada; krigagem com poucos poços para o variograma
+    p.select_option("#bl-ambiente", "leque")
+    janela.esperar("document.querySelector('#bl-guia-lista > li .g-cab strong') && "
+                   "document.querySelector('#bl-guia-lista > li .g-cab strong').textContent.includes('RBF')")
+    assert "indicado" in p.text_content("#bl-guia-lista > li:first-child .g-selo")
+    assert "9 poço(s)" in p.text_content("#bl-guia-fontes") and "sem comparação" in p.text_content("#bl-guia-fontes")
+    assert "variograma ainda é pouco confiável" in p.text_content("#bl-guia-lista")
+    p.select_option("#bl-m-estrutura", "krigagem")
+    p.uncheck("#bl-suavidade-auto")
+    p.fill("#bl-suavidade", "0.3")
+    p.dispatch_event("#bl-suavidade", "input")
     p.click("#bl-montar")
     janela.esperar("window.BlocoVisor && window.BlocoVisor.estado().superficies === 2", 60)
     assert "krigagem" in p.text_content("#bl-resumo")
+    assert janela.api.bloco_abrir(p.evaluate("bl.ultimo"))["modelo"]["ambiente"] == "leque"
     reg = janela.api.bloco_abrir(p.evaluate("bl.ultimo"))["modelo"]["parametros"]["interpolacao"]
     assert reg["estrutura"]["metodo"] == "krigagem" and reg["estrutura"]["suavidade"] == 0.3
     # σ da krigagem para colorir o topo
@@ -769,7 +781,10 @@ def test_bloco_escala_interpolacao_e_comparacao(janela, tmp_path):
     p.click("#bl-comparar")
     janela.esperar("!document.getElementById('bl-cmp').hidden", 120)
     assert "Errou menos" in p.text_content("#bl-cmp-resumo")
-    assert p.locator("#bl-cmp-tabela thead th").count() == 2 + 6
+    assert p.locator("#bl-cmp-tabela thead th").count() == 2 + 8
+    # o guia passa a contar a comparação: o melhor método ganha "seus poços"
+    janela.esperar("document.getElementById('bl-guia-fontes').textContent.includes('com a comparação')", 20)
+    assert "seus poços" in p.text_content("#bl-guia-lista")
     assert p.locator("#bl-cmp-tabela td.melhor").count() >= 2
     for f in ("csv", "svg"):
         p.click(f"[data-comparacao='{f}']")
@@ -1268,4 +1283,76 @@ def test_transcrever_trecho_de_texto_livre(janela, tmp_path):
     janela.esperar("document.querySelectorAll('#tr-lista td.trecho').length === 1")
     f = janela.api._banco.fatos(fonte_rel=rels[0], pagina=1)[0]
     assert f["tipo"] == "trecho" and f["observacao"] == "perda de circulacao\nna fase de 12 1/4 pol"
+    assert not janela.erros_js, janela.erros_js
+
+
+# ---------------------------------------------------------------- 0.32: bloco 3D
+def test_bloco_aparencia_dos_pocos_vale_na_hora(janela, tmp_path):
+    import numpy as np
+    from test_bloco import _avaliacao
+    from test_secao import poco
+    p = janela.page
+    abrir_projeto(janela)
+    b = janela.api._banco
+    ex = str(tmp_path / "ambiente_teste" / "execucoes")
+    pocos = [("1-AA-1-RN", -5.00, -37.00), ("1-AA-2-RN", -5.00, -36.96), ("1-AA-3-RN", -5.04, -37.00),
+             ("1-AA-4-RN", -5.04, -36.96), ("1-AA-5-RN", -5.02, -36.98)]
+    for pid, la, lo in pocos:
+        leste = (lo + 37.00) * 111.0
+        poco(b, pid, la, lo, 50.0, [("F", "JANDAI", 20, 300 + 10 * leste), ("F", "ACU", 300 + 10 * leste, 700)],
+             prof_final=900)
+        prof = np.arange(320, 700, 0.5)
+        _avaliacao(ex, pid, f"avaliacao_{pid}_1", prof, (prof > 400).astype(float), (prof > 500).astype(float),
+                   [{"nome": "Açu", "topo": 320, "base": 700, "hpv_m": 3.0, "net_pay_m": 20.0,
+                     "ntg": 0.6, "phi_media_pay": 0.2, "sw_media_pay": 0.35}])
+    ir(p, "interp", "bloco")
+    janela.esperar("document.getElementById('bl-disponiveis').textContent.includes('5 poço')")
+    # ordem do painel: poços → interpolação → grade → montar
+    passos = p.evaluate("[...document.querySelectorAll('#vista-bloco .lateral h2')].map(h => h.textContent.trim())")
+    assert [x[:1] for x in passos[:4]] == ["1", "2", "3", "4"] and "Montar" in passos[3]
+    p.click("#bl-selecionar")
+    janela.esperar("document.getElementById('bl-n').textContent === '5'")
+    p.click("#bl-montar")
+    janela.esperar("window.BlocoVisor && window.BlocoVisor.estado().superficies === 2", 30)
+    assert p.evaluate("window.BlocoVisor.estado().marcadores") == 5
+    # marcador, cores da trilha e legenda mudam sem montar de novo
+    p.click("#bl-aparencia summary")
+    p.select_option("#bl-ap-forma", "cubo")
+    janela.esperar("window.BlocoVisor.estado().forma === 'cubo'")
+    assert p.evaluate("window.BlocoVisor.estado().superficies") == 2           # mesmo bloco
+    assert p.locator("#bl-ap-cores input[type=color]").count() >= 2
+    p.locator("#bl-ap-cores input[type=color]").first.evaluate(
+        "e => { e.value = '#ff0000'; e.dispatchEvent(new Event('input')); }")
+    p.select_option("#bl-ap-forma", "nenhum")
+    janela.esperar("window.BlocoVisor.estado().marcadores === 0")
+    p.uncheck("#bl-ap-legenda")
+    assert p.locator(".bl-leg-trilha").is_hidden()
+    # a escolha fica guardada nas preferências
+    janela.esperar("bl.aparencia && bl.aparencia.marcador.forma === 'nenhum'")
+    for _ in range(50):
+        p.wait_for_timeout(100)                 # a gravação é adiada 0,4 s (várias mudanças seguidas = uma)
+        ap = janela.api._preferencias().ler().get("bloco", {}).get("aparencia", {})
+        if ap.get("legenda") is False:
+            break
+    assert ap["marcador"]["forma"] == "nenhum" and ap["legenda"] is False
+    assert "#ff0000" in ap["trilha"]["cores"].values()
+    # no bloco fechado, os poços ficam por cima (aparecem dentro do bloco)
+    p.click("[data-modo3d='fechado']")
+    assert p.evaluate("window.BlocoVisor.estado().porCima") is True
+    p.select_option("#bl-ap-porcima", "nunca")
+    assert p.evaluate("window.BlocoVisor.estado().porCima") is False
+    # a trilha escolhida continua ao montar de novo
+    p.select_option("#bl-trilha", "nenhuma")
+    janela.esperar("window.BlocoVisor.estado().trilhas === 0")
+    antes = p.evaluate("bl.ultimo")
+    p.click("#bl-montar")
+    janela.esperar(f"bl.ultimo && bl.ultimo !== '{antes}'", 30)
+    assert p.input_value("#bl-trilha") == "nenhuma"
+    p.click("#bl-explica summary")
+    assert "erro = previsto − AGP" in p.text_content("#bl-explica")
+    # a figura usa a mesma aparência
+    p.click("[data-figura='svg']")
+    janela.esperar("document.getElementById('bl-exportado').textContent.includes('_figura.svg')", 30)
+    svg = next((tmp_path / "ambiente_teste" / "exportacoes" / "blocos").glob("*_figura.svg")).read_text("utf-8")
+    assert "poço (cabeça)" not in svg
     assert not janela.erros_js, janela.erros_js
