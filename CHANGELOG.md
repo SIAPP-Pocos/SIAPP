@@ -6,6 +6,22 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 
 ## [Não lançado]
 
+## [0.39.0] — 2026-10-29
+Bloco 9, item 3: PVT.
+### Adicionado
+- **Análise PVT do laboratório**: as planilhas de liberação diferencial e de liberação flash da pasta "Dados De
+  Rochas e Fluidos/PVT" são lidas, e a pressão de saturação é tomada como a do maior Bo. Acima dela, o SIAPP
+  calcula a compressibilidade do óleo. As colunas são reconhecidas pelo título.
+- **Ficha › Análise PVT**: amostra, saturação, dados do tanque, gráficos de Bo, Rs e viscosidade × pressão e a
+  tabela dos estágios. **Composição** do fluido, de N₂ a C20+.
+- **Viabilidade**: com uma análise PVT num poço do campo, o grau API e a densidade do gás vêm dela, antes do dado
+  transcrito e da leitura automática. Bo, Rs e Bg vêm da tabela, interpolados na pressão do reservatório, no
+  lugar de Standing e Sutton + Papay; a memória de cálculo diz de que poço veio cada valor. Bg sai da tabela só
+  abaixo da saturação. O valor informado pelo usuário continua valendo sobre o medido.
+- A sigla do poço na operadora, que vem na planilha, vira apelido.
+### Mudado
+- A seção da ficha passou a se chamar "Formulários da ANP, testes e análises de laboratório".
+
 ## [0.38.0] — 2026-10-29
 Bloco 9, item 2: pressões.
 ### Adicionado

@@ -1,8 +1,11 @@
 """Propriedades de fluido (grau API do óleo, densidade relativa do gás) a partir dos documentos
 das pastas de poço do REATE — para a viabilidade não depender de digitar esses números.
 
-Três níveis, do mais confiável ao menos:
+Níveis, do mais confiável ao menos:
 
+0. **Análise PVT de laboratório** lida da planilha do poço (0.39, `motor/pvt.py`): grau API do
+   tanque, densidade do gás da liberação diferencial e a tabela Bo, Rs, Bg × pressão — a
+   viabilidade interpola na pressão do reservatório no lugar das correlações.
 1. **Dados transcritos** (tipo de fato `propriedade_fluido`): o usuário desenhou a caixa na
    página, conferiu o número e salvou — com documento, página e caixa como fonte. É o que a
    viabilidade usa primeiro (mediana, se houver mais de um).
@@ -175,11 +178,42 @@ def _fonte_fato(f: dict) -> str:
     return f"{f.get('poco_id')}{' (' + arq + pag + ')' if arq else ''} = {f.get('valor')}"
 
 
-def escolher(fatos: list[dict], leituras: list[dict], descartadas: set[str]) -> dict:
-    """Para cada grandeza: o valor a usar e a fonte (dados transcritos > leitura automática)."""
+def medidos(banco: Banco, ids_pocos: list[str]) -> list[dict]:
+    """Análises PVT de laboratório (liberação diferencial) lidas nos poços do campo (0.39)."""
+    import json
+    from . import dados_poco as mdp
+    saida = []
+    for pid in ids_pocos:
+        for i in mdp.itens_do_poco(banco, pid, "pvt"):
+            with banco.conexao() as c:
+                r = c.execute("SELECT dados FROM leituras WHERE rel = ?", (i["rel"],)).fetchone()
+            d = json.loads(r[0]) if r and r[0] else {}
+            x = i["extra"]
+            intervalo = f"{_br(i['prof_topo'])}–{_br(i['prof_base'])} m" if i["prof_topo"] is not None else ""
+            saida.append({"poco": pid, "rel": i["rel"], "intervalo": intervalo, "api": x.get("api_tanque"),
+                          "densidade_gas": x.get("dg_lib_dif") or x.get("dg_tanque"), "rgo": x.get("rgo_tanque"),
+                          "temp_c": x.get("temp_c"), "saturacao": x.get("saturacao") or {},
+                          "tabela": d.get("tabela") or [],
+                          "fonte": f"PVT do poço {pid} (liberação diferencial{', ' + intervalo if intervalo else ''})"})
+    return saida
+
+
+def escolher(fatos: list[dict], leituras: list[dict], descartadas: set[str], medidas: list[dict] | None = None) -> dict:
+    """Para cada grandeza: o valor a usar e a fonte (PVT de laboratório > dados transcritos > leitura automática)."""
     out = {}
+    medidas = medidas or []
+    if medidas:
+        melhor = max(medidas, key=lambda m: len(m["tabela"]))
+        out["pvt"] = {**melhor, "origem": "medido",
+                      "outros": [m["fonte"] for m in medidas if m is not melhor]}
     for g, info in GRANDEZAS.items():
         lo, hi = info["faixa"]
+        ms = [m for m in medidas if m.get(g) is not None and lo <= m[g] <= hi]
+        if ms:
+            v = float(median(m[g] for m in ms))
+            out[g] = {"valor": v, "origem": "medido", "n": len(ms),
+                      "fonte": "análise PVT de laboratório: " + "; ".join(f"{m['fonte']} = {_br(m[g])}" for m in ms[:6])}
+            continue
         fs = [f for f in fatos if f["grandeza"] == g and f["valor_num"] is not None and lo <= f["valor_num"] <= hi]
         if fs:
             v = float(median(f["valor_num"] for f in fs))
@@ -206,6 +240,7 @@ def resumo(banco: Banco, caminho_indice: str | None, campo: str, documentos: lis
     descartadas = set(ficha.get("fluidos_descartados") or [])
     leituras, citam = varrer_indice(caminho_indice, set(pocos)) if caminho_indice else ([], [])
     fatos = fatos_fluido(banco, list(pocos.values()))
+    med = medidos(banco, sorted(set(pocos.values())))
     docs = [d for d in (documentos or []) if (canonico(d.get("poco") or "") or d.get("poco")) in pocos]
     for x in leituras:
         x["chave"] = chave_leitura(x)
@@ -216,4 +251,5 @@ def resumo(banco: Banco, caminho_indice: str | None, campo: str, documentos: lis
             "leituras": leituras, "paginas": citam[:60], "n_paginas": len(citam),
             "fatos": [{k: f.get(k) for k in ("id", "poco_id", "nome", "valor", "unidade", "fonte_rel", "pagina",
                                               "origem", "grandeza")} for f in fatos],
-            "escolha": escolher(fatos, leituras, descartadas)}
+            "medidos": [{k: v for k, v in m.items() if k != "tabela"} for m in med],
+            "escolha": escolher(fatos, leituras, descartadas, med)}

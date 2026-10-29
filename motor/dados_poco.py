@@ -27,10 +27,10 @@ import json
 import os
 
 from . import pocos as mpo
-from . import pressoes, rfp
+from . import pressoes, pvt, rfp
 from .banco import Banco, agora
 
-LEITORES = {"cdpe": rfp, "pressoes": pressoes}
+LEITORES = {"cdpe": rfp, "pressoes": pressoes, "pvt": pvt}
 
 TIPOS = {
     "topo": "Topo estratigráfico", "indicio": "Indício de petróleo/gás", "testemunho": "Testemunho",
@@ -40,7 +40,8 @@ TIPOS = {
     "teste_completacao": "Teste na completação", "fase": "Fase da perfuração",
     "nao_conformidade": "Não conformidade", "perfilagem": "Perfilagem realizada",
     "pressao_formacao": "Pressão da formação (teste a cabo)", "teste_tfr": "Teste de formação (relatório)",
-    "manometro": "Registro de manômetro",
+    "manometro": "Registro de manômetro", "pvt": "Análise PVT (liberação diferencial)",
+    "composicao": "Composição do fluido (liberação flash)",
 }
 
 
@@ -147,7 +148,7 @@ def _sem_repeticao(itens: list[dict]) -> list[dict]:
     melhor = {}
     for i in itens:
         if i["tipo"] in ("pressao_formacao", "manometro", "perfilagem", "calha", "revestimento", "fase",
-                         "nao_conformidade", "teste_completacao"):
+                         "nao_conformidade", "teste_completacao", "pvt", "composicao"):
             k = (i["tipo"], i["rel"], i["ordem"])          # dados que não se repetem entre documentos
         else:
             k = (i["tipo"], None if i["prof_topo"] is None else round(i["prof_topo"], 1),

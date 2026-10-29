@@ -1691,3 +1691,27 @@ def test_pressoes_gradiente_contato_e_tfr_na_ficha(janela, tmp_path):
     p.locator(".dp-tfr").scroll_into_view_if_needed()
     foto(janela, "pr_2_tfr")
     assert not janela.erros_js, janela.erros_js
+
+
+def test_pvt_na_ficha(janela, tmp_path):
+    """0.39: análise PVT (liberação diferencial e flash) na ficha do poço."""
+    from interface_util import foto
+    from test_pvt import diferencial, flash, xlsx
+    p = janela.page
+    abrir_projeto(janela)
+    pasta = tmp_path / "ambiente_teste" / "bruto" / "Potiguar" / "1-SIAPP-1-RN" / "Dados De Rochas e Fluidos" / "PVT"
+    pasta.mkdir(parents=True)
+    xlsx(str(pasta / "1-SIAPP-1-RN-PVT Liberação Diferencial .xlsx"), diferencial())
+    xlsx(str(pasta / "1-SIAPP-1-RN-PVT Liberação Flash .xlsx"), flash())
+    janela.api._abrir_projeto(str(tmp_path / "ambiente_teste"))
+    p.click("#aba-mapa")
+    p.evaluate("abrirFicha('1-SIAPP-1-RN')")
+    janela.esperar("document.getElementById('fi-corpo').textContent.includes('Análise PVT')")
+    corpo = p.text_content("#fi-dados-poco")
+    assert "Pressão de saturação120 kgf/cm² (117,7 bar, 1.707 psi)" in corpo
+    assert "Bo 1,22 · Rs 70 m³/m³" in corpo and "31,2 °API" in corpo
+    assert p.locator(".dp-pvt svg polyline").count() == 3 and p.locator(".dp-tab-pvt tr").count() == 7
+    assert "Composição do fluido — liberação flash (6)" in corpo
+    p.locator(".dp-pvt").scroll_into_view_if_needed()
+    foto(janela, "pvt_1_ficha")
+    assert not janela.erros_js, janela.erros_js

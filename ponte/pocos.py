@@ -127,8 +127,14 @@ class PocosAPI:
             if dados.get("documento") == "cdpe":
                 d["titulo"] = dados.get("titulo_formulario") or d["titulo"]
         itens = {k: v for k, v in dp["itens"].items() if k not in ("manometro",)}
+        pvts = [{"rel": le["rel"], "amostra": le["dados"].get("amostra") or {}, "saturacao": le["dados"].get("saturacao"),
+                 "tabela": le["dados"].get("tabela") or []}
+                for le in dp["leituras"] if (le["dados"] or {}).get("documento") == "pvt_diferencial" and le["confere"] != 0]
+        comps = [{"rel": le["rel"], "amostra": le["dados"].get("amostra") or {},
+                  "componentes": le["dados"].get("componentes") or []}
+                 for le in dp["leituras"] if (le["dados"] or {}).get("documento") == "pvt_flash" and le["confere"] != 0]
         return {"documentos": docs, "gerais": mdp.gerais(self._banco, pid), "itens": itens,
-                "tipos": mdp.TIPOS, "pressoes": mpr.painel(dp)}
+                "tipos": mdp.TIPOS, "pressoes": mpr.painel(dp), "pvt": pvts, "composicao": comps}
 
     @resposta_segura
     def serie_pressao(self, rel: str, qual: str):

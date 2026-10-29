@@ -873,12 +873,24 @@ function desenharFluidos(d) {
   $("vb-fl-processar").textContent = `Processar os ${doc.pendentes.length} documento(s) pendente(s)`;
   for (const g of ["api", "densidade_gas"]) {
     const e = d.escolha[g], inp = document.querySelector(`[data-vb="${g}"]`);
-    if (inp) inp.placeholder = e ? `${numero(e.valor, 3)} (${e.origem === "transcrito" ? "transcrito" : "documentos"})`
+    if (inp) inp.placeholder = e ? `${numero(e.valor, 3)} (${e.origem === "medido" ? "PVT" : e.origem === "transcrito" ? "transcrito" : "documentos"})`
       : (g === "densidade_gas" ? "0,65" : "");
     const rot = fl.grandezas[g].rotulo;
     box.appendChild(el("p", e ? "em-uso" : "ajuda", e
       ? `${rot}: ${numero(e.valor, 3)} — ${e.fonte}`
       : `${rot}: nada nos documentos — ${g === "api" ? "sem ele, Bo e Rs não são estimados" : "usa 0,65"}.`));
+  }
+  const pv = d.escolha.pvt;
+  if (pv) {
+    const sat = pv.saturacao || {};
+    box.appendChild(el("p", "em-uso", `Análise PVT de laboratório — ${pv.fonte}: pressão de saturação ` +
+      `${numero(sat.p_bar, 1)} bar, Bo ${numero(sat.bo, 4)}, Rs ${numero(sat.rs, 1)} m³/m³ na saturação. ` +
+      "Bo, Rs e Bg vêm da tabela, na pressão do reservatório, no lugar das correlações (se você não informar)." +
+      ((pv.outros || []).length ? ` Outras análises: ${pv.outros.join("; ")}.` : "")));
+    for (const [g, v] of [["bo", sat.bo], ["rs", sat.rs]]) {
+      const inp = document.querySelector(`[data-vb="${g}"]`);
+      if (inp && v != null) inp.placeholder = `PVT (${numero(v, g === "bo" ? 4 : 1)} na saturação)`;
+    }
   }
   if (d.leituras.length) {
     box.appendChild(el("h5", "", "Valores lidos nos documentos"));

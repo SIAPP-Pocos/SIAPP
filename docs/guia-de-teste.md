@@ -131,6 +131,18 @@ Precisa de internet. Comece por uma categoria pequena para ver o tempo.
 - [ ] Sem intervalo marcado, **Calcular** explica que precisa de um intervalo-alvo.
 - [ ] Repetir no `5PX__0011__RN_5PX__0011__RN.tif` (DLIS de 2020).
 
+## 0.39 — análise PVT
+
+- [ ] Abra o projeto `ambiente_teste` e a ficha do **1-BRSA-1304-BA** › "Análise PVT — liberação diferencial
+      (1.680–1.684 m)". Esperado: saturação **155,4 kgf/cm²** (152,4 bar), **Bo 1,4013**, **Rs 125,37 m³/m³**, µo
+      0,79 cP; tanque 38,59 °API, RGO 117,83; três gráficos com a linha tracejada na saturação; 13 estágios.
+      Confira contra a planilha.
+- [ ] "Composição do fluido — liberação flash": 24 componentes, de N₂ a C20; C1 = 36,03 % no fluido do reservatório.
+- [ ] Viabilidade › um campo que tenha um poço com PVT baixado (o 1-BRSA-1304-BA é exploratório: só vale se o
+      cadastro da ANP o ligar a um campo): a nota dos fluidos diz "Análise PVT de laboratório…", o grau API vem
+      "(PVT)", e na memória de cálculo Bo e Rs aparecem como "medido: PVT do poço…".
+- [ ] Informe Bo à mão: a memória passa a dizer "informado pelo usuário".
+
 ## 0.38 — pressões (teste a cabo e TFR) e mais formulários
 
 - [ ] Abra o projeto `ambiente_teste`. Na abertura, o SIAPP lê o `1-brsa-1304-ba_sft-2.dlis` e o

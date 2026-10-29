@@ -31,6 +31,7 @@
     dados_poco.py   leitores de dados do poço em documentos (bloco 9): leituras, dados_poco, apelidos
     rfp.py          formulários CDPE da ANP pela posição do texto: RFP, RFCP, Perfuração, ND, NPR, Reentrada
     pressoes.py     teste a cabo (DLIS por tempo → estações), TFR (relatório + manômetros no ZIP), gradiente
+    pvt.py          análise PVT (liberação diferencial e flash): saturação, Bo/Rs/Bg × pressão, composição
     secao.py        seção estratigráfica pelos topos do AGP → SVG (PNG/PDF pelo PyMuPDF)
     secao_classica.py  estilo clássico: padrões de rocha, carimbo, mapa de localização
     bloco.py        bloco 3D: contorno convexo, Delaunay, superfícies de topo (só numpy) → janela com three.js

@@ -42,6 +42,7 @@ from statistics import median
 import numpy as np
 
 from . import producao as mpr
+from . import pvt as mpvt
 from .banco import Banco
 
 # ====================================================================== custo do duto
@@ -804,9 +805,34 @@ def avaliar(banco: Banco, campo: str, distancias: list[dict], dados: dict | None
                 avisos.append(f"O {rot} veio de leitura automática dos documentos dos poços (o OCR pode errar "
                               "números): confira as páginas e confirme ou descarte cada leitura.")
     tem_api = estimar and tem_pt and api_v is not None
+    # análise PVT de laboratório de um poço do campo (0.39): vale antes das correlações
+    pvt_med = sug.get("pvt")
+    p_res = mem.valores.get("P")
+
+    def do_pvt(chave: str):
+        if not pvt_med or not pvt_med.get("tabela"):
+            return None, ""
+        tab = pvt_med["tabela"]
+        sat = pvt_med.get("saturacao") or {}
+        if p_res is None:
+            if chave == "bg":
+                return None, ""
+            v, onde = sat.get(chave), f"na pressão de saturação ({fmt(sat.get('p_bar'))} bar)"
+        else:
+            pk = p_res / mpvt.KGF_BAR
+            faixa = [r["p_kgf_cm2"] for r in tab if r.get(chave) is not None]
+            if chave == "bg" and (not faixa or pk > max(faixa) or pk < min(faixa)):
+                return None, ""            # acima da saturação não há gás livre medido: fica a correlação
+            v, onde = mpvt.interpolar(tab, chave, pk), f"interpolado a {fmt(p_res)} bar"
+        if v is None:
+            return None, ""
+        return v, f"medido: {pvt_med['fonte']}, {onde}"
     # Rs
+    rs_pvt, rs_f = do_pvt("rs")
     if p["rs"] is not None:
         mem.entrada("Rs", p["rs"], "informado pelo usuário", G)
+    elif precisa["Rs"] and rs_pvt is not None:
+        mem.entrada("Rs", rs_pvt, rs_f, G)
     elif precisa["Rs"] and tem_api:
         mem.calcular("rs_scf", "pvt")
         mem.calcular("rs", "pvt")
@@ -817,10 +843,13 @@ def avaliar(banco: Banco, campo: str, distancias: list[dict], dados: dict | None
             avisos.append("Sem Rs: todo o gás produzido conta como gás livre no reservatório (superestima num campo de "
                           "óleo). Informe a razão de solubilidade inicial ou o grau API para estimá-la.")
     # Bo
+    bo_pvt, bo_f = do_pvt("bo")
     if p["bo"] is not None:
         mem.entrada("Bo", p["bo"], "informado pelo usuário", G)
     elif np_ == 0:
         mem.entrada("Bo", 0.0, "sem óleo produzido: não se aplica (0)", G)
+    elif bo_pvt is not None:
+        mem.entrada("Bo", bo_pvt, bo_f, G)
     elif tem_api:
         if "Rs_scf" not in mem.valores:
             mem.entrada("Rs_scf", mem.valores["Rs"] / 0.178108, "Rs (m³/m³) ÷ 0,178108", "Dados dos fluidos (para as correlações)")
@@ -830,10 +859,13 @@ def avaliar(banco: Banco, campo: str, distancias: list[dict], dados: dict | None
     else:
         mem.entrada("Bo", None, "não informado" + (" (informe o grau API para estimar)" if estimar else ""), G)
     # Bg
+    bg_pvt, bg_f = do_pvt("bg")
     if p["bg"] is not None:
         mem.entrada("Bg", p["bg"], "informado pelo usuário", G)
     elif not precisa["Bg"]:
         mem.entrada("Bg", 0.0, "sem gás produzido nem injetado: não se aplica (0)", G)
+    elif bg_pvt is not None:
+        mem.entrada("Bg", bg_pvt, bg_f, G)
     elif estimar and tem_pt:
         mem.entrada("p_padrao", constante(p, "p_padrao"), _fonte_const(p, "p_padrao"), "Constantes")
         mem.entrada("t_padrao", constante(p, "t_padrao"), _fonte_const(p, "t_padrao"), "Constantes")

@@ -44,7 +44,7 @@ function secaoDadosPocoFicha(corpo, dp, id) {
 function desenharDadosPoco(caixa, dp, id) {
   limpar(caixa);
   const docs = dp.documentos;
-  caixa.appendChild(el("h3", "", "Formulários da ANP e testes de formação"));
+  caixa.appendChild(el("h3", "", "Formulários da ANP, testes e análises de laboratório"));
   const ul = el("ul", "dp-docs");
   for (const d of docs) {                       // já em ordem de prioridade (RFP primeiro)
     const li = el("li");
@@ -101,6 +101,10 @@ function desenharDadosPoco(caixa, dp, id) {
   const pr = dp.pressoes || {};
   if ((pr.pontos || []).length) blocoDp(caixa, "Pressões × profundidade", pr.pontos.length, true, secaoPressoes(pr));
   for (const t of pr.tfr || []) blocoDp(caixa, `Teste de formação ${t.nome || ""} — relatório`, null, true, secaoTfr(t, pr.series || []));
+  for (const v of dp.pvt || []) blocoDp(caixa, `Análise PVT — liberação diferencial (${intervaloM(v.amostra.topo, v.amostra.base)} m)`,
+                                        null, true, secaoPvt(v));
+  for (const c of dp.composicao || []) blocoDp(caixa, `Composição do fluido — liberação flash`, c.componentes.length, false,
+                                               secaoComposicao(c));
 
   const testes = it.teste_formacao || [];
   if (testes.length) {
@@ -436,4 +440,68 @@ function secaoTfr(t, series) {
   if ((t.outros_arquivos || []).length)
     c.appendChild(el("p", "ajuda", `Também no ZIP: ${t.outros_arquivos.map((o) => o.arquivo.split("/").pop()).join(", ")}.`));
   return c;
+}
+
+
+// ------------------------------------------------ PVT
+function graficoXY(svg, xs, ys, xRot, yRot, marcaX) {
+  while (svg.firstChild) svg.removeChild(svg.firstChild);
+  const W = 220, H = 170, m = { e: 44, d: 8, t: 8, b: 30 };
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  const pts = xs.map((x, i) => [x, ys[i]]).filter(([x, y]) => x != null && y != null);
+  if (pts.length < 2) return;
+  const vx = pts.map((p) => p[0]), vy = pts.map((p) => p[1]);
+  const x = escalaLinear(Math.min(...vx), Math.max(...vx), m.e, W - m.d);
+  const y = escalaLinear(Math.min(...vy), Math.max(...vy), H - m.b, m.t);
+  const g = svgEl("g", { class: "dp-graf" });
+  g.appendChild(svgEl("rect", { x: m.e, y: m.t, width: W - m.e - m.d, height: H - m.t - m.b, class: "dp-graf-area" }));
+  if (marcaX != null) g.appendChild(svgEl("line", { x1: x(marcaX), x2: x(marcaX), y1: m.t, y2: H - m.b, class: "dp-linha-p" }));
+  pts.sort((a, b) => a[0] - b[0]);
+  g.appendChild(svgEl("polyline", { points: pts.map(([a, b]) => `${x(a).toFixed(1)},${y(b).toFixed(1)}`).join(" "), class: "dp-serie" }));
+  for (const [a, b] of pts) g.appendChild(svgEl("circle", { cx: x(a), cy: y(b), r: 2, fill: "#2a78d6" }));
+  const amp = Math.max(...vy) - Math.min(...vy);
+  for (let k = 0; k <= 2; k++) {
+    const yv = Math.min(...vy) + amp * k / 2, xv = Math.min(...vx) + (Math.max(...vx) - Math.min(...vx)) * k / 2;
+    const t = svgEl("text", { x: m.e - 3, y: y(yv) + 3, "text-anchor": "end", class: "dp-graf-txt" });
+    t.textContent = numero(yv, amp < 1 ? 3 : 1); g.appendChild(t);
+    const t2 = svgEl("text", { x: x(xv), y: H - m.b + 12, "text-anchor": "middle", class: "dp-graf-txt" });
+    t2.textContent = numero(xv, 0); g.appendChild(t2);
+  }
+  const r = svgEl("text", { x: (m.e + W) / 2, y: H - 3, "text-anchor": "middle", class: "dp-graf-txt" });
+  r.textContent = `${yRot} × ${xRot}`; g.appendChild(r);
+  svg.appendChild(g);
+}
+
+function secaoPvt(v) {
+  const c = el("div", "dp-pvt");
+  const a = v.amostra || {}, s = v.saturacao || {};
+  const t = el("table", "tabela ficha");
+  linhaFicha(t, "Amostra", [a.amostragem, a.fluido && a.fluido.toLowerCase(), a.temp_c != null ? `${numero(a.temp_c, 1)} °C` : ""].filter(Boolean).join(" · "));
+  linhaFicha(t, "Pressão de saturação", s.p_kgf_cm2 != null ? `${numero(s.p_kgf_cm2, 1)} kgf/cm² (${numero(s.p_bar, 1)} bar, ${numero(s.p_kgf_cm2 * KGF_PSI, 0)} psi)` : "");
+  linhaFicha(t, "Na saturação", [s.bo != null ? `Bo ${numero(s.bo, 4)}` : "", s.rs != null ? `Rs ${numero(s.rs, 2)} m³/m³` : "",
+                                 s.mu_o_cp != null ? `μo ${numero(s.mu_o_cp, 2)} cP` : "", s.rho_o_g_cm3 != null ? `ρo ${numero(s.rho_o_g_cm3, 4)} g/cm³` : ""].filter(Boolean).join(" · "));
+  linhaFicha(t, "Compressibilidade do óleo", s.co_por_kgf_cm2 != null ? `${numero(s.co_por_kgf_cm2 * 1e6, 0)} × 10⁻⁶ (kgf/cm²)⁻¹ (acima da saturação)` : "");
+  linhaFicha(t, "Tanque", [a.api_tanque != null ? `${numero(a.api_tanque, 2)} °API` : "", a.rgo_tanque != null ? `RGO ${numero(a.rgo_tanque, 2)} m³/m³` : "",
+                           a.dg_tanque != null ? `gás ${numero(a.dg_tanque, 4)} (ar = 1)` : ""].filter(Boolean).join(" · "));
+  linhaFicha(t, "Gás da liberação diferencial", a.dg_lib_dif != null ? `${numero(a.dg_lib_dif, 3)} (ar = 1)` : "");
+  c.appendChild(t);
+  const graf = el("div", "dp-pvt-graf");
+  const tab = v.tabela || [];
+  const ps = tab.map((r) => r.p_kgf_cm2);
+  for (const [k, rot] of [["bo", "Bo (m³/m³)"], ["rs", "Rs (m³/m³)"], ["mu_o_cp", "μo (cP)"]]) {
+    const svg = svgEl("svg", { class: "dp-svg dp-svg-pvt", role: "img", "aria-label": rot });
+    graficoXY(svg, ps, tab.map((r) => r[k]), "p (kgf/cm²)", rot, s.p_kgf_cm2);
+    graf.appendChild(svg);
+  }
+  c.appendChild(graf);
+  c.appendChild(tabelaSimples(["p (kgf/cm²)", "Bo", "Rs", "Visc. óleo (cP)", "Massa esp. (g/cm³)", "Bg", "Z"],
+    tab.map((r) => [numero(r.p_kgf_cm2, 1), numero(r.bo, 4), numero(r.rs, 2), numero(r.mu_o_cp, 2), numero(r.rho_o_g_cm3, 4),
+                    r.bg != null ? numero(r.bg, 5) : "—", r.z != null ? numero(r.z, 3) : "—"]), "dp-tab-pvt"));
+  c.appendChild(el("p", "ajuda", "Linha tracejada: pressão de saturação (o maior Bo). A viabilidade usa esta tabela na pressão do reservatório."));
+  return c;
+}
+
+function secaoComposicao(cp) {
+  return tabelaSimples(["Componente", "Óleo estabilizado (%)", "Gás (%)", "Fluido do reservatório (%)"],
+    cp.componentes.map((x) => [x.componente, numero(x.oleo_pct, 2), numero(x.gas_pct, 2), numero(x.fluido_pct, 2)]));
 }
