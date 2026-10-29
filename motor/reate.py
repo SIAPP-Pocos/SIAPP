@@ -10,13 +10,22 @@ Como o portal funciona (verificado em versões anteriores do projeto):
   - Não há login, cookie nem CSRF. A única credencial é o token da bacia,
     enviado via Basic Auth (padrão do Nextcloud para compartilhamento público).
   - Listar pastas = verbo WebDAV PROPFIND sobre /public.php/webdav/<caminho>.
+  - O nome reate.cprm.gov.br aponta para DOIS servidores (200.237.2.133 e .134,
+    conferido em 28/10/2026). Quando um deles fica sem servidor por trás, responde
+    "503 — No server is available to handle this request" a tudo, enquanto o outro
+    funciona; o Windows entrega sempre o mesmo primeiro, então o SIAPP caía sempre
+    no quebrado enquanto o Chrome abria. Por isso, diante de 502/503/504 ou de falha
+    de conexão, o cliente tenta os outros endereços e fica no que respondeu
+    (ver _Servidores e ClienteREATE._enviar).
 """
 
 from __future__ import annotations
 
 import base64
+import logging
 import os
 import re
+import socket
 import threading
 import time
 import unicodedata
@@ -25,8 +34,12 @@ import xml.etree.ElementTree as ET
 from urllib.parse import quote, unquote
 
 import requests
+import urllib3.util.connection as _u3_conexao
 
-VERSAO_CLIENTE = "0.1"
+VERSAO_CLIENTE = "0.2"
+HOST_PORTAL = "reate.cprm.gov.br"
+SERVIDOR_FORA = (502, 503, 504)       # o balanceador do portal sem servidor por trás
+log = logging.getLogger("siapp.reate")
 
 URL_BASE = "https://reate.cprm.gov.br/arquivos"
 URL_WEBDAV = f"{URL_BASE}/public.php/webdav"
@@ -107,6 +120,59 @@ class ErroREATE(Exception):
     """Falha de comunicação com o portal, com mensagem legível para o usuário."""
 
 
+class _Servidores:
+    """Qual dos endereços do portal usar (vale para o processo inteiro, todas as bacias).
+
+    Enquanto nada falha, o sistema escolhe (fixo = None). Quando um endereço responde
+    502/503/504 ou não conecta, o cliente tenta os outros e fixa o que funcionou. A
+    troca vale para as próximas conexões; o certificado e o cabeçalho Host continuam
+    sendo os de reate.cprm.gov.br (só o endereço IP da conexão muda)."""
+
+    VALIDADE_DNS_S = 600
+
+    def __init__(self):
+        self.fixo: str | None = None
+        self._trava = threading.Lock()
+        self._cache: tuple[float, list[str]] = (0.0, [])
+
+    def resolver(self) -> list[str]:
+        try:
+            infos = socket.getaddrinfo(HOST_PORTAL, 443, proto=socket.IPPROTO_TCP)
+        except OSError:
+            return []
+        return list(dict.fromkeys(i[4][0] for i in infos))
+
+    def enderecos(self) -> list[str]:
+        with self._trava:
+            quando, ips = self._cache
+            if not ips or time.monotonic() - quando > self.VALIDADE_DNS_S:
+                ips = self.resolver()
+                self._cache = (time.monotonic(), ips)
+            return list(ips)
+
+    def alternativas(self, excluir: str | None) -> list[str]:
+        return [ip for ip in self.enderecos() if ip != excluir]
+
+    def esquecer(self):
+        with self._trava:
+            self.fixo, self._cache = None, (0.0, [])
+
+
+SERVIDORES = _Servidores()
+_criar_conexao_original = _u3_conexao.create_connection
+
+
+def _criar_conexao(endereco, *args, **kwargs):
+    """Gancho do urllib3: conexões a reate.cprm.gov.br vão ao endereço fixado, se houver."""
+    host, porta = endereco
+    if host == HOST_PORTAL and SERVIDORES.fixo:
+        endereco = (SERVIDORES.fixo, porta)
+    return _criar_conexao_original(endereco, *args, **kwargs)
+
+
+_u3_conexao.create_connection = _criar_conexao
+
+
 class DownloadCancelado(Exception):
     """O usuário cancelou. O arquivo .part fica no disco para retomar depois."""
 
@@ -148,13 +214,54 @@ class ClienteREATE:
             time.sleep(espera)
         self._ultima_req = time.monotonic()
 
+    def _uma(self, metodo: str, url: str, kw: dict):
+        if metodo == "GET":
+            return self.sessao.get(url, **kw)
+        return self.sessao.request(metodo, url, **kw)
+
+    def _enviar(self, metodo: str, url: str, **kw):
+        """Uma requisição ao portal. Se o servidor responder 502/503/504 ou não conectar,
+        tenta os outros endereços do portal e fica no primeiro que responder."""
+        usado = SERVIDORES.fixo
+        falhas: list[str] = []
+        erro_conexao = None
+        try:
+            resp = self._uma(metodo, url, kw)
+            if resp.status_code not in SERVIDOR_FORA:
+                return resp
+            getattr(resp, "close", lambda: None)()
+            falhas.append(f"{usado or 'o endereço padrão'}: HTTP {resp.status_code}")
+        except requests.exceptions.ConnectionError as e:
+            erro_conexao = e
+            falhas.append(f"{usado or 'o endereço padrão'}: sem conexão")
+        for ip in SERVIDORES.alternativas(usado):
+            SERVIDORES.fixo = ip
+            self.sessao.close()                       # conexões abertas iam ao endereço antigo
+            try:
+                resp = self._uma(metodo, url, kw)
+            except requests.exceptions.ConnectionError as e:
+                erro_conexao = e
+                falhas.append(f"{ip}: sem conexão")
+                continue
+            if resp.status_code in SERVIDOR_FORA:
+                getattr(resp, "close", lambda: None)()
+                falhas.append(f"{ip}: HTTP {resp.status_code}")
+                continue
+            log.info("REATE: servidor com defeito (%s); usando %s", "; ".join(falhas), ip)
+            return resp
+        SERVIDORES.fixo = usado
+        if erro_conexao is not None and not any("HTTP" in f for f in falhas):
+            raise erro_conexao
+        raise ErroREATE("O REATE está fora do ar: nenhum servidor do portal respondeu "
+                        f"({'; '.join(falhas)}). Tente de novo mais tarde.")
+
     def _propfind(self, caminho: str, profundidade: str, timeout_s: float | None = None) -> list[dict]:
         caminho = "/" + caminho.strip("/") + "/" if caminho.strip("/") else "/"
         url = URL_WEBDAV + quote(caminho, safe="/")
         try:
             with self._trava:
                 self._aguardar_vez()
-                resp = self.sessao.request(
+                resp = self._enviar(
                     "PROPFIND", url,
                     headers={"Depth": profundidade, "Content-Type": "application/xml; charset=utf-8"},
                     data=_CORPO_PROPFIND.encode("utf-8"),
@@ -342,8 +449,8 @@ class ClienteREATE:
         try:
             with self._trava:
                 self._aguardar_vez()
-                with self.sessao.get(url, headers={"Range": f"bytes=0-{n - 1}"}, stream=True,
-                                     timeout=(30, self.timeout_s)) as resp:
+                with self._enviar("GET", url, headers={"Range": f"bytes=0-{n - 1}"}, stream=True,
+                                  timeout=(30, self.timeout_s)) as resp:
                     if resp.status_code == 401:
                         raise ErroREATE("O portal recusou o token da bacia (401).")
                     if resp.status_code == 404:
@@ -402,8 +509,8 @@ class ClienteREATE:
                 break
             cab = {"Range": f"bytes={ja}-"} if ja else {}
             try:
-                with self.sessao.get(url, params=params, headers=cab, stream=True,
-                                     timeout=(30, 120)) as resp:
+                with self._enviar("GET", url, params=params, headers=cab, stream=True,
+                                  timeout=(30, 120)) as resp:
                     if resp.status_code == 401:
                         raise ErroREATE("O portal recusou o token da bacia (401).")
                     if resp.status_code == 404:

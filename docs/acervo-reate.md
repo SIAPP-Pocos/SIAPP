@@ -26,6 +26,21 @@ _O que o acervo realmente contém, observado com o SIAPP em poços reais. Separa
 
 ---
 
+## Os dois servidores do portal (28/10/2026)
+
+O nome `reate.cprm.gov.br` aponta para **dois endereços** (200.237.2.133 e 200.237.2.134).
+Quando um deles fica sem servidor por trás, responde a tudo
+`503 Service Unavailable — No server is available to handle this request`, enquanto o outro
+funciona. Não é bloqueio: o mesmo pedido (do SIAPP ou de um navegador) é recusado pelo
+quebrado e atendido pelo bom. O Windows entrega sempre o mesmo endereço primeiro, então o
+SIAPP caía sempre no quebrado enquanto o Chrome, que escolhe de outro jeito, abria.
+
+Desde a 0.35.1, diante de 502/503/504 ou de falha de conexão, o SIAPP tenta o outro endereço
+e fica nele (`motor/reate.py`, `_Servidores`); o certificado e o nome do site continuam os do
+portal. Se os dois falharem, a mensagem diz que o REATE está fora do ar e mostra o que cada
+endereço respondeu. Os scripts `diagnostico_reate.py` e `diagnostico_reate_ip.py` (deixados em
+`ambiente_teste`) repetem o teste, endereço por endereço.
+
 ## Estrutura de pastas
 
 ```

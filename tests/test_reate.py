@@ -185,3 +185,94 @@ def test_ler_inicio_pede_range_e_para_nos_n_bytes():
     assert len(dados) == 1024 and vistos["range"] == "bytes=0-1023"
     assert vistos["url"].endswith("/webdav/POCO/Cat/1-A-1-RN/Perfil%20Convencional/a%20b.tif")
     assert vistos["resp"].lidos == 1                         # não leu o resto do arquivo
+
+
+# ------------------------------------------------ dois servidores, um quebrado (28/10/2026)
+@pytest.fixture
+def dois_servidores(monkeypatch):
+    reate.SERVIDORES.esquecer()
+    monkeypatch.setattr(reate.SERVIDORES, "resolver", lambda: ["200.0.0.1", "200.0.0.2"])
+    yield reate.SERVIDORES
+    reate.SERVIDORES.esquecer()
+
+
+def test_servidor_quebrado_troca_para_o_outro_e_fica_nele(dois_servidores):
+    c = reate.ClienteREATE("T", pausa_s=0)
+    vistos = []
+
+    def falso(metodo, url, **kw):
+        vistos.append(dois_servidores.fixo)
+        if dois_servidores.fixo != "200.0.0.2":
+            return Resp(503, b"<h1>503 Service Unavailable</h1> No server is available")
+        return Resp(207, xml_propfind("/", [("POCO", True, 0)]))
+
+    c.sessao.request = falso
+    assert [i["nome"] for i in c.listar("/")] == ["POCO"]
+    assert vistos == [None, "200.0.0.1", "200.0.0.2"] and dois_servidores.fixo == "200.0.0.2"
+    vistos.clear()
+    c.listar("/")                                            # já vai direto ao que funciona
+    assert vistos == ["200.0.0.2"]
+
+
+def test_todos_os_servidores_fora_do_ar(dois_servidores):
+    c = reate.ClienteREATE("T", pausa_s=0)
+    c.sessao.request = lambda *a, **k: Resp(503)
+    with pytest.raises(reate.ErroREATE, match="fora do ar") as e:
+        c.listar("/")
+    assert "200.0.0.1: HTTP 503" in str(e.value) and "200.0.0.2: HTTP 503" in str(e.value)
+    assert dois_servidores.fixo is None
+
+
+def test_gancho_leva_a_conexao_ao_endereco_fixado(dois_servidores, monkeypatch):
+    pedidos = []
+    monkeypatch.setattr(reate, "_criar_conexao_original", lambda end, *a, **k: pedidos.append(end))
+    dois_servidores.fixo = "200.0.0.2"
+    reate._criar_conexao((reate.HOST_PORTAL, 443))
+    reate._criar_conexao(("api.github.com", 443))            # outros sites não mudam
+    assert pedidos == [("200.0.0.2", 443), ("api.github.com", 443)]
+
+
+def test_de_ponta_a_ponta_com_dois_servidores_locais(monkeypatch):
+    """Dois servidores HTTP de verdade, em 127.0.0.1 (responde 503) e 127.0.0.2 (lista)."""
+    import http.server
+    import socketserver
+
+    class Quebrado(http.server.BaseHTTPRequestHandler):
+        def do_PROPFIND(self):
+            self.send_response(503)
+            self.end_headers()
+            self.wfile.write(b"No server is available to handle this request.")
+
+        def log_message(self, *a):
+            pass
+
+    class Bom(Quebrado):
+        def do_PROPFIND(self):
+            corpo = xml_propfind("/", [("POCO", True, 0)])
+            self.send_response(207)
+            self.send_header("Content-Length", str(len(corpo)))
+            self.end_headers()
+            self.wfile.write(corpo)
+
+    try:
+        s1 = socketserver.TCPServer(("127.0.0.1", 0), Quebrado)
+        s2 = socketserver.TCPServer(("127.0.0.2", s1.server_address[1]), Bom)
+    except OSError:
+        pytest.skip("sem 127.0.0.2 neste sistema")
+    porta = s1.server_address[1]
+    for s in (s1, s2):
+        threading.Thread(target=s.serve_forever, daemon=True).start()
+    try:
+        reate.SERVIDORES.esquecer()
+        monkeypatch.setattr(reate, "HOST_PORTAL", "portal.teste")
+        monkeypatch.setattr(reate, "URL_WEBDAV", f"http://portal.teste:{porta}/arquivos/public.php/webdav")
+        monkeypatch.setattr(reate.SERVIDORES, "resolver", lambda: ["127.0.0.1", "127.0.0.2"])
+        c = reate.ClienteREATE("T", pausa_s=0, timeout_s=5)
+        c.sessao.trust_env = False                           # sem proxy do ambiente
+        assert [i["nome"] for i in c.listar("/")] == ["POCO"]
+        assert reate.SERVIDORES.fixo == "127.0.0.2"
+    finally:
+        reate.SERVIDORES.esquecer()
+        for s in (s1, s2):
+            s.shutdown()
+            s.server_close()

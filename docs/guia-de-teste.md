@@ -131,6 +131,13 @@ Precisa de internet. Comece por uma categoria pequena para ver o tempo.
 - [ ] Sem intervalo marcado, **Calcular** explica que precisa de um intervalo-alvo.
 - [ ] Repetir no `5PX__0011__RN_5PX__0011__RN.tif` (DLIS de 2020).
 
+## 0.35.1 — conexão com o REATE
+
+- [ ] Dados › Catálogo do REATE: conectar o **Recôncavo** (e a Potiguar). Conecta mesmo quando um dos dois servidores
+      do portal está com defeito; o `siapp.log` registra "REATE: servidor com defeito … usando 200.237.2.134".
+- [ ] Sem internet, conectar diz "Sem conexão com o REATE"; se os dois servidores estiverem fora, "O REATE está
+      fora do ar" com o que cada um respondeu.
+
 ## 0.35 — comunidade: painel e biblioteca de interpretações
 
 - [ ] Comunidade: a barra lateral tem **Contribuir**, **Painel de preenchimento** e **Biblioteca de interpretações**.

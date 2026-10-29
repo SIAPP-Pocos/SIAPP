@@ -6,6 +6,13 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 
 ## [Não lançado]
 
+## [0.35.1] — 2026-10-28
+### Corrigido
+- **"Resposta inesperada do portal: HTTP 503" ao conectar uma bacia**, enquanto o portal abria no navegador. O
+  REATE tem dois servidores (200.237.2.133 e .134) e um deles estava respondendo 503 a tudo; o SIAPP caía sempre
+  nele. Agora, diante de 502/503/504 ou de falha de conexão, tenta o outro servidor e fica no que responde. Se
+  nenhum responder, a mensagem diz que o REATE está fora do ar e o que cada servidor respondeu.
+
 ## [0.35.0] — 2026-10-28
 Bloco 8 do teste da 0.29: Comunidade.
 ### Adicionado
