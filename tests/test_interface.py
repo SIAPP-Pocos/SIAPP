@@ -1596,3 +1596,48 @@ def test_referencia_do_gr_na_avaliacao_e_selo_do_download(janela, tmp_path):
     janela.esperar("__item.selo.textContent === 'baixado'")
     assert p.evaluate("__item.no.tipo") == "perfil" and p.evaluate("__item.cb.disabled")
     assert not janela.erros_js, janela.erros_js
+
+
+def test_formularios_da_anp_na_ficha_nos_perfis_e_na_avaliacao(janela, tmp_path):
+    """0.37: RFP, RFCP e Perfuração lidos ao abrir o projeto aparecem na ficha, viram intervalos
+    candidatos e referência de temperatura/fluido na avaliação."""
+    import rfp_util as u
+    from interface_util import foto
+    from test_avaliacao import las_reservatorio
+    p = janela.page
+    abrir_projeto(janela)
+    pasta = tmp_path / "ambiente_teste" / "bruto" / "Potiguar" / "1-SIAPP-1-RN" / "Pasta de Poco"
+    pasta.mkdir(parents=True)
+    for k, nome in enumerate(("RFP", "RFCP", "Perfuracao"), 1):
+        u.gerar(str(pasta / f"1-SIAPP-1-RN_CDPE_{k}_{nome}.pdf"), getattr(u, nome.upper()))
+    perfis = pasta.parent / "Perfil Convencional"
+    perfis.mkdir()
+    las_reservatorio(perfis / "siapp.las")
+    janela.api._abrir_projeto(str(tmp_path / "ambiente_teste"))
+    p.evaluate("abrirFicha('1-SIAPP-1-RN')")
+    janela.esperar("document.getElementById('fi-corpo').textContent.includes('Formulários da ANP')")
+    corpo = p.text_content("#fi-dados-poco")
+    assert "Relatório Final de Poço" in corpo and "Relatório Final de Completação" in corpo
+    assert "Prof. final (sondador)1.850 m" in corpo and "FM JANDAÍRA" in corpo
+    assert "FM AÇU780801,5-689,3+21,5" in corpo                       # prevista × constatada
+    assert "141,7 kgf/cm² (2.015 psi)" in corpo and "158 °F (70 °C)" in corpo
+    assert "canhoneado1.396–1.401FM. AÇUHSD · 6 tiros/pé" in corpo and "CATIÔNICO9,6" in corpo
+    assert "Sigla do Poço na base do E&P: 1-ABC-1-RN" in corpo
+    p.click("#aba-mapa")
+    p.locator("#fi-dados-poco h3").scroll_into_view_if_needed()
+    foto(janela, "dp_1_ficha")
+    p.locator("#fi-dados-poco .dp-bloco").first.scroll_into_view_if_needed()
+    foto(janela, "dp_1b_ficha_tabelas")
+    p.click("#aba-perfis")
+    janela.esperar("document.querySelectorAll('#lista-perfis button').length >= 1")
+    p.click("#lista-perfis button")
+    janela.esperar("document.querySelectorAll('.av-int').length >= 3", 30)
+    ints = p.text_content("#av-intervalos")
+    assert "Dos formulários da ANP" in ints and "Canhoneado · FM. AÇU · 1.396–1.401 m" in ints
+    assert "Teste TFR · ÓLEO" in ints
+    lama = p.text_content("#av-lama")
+    assert "No RFP: 80 °F lida a 0 m (origem P) · 158 °F extrapolada a 1.850 m (perfilagem final)" in lama
+    assert "fase 2 (12 1/4\") catiônico 9,6 lb/gal até 1.850 m" in lama
+    assert p.evaluate("pf.form.canhoneados.length") == 1 and p.evaluate("pf.form.topos.length") == 4
+    foto(janela, "dp_2_avaliacao")
+    assert not janela.erros_js, janela.erros_js

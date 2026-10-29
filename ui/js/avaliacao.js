@@ -125,14 +125,15 @@ function desenharIntervalosAv() {
   const box = limpar($("av-intervalos"));
   const ints = av.info ? av.info.intervalos : [];
   const doAgp = av.info ? (av.info.intervalos_agp || []) : [];
+  const doForm = av.info ? (av.info.intervalos_formularios || []) : [];
   const bibl = av.info && av.info.biblioteca;
   if (bibl) {
     box.appendChild(el("p", "ajuda av-sub", `Da biblioteca (${bibl.autor || "sem autor"}):`));
     for (const f of bibl.intervalos) box.appendChild(caixaIntervalo(f, true));
   }
   if (!ints.length) {
-    box.appendChild(el("p", "ajuda", doAgp.length
-      ? "Nenhum intervalo marcado por você. Use uma unidade do AGP abaixo ou arraste sobre o gráfico."
+    box.appendChild(el("p", "ajuda", doAgp.length || doForm.length
+      ? "Nenhum intervalo marcado por você. Use um intervalo da operadora abaixo ou arraste sobre o gráfico."
       : "Nenhum intervalo-alvo neste poço. Arraste na vertical sobre o gráfico e salve como “Intervalo-alvo”."));
   }
   for (const f of ints) box.appendChild(caixaIntervalo(f, !bibl));
@@ -140,6 +141,10 @@ function desenharIntervalosAv() {
     const t = el("p", "ajuda av-sub", "Do AGP (topos interpretados pela operadora):");
     box.appendChild(t);
     for (const f of doAgp) box.appendChild(caixaIntervalo(f, false));
+  }
+  if (doForm.length) {
+    box.appendChild(el("p", "ajuda av-sub", "Dos formulários da ANP (RFP/RFCP: análise de perfis, canhoneados, testes):"));
+    for (const f of doForm) box.appendChild(caixaIntervalo(f, false));
   }
   desenharLamaAv();
 }
@@ -150,7 +155,9 @@ function desenharLamaAv() {
   if (!p) return;
   const cs = (av.info && av.info.lama_agp) || [];
   const ts = (av.info && av.info.temperaturas_agp) || [];
-  if (!cs.length && !ts.length) { p.hidden = true; return; }
+  const tf = (av.info && av.info.temperaturas_formularios) || [];
+  const ff = (av.info && av.info.fluido_formularios) || [];
+  if (!cs.length && !ts.length && !tf.length && !ff.length) { p.hidden = true; return; }
   const partes = cs.map((c) => [`corrida ${c.corrida || "?"}`,
     c.rm != null ? `Rm ${numero(c.rm, 3)} a ${numero(c.t_rm, 1)} °F` : "",
     c.rmf != null ? `Rmf ${numero(c.rmf, 3)} a ${numero(c.t_rmf, 1)} °F` : "",
@@ -160,7 +167,13 @@ function desenharLamaAv() {
     partes.push(t.gradiente_f_m != null ? `gradiente ${numero(t.gradiente_f_m, 3)} °F/m (corrida ${t.corrida})`
       : `${numero(t.temperatura_f, 1)} °F extrapolada a ${numero(t.prof, 0)} m (corrida ${t.corrida})`);
   }
-  p.textContent = "No AGP: " + partes.join(" · ") + ". Referência para escolher o Rw — o SIAPP não converte.";
+  const textos = [];
+  if (partes.length) textos.push("No AGP: " + partes.join(" · ") + ".");
+  if (tf.length) textos.push("No RFP: " + tf.map((t) => `${numero(t.valor, 1)} ${t.unidade || ""} ${t.tipo || ""} a ` +
+    `${numero(t.prof, 0)} m${t.origem ? ` (${t.origem.length > 3 ? t.origem.toLowerCase() : "origem " + t.origem})` : ""}`).join(" · ") + ".");
+  if (ff.length) textos.push("Fluido de perfuração: " + ff.map((f) => `${f.fase}${f.fluido ? " " + f.fluido.toLowerCase() : ""}` +
+    `${f.peso_lb_gal != null ? ` ${numero(f.peso_lb_gal, 2)} lb/gal` : ""}${f.ate != null ? ` até ${numero(f.ate, 0)} m` : ""}`).join(" · ") + ".");
+  p.textContent = textos.join(" ") + " Referência para escolher o Rw — o SIAPP não converte.";
   p.hidden = false;
 }
 

@@ -8,6 +8,7 @@ import webview
 
 from motor import producao as mprod
 from motor import agp as magp
+from motor import dados_poco as mdp
 from motor import levantamento as mlv
 from motor import pocos as mpo
 
@@ -103,7 +104,30 @@ class PocosAPI:
         d["agp"] = [{"caminho": g["caminho"], "poco_pasta": g["poco_pasta"], "confere": g["confere"],
                      "arquivo_local": g["arquivo_local"], "lido_em": g["lido_em"], **g["dados"]}
                     for g in magp.do_poco(self._banco, pid)]
+        d["dados_poco"] = self._dados_poco_ficha(pid)
         return d
+
+    def _dados_poco_ficha(self, pid: str) -> dict:
+        """O que os formulários da ANP (RFP, RFCP, Perfuração) trouxeram, para a ficha."""
+        dp = mdp.do_poco(self._banco, pid)
+        docs = [{"rel": le["rel"], "documento": le["documento"], "n": le["n"], "erro": le["erro"],
+                 "confere": le["confere"], "poco_documento": le["poco_documento"], "lido_em": le["lido_em"],
+                 "observacoes": (le["dados"] or {}).get("observacoes") or "",
+                 "titulo": mdp.LEITORES[le["leitor"]].DOCUMENTOS.get(le["documento"] or "", "")
+                 if hasattr(mdp.LEITORES.get(le["leitor"]), "DOCUMENTOS") else ""}
+                for le in dp["leituras"]]
+        return {"documentos": docs, "gerais": mdp.gerais(self._banco, pid), "itens": dp["itens"],
+                "tipos": mdp.TIPOS}
+
+    @resposta_segura
+    def reler_dados_poco(self, poco: str):
+        """Lê de novo os formulários do poço (ex.: depois de um leitor melhor)."""
+        self._exigir_projeto()
+        pid = mpo.resolver(self._banco, poco)
+        lidos = [r for a in self._banco.arquivos(pid)
+                 if (r := self._ler_dados_poco(a["rel"], pid, a.get("sha256")))]
+        return {"lidos": len(lidos), "itens": sum(r["n"] for r in lidos),
+                "erros": [r["rel"] for r in lidos if r["erro"]], "dados_poco": self._dados_poco_ficha(pid)}
 
     @resposta_segura
     def pocos_posicoes(self, ids: list):

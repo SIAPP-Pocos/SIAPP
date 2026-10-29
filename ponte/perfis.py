@@ -7,6 +7,7 @@ from datetime import datetime
 
 from motor import agp as magp
 from motor import avaliacao as mav
+from motor import dados_poco as mdp
 from motor import formatos
 from motor import perfis as mpf
 from motor import pocos as mpo
@@ -83,6 +84,7 @@ class PerfisAPI:
                               for u in magp.unidades_do_poco(self._banco, poco) if u["topo"] is not None],
                 "litologia_agp": [c for g in magp.do_poco(self._banco, poco)[:1]
                                   for c in g["dados"].get("litologia", [])],
+                "formularios": self._formularios_perfil(poco),
                 "padrao": mpf.curvas_padrao(inv, self._cl()),
                 "objetivos": {k: v["nome"] for k, v in mpf.OBJETIVOS.items()},
                 "familias": self._cl().familias,
@@ -180,6 +182,42 @@ class PerfisAPI:
                                   "prof_base": z["base"], "origem": "AGP"})
         return saida
 
+    def _formularios_perfil(self, poco: str) -> dict:
+        """Do RFP/RFCP para a vista de perfis: topos constatados e intervalos canhoneados."""
+        topos = [{"nome": t["nome"] or f"topo {t['extra'].get('ordem', '')}".strip(), "com_nome": bool(t["nome"]),
+                  "topo": t["prof_topo"], "documento": t["documento"]}
+                 for t in mdp.itens_do_poco(self._banco, poco, "topo") if t["prof_topo"] is not None]
+        canh = [{"nome": c["nome"] or "", "topo": c["prof_topo"], "base": c["prof_base"]}
+                for c in mdp.itens_do_poco(self._banco, poco, "canhoneado")
+                if c["prof_topo"] is not None and c["prof_base"] is not None]
+        return {"topos": topos, "canhoneados": canh}
+
+    def _intervalos_formularios(self, poco: str) -> list[dict]:
+        """Intervalos dos formulários da ANP como candidatos para a avaliação: análise de perfis
+        (RFP), canhoneados (RFCP) e testes de formação com topo e base. id estável:
+        rfp:<tipo>:<topo>-<base>."""
+        saida, vistos = [], set()
+        rotulos = {"analise_perfil": "Análise de perfis", "canhoneado": "Canhoneado", "teste_formacao": "Teste"}
+        for tipo, rot in rotulos.items():
+            for i in mdp.itens_do_poco(self._banco, poco, tipo):
+                t, b = i["prof_topo"], i["prof_base"]
+                if t is None or b is None or b <= t:
+                    continue
+                ident = f"rfp:{tipo}:{t:g}-{b:g}"
+                if ident in vistos:
+                    continue
+                vistos.add(ident)
+                if tipo == "teste_formacao":
+                    partes = (f"{rot} {i['nome'] or ''}".strip(), i["texto"])
+                elif tipo == "analise_perfil":
+                    partes = (rot, i["texto"], i["nome"])
+                else:
+                    partes = (rot, i["nome"])
+                nome = " · ".join(x for x in partes if x)
+                saida.append({"id": ident, "nome": nome, "prof_topo": t, "prof_base": b,
+                              "origem": (i["documento"] or "rfp").upper()})
+        return saida
+
     def _intervalos_biblioteca(self, id_: str, poco: str) -> tuple[dict | None, list[dict]]:
         """Intervalos de uma interpretação da biblioteca, como candidatos (id bib:<id>:<n>)."""
         row = self._banco.interpretacao(id_) if id_ else None
@@ -228,6 +266,13 @@ class PerfisAPI:
                 "intervalos": [f for f in self._banco.fatos(poco, tipo="intervalo_alvo")
                                if f["prof_topo"] is not None and f["prof_base"] is not None],
                 "intervalos_agp": self._intervalos_agp(poco),
+                "intervalos_formularios": self._intervalos_formularios(poco),
+                "temperaturas_formularios": [
+                    {"valor": t["valor"], "unidade": t["unidade"], "prof": t["prof_topo"], "tipo": t["texto"],
+                     "origem": t["nome"]} for t in mdp.itens_do_poco(self._banco, poco, "temperatura")],
+                "fluido_formularios": [
+                    {"fase": f["nome"], "ate": f["prof_base"], "fluido": f["texto"], "peso_lb_gal": f["valor"]}
+                    for f in mdp.itens_do_poco(self._banco, poco, "fase") if f["valor"] or f["texto"]],
                 "lama_agp": [c for g in magp.do_poco(self._banco, poco)[:1] for c in g["dados"].get("corridas", [])],
                 "temperaturas_agp": [t for g in magp.do_poco(self._banco, poco)[:1]
                                      for t in g["dados"].get("temperaturas", [])],
@@ -246,6 +291,7 @@ class PerfisAPI:
         poco = arq.get("poco_id", "")
         fatos = {f["id"]: f for f in self._banco.fatos(poco, tipo="intervalo_alvo")}
         fatos.update({i["id"]: i for i in self._intervalos_agp(poco)})
+        fatos.update({i["id"]: i for i in self._intervalos_formularios(poco)})
         for bid in {str(x).split(":")[1] for x in intervalos if str(x).startswith("bib:")}:
             fatos.update({i["id"]: i for i in self._intervalos_biblioteca(bid, poco)[1]})
         escolhidos = [{"id": fid, "nome": fatos[fid]["nome"], "topo": fatos[fid]["prof_topo"],

@@ -12,6 +12,7 @@ import os
 import webview
 
 from motor import banco as mb
+from motor import dados_poco as mdp
 from motor import documentos as md
 from motor import projeto as mp
 from motor import reate, registro
@@ -84,6 +85,13 @@ class API(BaseAPI, JanelasAPI, PocosAPI, CatalogoAPI, DocumentosAPI, Vocabulario
             registro.log.info("vocabulário do SIAPP 0.6 migrado para o banco: %d itens", n)
         self._progresso_abertura(3, passos, "Conferindo os arquivos baixados (só os novos ganham hash)")
         self._migrar_downloads()
+        try:    # documentos baixados antes do leitor existir (ou lidos por um leitor mais antigo)
+            lidos = mdp.ler_pendentes(self._banco, self._projeto.pasta, lambda k, n, rel: self._progresso_abertura(
+                3, passos, f"Lendo os dados do poço nos formulários da ANP ({k} de {n})"))
+            if lidos:
+                registro.log.info("dados do poço: %d documento(s) lido(s) na abertura", len(lidos))
+        except Exception:  # noqa: BLE001
+            registro.log.exception("leitura dos dados do poço na abertura falhou")
         self._progresso_abertura(4, passos, "Conferindo o catálogo do REATE")
         self._migrar_pocos()
         self._progresso_abertura(5, passos, "Carregando o índice de texto dos documentos")
@@ -120,10 +128,29 @@ class API(BaseAPI, JanelasAPI, PocosAPI, CatalogoAPI, DocumentosAPI, Vocabulario
     def _registrar_arquivo_local(self, caminho: str, *, bacia: str, poco: str,
                                  caminho_remoto: str = "", baixado_em: str | None = None):
         rel = self._projeto.rel(caminho)
+        poco_id, sha = self._id_poco(poco), mp.sha256_arquivo(caminho)
         self._banco.registrar_arquivo(
-            rel, bacia=bacia, poco_id=self._id_poco(poco), caminho_remoto=caminho_remoto,
-            bytes_=os.path.getsize(caminho), sha256=mp.sha256_arquivo(caminho),
+            rel, bacia=bacia, poco_id=poco_id, caminho_remoto=caminho_remoto,
+            bytes_=os.path.getsize(caminho), sha256=sha,
             tipo=mp.tipo_arquivo(caminho), baixado_em=baixado_em)
+        self._ler_dados_poco(rel, poco_id, sha)
+
+    def _ler_dados_poco(self, rel: str, poco_id: str | None, sha256: str | None = None):
+        """Documento com leitor de dados do poço (RFP, RFCP, Perfuração…): lê na hora (só texto
+        embutido, frações de segundo). Falha de leitura fica registrada, não interrompe."""
+        if mdp.leitor_para(os.path.basename(rel)) is None:
+            return None
+        try:
+            r = mdp.ler_arquivo(self._banco, self._projeto.pasta, rel.replace(os.sep, "/"),
+                                poco_id=poco_id, sha256=sha256)
+        except Exception:  # noqa: BLE001 — um PDF estranho não pode derrubar o download
+            registro.log.exception("leitura de dados do poço falhou: %s", rel)
+            return None
+        if r and r["erro"]:
+            registro.log.info("dados do poço não lidos de %s: %s", rel, r["erro"])
+        elif r:
+            registro.log.info("dados do poço lidos de %s (%s): %d itens", rel, r["documento"], r["n"])
+        return r
 
     def _ao_terminar_download(self, evento: dict):
         try:

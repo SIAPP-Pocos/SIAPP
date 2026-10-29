@@ -1235,3 +1235,14 @@ html[data-tema="escuro"] .selo.err { background: #3a2220; }
 .av-explica-gr summary { cursor: pointer; color: var(--destaque); }
 .av-explica-gr p { margin: 6px 0 0; color: var(--suave); }
 .av-avisos { margin: 6px 0 0; }
+
+/* ---------- dados do poço lidos dos formulários da ANP (0.37) ---------- */
+.dp-secao { margin-top: 6px; }
+.dp-docs { list-style: none; padding: 0; margin: 4px 0 8px; display: grid; gap: 6px; }
+.dp-docs li { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 12.5px; }
+.dp-arquivo { font: 11px var(--mono); color: var(--suave); word-break: break-all; }
+.dp-erro { color: var(--erro); font-size: 12px; }
+.dp-bloco { margin: 6px 0; font-size: 12.5px; }
+.dp-bloco > summary { cursor: pointer; font-weight: 600; padding: 3px 0; }
+.dp-tabela td, .dp-tabela th { font-size: 12px; }
+.dp-obs { white-space: pre-wrap; font-size: 12px; margin: 4px 0; }

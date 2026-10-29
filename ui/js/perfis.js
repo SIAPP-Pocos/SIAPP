@@ -64,6 +64,7 @@ function mostrarPerfil(r) {
   pf.familias = { ...(r.familias || pf.familias), ...FAMILIAS_AV };
   pf.fatos = r.fatos || [];
   pf.toposAgp = r.topos_agp || [];
+  pf.form = r.formularios || { topos: [], canhoneados: [] };
   pf.litoAgp = r.litologia_agp || [];
   pf.selecao = r.padrao.slice();
   pf.limites = [r.inventario.topo_m, r.inventario.base_m];
@@ -330,6 +331,14 @@ function desenharTrilhas() {
         if (u.tip !== "L" || u.topo < pf.topo || u.topo > pf.base) continue;
         g.fillText(String(u.nome).slice(0, 10), 2, Math.round(yDe(u.topo)) + 10);
       }
+      // sem AGP: os topos constatados do RFP (só os que têm nome) dão nome às unidades
+      if (!(pf.toposAgp || []).some((u) => u.tip === "L")) {
+        g.fillStyle = "#8a5a2b";
+        for (const u of (pf.form && pf.form.topos) || []) {
+          if (!u.com_nome || u.topo < pf.topo || u.topo > pf.base) continue;
+          g.fillText(String(u.nome).replace(/^FM\.?\s*/i, "").slice(0, 10), 2, Math.round(yDe(u.topo)) + 10);
+        }
+      }
       continue;
     }
     // linhas verticais (décadas nas escalas logarítmicas)
@@ -470,6 +479,20 @@ function desenharFatosNaTrilha(g, w, yDe) {
     const y = Math.round(yDe(u.topo)) + 0.5;
     g.beginPath(); g.moveTo(0, y); g.lineTo(w, y); g.stroke();
     g.setLineDash([]);
+  }
+  // topos constatados do RFP: marrom tracejado; canhoneados (RFCP): faixa vermelha na borda direita
+  const form = pf.form || { topos: [], canhoneados: [] };
+  for (const u of form.topos) {
+    if (u.topo < pf.topo || u.topo > pf.base) continue;
+    g.strokeStyle = "#b08050"; g.setLineDash([1, 3]); g.lineWidth = 1;
+    const y = Math.round(yDe(u.topo)) + 0.5;
+    g.beginPath(); g.moveTo(0, y); g.lineTo(w, y); g.stroke();
+    g.setLineDash([]);
+  }
+  for (const c of form.canhoneados) {
+    if (c.base < pf.topo || c.topo > pf.base) continue;
+    g.fillStyle = "rgba(192, 57, 43, .55)";
+    g.fillRect(w - 5, yDe(c.topo), 5, Math.max(2, yDe(c.base) - yDe(c.topo)));
   }
   for (const f of pf.fatos) {
     if (f.prof_topo === null) continue;

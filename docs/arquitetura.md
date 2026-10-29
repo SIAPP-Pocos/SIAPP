@@ -28,6 +28,8 @@
     formatos.py     formato pelo conteúdo (1 KB)     levantamento.py  acervo da bacia, sem baixar
     avaliacao.py    Vsh, φ, Sw, net pay no intervalo-alvo (registro em execucoes/)
     agp.py          AGP da ANP: topos, lama, testes, litologia (tabelas agp, agp_unidades)
+    dados_poco.py   leitores de dados do poço em documentos (bloco 9): leituras, dados_poco, apelidos
+    rfp.py          formulários CDPE da ANP pela posição do texto: RFP, RFCP, Perfuração
     secao.py        seção estratigráfica pelos topos do AGP → SVG (PNG/PDF pelo PyMuPDF)
     secao_classica.py  estilo clássico: padrões de rocha, carimbo, mapa de localização
     bloco.py        bloco 3D: contorno convexo, Delaunay, superfícies de topo (só numpy) → janela com three.js
@@ -99,6 +101,8 @@ importar = inserir com outra origem. Um código só para os dois lados.
 | `fatos` | dados com fonte: topo de formação, intervalo-alvo, revestimento, teste… |
 | `pacotes` | contribuições exportadas e importadas, bases aplicadas |
 | `paginas_revisadas` | texto de página revisado à mão (vale no lugar do texto remontado) |
+| `interpretacoes` | biblioteca de interpretações de perfil (local, pacote ou base) |
+| `leituras`, `dados_poco` | documentos lidos por um leitor de dados do poço (RFP, RFCP…) e o que cada um trouxe, por profundidade; só leitura, refeito ao reler ([`formularios-anp.md`](formularios-anp.md)) |
 
 Migrações numeradas (`motor/banco.py:MIGRACOES`) atualizam o banco de quem já usa o
 SIAPP sem perder nada. Nunca se edita uma migração publicada: acrescenta-se outra.

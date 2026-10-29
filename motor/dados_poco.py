@@ -1,0 +1,175 @@
+"""Dados do poço lidos de documentos (bloco 9): o arcabouço comum dos leitores.
+
+Cada **leitor** é um módulo com:
+
+- `VERSAO` (int) e `NOME`;
+- `reconhece_nome(nome) -> bool`: pelo nome do arquivo, barato (decide o que tentar ler);
+- `ler(caminho) -> dict`: os dados do documento, com a chave `documento` (tipo do formulário);
+  levanta `ValueError` quando o arquivo não é do formato;
+- `itens(dados) -> list[dict]`: uma linha por dado com profundidade — tipo, nome, prof_topo,
+  prof_base, cota, valor, unidade, texto, extra, pagina — para a tabela `dados_poco`;
+- opcional `apelidos(dados) -> list[str]`: outros nomes do poço declarados no documento.
+
+O que é lido fica em duas tabelas (migração 10): `leituras` (um documento lido, com a versão
+do leitor, os dados completos em JSON e o erro, se houve) e `dados_poco` (os itens, para
+consultas por poço e por tipo). Ler de novo **substitui** a leitura daquele arquivo. Um leitor
+melhor (VERSAO maior) faz os documentos já lidos entrarem de novo em `pendentes`.
+
+São dados da operadora/ANP, não do usuário: ficam fora dos pacotes de contribuição.
+"""
+
+from __future__ import annotations
+
+import json
+import os
+
+from . import pocos as mpo
+from . import rfp
+from .banco import Banco, agora
+
+LEITORES = {"cdpe": rfp}
+
+TIPOS = {
+    "topo": "Topo estratigráfico", "indicio": "Indício de petróleo/gás", "testemunho": "Testemunho",
+    "amostra_lateral": "Amostra lateral", "analise_perfil": "Intervalo da análise de perfis",
+    "teste_formacao": "Teste de formação", "temperatura": "Temperatura", "calha": "Amostragem de calha",
+    "revestimento": "Revestimento de produção", "canhoneado": "Intervalo canhoneado",
+    "teste_completacao": "Teste na completação", "fase": "Fase da perfuração",
+    "nao_conformidade": "Não conformidade",
+}
+
+
+def leitor_para(nome: str) -> str | None:
+    for chave, mod in LEITORES.items():
+        if mod.reconhece_nome(nome):
+            return chave
+    return None
+
+
+def gravar(banco: Banco, rel: str, *, poco_id: str | None, leitor: str, dados: dict | None,
+           erro: str | None = None, sha256: str | None = None) -> dict:
+    """Grava (substituindo) a leitura de um arquivo e os itens. Devolve o resumo."""
+    mod = LEITORES[leitor]
+    lista = mod.itens(dados) if dados else []
+    poco_doc = ((dados or {}).get("gerais") or {}).get("poco")
+    confere = None
+    if poco_doc and poco_id:
+        confere = int(mpo.chave(poco_doc) == mpo.chave(poco_id) or mpo.resolver(banco, poco_doc) == poco_id)
+    with banco.conexao() as c:
+        c.execute("DELETE FROM dados_poco WHERE rel = ?", (rel,))
+        c.execute("INSERT OR REPLACE INTO leituras VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+                  (rel, poco_id, leitor, mod.VERSAO, (dados or {}).get("documento"), sha256, poco_doc, confere,
+                   len(lista), json.dumps(dados, ensure_ascii=False) if dados else None, erro, agora()))
+        c.executemany("INSERT INTO dados_poco VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                      [(rel, poco_id, i["tipo"], k, i.get("nome"), i.get("prof_topo"), i.get("prof_base"),
+                        i.get("cota"), i.get("valor"), i.get("unidade"), i.get("texto"),
+                        json.dumps(i.get("extra") or {}, ensure_ascii=False), i.get("pagina"))
+                       for k, i in enumerate(lista)])
+        # outros nomes do poço que o documento declara (ex.: sigla antiga na base da operadora)
+        if dados and poco_id and confere != 0 and hasattr(mod, "apelidos"):
+            for nome in dados.get("apelidos") or mod.apelidos(dados):
+                k = mpo.chave(nome)
+                if not k or k == poco_id:
+                    continue
+                if c.execute("SELECT 1 FROM pocos WHERE id = ? AND id <> ?", (k, poco_id)).fetchone():
+                    continue           # é o nome de outro poço do cadastro: não sequestrar
+                c.execute("INSERT OR IGNORE INTO apelidos VALUES (?, ?, ?, '')", (k, poco_id, leitor))
+    return {"rel": rel, "documento": (dados or {}).get("documento"), "n": len(lista), "erro": erro,
+            "confere": confere}
+
+
+def ler_arquivo(banco: Banco, pasta_projeto: str, rel: str, *, poco_id: str | None = None,
+                sha256: str | None = None) -> dict | None:
+    """Lê um arquivo do projeto com o leitor que o reconhece pelo nome. None = nenhum leitor."""
+    leitor = leitor_para(os.path.basename(rel))
+    if leitor is None:
+        return None
+    caminho = os.path.join(pasta_projeto, rel)
+    try:
+        dados = LEITORES[leitor].ler(caminho)
+    except (ValueError, OSError) as e:
+        return gravar(banco, rel, poco_id=poco_id, leitor=leitor, dados=None, erro=str(e), sha256=sha256)
+    return gravar(banco, rel, poco_id=poco_id, leitor=leitor, dados=dados, sha256=sha256)
+
+
+def pendentes(banco: Banco) -> list[dict]:
+    """Arquivos baixados que algum leitor reconhece e que ainda não foram lidos — ou foram
+    por uma versão anterior do leitor, ou mudaram (hash diferente)."""
+    with banco.conexao() as c:
+        lidos = {r["rel"]: dict(r) for r in c.execute("SELECT rel, leitor, versao, sha256 FROM leituras")}
+        arquivos = [dict(r) for r in c.execute("SELECT rel, poco_id, sha256 FROM arquivos ORDER BY rel")]
+    saida = []
+    for a in arquivos:
+        leitor = leitor_para(os.path.basename(a["rel"]))
+        if leitor is None:
+            continue
+        lido = lidos.get(a["rel"])
+        if (lido is None or lido["leitor"] != leitor or lido["versao"] < LEITORES[leitor].VERSAO
+                or (a["sha256"] and lido["sha256"] and a["sha256"] != lido["sha256"])):
+            saida.append(a)
+    return saida
+
+
+def ler_pendentes(banco: Banco, pasta_projeto: str, progresso=None) -> list[dict]:
+    saida = []
+    lista = pendentes(banco)
+    for k, a in enumerate(lista, 1):
+        if not os.path.isfile(os.path.join(pasta_projeto, a["rel"])):
+            continue
+        if progresso:
+            progresso(k, len(lista), a["rel"])
+        r = ler_arquivo(banco, pasta_projeto, a["rel"], poco_id=a["poco_id"], sha256=a["sha256"])
+        if r:
+            saida.append(r)
+    return saida
+
+
+def _item(r) -> dict:
+    d = dict(r)
+    d["extra"] = json.loads(d.get("extra") or "{}")
+    return d
+
+
+def do_poco(banco: Banco, poco_id: str) -> dict:
+    """Leituras do poço (com os dados completos) e itens agrupados por tipo."""
+    with banco.conexao() as c:
+        leituras = [dict(r) for r in c.execute(
+            "SELECT * FROM leituras WHERE poco_id = ? ORDER BY documento, rel", (poco_id,))]
+        itens = [_item(r) for r in c.execute(
+            """SELECT d.*, l.documento FROM dados_poco d JOIN leituras l ON l.rel = d.rel
+               WHERE d.poco_id = ? ORDER BY d.tipo, coalesce(d.prof_topo, d.prof_base), d.ordem""", (poco_id,))]
+    for le in leituras:
+        le["dados"] = json.loads(le["dados"]) if le["dados"] else None
+    por_tipo = {}
+    for i in itens:
+        por_tipo.setdefault(i["tipo"], []).append(i)
+    return {"leituras": leituras, "itens": por_tipo}
+
+
+def itens_do_poco(banco: Banco, poco_id: str, tipo: str) -> list[dict]:
+    with banco.conexao() as c:
+        return [_item(r) for r in c.execute(
+            """SELECT d.*, l.documento FROM dados_poco d JOIN leituras l ON l.rel = d.rel
+               WHERE d.poco_id = ? AND d.tipo = ? AND coalesce(l.confere, 1) = 1
+               ORDER BY coalesce(d.prof_topo, d.prof_base), d.ordem""", (poco_id, tipo))]
+
+
+def gerais(banco: Banco, poco_id: str) -> dict:
+    """Campos gerais dos formulários do poço, juntos (o RFP prevalece sobre RFCP e Perfuração)."""
+    saida = {}
+    ordem = {"rfp": 0, "rfcp": 1, "perfuracao": 2}
+    leituras = [le for le in do_poco(banco, poco_id)["leituras"] if le["dados"] and le.get("confere") != 0]
+    for le in sorted(leituras, key=lambda x: ordem.get(x["documento"], 9)):
+        for k, v in (le["dados"].get("gerais") or {}).items():
+            if v not in (None, "", {}) and k not in saida:
+                saida[k] = v
+    return saida
+
+
+def resumo(banco: Banco) -> dict:
+    with banco.conexao() as c:
+        por_doc = {r[0] or "erro": r[1] for r in c.execute(
+            "SELECT documento, count(*) FROM leituras GROUP BY documento")}
+        por_tipo = {r[0]: r[1] for r in c.execute("SELECT tipo, count(*) FROM dados_poco GROUP BY tipo")}
+        pocos = c.execute("SELECT count(DISTINCT poco_id) FROM leituras WHERE dados IS NOT NULL").fetchone()[0]
+    return {"documentos": por_doc, "itens": por_tipo, "pocos": pocos}

@@ -22,6 +22,9 @@ Tabelas:
     curvas     curvas de cada perfil, com família, unidade e intervalo
     fatos      dados com procedência: topo de formação, revestimento, intervalo-alvo…
     pacotes    contribuições exportadas/importadas e bases aplicadas
+    leituras   documentos lidos por um leitor de dados do poço (RFP, RFCP…), com versão
+    dados_poco o que cada leitura trouxe, uma linha por dado com profundidade (só leitura:
+               refeito ao reler; não entra nos pacotes de contribuição)
 
 O texto dos documentos continua em texto/*.json (grande demais para o banco)
 e o índice de busca em texto/indice.sqlite (derivado, pode ser refeito).
@@ -225,6 +228,22 @@ MIGRACOES: list[str] = [
         exportado_em TEXT
     );
     CREATE INDEX interpretacoes_poco ON interpretacoes(poco_id);
+    """,
+    # 10 — dados do poço lidos de documentos (SIAPP 0.37): RFP, RFCP, Perfuração… (bloco 9)
+    """
+    CREATE TABLE leituras(
+        rel TEXT PRIMARY KEY, poco_id TEXT, leitor TEXT NOT NULL, versao INTEGER NOT NULL,
+        documento TEXT, sha256 TEXT, poco_documento TEXT, confere INTEGER,
+        n INTEGER NOT NULL DEFAULT 0, dados TEXT, erro TEXT, lido_em TEXT NOT NULL
+    );
+    CREATE INDEX leituras_poco ON leituras(poco_id);
+    CREATE TABLE dados_poco(
+        rel TEXT NOT NULL, poco_id TEXT, tipo TEXT NOT NULL, ordem INTEGER NOT NULL,
+        nome TEXT, prof_topo REAL, prof_base REAL, cota REAL, valor REAL, unidade TEXT, texto TEXT,
+        extra TEXT, pagina INTEGER,
+        PRIMARY KEY (rel, ordem)
+    );
+    CREATE INDEX dados_poco_poco ON dados_poco(poco_id, tipo);
     """,
 ]
 

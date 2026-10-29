@@ -6,6 +6,28 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 
 ## [Não lançado]
 
+## [0.37.0] — 2026-10-29
+Bloco 9, item 1: os formulários da ANP na pasta de poço.
+### Adicionado
+- **Leitura dos formulários CDPE da ANP** — Relatório Final de Poço (RFP), Relatório Final de Completação (RFCP) e
+  Notificação/Relatório de Perfuração. São PDFs com texto e leiaute fixo; o SIAPP lê pela posição do texto, sem OCR,
+  assim que o arquivo é baixado (e, ao abrir o projeto, os que já estavam baixados). Traz dados gerais e
+  coordenadas, topos previstos × constatados, indícios, testemunhos, amostras laterais, análise de perfis, testes
+  de formação (°API, vazão, pressão estática), temperaturas lidas e extrapoladas, amostragem de calha, revestimento
+  e intervalos canhoneados, coluna de produção, teste na completação, fases da perfuração com o fluido e o peso
+  da lama, e as observações.
+- **Ficha do poço › Formulários da ANP**: tudo isso em tabelas, com °C e psi ao lado, e o botão "Ler os formulários
+  de novo".
+- **Avaliação de formação**: os intervalos da análise de perfis (RFP), os canhoneados (RFCP) e os testes com
+  intervalo entram como intervalos candidatos; as temperaturas do RFP e o fluido/peso de cada fase aparecem como
+  referência para o Rw, ao lado das do AGP.
+- **Perfis**: topos constatados do RFP (marrom pontilhado; dão nome às unidades no eixo quando não há AGP) e faixa
+  vermelha nos intervalos canhoneados.
+- **Apelido automático**: a "sigla do poço na base do E&P" do RFCP (ex.: 1-BRSA-1304-BA = 1-FPA-1-BA) e o nome do
+  poço para o operador viram outras grafias do poço — sem tomar o nome de outro poço do cadastro.
+- Arcabouço comum dos leitores de dados do poço (`motor/dados_poco.py`, migração 10: `leituras` e `dados_poco`),
+  com versão do leitor: um leitor melhorado relê sozinho os documentos lidos pelo anterior.
+
 ## [0.36.0] — 2026-10-29
 Anotações de 29/10, antes do Bloco 9.
 ### Adicionado

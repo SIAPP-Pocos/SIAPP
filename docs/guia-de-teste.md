@@ -131,6 +131,30 @@ Precisa de internet. Comece por uma categoria pequena para ver o tempo.
 - [ ] Sem intervalo marcado, **Calcular** explica que precisa de um intervalo-alvo.
 - [ ] Repetir no `5PX__0011__RN_5PX__0011__RN.tif` (DLIS de 2020).
 
+## 0.37 — formulários da ANP (RFP, RFCP, Perfuração)
+
+- [ ] Abra o projeto `ambiente_teste` (que já tem os formulários de 1-BRSA-1304-BA, 3-BRSA-1151-RN e 1-AURI-12-RN
+      baixados). A tela de abertura mostra "Lendo os dados do poço nos formulários da ANP" por um instante.
+- [ ] Mapa › ficha de **1-BRSA-1304-BA** › "Formulários da ANP": três documentos lidos (Relatório Final de Poço,
+      de Completação e de Perfuração). Confira na tela contra o PDF (botão "Ver"):
+      prof. final do sondador **1.944 m**, do perfil **1.948,5 m (cota −1.854,4)**, mesa rotativa **90,6 m**;
+      12 topos (sem nome no formulário: aparece o aviso); teste **TFR 1.680–1.684 m, óleo, 36,6 °API,
+      88,5 m³/d, 168,9 kgf/cm²**; temperaturas **110, 178 e 191 °F**; canhoneado **FM. AGUA GRANDE
+      1.679–1.693,5 m**, HSD, 5 tiros/pé.
+- [ ] Na mesma ficha, embaixo: "Também escrito como" inclui **1-FPA-1-BA** (a sigla antiga do RFCP). No mapa, em
+      "Destacar poços", digite 1-FPA-1-BA e clique em Destacar: o destacado é o 1-BRSA-1304-BA.
+- [ ] Ficha de **1-AURI-12-RN**: os topos têm nome (FM BARREIRAS… FM PENDÊNCIA) e diferença prevista × constatada;
+      30 indícios (bloco fechado: clique para abrir); testes TCA-1 e TCA-2 com "FILTRADO/ ÁGUA FORMAÇÃO".
+- [ ] Ficha de **3-BRSA-1151-RN**: observações do RFP e do RFCP; amostragem de calha (SEM AMOSTRAGEM, 9 X 9…);
+      apelido 3-ARG-790-RN.
+- [ ] Perfis › um perfil do 1-BRSA-1304-BA › Avaliação: na lista de intervalos aparece "Dos formulários da ANP"
+      com a análise de perfis (1.679–1.693,5 m, ARENITO), o canhoneado e o TFR. Marque um e calcule.
+- [ ] Na mesma tela, a nota de referência do Rw traz "No RFP: …" e o fluido de cada fase (quando o formulário de
+      perfuração traz).
+- [ ] No gráfico dos perfis do 1-BRSA-1304-BA: linhas marrons pontilhadas nos topos do RFP e faixa vermelha
+      à direita entre 1.679 e 1.693,5 m.
+- [ ] Botão "Ler os formulários de novo" na ficha: a mensagem diz quantos foram lidos.
+
 ## 0.36 — referência do GR, legenda da litologia, selo do download
 
 - [ ] Dados › Catálogo: baixe um arquivo pequeno de um poço. O selo vai de "na fila" a "baixando" e termina em
