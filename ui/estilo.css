@@ -1109,3 +1109,115 @@ td.ql-questionavel { color: var(--erro); font-weight: 600; }
 #dq-chips .chip-dic { gap: 6px; }
 #dq-chips .link { font-size: 12px; }
 #ml-largura { width: 56px; flex: none; }
+
+/* ---------- comunidade: painel de preenchimento e biblioteca de interpretações (0.35) ---------- */
+[data-com-painel][hidden], [data-com-lat][hidden] { display: none; }
+.campo-lat { display: grid; gap: 4px; font-size: 12.5px; font-weight: 600; margin-bottom: 10px; }
+.campo-lat select, .campo-lat input { font-weight: 400; width: 100%; }
+.com-sub { display: grid; gap: 16px; }
+.tabela-rolar { overflow-x: auto; max-width: 100%; }
+.tabela td.nr, .tabela th.nr { text-align: right; font-variant-numeric: tabular-nums; }
+.tabela td.nr small { color: var(--suave); font-size: 11px; }
+.tabela td.zero { color: var(--linha); }
+.btn.perigo { color: var(--erro); border-color: var(--erro); }
+.btn.perigo:hover:not(:disabled) { background: var(--aviso-fundo); }
+.selo.o-local { background: var(--destaque-claro); color: var(--destaque); }
+.selo.o-pacote { background: var(--painel2); color: var(--tinta); border: 1px solid var(--linha); }
+.selo.o-base { background: var(--tinta); color: var(--painel); }
+.selo.o-não { background: var(--fundo); color: var(--suave); }
+.selo.falta { background: var(--aviso-fundo); color: var(--tinta); border: 1px solid var(--aviso-linha); }
+html[data-tema="escuro"] .selo.ok { background: #1d3527; }
+html[data-tema="escuro"] .selo.err { background: #3a2220; }
+
+.pn-cab h2 { font-size: 20px; margin: 0 0 4px; }
+.pn-cab .ajuda { margin: 0; max-width: 90ch; }
+.pn-kpis { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.pn-kpi { background: var(--painel); border: 1px solid var(--linha); border-radius: 8px; padding: 10px 12px; display: grid; gap: 6px; cursor: help; }
+.pn-kpi-num { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; }
+.pn-kpi-num strong { font: 600 24px var(--serif); color: var(--destaque); font-variant-numeric: tabular-nums; }
+.pn-pct { font: 600 13px var(--sans); color: var(--suave); font-variant-numeric: tabular-nums; }
+.pn-kpi-nome { font-size: 12.5px; color: var(--tinta); }
+.pn-barra { height: 6px; border-radius: 3px; background: var(--fundo); border: 1px solid var(--linha); overflow: hidden; }
+.pn-barra span { display: block; height: 100%; background: var(--destaque); border-radius: 0 3px 3px 0; }
+.pn-tabela th { white-space: nowrap; }
+.pn-tabela td:first-child { white-space: nowrap; }
+.pn-tabela td:first-child .selo { margin-left: 6px; }
+.pn-tabela .link { font-size: 13px; }
+.pn-tabela tr.voce td { background: var(--destaque-claro); }
+.pn-total { white-space: nowrap; }
+.pn-mini { display: inline-block; height: 6px; margin-left: 6px; border-radius: 3px; background: var(--destaque); vertical-align: middle; }
+.pn-svg { width: 100%; height: auto; display: block; max-height: 220px; }
+.pn-svg .pn-grade { stroke: var(--linha); stroke-width: 1; }
+.pn-svg .pn-eixo { fill: var(--suave); font: 10px var(--sans); }
+.pn-t0 { fill: var(--destaque); background: var(--destaque); }
+.pn-t1 { fill: #c07a1a; background: #c07a1a; }
+.pn-t2 { fill: #5a6fd6; background: #5a6fd6; }
+.pn-t3 { fill: #8a97a3; background: #8a97a3; }
+.pn-t4 { fill: #b0457a; background: #b0457a; }
+.pn-t5 { fill: #2f9a76; background: #2f9a76; }
+.pn-legenda { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12px; color: var(--suave); margin-top: 6px; }
+.pn-legenda span { display: inline-flex; align-items: center; gap: 5px; }
+.pn-legenda i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+.pn-ajuda-item + .pn-ajuda-item { border-top: 1px solid var(--linha); padding-top: 10px; }
+.pn-ajuda-item h3 { margin: 0 0 2px; }
+.pn-pocos { list-style: none; margin: 4px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 3px 12px; }
+.pn-pocos .link { font: 12.5px var(--mono); }
+.pn-pocos .ajuda { margin: 0; font-size: 11.5px; }
+
+.bib-cab { display: grid; gap: 8px; }
+.bib-cab .ajuda { margin: 0; }
+.bib-cab .linha { align-items: center; flex-wrap: wrap; }
+.bib-grade { display: grid; grid-template-columns: minmax(280px, 1fr) minmax(320px, 1.25fr); gap: 16px; align-items: start; }
+@media (max-width: 1200px) { .bib-grade { grid-template-columns: minmax(0, 1fr); } }
+.bib-col-lista { display: grid; gap: 14px; min-width: 0; }
+.bib-lista { display: grid; gap: 14px; }
+.bib-filtro-poco { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 10px;
+  border: 1px solid var(--linha); border-radius: 6px; background: var(--destaque-claro); color: var(--destaque); font-weight: 600; }
+.bib-poco { display: grid; gap: 6px; }
+.bib-poco h3 { margin: 0; font: 600 14px var(--sans); display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
+.bib-poco h3 .link { font: 600 14px var(--mono); }
+.bib-poco h3 .ajuda { margin: 0; font-weight: 400; font-size: 12px; }
+.bib-item { background: var(--painel); border: 1px solid var(--linha); border-radius: 8px; padding: 9px 12px; display: grid; gap: 3px; cursor: pointer; }
+.bib-item:hover, .bib-item:focus-visible { border-color: var(--destaque); outline: none; }
+.bib-item.ativo { border-color: var(--destaque); box-shadow: inset 3px 0 0 var(--destaque); }
+.bib-item.nao { cursor: default; border-style: dashed; }
+.bib-item p { margin: 0; }
+.bib-item-topo { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.bib-item-topo strong { font-size: 13.5px; }
+.bib-marca { margin: 0; }
+.bib-meta { font-size: 12px; color: var(--suave); }
+.bib-ints { font-size: 12px; overflow-wrap: anywhere; }
+.bib-num { font: 12px var(--mono); color: var(--tinta); }
+.bib-nao h3 { margin: 0 0 2px; font: 600 14px var(--sans); }
+.bib-nao > div { display: grid; gap: 6px; }
+.bib-col-detalhe { position: sticky; top: 0; min-width: 0; }
+.bib-detalhe { background: var(--painel); border: 1px solid var(--linha); border-radius: 10px; padding: 14px 16px; display: grid; gap: 8px; }
+.bib-detalhe h2 { margin: 0; font-size: 18px; }
+.bib-detalhe h3 { margin: 6px 0 0; font: 600 13px var(--sans); }
+.bib-detalhe p { margin: 0; }
+.bib-detalhe .linha { flex-wrap: wrap; }
+.bib-detalhe .selo { margin-right: 4px; }
+.bib-comentario { white-space: pre-wrap; padding: 8px 10px; border-left: 3px solid var(--destaque); background: var(--painel2); border-radius: 0 6px 6px 0; font-size: 13px; }
+.bib-tabela td, .bib-tabela th { padding: 5px 7px; font-size: 12.5px; }
+.bib-detalhe .tabela.ficha td .selo { margin-left: 6px; }
+.form-compartilhar { display: grid; gap: 8px; padding: 10px 12px; border: 1px solid var(--linha); border-radius: 8px; background: var(--painel2); max-width: 640px; }
+.form-compartilhar[hidden] { display: none; }
+.form-compartilhar label { display: grid; gap: 4px; font-size: 12.5px; font-weight: 600; }
+.form-compartilhar input, .form-compartilhar textarea { font: 13px var(--sans); padding: 6px 8px; border: 1px solid var(--linha); border-radius: 6px;
+  background: var(--campo); color: var(--tinta); font-weight: 400; resize: vertical; }
+.form-compartilhar .ajuda { margin: 0; font-size: 12px; }
+.bib-comparacao { background: var(--painel); border: 1px solid var(--linha); border-radius: 10px; padding: 14px 16px; display: grid; gap: 8px; }
+.bib-comparacao[hidden] { display: none; }
+.bib-comparacao p { margin: 0; }
+.bib-comp-cab { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.bib-comp-cab h2 { margin: 0; }
+.bib-comp thead th { vertical-align: bottom; text-transform: none; letter-spacing: 0; font-size: 12px; color: var(--tinta); }
+.bib-comp thead th small { display: block; color: var(--suave); font-weight: 400; }
+.bib-comp tbody th { font-weight: 600; font-size: 12.5px; white-space: nowrap; background: none; text-transform: none; letter-spacing: 0; color: var(--tinta); }
+.bib-comp tbody th small { color: var(--suave); font-weight: 400; }
+.bib-comp tr.secao td { font: 600 11.5px var(--sans); text-transform: uppercase; letter-spacing: .03em; color: var(--suave); background: var(--fundo); }
+.bib-comp tr.difere th, .bib-comp tr.difere td { background: var(--aviso-fundo); }
+.bib-comp td .selo { margin-left: 6px; }
+.av-bib-nota { margin: 4px 0 8px; }
+.av-bib-nota .link { font-size: 13px; }
+#av-compartilhada { align-self: center; }

@@ -67,6 +67,11 @@ As avaliações anteriores ficam listadas no painel; clicar numa delas mostra o 
 gráfico e retoma os parâmetros. **Exportar** grava CSV ou LAS 2.0 em `exportacoes/<poço>/`
 (só as profundidades dentro dos intervalos).
 
+**Compartilhar na biblioteca** (0.35) leva a avaliação para Comunidade › Biblioteca de
+interpretações, com título e comentário: o arquivo (hash), as curvas, os métodos, os parâmetros e
+o resumo de cada intervalo — sem as curvas calculadas. De lá, colegas comparam com as deles e
+refazem o cálculo no mesmo arquivo. Ver `docs/comunidade.md`.
+
 ## Limites desta versão
 
 - Uma litologia por cálculo (ρma e Δtma únicos): intervalos com arenito e carbonato pedem

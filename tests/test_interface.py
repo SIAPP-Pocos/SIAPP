@@ -1459,3 +1459,86 @@ def test_mapa_legenda_destaque_producao_e_secao_pela_linha(janela):
     assert p.evaluate("sec.pocos") == ["1-OES-1-RN", "1-MEI-1-RN", "1-LES-1-RN"]
     assert "linha desenhada no mapa" in p.text_content("#sec-corredor-res")
     assert not janela.erros_js, janela.erros_js
+
+
+def test_comunidade_painel_biblioteca_compartilhar_comparar_e_refazer(janela, tmp_path):
+    from interface_util import foto
+    from test_avaliacao import las_reservatorio
+    p = janela.page
+    abrir_projeto(janela)
+    api = janela.api
+    api.definir_autor("Ruan da Silva Nobre", "UFAL")
+    pasta = tmp_path / "ambiente_teste" / "bruto" / "Potiguar" / "7-TST-1-RN" / "Perfil Convencional"
+    pasta.mkdir(parents=True)
+    las_reservatorio(pasta / "tst.las")
+    api._abrir_projeto(str(tmp_path / "ambiente_teste"))
+    rel = "bruto/Potiguar/7-TST-1-RN/Perfil Convencional/tst.las"
+    assert api.inventariar_perfil(rel)["ok"]
+    assert api.salvar_intervalo(rel, {"tipo": "intervalo_alvo", "nome": "Açu", "prof_topo": "1005",
+                                      "prof_base": "1035"})["ok"]
+    # aba Perfis: calcular e compartilhar
+    p.click("#aba-perfis")
+    janela.esperar("document.querySelector('#lista-perfis button')")
+    p.click("#lista-perfis button")
+    janela.esperar("document.querySelectorAll('.av-curva').length === 8")
+    p.fill("#av-gr_limpo", "30")
+    p.fill("#av-gr_argila", "120")
+    p.click("#av-calcular")
+    janela.esperar("!document.getElementById('av-acoes').hidden")
+    assert p.is_hidden("#av-compartilhada")
+    p.click("#av-compartilhar")
+    p.fill("#av-form-compart input", "Açu com Archie, Rw 0,05")
+    p.fill("#av-form-compart textarea", "Rw estimado da lama do AGP.")
+    p.click("#av-form-compart .btn:not(.secundario)")
+    janela.esperar("!document.getElementById('av-compartilhada').hidden")
+    assert "Editar" in p.text_content("#av-compartilhar")
+    p.locator("#av-acoes").scroll_into_view_if_needed()
+    foto(janela, "com_1_perfis_compartilhada")
+    # uma segunda avaliação, com outro Rw, fica sem compartilhar
+    p.fill("#av-rw", "0,02")
+    p.click("#av-calcular")
+    janela.esperar("document.getElementById('av-compartilhada').hidden")
+    # Comunidade › Biblioteca
+    p.click("#aba-comunidade")
+    p.click(".sub-nav [data-com='biblioteca']")
+    janela.esperar("document.querySelectorAll('#bib-lista .bib-item').length === 1")
+    assert "Açu com Archie" in p.text_content("#bib-lista") and "7-TST-1-RN" in p.text_content("#bib-lista")
+    assert p.is_visible("#bib-nao") and p.locator("#bib-nao-lista .bib-item").count() == 1
+    p.click("#bib-lista .bib-item .bib-marca")
+    p.click("#bib-nao-lista .bib-marca")
+    assert not p.is_disabled("#bib-comparar")
+    p.click("#bib-comparar")
+    janela.esperar("!document.getElementById('bib-comparacao').hidden")
+    comp = p.text_content("#bib-comparacao")
+    assert "Diferem em: Rw" in comp and "não compartilhada" in comp
+    assert p.locator("#bib-comparacao tr.difere").count() >= 1
+    foto(janela, "com_2_comparacao")
+    # detalhe e "refazer"
+    p.click("#bib-lista .bib-item strong")
+    janela.esperar("document.getElementById('bib-detalhe').textContent.includes('Rw estimado')")
+    assert "mesmo hash" in p.text_content("#bib-detalhe")
+    p.locator("#bib-detalhe").scroll_into_view_if_needed()
+    foto(janela, "com_3_biblioteca_detalhe")
+    p.click("#bib-detalhe >> text=Refazer nos Perfis")
+    janela.esperar("!document.getElementById('av-bib-refazer').hidden")
+    assert "Ruan da Silva Nobre" in p.text_content("#av-bib-refazer")
+    assert p.evaluate("[...document.querySelectorAll('.av-int:checked')].map(c => c.value)")[0].startswith("bib:")
+    assert p.input_value("#av-rw") == "0,05"
+    p.click("#av-calcular")
+    janela.esperar("!document.getElementById('av-comparar-bib').hidden")
+    p.locator("#pf-av").scroll_into_view_if_needed()
+    foto(janela, "com_4_refazer")
+    # Painel
+    p.click("#aba-comunidade")
+    p.click(".sub-nav [data-com='painel']")
+    janela.esperar("document.querySelectorAll('#pn-kpis .pn-kpi').length === 8")
+    assert "Ruan da Silva Nobre" in p.text_content("#pn-contrib")
+    assert "1" in p.text_content("#pn-kpis [data-ind='interpretacoes'] strong")
+    assert "Têm perfil e nenhum topo" in p.text_content("#pn-ajudar")
+    assert p.locator("#pn-atividade svg rect").count() >= 1
+    foto(janela, "com_5_painel")
+    # Contribuir conta a interpretação; a sub-aba fica lembrada
+    p.click(".sub-nav [data-com='contribuir']")
+    janela.esperar("document.getElementById('com-local').textContent.includes('interpretação')")
+    assert "1 interpretação" in p.text_content("#com-local")
+    assert not janela.erros_js, janela.erros_js

@@ -40,6 +40,8 @@ existe e a validação científica ficam **para o final**, antes do lançamento 
 - [x] **Gasodutos e blocos exploratórios** (0.28): distância de cada bloco exploratório (ou campo) à feição mais
       próxima da camada escolhida e o custo do duto; mapa colorido por distância; CSV com fórmulas e entradas.
 - [x] **Bo, Rs e Bg estimados por correlação** (0.28): Standing (pede o API) e Sutton + Papay, com aviso de faixa.
+- [x] **Painel de preenchimento e biblioteca de interpretações** (0.35): quanto do acervo está preenchido e
+      quem contribuiu; avaliações de formação compartilhadas, comparadas e refeitas com os mesmos parâmetros.
 
 ## No final — melhorias do que já existe
 
@@ -47,8 +49,8 @@ existe e a validação científica ficam **para o final**, antes do lançamento 
       do mapa, com uma tabela por poço (nada pré-marcado; atalhos só para marcar) e leitura
       automática ao terminar. Os rótulos de corrida da 0.17 ajudam a escolher (ex.: só a
       perfilagem convencional, passada principal).
-- [ ] **Seção pelo mapa**: clicar nos poços A e B no mapa, ver a linha da seção desenhada no
-      mapa, abrir a seção pela ficha de um campo.
+- [x] **Seção pelo mapa** (0.34): a linha desenhada no mapa (A, pontos intermediários, B) escolhe os
+      poços e abre a seção nessa ordem.
 - [ ] **Instalador para Windows** (.exe que roda sem instalar Python).
 - [ ] Ajustes finos do estilo clássico da seção a partir de uma figura de referência
       (ex.: Boletim de Geociências da Petrobras).

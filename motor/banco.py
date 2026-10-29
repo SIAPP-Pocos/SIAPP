@@ -210,6 +210,22 @@ MIGRACOES: list[str] = [
         PRIMARY KEY (rel, pagina)
     );
     """,
+    # 9 — biblioteca de interpretações de perfil (SIAPP 0.35): avaliações compartilhadas
+    """
+    CREATE TABLE interpretacoes(
+        id TEXT PRIMARY KEY,
+        poco_id TEXT NOT NULL,
+        titulo TEXT, comentario TEXT,
+        arquivo_sha256 TEXT, arquivo_caminho TEXT, arquivo_bacia TEXT, arquivo_nome TEXT,
+        execucao TEXT,
+        dados TEXT NOT NULL,
+        autor TEXT, criado_em TEXT NOT NULL,
+        origem TEXT NOT NULL CHECK (origem IN ('local', 'pacote', 'base')),
+        pacote TEXT NOT NULL DEFAULT '',
+        exportado_em TEXT
+    );
+    CREATE INDEX interpretacoes_poco ON interpretacoes(poco_id);
+    """,
 ]
 
 
@@ -513,9 +529,60 @@ class Banco:
         """Remove tudo o que um pacote importado trouxe."""
         with self.conexao() as c:
             n = {t: c.execute(f"DELETE FROM {t} WHERE origem = 'pacote' AND pacote = ?",
-                              (id_,)).rowcount for t in ("vocab", "fatos", "apelidos")}
+                              (id_,)).rowcount for t in ("vocab", "fatos", "apelidos", "interpretacoes")}
             c.execute("DELETE FROM pacotes WHERE id = ? AND tipo = 'importado'", (id_,))
         return n
+
+    # ========================================================= interpretações
+    CAMPOS_INTERP = ("id", "poco_id", "titulo", "comentario", "arquivo_sha256", "arquivo_caminho",
+                     "arquivo_bacia", "arquivo_nome", "execucao", "dados", "autor", "criado_em",
+                     "origem", "pacote", "exportado_em")
+
+    def salvar_interpretacao(self, d: dict, c=None) -> str:
+        """Cria ou substitui (mesmo id) uma interpretação da biblioteca. `dados`: dict."""
+        if c is None:
+            with self.conexao() as c:
+                return self.salvar_interpretacao(d, c)
+        f = {k: d.get(k) for k in self.CAMPOS_INTERP}
+        f["id"] = f["id"] or novo_id()
+        f["criado_em"] = f["criado_em"] or agora()
+        f["origem"] = f["origem"] or "local"
+        f["pacote"] = f["pacote"] or ""
+        f["dados"] = json.dumps(f["dados"] or {}, ensure_ascii=False)
+        c.execute(f"INSERT OR REPLACE INTO interpretacoes ({', '.join(self.CAMPOS_INTERP)}) "
+                  f"VALUES ({', '.join('?' for _ in self.CAMPOS_INTERP)})",
+                  [f[k] for k in self.CAMPOS_INTERP])
+        return f["id"]
+
+    @staticmethod
+    def _interp(r) -> dict:
+        d = dict(r)
+        try:
+            d["dados"] = json.loads(d["dados"] or "{}")
+        except (TypeError, json.JSONDecodeError):
+            d["dados"] = {}
+        return d
+
+    def interpretacoes(self, poco_id: str | None = None, *, origem: str | None = None) -> list[dict]:
+        cond, args = [], []
+        for campo, valor in (("poco_id", poco_id), ("origem", origem)):
+            if valor is not None:
+                cond.append(f"{campo} = ?")
+                args.append(valor)
+        where = ("WHERE " + " AND ".join(cond)) if cond else ""
+        with self.conexao() as c:
+            return [self._interp(r) for r in c.execute(
+                f"SELECT * FROM interpretacoes {where} ORDER BY poco_id, criado_em DESC", args)]
+
+    def interpretacao(self, id_: str) -> dict | None:
+        with self.conexao() as c:
+            r = c.execute("SELECT * FROM interpretacoes WHERE id = ?", (id_,)).fetchone()
+            return self._interp(r) if r else None
+
+    def remover_interpretacao(self, id_: str) -> int:
+        """Só as locais; as da comunidade se desfazem pelo pacote."""
+        with self.conexao() as c:
+            return c.execute("DELETE FROM interpretacoes WHERE id = ? AND origem = 'local'", (id_,)).rowcount
 
     # ============================================================ páginas revisadas
     def salvar_revisao(self, rel: str, pagina: int, texto: str, autor: str | None = None) -> None:

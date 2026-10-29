@@ -10,16 +10,23 @@ Três operações:
   base       a base compilada (SQLite publicado nas Releases do SIAPP-dados)
              substitui tudo o que tem origem "base".
 
-Formato do pacote (versão 2; a 1 é aceita na importação):
+Formato do pacote (versão 3; a 1 e a 2 são aceitas na importação):
 
-    {"formato": "siapp-contribuicao", "versao_formato": 2,
+    {"formato": "siapp-contribuicao", "versao_formato": 3,
      "id": uuid, "criado_em": iso, "siapp_versao": "0.7.0", "licenca": "CC-BY-4.0",
      "autor": {"nome", "instituicao", "orcid"},
      "vocabulario": {"palavras": [...], "correcoes": [{"de", "para"}], "manter_original": [...]},
      "fatos": [{"id", "poco", "tipo", "nome", "valor", "unidade", "prof_topo", "prof_base",
                 "observacao", "criado_em",
                 "fonte": {"sha256", "caminho_remoto", "bacia", "pagina", "caixa": [x0,y0,x1,y1]}}],
-     "apelidos": [{"apelido", "poco"}]}
+     "apelidos": [{"apelido", "poco"}],
+     "interpretacoes": [{"id", "poco", "criado_em", "titulo", "comentario",
+                         "arquivo": {"sha256", "caminho_remoto", "bacia", "nome"},
+                         "curvas_usadas", "metodos", "parametros", "parametros_automaticos",
+                         "passo_m", "intervalos": [{nome, topo, base, net_pay_m, ...}]}]}
+
+A v3 (SIAPP 0.35) acrescenta as interpretações de perfil da biblioteca
+(motor/biblioteca.py): avaliações de formação com parâmetros e resumo, sem curvas.
 
 Nenhum arquivo do REATE vai no pacote: documentos são citados pelo hash
 SHA-256 e pelo caminho no portal.
@@ -35,11 +42,13 @@ import unicodedata
 
 import requests
 
+from . import biblioteca as mbib
 from .banco import Banco, agora, com_fuso, novo_id
 from .vocabulario import normalizar
 
 FORMATO = "siapp-contribuicao"
-VERSAO_FORMATO = 2
+VERSAO_FORMATO = 3
+VERSOES_ACEITAS = (1, 2, 3)
 LICENCA = "CC-BY-4.0"
 URL_ULTIMA_BASE = "https://api.github.com/repos/SIAPP-Pocos/SIAPP-dados/releases/latest"
 NOME_ARQUIVO_BASE = "siapp-dados.sqlite"
@@ -120,18 +129,22 @@ def montar_pacote(banco: Banco, autor: dict, siapp_versao: str, apenas_novos: bo
     with banco.conexao() as c:
         apelidos = [{"apelido": r["chave"], "poco": r["poco_id"]}
                     for r in c.execute("SELECT * FROM apelidos WHERE origem = 'local'")]
+    interpretacoes = [mbib.para_pacote(i) for i in banco.interpretacoes(origem="local")
+                      if not (apenas_novos and i.get("exportado_em"))]
     return {"formato": FORMATO, "versao_formato": VERSAO_FORMATO, "id": novo_id(),
             "criado_em": agora(), "siapp_versao": siapp_versao, "licenca": LICENCA,
             "autor": {k: (autor.get(k) or "").strip() for k in ("nome", "instituicao", "orcid")
                       if (autor.get(k) or "").strip()},
-            "vocabulario": vocab, "fatos": fatos, "apelidos": apelidos}
+            "vocabulario": vocab, "fatos": fatos, "apelidos": apelidos,
+            "interpretacoes": interpretacoes}
 
 
 def contar_itens(pacote: dict) -> dict:
     v = pacote.get("vocabulario") or {}
     return {"palavras": len(v.get("palavras", [])), "correcoes": len(v.get("correcoes", [])),
             "manter_original": len(v.get("manter_original", [])),
-            "fatos": len(pacote.get("fatos", [])), "apelidos": len(pacote.get("apelidos", []))}
+            "fatos": len(pacote.get("fatos", [])), "apelidos": len(pacote.get("apelidos", [])),
+            "interpretacoes": len(pacote.get("interpretacoes", []))}
 
 
 def pacote_vazio(pacote: dict) -> bool:
@@ -155,6 +168,8 @@ def gravar_pacote(banco: Banco, pacote: dict, pasta: str) -> str:
         ids = [f["id"] for f in pacote["fatos"]]
         c.executemany("UPDATE fatos SET exportado_em = ? WHERE id = ?",
                       [(pacote["criado_em"], i) for i in ids])
+        c.executemany("UPDATE interpretacoes SET exportado_em = ? WHERE id = ? AND origem = 'local'",
+                      [(pacote["criado_em"], i["id"]) for i in pacote.get("interpretacoes", [])])
         banco.definir_meta("ultima_exportacao", pacote["criado_em"], c)
         banco.registrar_pacote(pacote["id"], "exportado", autor=pacote["autor"].get("nome", ""),
                                arquivo=os.path.basename(caminho), criado_em=pacote["criado_em"],
@@ -171,7 +186,7 @@ def validar_pacote(p) -> list[str]:
     if not isinstance(p, dict) or p.get("formato") != FORMATO:
         return ["Não é um pacote de contribuição do SIAPP."]
     erros = []
-    if p.get("versao_formato") not in (1, 2):
+    if p.get("versao_formato") not in VERSOES_ACEITAS:
         erros.append(f"Versão de formato não suportada: {p.get('versao_formato')!r} "
                      f"(este SIAPP lê até a {VERSAO_FORMATO}). Atualize o SIAPP.")
     if not isinstance(p.get("id"), str) or len(p["id"]) < 8:
@@ -199,6 +214,11 @@ def validar_pacote(p) -> list[str]:
         if (isinstance(f.get("prof_topo"), (int, float)) and isinstance(f.get("prof_base"), (int, float))
                 and f["prof_base"] < f["prof_topo"]):
             erros.append(f"{rotulo}: base acima do topo.")
+    inter = p.get("interpretacoes", [])
+    if inter and p.get("versao_formato", 0) < 3:
+        erros.append("Interpretações de perfil só existem no formato 3.")
+    for i in inter if isinstance(inter, list) else []:
+        erros.extend(mbib.validar(i))
     return erros
 
 
@@ -233,10 +253,13 @@ def previa(banco: Banco, p: dict) -> dict:
                               "proposta": c["para"]})
     ids = {f["id"] for f in banco.fatos()}
     fatos_repetidos = sum(1 for f in p.get("fatos", []) if f.get("id") in ids)
+    ids_i = {i["id"] for i in banco.interpretacoes()}
+    interp_repetidas = sum(1 for i in p.get("interpretacoes", []) if i.get("id") in ids_i)
     ja = any(x["id"] == p["id"] for x in banco.pacotes())
     return {"id": p["id"], "autor": p.get("autor", {}), "criado_em": p.get("criado_em"),
             "versao_formato": p.get("versao_formato"), "itens": novos,
             "correcoes_repetidas": repetidas, "fatos_repetidos": fatos_repetidos,
+            "interpretacoes_repetidas": interp_repetidas,
             "conflitos": conflitos, "ja_importado": ja}
 
 
@@ -271,7 +294,14 @@ def importar(banco: Banco, p: dict, arquivo: str = "") -> dict:
         for a in p.get("apelidos", []):
             c.execute("INSERT OR IGNORE INTO apelidos VALUES (?, ?, 'pacote', ?)",
                       (normalizar(a["apelido"]), a["poco"], pid))
-        resumo = {**contar_itens(p), "fatos_novos": n_fatos}
+        ja = {r[0] for r in c.execute("SELECT id FROM interpretacoes")}
+        n_interp = 0
+        for i in p.get("interpretacoes", []):
+            if i.get("id") in ja:
+                continue
+            banco.salvar_interpretacao(mbib.de_pacote(i, autor, "pacote", pid), c)
+            n_interp += 1
+        resumo = {**contar_itens(p), "fatos_novos": n_fatos, "interpretacoes_novas": n_interp}
         banco.registrar_pacote(pid, "importado", autor=autor, arquivo=arquivo,
                                criado_em=p.get("criado_em", ""), resumo=resumo, c=c)
     return resumo
@@ -292,6 +322,9 @@ def aplicar_base(banco: Banco, caminho_sqlite: str) -> dict:
         fatos = [dict(r) for r in b.execute("SELECT * FROM fatos")]
         apelidos = [dict(r) for r in b.execute("SELECT * FROM apelidos")]
         n_contrib = b.execute("SELECT count(*) FROM contribuicoes").fetchone()[0]
+        tabelas = {r[0] for r in b.execute("SELECT name FROM sqlite_master WHERE type = 'table'")}
+        interp = ([dict(r) for r in b.execute("SELECT * FROM interpretacoes")]
+                  if "interpretacoes" in tabelas else [])     # bases compiladas antes da v3 não têm
         b.close()
     except sqlite3.DatabaseError as e:
         raise ErroComunidade(f"Base comunitária ilegível: {e}") from e
@@ -299,7 +332,7 @@ def aplicar_base(banco: Banco, caminho_sqlite: str) -> dict:
     pid = f"base:{versao}"
     tipos = {"palavra": "palavra", "correcao": "correcao", "manter_original": "ignorar"}
     with banco.conexao() as c:
-        for t in ("vocab", "fatos", "apelidos"):
+        for t in ("vocab", "fatos", "apelidos", "interpretacoes"):
             c.execute(f"DELETE FROM {t} WHERE origem = 'base'")
         c.execute("DELETE FROM pacotes WHERE tipo = 'base'")
         for r in vocab:
@@ -319,8 +352,18 @@ def aplicar_base(banco: Banco, caminho_sqlite: str) -> dict:
         for a in apelidos:
             c.execute("INSERT OR IGNORE INTO apelidos VALUES (?, ?, 'base', ?)",
                       (normalizar(a["apelido"]), a["poco"], pid))
+        n_interp = 0
+        for r in interp:
+            try:
+                item = json.loads(r["dados"])
+            except (TypeError, json.JSONDecodeError):
+                continue
+            if mbib.validar(item):
+                continue
+            banco.salvar_interpretacao(mbib.de_pacote(item, r.get("autor") or "", "base", pid), c)
+            n_interp += 1
         resumo = {"versao": versao, "contribuicoes": n_contrib, "vocabulario": len(vocab),
-                  "fatos": len(fatos), "apelidos": len(apelidos)}
+                  "fatos": len(fatos), "apelidos": len(apelidos), "interpretacoes": n_interp}
         banco.registrar_pacote(pid, "base", arquivo=os.path.basename(caminho_sqlite),
                                criado_em=meta.get("gerado_em", ""), resumo=resumo, c=c)
     return resumo

@@ -87,7 +87,8 @@ def test_aplicar_base_substitui_a_anterior(banco, tmp_path):
     alvo = mb.Banco(str(tmp_path / "c.sqlite"))
     montar_base(str(tmp_path / "base1.sqlite"), [p], "v2026.10.0")
     r = mc.aplicar_base(alvo, str(tmp_path / "base1.sqlite"))
-    assert r == {"versao": "v2026.10.0", "contribuicoes": 1, "vocabulario": 3, "fatos": 1, "apelidos": 0}
+    assert r == {"versao": "v2026.10.0", "contribuicoes": 1, "vocabulario": 3, "fatos": 1, "apelidos": 0,
+                 "interpretacoes": 0}
     assert alvo.vocab_efetivo()["origens"] == {"BARIGIRAS": "base"}
     assert alvo.fatos()[0]["caixa"] == [0.1, 0.2, 0.4, 0.25]
     montar_base(str(tmp_path / "base2.sqlite"), [], "v2026.11.0")         # base nova, vazia

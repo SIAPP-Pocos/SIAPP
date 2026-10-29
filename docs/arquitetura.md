@@ -20,7 +20,9 @@
     documentos.py   texto/OCR, índice FTS5           perfis.py      DLIS/LIS/LAS → metros
     layout.py       texto da página remontado pelas caixas das palavras (linhas, colunas, parágrafos)
     dicionario.py   dicionário de português: palavra partida, possíveis erros, sugestões, legibilidade
-    vocabulario.py  correção de OCR em camadas       comunidade.py  pacotes e base
+    vocabulario.py  correção de OCR em camadas       comunidade.py  pacotes (formato v3) e base
+    painel.py       preenchimento do acervo, quem contribuiu, onde ajudar (só leitura)
+    biblioteca.py   interpretações de perfil compartilhadas: do registro da avaliação, validar, comparar
     projeto.py      pasta de projeto, procedência    registro.py    siapp.log
     preferencias.py cores, tamanho do texto, arranjo das janelas (preferencias.json)
     formatos.py     formato pelo conteúdo (1 KB)     levantamento.py  acervo da bacia, sem baixar

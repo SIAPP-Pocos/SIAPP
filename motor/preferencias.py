@@ -24,6 +24,7 @@ FONTES = ("P", "M", "G")
 ABAS = ("projeto", "dados", "mapa", "docs", "perfis", "interp", "viab", "comunidade")
 SUB_DADOS = ("catalogo", "cadastro", "levantamento", "producao", "camadas")
 SUB_INTERP = ("secao", "bloco")
+SUB_COM = ("contribuir", "painel", "biblioteca")
 
 PADRAO = {
     "paleta": "marinho",
@@ -33,7 +34,7 @@ PADRAO = {
     "lembrar_arranjo": True,
     "recolhidas": {},          # {aba: True} barras laterais recolhidas
     "layout": {"ativa": "projeto", "dividida": False, "direita": "mapa", "razao": 0.5,
-               "sub_dados": "catalogo", "sub_interp": "secao"},
+               "sub_dados": "catalogo", "sub_interp": "secao", "sub_com": "contribuir"},
     "principal": {},           # geometria da janela principal {x, y, largura, altura, maximizada}
     "janelas": {},             # {aba: geometria} das janelas destacadas
     "abertas": [],             # abas que estavam em janela própria ao fechar o SIAPP
@@ -123,7 +124,7 @@ def normalizar(d) -> dict:
     if isinstance(lay, dict):
         L = p["layout"]
         for chave, opcoes in (("ativa", ABAS), ("direita", ABAS), ("sub_dados", SUB_DADOS),
-                              ("sub_interp", SUB_INTERP)):
+                              ("sub_interp", SUB_INTERP), ("sub_com", SUB_COM)):
             if lay.get(chave) in opcoes:
                 L[chave] = lay[chave]
         if isinstance(lay.get("dividida"), bool):

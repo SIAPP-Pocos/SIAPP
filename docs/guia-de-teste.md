@@ -131,6 +131,31 @@ Precisa de internet. Comece por uma categoria pequena para ver o tempo.
 - [ ] Sem intervalo marcado, **Calcular** explica que precisa de um intervalo-alvo.
 - [ ] Repetir no `5PX__0011__RN_5PX__0011__RN.tif` (DLIS de 2020).
 
+## 0.35 — comunidade: painel e biblioteca de interpretações
+
+- [ ] Comunidade: a barra lateral tem **Contribuir**, **Painel de preenchimento** e **Biblioteca de interpretações**.
+      A parte escolhida fica lembrada ao fechar o SIAPP.
+- [ ] **Painel**: os números de poços com documentos, perfil, topos, dados transcritos, páginas revisadas,
+      interpretações e produção, com a porcentagem. Escolha a bacia Potiguar no filtro (ou clique nela na tabela).
+- [ ] "Quem contribuiu" mostra você (com o selo "você") e, se você aplicou a base ou importou um pacote, os outros
+      autores. Passe o mouse nos cabeçalhos curtos: aparece o nome inteiro.
+- [ ] "Onde ajudar": clique num poço — abre a ficha no mapa.
+- [ ] **Perfis** › `1-AURI-12-RN_AIT_P.DLIS` › Avaliação de formação: **Calcular**, depois **Compartilhar na
+      biblioteca…**: escreva um título (ex.: "Açu, Archie, Rw 0,05") e um comentário. Aparece o selo "na biblioteca".
+- [ ] Mude o Rw e **Calcular** de novo (esta fica sem compartilhar).
+- [ ] **Biblioteca**: a interpretação aparece agrupada pelo poço; embaixo, "Suas avaliações ainda não
+      compartilhadas" com a segunda. Marque as duas e **Comparar as marcadas**: "Diferem em: Rw", a linha do Rw
+      destacada e o net pay de cada uma no mesmo intervalo.
+- [ ] Clique na interpretação: parâmetros (os estimados com "auto"), curvas, intervalos, comentário; "você tem
+      este arquivo (mesmo hash)". **Refazer nos Perfis**: abre o arquivo com o intervalo dela marcado e os mesmos
+      parâmetros; **Calcular** dá o mesmo net pay; **Comparar com a da biblioteca** põe as duas lado a lado.
+- [ ] Buscar por "Archie" e pelo nome do poço; filtrar Origem = "Da base comunitária" (vazio, se não houver base).
+- [ ] Contribuir › **Exportar pacote**: o resumo conta a interpretação; o JSON tem `"versao_formato": 3` e a
+      lista `interpretacoes` (sem curvas). Importe o pacote em outra pasta de projeto: a interpretação aparece na
+      biblioteca como "pacote"; **Desfazer** tira.
+- [ ] **Tirar da biblioteca** (só nas suas): avisa se ela já foi num pacote exportado.
+- [ ] Modo escuro: painel, biblioteca e comparação legíveis.
+
 ## 0.34 — mapa e seção
 
 - [ ] Mapa, bacia Potiguar: clique em "só no cadastro" na legenda — esses poços somem (a legenda fica riscada e a lista

@@ -180,10 +180,21 @@ class PerfisAPI:
                                   "prof_base": z["base"], "origem": "AGP"})
         return saida
 
+    def _intervalos_biblioteca(self, id_: str, poco: str) -> tuple[dict | None, list[dict]]:
+        """Intervalos de uma interpretação da biblioteca, como candidatos (id bib:<id>:<n>)."""
+        row = self._banco.interpretacao(id_) if id_ else None
+        if row is None or row["poco_id"] != poco:
+            return None, []
+        ints = [{"id": f"bib:{row['id']}:{k}", "nome": i.get("nome") or f"intervalo {k + 1}",
+                 "prof_topo": i["topo"], "prof_base": i["base"], "origem": "biblioteca"}
+                for k, i in enumerate(row["dados"].get("intervalos") or [])]
+        return row, ints
+
     @resposta_segura
-    def avaliacao_info(self, rel: str):
+    def avaliacao_info(self, rel: str, interpretacao: str | None = None):
         """Curvas candidatas a cada papel, intervalos-alvo do poço, parâmetros
-        padrão (ou os da última avaliação deste arquivo) e o histórico."""
+        padrão (ou os da última avaliação deste arquivo) e o histórico.
+        `interpretacao`: id de uma interpretação da biblioteca a refazer neste arquivo."""
         _, arq = self._arquivo_perfil(rel)
         rel = mp.rel_padrao(rel)
         poco = arq.get("poco_id", "")
@@ -200,7 +211,20 @@ class PerfisAPI:
             escolhida = next((padrao[f] for f in fams if f in padrao), None)
             papeis[papel] = {"obrigatorio": obrig, "opcoes": opcoes, "padrao": escolhida}
         historico = mav.execucoes(self._pasta_execucoes(), rel)
-        return {"papeis": papeis, "padrao": mav.PADRAO, "nomes": mav.NOMES_METODO,
+        publicadas = {i["execucao"]: i["id"] for i in self._banco.interpretacoes(poco, origem="local")
+                      if i.get("execucao")}
+        row, ints_bib = self._intervalos_biblioteca(interpretacao, poco)
+        biblioteca = None
+        if row is not None:
+            d = row["dados"]
+            biblioteca = {"id": row["id"], "titulo": row.get("titulo") or "", "autor": row.get("autor") or "",
+                          "origem": row["origem"], "intervalos": ints_bib,
+                          "curvas_usadas": d.get("curvas_usadas") or {}, "parametros": d.get("parametros") or {},
+                          "automaticos": d.get("parametros_automaticos") or {},
+                          "mesmo_arquivo": bool(row.get("arquivo_sha256")) and row.get("arquivo_sha256") == arq.get("sha256")}
+        return {"papeis": papeis, "biblioteca": biblioteca,
+                "na_biblioteca": self._banco.contar("interpretacoes", "WHERE poco_id = ?", (poco,)),
+                "publicadas": publicadas, "padrao": mav.PADRAO, "nomes": mav.NOMES_METODO,
                 "intervalos": [f for f in self._banco.fatos(poco, tipo="intervalo_alvo")
                                if f["prof_topo"] is not None and f["prof_base"] is not None],
                 "intervalos_agp": self._intervalos_agp(poco),
@@ -221,6 +245,8 @@ class PerfisAPI:
         poco = arq.get("poco_id", "")
         fatos = {f["id"]: f for f in self._banco.fatos(poco, tipo="intervalo_alvo")}
         fatos.update({i["id"]: i for i in self._intervalos_agp(poco)})
+        for bid in {str(x).split(":")[1] for x in intervalos if str(x).startswith("bib:")}:
+            fatos.update({i["id"]: i for i in self._intervalos_biblioteca(bid, poco)[1]})
         escolhidos = [{"id": fid, "nome": fatos[fid]["nome"], "topo": fatos[fid]["prof_topo"],
                        "base": fatos[fid]["prof_base"], "origem": fatos[fid].get("origem", "SIAPP")}
                       for fid in intervalos if fid in fatos]

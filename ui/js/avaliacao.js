@@ -3,7 +3,8 @@
 // e as trilhas calculadas no gráfico.
 "use strict";
 
-const av = { info: null, id: null, ultimo: null };
+// bibId/bibRel: interpretação da biblioteca sendo refeita neste arquivo (0.35)
+const av = { info: null, id: null, ultimo: null, bibId: null, bibRel: null };
 
 const PARAMS_AV = ["vsh_metodo", "gr_limpo", "gr_argila", "phi_metodo", "rho_matriz", "rho_fluido", "dt_matriz",
                    "dt_fluido", "phi_argila", "sw_metodo", "rw", "rsh", "a", "m", "n", "corte_vsh", "corte_phi",
@@ -24,20 +25,86 @@ function textoParam(v) { return v === null || v === undefined ? "" : String(v).r
 
 async function carregarAvaliacao() {
   if (!pf.rel) return;
-  const r = await chamar(null, "avaliacao_info", pf.rel);
+  if (av.bibRel !== pf.rel) { av.bibId = null; av.bibRel = null; }
+  const r = await chamar(null, "avaliacao_info", pf.rel, av.bibId);
   if (!r.ok) return;
   av.info = r;
   av.id = null;
   desenharIntervalosAv();
   desenharCurvasAv();
-  if (r.ultima) preencherParametros(r.ultima.parametros, r.ultima.parametros_automaticos || {});
+  if (r.biblioteca) aplicarInterpretacaoAv(r.biblioteca);
+  else if (r.ultima) preencherParametros(r.ultima.parametros, r.ultima.parametros_automaticos || {});
   else preencherParametros(r.padrao);
   limpar($("av-resultado"));
   $("av-acoes").hidden = true;
+  $("av-form-compart").hidden = true;
+  desenharNotasBibAv();
   desenharHistoricoAv();
-  if (r.ultima) mostrarResultadoAv({ id: r.ultima.id, intervalos: r.ultima.intervalos,
+  if (r.ultima && !r.biblioteca) mostrarResultadoAv({ id: r.ultima.id, intervalos: r.ultima.intervalos,
                                      automaticos: r.ultima.parametros_automaticos,
                                      registro: `execucoes/${r.ultima.id}.json` }, true);
+}
+
+// ------------------------------------------------ biblioteca de interpretações (0.35)
+// Vindo da Comunidade › Biblioteca: abre o arquivo e marca intervalos, curvas e parâmetros dela.
+async function abrirInterpretacaoNosPerfis(id) {
+  const r = await chamar(null, "interpretacao_refazer", id);
+  if (!r.ok) return;
+  av.bibId = id;
+  av.bibRel = r.rel;
+  await abrirPerfil({ rel: r.rel, nome: r.nome });
+  $("pf-av").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function aplicarInterpretacaoAv(b) {
+  for (const sel of document.querySelectorAll(".av-curva")) {
+    const c = b.curvas_usadas[sel.dataset.papel];
+    const ops = [...sel.options].filter((o) => o.value);
+    if (!c) { if ([...sel.options].some((o) => o.value === "")) sel.value = ""; continue; }
+    const igual = ops.find((o) => { const v = JSON.parse(o.value); return v.mnemonico === c.mnemonico && v.quadro === c.quadro; })
+      || ops.find((o) => JSON.parse(o.value).mnemonico === c.mnemonico);
+    if (igual) sel.value = igual.value;
+  }
+  preencherParametros(b.parametros, b.automaticos || {});
+}
+
+function desenharNotasBibAv() {
+  const b = av.info && av.info.biblioteca;
+  const p = $("av-bib-refazer");
+  p.hidden = !b;
+  if (b) {
+    p.textContent = `Refazendo “${b.titulo || "sem título"}”, de ${b.autor || "autor sem nome"}: intervalos, curvas e ` +
+      `parâmetros dela já estão marcados. Confira e clique em Calcular.` +
+      (b.mesmo_arquivo ? "" : " Atenção: o seu arquivo não tem o mesmo hash do dela (outra versão ou outra corrida).");
+  }
+  const n = (av.info && av.info.na_biblioteca) || 0;
+  const nota = limpar($("av-bib-nota"));
+  nota.hidden = !n || Boolean(b);
+  if (n && !b) {
+    nota.append(document.createTextNode(`A biblioteca tem ${n} interpretação(ões) deste poço. `));
+    const l = el("button", "link", "Ver e comparar");
+    l.onclick = () => irPara("biblioteca", "mostrarBibliotecaDoPoco", pf.poco);
+    nota.appendChild(l);
+  }
+}
+
+function estadoCompartilhadaAv() {
+  const pub = (av.info && av.info.publicadas) || {};
+  const ja = Boolean(av.id && pub[av.id]);
+  $("av-compartilhada").hidden = !ja;
+  $("av-compartilhar").textContent = ja ? "Editar na biblioteca…" : "Compartilhar na biblioteca…";
+  const b = av.info && av.info.biblioteca;
+  $("av-comparar-bib").hidden = !(b && av.id && av.ultimo && !av.ultimo.anterior);
+}
+
+async function compartilharAvaliacao() {
+  if (!av.id) return;
+  formCompartilhar($("av-form-compart"), av.id, async () => {
+    const h = await chamar(null, "avaliacao_info", pf.rel, av.bibId);
+    if (h.ok) { av.info.publicadas = h.publicadas; av.info.na_biblioteca = h.na_biblioteca; }
+    estadoCompartilhadaAv();
+    desenharNotasBibAv();
+  });
 }
 
 function caixaIntervalo(f, marcado) {
@@ -55,12 +122,17 @@ function desenharIntervalosAv() {
   const box = limpar($("av-intervalos"));
   const ints = av.info ? av.info.intervalos : [];
   const doAgp = av.info ? (av.info.intervalos_agp || []) : [];
+  const bibl = av.info && av.info.biblioteca;
+  if (bibl) {
+    box.appendChild(el("p", "ajuda av-sub", `Da biblioteca (${bibl.autor || "sem autor"}):`));
+    for (const f of bibl.intervalos) box.appendChild(caixaIntervalo(f, true));
+  }
   if (!ints.length) {
     box.appendChild(el("p", "ajuda", doAgp.length
       ? "Nenhum intervalo marcado por você. Use uma unidade do AGP abaixo ou arraste sobre o gráfico."
       : "Nenhum intervalo-alvo neste poço. Arraste na vertical sobre o gráfico e salve como “Intervalo-alvo”."));
   }
-  for (const f of ints) box.appendChild(caixaIntervalo(f, true));
+  for (const f of ints) box.appendChild(caixaIntervalo(f, !bibl));
   if (doAgp.length) {
     const t = el("p", "ajuda av-sub", "Do AGP (topos interpretados pela operadora):");
     box.appendChild(t);
@@ -91,7 +163,7 @@ function desenharLamaAv() {
 
 async function atualizarIntervalosAv() {
   if (!pf.rel || !av.info) return;
-  const r = await chamar(null, "avaliacao_info", pf.rel);
+  const r = await chamar(null, "avaliacao_info", pf.rel, av.bibId);
   if (r.ok) { av.info.intervalos = r.intervalos; desenharIntervalosAv(); }
 }
 
@@ -155,13 +227,14 @@ async function calcularAvaliacao() {
   preencherParametros(r.parametros, r.automaticos || {});   // mostra os automáticos que o motor escolheu
   const pay = r.intervalos.reduce((t, i) => t + i.net_pay_m, 0);
   status(`Avaliação calculada: net pay ${numero(pay, 1)} m em ${r.intervalos.length} intervalo(s). Registro em ${r.registro}.`, "ok");
-  const h = await chamar(null, "avaliacao_info", pf.rel);
-  if (h.ok) { av.info.historico = h.historico; desenharHistoricoAv(); }
+  const h = await chamar(null, "avaliacao_info", pf.rel, av.bibId);
+  if (h.ok) { av.info.historico = h.historico; av.info.publicadas = h.publicadas; desenharHistoricoAv(); estadoCompartilhadaAv(); }
 }
 
 function mostrarResultadoAv(r, anterior = false) {
   av.id = r.id;
-  av.ultimo = r;
+  av.ultimo = { ...r, anterior };
+  $("av-form-compart").hidden = true;
   const box = limpar($("av-resultado"));
   if (anterior) box.appendChild(el("p", "ajuda", `Última avaliação deste arquivo (${r.id.split("_").slice(-1)[0]}):`));
   const t = el("table");
@@ -195,6 +268,7 @@ function mostrarResultadoAv(r, anterior = false) {
   }
   $("av-acoes").hidden = false;
   $("av-registro").textContent = `Registro: ${r.registro}`;
+  estadoCompartilhadaAv();
   if ($("av-mostrar").checked) atualizarGrafico();
 }
 
@@ -239,4 +313,7 @@ function ligarAvaliacao() {
   ligar("av-mostrar", "onchange", () => atualizarGrafico());
   ligar("av-csv", "onclick", () => exportarAvaliacao("csv", $("av-csv")));
   ligar("av-las", "onclick", () => exportarAvaliacao("las", $("av-las")));
+  ligar("av-compartilhar", "onclick", compartilharAvaliacao);
+  ligar("av-comparar-bib", "onclick", () => av.info && av.info.biblioteca &&
+    irPara("biblioteca", "compararInterpretacoes", [av.info.biblioteca.id, "exec:" + av.id]));
 }

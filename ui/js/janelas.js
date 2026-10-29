@@ -24,7 +24,7 @@ const PALETAS_SIAPP = [
 // estado da interface desta janela
 const ui = {
   ativa: MODO_JANELA || "projeto", dividida: false, direita: "mapa", razao: 0.5,
-  subDados: "catalogo", subInterp: "secao",
+  subDados: "catalogo", subInterp: "secao", subCom: "contribuir",
   fora: new Set(),          // abas que estão em janela própria (só a principal acompanha)
   recolhidas: {},
   visiveis: new Set(),
@@ -41,6 +41,7 @@ async function carregarPreferencias() {
   const L = prefs.layout;
   ui.subDados = L.sub_dados;
   ui.subInterp = L.sub_interp;
+  ui.subCom = L.sub_com || "contribuir";
   if (!MODO_JANELA && prefs.lembrar_arranjo) {
     ui.ativa = L.ativa;
     ui.direita = L.direita;
@@ -64,7 +65,7 @@ function guardarLayout() {
   clearTimeout(_guardarLayout);
   _guardarLayout = setTimeout(() => guardarPreferencias({ layout: {
     ativa: ui.ativa, dividida: ui.dividida, direita: ui.direita, razao: Math.round(ui.razao * 1000) / 1000,
-    sub_dados: ui.subDados, sub_interp: ui.subInterp } }), 400);
+    sub_dados: ui.subDados, sub_interp: ui.subInterp, sub_com: ui.subCom } }), 400);
 }
 
 function aplicarAparencia() {
@@ -86,6 +87,7 @@ function preferenciasMudaram(p) {
 function normalizarAba(qual) {
   if (["catalogo", "cadastro", "levantamento", "producao", "camadas"].includes(qual)) { ui.subDados = qual; return "dados"; }
   if (qual === "secao" || qual === "bloco") { ui.subInterp = qual; return "interp"; }
+  if (["contribuir", "painel", "biblioteca"].includes(qual)) { ui.subCom = qual; return "comunidade"; }
   if (qual === "inicio") return "projeto";
   return ABAS_SIAPP.includes(qual) ? qual : "projeto";
 }
@@ -160,6 +162,9 @@ function aplicarLayout(recarregar = new Set()) {
   for (const b of document.querySelectorAll(".sub-nav [data-sub]")) b.classList.toggle("ativa", b.dataset.sub === ui.subDados);
   for (const p of document.querySelectorAll("[data-sub-painel]")) p.hidden = p.dataset.subPainel !== ui.subDados;
   for (const p of document.querySelectorAll("[data-sub-lat]")) p.hidden = p.dataset.subLat !== ui.subDados;
+  for (const b of document.querySelectorAll(".sub-nav [data-com]")) b.classList.toggle("ativa", b.dataset.com === ui.subCom);
+  for (const p of document.querySelectorAll("[data-com-painel]")) p.hidden = p.dataset.comPainel !== ui.subCom;
+  for (const p of document.querySelectorAll("[data-com-lat]")) p.hidden = p.dataset.comLat !== ui.subCom;
   desenharAcoesTopo();
   const novas = visiveis.filter((a) => !ui.visiveis.has(a) || recarregar.has(a));
   ui.visiveis = new Set(visiveis);

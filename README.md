@@ -2,7 +2,7 @@
 
 [![testes](https://github.com/SIAPP-Pocos/siapp/actions/workflows/testes.yml/badge.svg)](https://github.com/SIAPP-Pocos/siapp/actions/workflows/testes.yml)
 [![licença: AGPL-3.0](https://img.shields.io/badge/licen%C3%A7a-AGPL--3.0-blue)](LICENSE)
-![versão](https://img.shields.io/badge/vers%C3%A3o-0.34.0-informational)
+![versão](https://img.shields.io/badge/vers%C3%A3o-0.35.0-informational)
 
 Ferramenta aberta para transformar o acervo **público** de dados de poços da ANP
 (portal [REATE](https://reate.cprm.gov.br/anp/TERRESTRE), ANP/CPRM) em dados
@@ -33,7 +33,7 @@ que cada usuário receba os dados já tratados.
 | **Perfis** | DLIS, LIS e LAS em metros, curvas classificadas por família, gráfico em trilhas, intervalo-alvo e topos marcados no perfil, exportação LAS 2.0 e CSV. **Avaliação de formação** no intervalo-alvo: Vsh (linear/Larionov), φ (densidade, densidade-nêutron, sônico), Sw (Archie/Simandoux), cortes, net pay, N/G, HPV e controle de qualidade, com cada cálculo registrado com seus parâmetros. Topos e litologia do AGP no gráfico; formações do AGP como intervalos candidatos |
 | **Interpretação** | **Seção**: **Seção estratigráfica** pelos topos de formação do AGP: até 20 poços, escolhidos um a um ou ao longo de uma linha; em cota ou nivelada num datum; litologia de calha e curva GR; avisos de saltos entre vizinhos; figura em dois estilos — **clássico** (padrões de rocha, carimbo, mapa de localização) e moderno — exportada em SVG, PNG 300 ppp, PDF e CSV. **Bloco 3D**: Poços no espaço e **superfícies de topo** das formações pelos topos do AGP: por campo, em volta de um poço, a bacia inteira ou os poços da seção; interpolação **linear, IDW, spline, krigagem ou tendência + krigagem** (um método para topos, espessuras e propriedades, com explicação de cada parâmetro), escala **reservatório ou bacia**, **comparação dos métodos** pela validação cruzada e mapa de incerteza da krigagem; só dentro do contorno dos poços (área calculada), margem opcional; visor 3D com exagero vertical, unidades liga/desliga, norte e eixos; **trajetória real** dos poços desviados (dados direcionais); **pay da avaliação** ou indícios do AGP ao longo dos poços; **HPV, net pay, N/G, φ ou Sw** no topo da unidade; **bloco fechado** (do terreno a uma base plana, camadas topo a topo ou por espessura, com corte, seção A–A′ e camadas afastadas); **validação cruzada** (quanto o bloco erra sem cada poço) e **prognóstico num ponto** com incerteza; **figura estilo artigo** (SVG, PDF, PNG 300 ppp) e CSV; **saídas**: mapas de topo e isópaca em GeoTIFF/XYZ (SIRGAS 2000 / UTM) para o QGIS, deck **ECLIPSE (.DATA)** para tNavigator/OPM, volumetria preliminar por formação e modelo 3D **.glb** para o PowerPoint; **um clique monta o bloco de um campo**; **produção do campo pela ANP** (por poço e por zona, mês a mês, e o sumário do Plano de Desenvolvimento). É contexto espacial, não resultado |
 | **Viabilidade** | **Campo × infraestrutura**: distância do campo ao gasoduto, à UPGN, ao projeto de H₂ e à fonte de CO₂ mais próximos e a depleção pelo Plano de Desenvolvimento, num mapa próprio; **viabilidade econômica** auditável (custo do duto ÷ capacidade, três métodos de capacidade, constantes e equações editáveis, memória de cálculo, API e densidade do gás lidos nas pastas de poço); **blocos e campos × infraestrutura** para todas as áreas de uma vez |
-| **Comunidade** | Exportar as próprias correções e transcrições como pacote assinado, importar pacotes de colegas com prévia de conflitos e atualizar a base comunitária ([SIAPP-dados](https://github.com/SIAPP-Pocos/SIAPP-dados)) |
+| **Comunidade** | Exportar as próprias correções, transcrições e interpretações como pacote assinado, importar pacotes de colegas com prévia de conflitos e atualizar a base comunitária ([SIAPP-dados](https://github.com/SIAPP-Pocos/SIAPP-dados)); painel de quanto do acervo está preenchido e de quem contribuiu; biblioteca de interpretações de perfil para comparar e refazer com os mesmos parâmetros |
 
 Tudo fica num **banco do projeto** (`ambiente_teste/projeto.sqlite`) com o mesmo modelo
 da base comunitária: cada dado sabe se foi feito aqui, veio de um pacote ou da base, e
@@ -92,6 +92,8 @@ motor/            toda a lógica, sem nenhuma dependência de interface
   direcionais.py  dados direcionais: trajetória do poço (curvatura mínima)
   ferramentas.py  esquemas de ferramentas: tipo de cada corrida e ferramentas (nome + texto/OCR)
   comunidade.py   pacotes de contribuição e base comunitária
+  painel.py       preenchimento do acervo e contribuidores
+  biblioteca.py   interpretações de perfil compartilhadas
   projeto.py      pasta de projeto: configuração, procedência, escrita atômica
   registro.py     siapp.log
 ui/               HTML, CSS e JavaScript puros (ui/js/: um script por aba; ui/vendor/: Leaflet, three.js)

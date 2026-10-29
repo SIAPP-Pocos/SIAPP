@@ -349,6 +349,9 @@ def registrar(pasta_execucoes: str, *, poco: str, rel: str, sha256: str | None, 
     os.makedirs(pasta_execucoes, exist_ok=True)
     quando = datetime.now()
     ident = f"avaliacao_{re.sub(r'[^A-Za-z0-9-]+', '_', poco or 'sem_poco')}_{quando:%Y%m%d-%H%M%S}"
+    base, n = ident, 2
+    while os.path.exists(os.path.join(pasta_execucoes, ident + ".json")):   # duas no mesmo segundo
+        ident, n = f"{base}-{n}", n + 1
     np.savez_compressed(os.path.join(pasta_execucoes, ident + ".npz"), prof=resultado["prof"],
                         **{k: v.astype(np.float32) for k, v in resultado["curvas"].items()})
     reg = {

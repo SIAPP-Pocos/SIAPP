@@ -132,3 +132,14 @@ def test_erros_claros(tmp_path, cl):
         av.avaliar(cache, "tst.las", curvas, [{"nome": "x", "topo": 3000, "base": 3010}])
     with pytest.raises(av.ErroAvaliacao, match="não é número"):
         av.avaliar(cache, "tst.las", curvas, [{"topo": 1000, "base": 1010}], {"rw": "abc"})
+
+
+def test_duas_avaliacoes_no_mesmo_segundo_nao_se_sobrescrevem(tmp_path, cl):
+    f = tmp_path / "tst.las"
+    las_reservatorio(f)
+    cache = str(tmp_path / "cache")
+    inv = mpf.inventariar(str(f), cl, cache)
+    r = av.avaliar(cache, "tst.las", curvas_do_inventario(inv, cl), [{"nome": "Açu", "topo": 1005, "base": 1035}])
+    pasta = str(tmp_path / "execucoes")
+    ids = {av.registrar(pasta, poco="7-TST-1-RN", rel="tst.las", sha256=None, resultado=r)[0] for _ in range(3)}
+    assert len(ids) == 3 and len(av.execucoes(pasta)) == 3

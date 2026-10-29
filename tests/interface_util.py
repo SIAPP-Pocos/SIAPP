@@ -149,3 +149,11 @@ def abrir_destacada(jt_principal, aba):
     api._janelas[aba] = falsa
     jt, _ = abrir(api, jt_principal.navegador, srv=jt_principal.srv, consulta=f"?janela={aba}", falsa=falsa)
     return jt
+
+
+def foto(jt, nome: str):
+    """Captura da tela em $SIAPP_FOTOS/<nome>.png (para conferir o visual; sem a variável, nada)."""
+    pasta = os.environ.get("SIAPP_FOTOS")
+    if pasta:
+        os.makedirs(pasta, exist_ok=True)
+        jt.page.screenshot(path=os.path.join(pasta, nome + ".png"))

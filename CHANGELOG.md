@@ -6,6 +6,30 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 
 ## [Não lançado]
 
+## [0.35.0] — 2026-10-28
+Bloco 8 do teste da 0.29: Comunidade.
+### Adicionado
+- **Painel de preenchimento e contribuição** (Comunidade › Painel): dos poços com pasta no REATE, quantos têm
+  documentos, perfil, topos (AGP ou transcritos), dados transcritos, páginas revisadas, interpretações e
+  produção — em número e porcentagem, no total e por bacia; quem contribuiu (dados, topos, correções do OCR,
+  palavras, páginas, interpretações; poços; origem; período); atividade por mês; e onde ajudar (poços com
+  perfil e sem topo, com documentos e sem dado transcrito).
+- **Biblioteca de interpretações de perfil** (Comunidade › Biblioteca): a avaliação de formação calculada na
+  aba Perfis pode ser compartilhada (título e comentário) com o arquivo (hash), as curvas, os métodos, os
+  parâmetros e o resumo de cada intervalo — sem as curvas calculadas. Buscar por poço, autor, bacia e origem;
+  ver os parâmetros; **comparar** de 2 a 6 lado a lado (intervalos casados pela profundidade, diferenças
+  destacadas), inclusive com avaliações suas ainda não compartilhadas; **refazer nos Perfis** com os mesmos
+  intervalos, curvas e parâmetros, e comparar o resultado com o original.
+- **Formato de contribuição v3**: as interpretações vão no pacote e na base comunitária (tabela opcional
+  `interpretacoes`), com autor e origem; importar, desfazer e aplicar a base valem para elas como para os
+  dados transcritos. Os formatos 1 e 2 continuam aceitos. O SIAPP-dados (em `_publicar`) foi atualizado junto:
+  esquema v3 (que também passa a aceitar o tipo `trecho`), validador e compilador.
+- Na aba Perfis, uma nota avisa quando a biblioteca tem interpretações do poço aberto.
+### Corrigido
+- Duas avaliações de formação calculadas no mesmo segundo gravavam o mesmo registro em `execucoes/` (a segunda
+  apagava a primeira). Agora a segunda ganha um sufixo.
+- No modo escuro, os selos verdes ("ok") e vermelhos ficavam com fundo claro.
+
 ## [0.34.0] — 2026-10-28
 Bloco 6 do teste da 0.29: Mapa e Seção.
 ### Adicionado

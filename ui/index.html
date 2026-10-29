@@ -826,6 +826,8 @@
             <p class="ajuda">Argilosidade pelo GR, porosidade, saturação de água e net pay, calculados <strong>só dentro
               dos intervalos-alvo</strong> escolhidos. Cada cálculo fica registrado em <code>execucoes/</code> com as curvas,
               os métodos e todos os parâmetros — inclusive os estimados automaticamente.</p>
+            <p class="aviso av-bib-refazer" id="av-bib-refazer" hidden></p>
+            <p class="ajuda av-bib-nota" id="av-bib-nota" hidden></p>
             <div class="av-grade">
               <div class="av-col">
                 <h4>Intervalos-alvo</h4>
@@ -874,8 +876,12 @@
             <div class="linha" id="av-acoes" hidden>
               <button class="btn secundario pequeno" id="av-csv">Exportar CSV</button>
               <button class="btn secundario pequeno" id="av-las">Exportar LAS</button>
+              <button class="btn secundario pequeno" id="av-compartilhar" title="Coloca esta avaliação na biblioteca de interpretações (vai no próximo pacote)">Compartilhar na biblioteca…</button>
+              <button class="btn secundario pequeno" id="av-comparar-bib" hidden>Comparar com a da biblioteca</button>
+              <span class="selo o-local" id="av-compartilhada" hidden>na biblioteca</span>
               <span class="ajuda" id="av-registro"></span>
             </div>
+            <div class="form-compartilhar" id="av-form-compart" hidden></div>
             <details class="av-historico" id="av-historico" hidden>
               <summary>Avaliações anteriores deste arquivo</summary>
               <ul class="dic-lista" id="av-hist-lista"></ul>
@@ -1357,6 +1363,12 @@
 
   <main class="grade comunidade" id="vista-comunidade" hidden>
     <aside class="lateral" data-titulo="Comunidade">
+      <nav class="sub-nav" aria-label="Comunidade">
+        <button class="sub-btn" data-com="contribuir">Contribuir</button>
+        <button class="sub-btn" data-com="painel">Painel de preenchimento</button>
+        <button class="sub-btn" data-com="biblioteca">Biblioteca de interpretações</button>
+      </nav>
+      <div data-com-lat="contribuir">
       <section class="etapa">
         <h2>Quem é você</h2>
         <p class="ajuda">Seu nome assina as contribuições que você exportar (licença CC-BY 4.0: quem usar os dados cita os autores).</p>
@@ -1376,8 +1388,46 @@
           <li>Cada versão da base reúne todos os pacotes aceitos. <strong>Atualizar a base</strong> traz tudo para o seu SIAPP.</li>
         </ol>
       </section>
+      </div>
+      <div data-com-lat="painel" hidden>
+        <section class="etapa">
+          <h2>Filtrar</h2>
+          <label class="campo-lat">Bacia <select id="pn-bacia"><option value="">Todas</option></select></label>
+          <button class="btn secundario pequeno" id="pn-atualizar">Atualizar</button>
+        </section>
+        <section class="etapa">
+          <h2>Como ler</h2>
+          <ul class="ajuda passos">
+            <li>A base é o conjunto de poços com pasta no REATE (do levantamento do acervo ou do catálogo). Sem levantamento, entram os poços que aparecem em algum dado do projeto.</li>
+            <li>Os números incluem o que veio da <strong>base comunitária</strong> e dos <strong>pacotes</strong> importados, além do que foi feito aqui.</li>
+            <li>“Quem contribuiu” junta dados transcritos, topos, correções do OCR, páginas revisadas e interpretações, com o autor gravado em cada um.</li>
+          </ul>
+        </section>
+      </div>
+      <div data-com-lat="biblioteca" hidden>
+        <section class="etapa">
+          <h2>Buscar</h2>
+          <div class="bib-filtros">
+            <label class="campo-lat">Poço, título, autor ou campo <input id="bib-texto" type="search" placeholder="ex.: 7-GMR, Açu, Simandoux"></label>
+            <label class="campo-lat">Bacia <select id="bib-bacia"><option value="">Todas</option></select></label>
+            <label class="campo-lat">Origem <select id="bib-origem">
+              <option value="">Todas</option><option value="local">Suas</option>
+              <option value="pacote">De pacotes importados</option><option value="base">Da base comunitária</option></select></label>
+          </div>
+        </section>
+        <section class="etapa">
+          <h2>Como funciona</h2>
+          <ol class="ajuda passos">
+            <li>Na aba Perfis, depois de calcular uma avaliação de formação, clique em <strong>Compartilhar na biblioteca</strong>.</li>
+            <li>Vão o poço, o arquivo (pelo hash), as curvas, os métodos, os parâmetros e o resumo de cada intervalo — <strong>sem as curvas calculadas</strong>.</li>
+            <li>Ela segue no próximo pacote que você exportar (Contribuir) e chega aos colegas pela base comunitária.</li>
+            <li>Quem tem o mesmo arquivo <strong>refaz</strong> o cálculo com os mesmos parâmetros e <strong>compara</strong> com o seu.</li>
+          </ol>
+        </section>
+      </div>
     </aside>
     <section class="principal">
+      <div data-com-painel="contribuir">
       <div class="cartoes">
         <section class="cartao">
           <h2>Suas contribuições</h2>
@@ -1407,6 +1457,60 @@
           <h3>Pacotes importados</h3>
           <ul class="lista-pacotes" id="lista-pacotes"></ul>
         </section>
+      </div>
+      </div>
+
+      <div class="com-sub" data-com-painel="painel" hidden>
+        <header class="pn-cab">
+          <h2 id="pn-titulo">Preenchimento do acervo</h2>
+          <p class="ajuda" id="pn-sub">—</p>
+        </header>
+        <div class="pn-kpis" id="pn-kpis"></div>
+        <div class="cartoes">
+          <section class="cartao largo">
+            <h2>Por bacia</h2>
+            <div class="tabela-rolar"><table class="tabela pn-tabela" id="pn-bacias"></table></div>
+          </section>
+          <section class="cartao largo">
+            <h2>Quem contribuiu</h2>
+            <p class="ajuda" id="pn-contrib-sub"></p>
+            <div class="tabela-rolar"><table class="tabela pn-tabela" id="pn-contrib"></table></div>
+          </section>
+          <section class="cartao">
+            <h2>Atividade por mês</h2>
+            <p class="ajuda">Contribuições gravadas em cada mês (data de criação de cada item).</p>
+            <div class="pn-atividade" id="pn-atividade"></div>
+          </section>
+          <section class="cartao">
+            <h2>Onde ajudar</h2>
+            <div class="pn-ajudar" id="pn-ajudar"></div>
+          </section>
+        </div>
+      </div>
+
+      <div class="com-sub" data-com-painel="biblioteca" hidden>
+        <header class="bib-cab">
+          <p class="ajuda" id="bib-resumo">—</p>
+          <div class="linha">
+            <button class="btn" id="bib-comparar" disabled>Comparar as marcadas</button>
+            <button class="btn secundario pequeno" id="bib-limpar-sel" hidden>Desmarcar</button>
+            <span class="ajuda" id="bib-sel"></span>
+          </div>
+        </header>
+        <div class="bib-grade">
+          <div class="bib-col-lista">
+            <div class="bib-lista" id="bib-lista"></div>
+            <section class="bib-nao" id="bib-nao" hidden>
+              <h3>Suas avaliações ainda não compartilhadas</h3>
+              <p class="ajuda">Marque para comparar com as da biblioteca, ou compartilhe.</p>
+              <div id="bib-nao-lista"></div>
+            </section>
+          </div>
+          <div class="bib-col-detalhe">
+            <div class="bib-detalhe" id="bib-detalhe"><p class="ajuda">Escolha uma interpretação para ver os parâmetros e os intervalos.</p></div>
+          </div>
+        </div>
+        <section class="bib-comparacao" id="bib-comparacao" hidden></section>
       </div>
     </section>
   </main>

@@ -13,12 +13,14 @@ CREATE TABLE fatos (id TEXT PRIMARY KEY, poco TEXT, tipo TEXT, nome TEXT, valor 
                     fonte_sha256 TEXT, fonte_caminho TEXT, fonte_bacia TEXT, pagina INTEGER,
                     caixa TEXT, autor TEXT, contribuicao TEXT);
 CREATE TABLE apelidos (apelido TEXT, poco TEXT, contribuicao TEXT);
+CREATE TABLE interpretacoes (id TEXT PRIMARY KEY, poco TEXT, titulo TEXT, autor TEXT, criado_em TEXT,
+                             dados TEXT, contribuicao TEXT);
 """
 
 
-def montar_base(caminho, pacotes, versao="v2026.10.0"):
+def montar_base(caminho, pacotes, versao="v2026.10.0", com_interpretacoes=True):
     c = sqlite3.connect(caminho)
-    c.executescript(ESQUEMA_BASE)
+    c.executescript(ESQUEMA_BASE if com_interpretacoes else ESQUEMA_BASE.split("CREATE TABLE interpretacoes")[0])
     c.executemany("INSERT INTO meta VALUES (?, ?)", [
         ("formato", "siapp-dados-base"), ("versao_formato_base", "1"),
         ("versao_base", versao), ("gerado_em", "2026-10-16T10:00:00")])
@@ -43,5 +45,9 @@ def montar_base(caminho, pacotes, versao="v2026.10.0"):
                        json.dumps(fo["caixa"]) if fo.get("caixa") else None, a["nome"], p["id"]))
         for ap in p.get("apelidos", []):
             c.execute("INSERT INTO apelidos VALUES (?,?,?)", (ap["apelido"], ap["poco"], p["id"]))
+        for i in p.get("interpretacoes", []) if com_interpretacoes else []:
+            c.execute("INSERT OR REPLACE INTO interpretacoes VALUES (?,?,?,?,?,?,?)",
+                      (i["id"], i["poco"], i.get("titulo"), a["nome"], i.get("criado_em"),
+                       json.dumps(i, ensure_ascii=False), p["id"]))
     c.commit()
     c.close()
