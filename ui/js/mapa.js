@@ -419,7 +419,10 @@ async function abrirFicha(id) {
 
   const bd = el("button", "btn secundario pequeno", "Destacar no mapa");
   bd.onclick = () => destacarPocos([id], $("dq-cor").value);
-  corpo.appendChild(bd);
+  const bc = el("button", "btn secundario pequeno", "Dados consolidados");
+  bc.title = "Todos os dados deste poço, por tipo, com a fonte de cada um (Dados › Dados consolidados)";
+  bc.onclick = () => verConsolidadoDoPoco(id);
+  corpo.append(bd, " ", bc);
   secaoProducaoFicha(corpo, r.producao, p.campo);
 
   corpo.appendChild(el("h3", "", "No portal REATE"));

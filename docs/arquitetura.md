@@ -32,6 +32,7 @@
     rfp.py          formulários CDPE da ANP pela posição do texto: RFP, RFCP, Perfuração, ND, NPR, Reentrada
     pressoes.py     teste a cabo (DLIS por tempo → estações), TFR (relatório + manômetros no ZIP), gradiente
     pvt.py          análise PVT (liberação diferencial e flash): saturação, Bo/Rs/Bg × pressão, composição
+    consolidado.py  dados consolidados: por tema, as fontes, a tabela onde ficam e os módulos que as usam
     geoquimica.py   geoquímica: δ¹³C dos gases (planilha XML 2003, xls, xlsx), geoquímica de rocha
     checkshot.py    sísmica de poço: cabeçalhos do SEG-Y → tabela tempo × profundidade, TWT, CSV
     operador.py     perfis processados pela operadora: famílias do levantamento refeitas, pesquisa, comparação

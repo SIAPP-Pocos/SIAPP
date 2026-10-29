@@ -1849,3 +1849,35 @@ def test_geoquimica_e_apelidos_com_origem_na_ficha(janela, tmp_path):
     assert "Geoquímica de rocha (2)" in corpo
     assert "(geoquímica)" in p.text_content("#fi-apelidos")
     assert not janela.erros_js, janela.erros_js
+
+
+def test_dados_consolidados(janela, tmp_path):
+    """0.44: Dados › Dados consolidados — o projeto e um poço, também a partir da ficha."""
+    import rfp_util as u
+    from interface_util import foto
+    p = janela.page
+    abrir_projeto(janela)
+    pasta = tmp_path / "ambiente_teste" / "bruto" / "Potiguar" / "1-SIAPP-1-RN" / "Pasta de Poco"
+    pasta.mkdir(parents=True)
+    u.gerar(str(pasta / "1-SIAPP-1-RN_CDPE_7_RFP.pdf"), u.RFP)
+    u.gerar(str(pasta / "1-SIAPP-1-RN_CDPE_8_RFCP_1.pdf"), u.RFCP)
+    janela.api._abrir_projeto(str(tmp_path / "ambiente_teste"))
+    ir(p, "dados", "consolidado")
+    janela.esperar("document.querySelectorAll('#co-resultado .co-tabela tr').length > 10")
+    assert "RFP (topos constatados): 1 · 4" in p.text_content("#co-resultado")
+    assert "Seção estratigráfica e bloco 3D: só os topos do AGP" in p.text_content("#co-resultado")
+    foto(janela, "co_1_projeto")
+    p.fill("#co-poco", "1-ABC-1-RN")
+    p.click("#co-ver")
+    janela.esperar("document.getElementById('co-resultado').textContent.includes('Poço 1-SIAPP-1-RN')")
+    assert "Canhoneados (RFCP)1.396–1.401FM. AÇU" in p.text_content("#co-resultado")
+    foto(janela, "co_2_poco")
+    # da ficha do poço
+    p.evaluate("abrirFicha('1-SIAPP-1-RN')")
+    janela.esperar("document.getElementById('fi-corpo').textContent.includes('Formulários da ANP')")
+    p.evaluate("limpar($('co-resultado'))")
+    p.click("#aba-mapa")
+    p.locator("#fi-corpo button", has_text="Dados consolidados").click()
+    janela.esperar("document.getElementById('co-resultado').textContent.includes('Poço 1-SIAPP-1-RN')")
+    assert p.is_visible("#co-resultado")
+    assert not janela.erros_js, janela.erros_js

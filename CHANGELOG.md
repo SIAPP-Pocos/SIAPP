@@ -6,6 +6,18 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 
 ## [Não lançado]
 
+## [0.44.0] — 2026-10-29
+O leitor final dos dados consolidados.
+### Adicionado
+- **Dados › Dados consolidados**: por tema (topos, intervalos de interesse, temperatura, pressão, fluidos, lama,
+  litologia, curvas, interpretações, tempo × profundidade, trajetória, produção, outros nomes), cada fonte com
+  quantos poços e registros tem no projeto, a tabela do banco onde fica e onde é usada; e os documentos lidos por
+  leitor, com os que não foram lidos e os de outro poço.
+- **Um poço**: os valores de cada fonte lado a lado (pelo nome em qualquer grafia), também pelo botão "Dados
+  consolidados" da ficha.
+- `docs/dados-consolidados.md`: o mesmo catálogo, e as lacunas que ele mostra (a seção e o bloco 3D só usam os topos
+  do AGP; temperatura e lama são referência, não viram Rw sozinhas).
+
 ## [0.43.0] — 2026-10-29
 Bloco 9, item 7: geoquímica e apelidos. Com ele, o bloco 9 está completo.
 ### Adicionado

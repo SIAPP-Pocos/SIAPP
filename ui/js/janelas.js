@@ -85,7 +85,7 @@ function preferenciasMudaram(p) {
 
 // ---------------------------------------------------------------- abas e layout
 function normalizarAba(qual) {
-  if (["catalogo", "cadastro", "levantamento", "producao", "camadas"].includes(qual)) { ui.subDados = qual; return "dados"; }
+  if (["catalogo", "cadastro", "levantamento", "producao", "camadas", "consolidado"].includes(qual)) { ui.subDados = qual; return "dados"; }
   if (qual === "secao" || qual === "bloco") { ui.subInterp = qual; return "interp"; }
   if (["contribuir", "painel", "biblioteca"].includes(qual)) { ui.subCom = qual; return "comunidade"; }
   if (qual === "inicio") return "projeto";
@@ -523,6 +523,7 @@ function ligarJanelas() {
   for (const b of document.querySelectorAll(".sub-nav [data-sub]")) b.onclick = () => {
     ui.subDados = b.dataset.sub;
     if (ui.subDados !== "catalogo" && !$("gaveta").hidden) fecharGaveta();
+    if (ui.subDados === "consolidado" && typeof carregarConsolidado === "function") carregarConsolidado();
     aplicarLayout(new Set(["dados"]));
     guardarLayout();
   };

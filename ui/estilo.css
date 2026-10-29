@@ -1279,3 +1279,20 @@ td.av-op-dif { color: var(--erro); font-weight: 600; }
 .lv-processados .tabela td, .lv-processados .tabela th { font-size: 12px; }
 td.lv-arqs { font: 11px var(--mono); word-break: break-all; }
 .dp-aviso { margin-top: 2px; }
+
+/* ---------- dados consolidados (0.44) ---------- */
+.co-tabela td, .co-tabela th { font-size: 12px; vertical-align: top; }
+.co-fonte { white-space: nowrap; }
+.co-vazia { color: var(--suave); opacity: .7; }
+.co-onde { font: 11px var(--mono); color: var(--suave); }
+.co-usos { margin: 0; padding-left: 16px; font-size: 12px; }
+.co-tema { margin: 6px 0; }
+.co-tema > summary { cursor: pointer; font-weight: 600; font-size: 13px; padding: 3px 0; }
+.co-tabela-poco td { font-size: 12px; }
+.sub-painel.cartoes > #etapa-consolidado { grid-column: 1 / -1; max-width: none; }
+#etapa-consolidado .co-tabela { width: 100%; table-layout: fixed; }
+#etapa-consolidado .co-tabela th:nth-child(1) { width: 14%; }
+#etapa-consolidado .co-tabela th:nth-child(2) { width: 32%; }
+#etapa-consolidado .co-tabela th:nth-child(3) { width: 20%; }
+#etapa-consolidado .co-onde div { overflow-wrap: anywhere; }
+#co-poco { min-width: 280px; }

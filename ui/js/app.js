@@ -27,6 +27,7 @@ async function carregarDados() {
   carregarLevantamento();
   carregarProducao();
   carregarCamadas();
+  if (ui.subDados === "consolidado") carregarConsolidado();
 }
 
 // ---------------------------------------------------------------- início
@@ -120,6 +121,7 @@ async function iniciar() {
   ligarBloco();
   ligarExternos();
   ligarComunidade();
+  ligarConsolidado();
   ligar("ocr-cancelar", "onclick", async () => {
     await chamar($("ocr-cancelar"), "cancelar_processamento");
     status("Cancelando o processamento…", "trab");

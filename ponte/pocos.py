@@ -173,6 +173,22 @@ class PocosAPI:
         return saida
 
     @resposta_segura
+    def consolidado_projeto(self):
+        """Cada tipo de dado: de onde vem, onde fica no banco, onde é usado e quantos poços o têm."""
+        from motor import consolidado as mco
+        self._exigir_projeto()
+        return mco.projeto(self._banco)
+
+    @resposta_segura
+    def consolidado_poco(self, poco: str):
+        """Os valores de cada fonte, lado a lado, para um poço (qualquer grafia do nome)."""
+        from motor import consolidado as mco
+        self._exigir_projeto()
+        if not str(poco or "").strip():
+            raise ErroUsuario("Informe o poço.")
+        return mco.poco(self._banco, mpo.resolver(self._banco, poco))
+
+    @resposta_segura
     def exportar_checkshot(self, poco: str):
         """Tabela tempo × profundidade do checkshot em CSV (exportacoes/<poço>/), para levar à sísmica."""
         from motor import checkshot as mck

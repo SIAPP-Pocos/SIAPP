@@ -142,6 +142,7 @@
         <button class="sub-btn" data-sub="levantamento">Levantamento do acervo</button>
         <button class="sub-btn" data-sub="producao">Produção da ANP</button>
         <button class="sub-btn" data-sub="camadas">Camadas geográficas</button>
+        <button class="sub-btn" data-sub="consolidado">Dados consolidados</button>
       </nav>
       <div data-sub-lat="catalogo">
       <section class="etapa bloqueada" id="etapa-bacia">
@@ -229,6 +230,20 @@
           <button class="btn secundario pequeno" id="lv-exportar" title="Um CSV por poço e um por arquivo, para o Excel">Exportar CSV</button>
           <button class="btn secundario pequeno" id="lv-pasta">Abrir a pasta</button>
         </div>
+      </section>
+      </div>
+      <div class="sub-painel cartoes" data-sub-painel="consolidado" hidden>
+      <section class="etapa" id="etapa-consolidado">
+        <h2>Dados consolidados</h2>
+        <p class="ajuda">Tudo o que o SIAPP leu dos arquivos e do portal, por tipo de dado: de onde vem, em que tabela
+          do banco do projeto fica e onde é usado. O mesmo dado pode vir de várias fontes (um topo, do AGP, do RFP, da
+          calha ou da sua transcrição); aqui elas aparecem lado a lado. Nada aqui muda os dados.</p>
+        <div class="linha">
+          <label>Poço <input id="co-poco" placeholder="qualquer grafia: 1-BRSA-1304-BA, 1-FPA-1-BA…"></label>
+          <button class="btn secundario" id="co-ver">Ver o poço</button>
+          <button class="btn secundario pequeno" id="co-projeto">O projeto todo</button>
+        </div>
+        <div id="co-resultado"></div>
       </section>
       </div>
       <div class="sub-painel cartoes" data-sub-painel="producao" hidden>
@@ -1640,6 +1655,7 @@
   <script src="js/mapa.js"></script>
   <script src="js/levantamento.js"></script>
   <script src="js/dados_poco.js"></script>
+  <script src="js/consolidado.js"></script>
   <script src="js/ferramentas.js"></script>
   <script src="js/perfis.js"></script>
   <script src="js/avaliacao.js"></script>

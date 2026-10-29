@@ -2,7 +2,7 @@
 
 [![testes](https://github.com/SIAPP-Pocos/siapp/actions/workflows/testes.yml/badge.svg)](https://github.com/SIAPP-Pocos/siapp/actions/workflows/testes.yml)
 [![licença: AGPL-3.0](https://img.shields.io/badge/licen%C3%A7a-AGPL--3.0-blue)](LICENSE)
-![versão](https://img.shields.io/badge/vers%C3%A3o-0.43.0-informational)
+![versão](https://img.shields.io/badge/vers%C3%A3o-0.44.0-informational)
 
 Ferramenta aberta para transformar o acervo **público** de dados de poços da ANP
 (portal [REATE](https://reate.cprm.gov.br/anp/TERRESTRE), ANP/CPRM) em dados
@@ -105,7 +105,7 @@ SIAPP baixa e produz fica nela, em formatos abertos (JSON, SQLite, LAS, CSV), co
 histórico de cada ação em `siapp.json`. Detalhes em [`docs/arquitetura.md`](docs/arquitetura.md),
 [`docs/comunidade.md`](docs/comunidade.md), [`docs/perfis.md`](docs/perfis.md),
 [`docs/levantamento.md`](docs/levantamento.md), [`docs/avaliacao.md`](docs/avaliacao.md),
-[`docs/agp.md`](docs/agp.md), [`docs/formularios-anp.md`](docs/formularios-anp.md), [`docs/pressoes.md`](docs/pressoes.md), [`docs/pvt.md`](docs/pvt.md), [`docs/pag.md`](docs/pag.md), [`docs/perfis-processados.md`](docs/perfis-processados.md), [`docs/checkshot.md`](docs/checkshot.md), [`docs/geoquimica.md`](docs/geoquimica.md), [`docs/secao.md`](docs/secao.md), [`docs/ferramentas.md`](docs/ferramentas.md) e [`docs/bloco.md`](docs/bloco.md).
+[`docs/agp.md`](docs/agp.md), [`docs/formularios-anp.md`](docs/formularios-anp.md), [`docs/pressoes.md`](docs/pressoes.md), [`docs/pvt.md`](docs/pvt.md), [`docs/pag.md`](docs/pag.md), [`docs/perfis-processados.md`](docs/perfis-processados.md), [`docs/checkshot.md`](docs/checkshot.md), [`docs/geoquimica.md`](docs/geoquimica.md), [`docs/dados-consolidados.md`](docs/dados-consolidados.md), [`docs/secao.md`](docs/secao.md), [`docs/ferramentas.md`](docs/ferramentas.md) e [`docs/bloco.md`](docs/bloco.md).
 
 ## Dados e procedência
 

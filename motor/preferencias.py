@@ -22,7 +22,7 @@ PALETAS = ("marinho", "petroleo", "oceano", "arenito", "grafite", "floresta", "c
 TEMAS = ("claro", "escuro")
 FONTES = ("P", "M", "G")
 ABAS = ("projeto", "dados", "mapa", "docs", "perfis", "interp", "viab", "comunidade")
-SUB_DADOS = ("catalogo", "cadastro", "levantamento", "producao", "camadas")
+SUB_DADOS = ("catalogo", "cadastro", "levantamento", "producao", "camadas", "consolidado")
 SUB_INTERP = ("secao", "bloco")
 SUB_COM = ("contribuir", "painel", "biblioteca")
 

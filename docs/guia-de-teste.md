@@ -131,6 +131,15 @@ Precisa de internet. Comece por uma categoria pequena para ver o tempo.
 - [ ] Sem intervalo marcado, **Calcular** explica que precisa de um intervalo-alvo.
 - [ ] Repetir no `5PX__0011__RN_5PX__0011__RN.tif` (DLIS de 2020).
 
+## 0.44 — dados consolidados
+
+- [ ] Dados › Dados consolidados: a tabela "No projeto" lista os 13 temas; confira alguns números (ex.: "AGP da
+      ANP" com os poços de AGP lidos; "RFP (topos constatados)" com os 3 poços de formulários do `ambiente_teste`).
+- [ ] A coluna "Onde é usado" bate com o que você vê no SIAPP? (ex.: a seção só com os topos do AGP.)
+- [ ] Digite **1-FPA-1-BA** e "Ver o poço": abre o 1-BRSA-1304-BA, com RFP, calha, TFR, teste a cabo, PVT,
+      checkshot e geoquímica nos temas certos.
+- [ ] Na ficha de qualquer poço, o botão "Dados consolidados" leva direto ao poço nessa tela.
+
 ## 0.43 — geoquímica e apelidos
 
 - [ ] Ficha do **1-BRSA-1304-BA** › "Geoquímica — isótopos de carbono do gás": 1.680–1.684 m, gás, δ¹³C
