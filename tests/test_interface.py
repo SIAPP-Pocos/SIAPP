@@ -1865,7 +1865,7 @@ def test_dados_consolidados(janela, tmp_path):
     ir(p, "dados", "consolidado")
     janela.esperar("document.querySelectorAll('#co-resultado .co-tabela tr').length > 10")
     assert "RFP (topos constatados): 1 · 4" in p.text_content("#co-resultado")
-    assert "Seção estratigráfica e bloco 3D: só os topos do AGP" in p.text_content("#co-resultado")
+    assert "Seção estratigráfica e bloco 3D: o topo efetivo" in p.text_content("#co-resultado")
     foto(janela, "co_1_projeto")
     p.fill("#co-poco", "1-ABC-1-RN")
     p.click("#co-ver")
@@ -1880,4 +1880,40 @@ def test_dados_consolidados(janela, tmp_path):
     p.locator("#fi-corpo button", has_text="Dados consolidados").click()
     janela.esperar("document.getElementById('co-resultado').textContent.includes('Poço 1-SIAPP-1-RN')")
     assert p.is_visible("#co-resultado")
+    assert not janela.erros_js, janela.erros_js
+
+
+def test_topos_comparar_e_escolher_na_ficha(janela, tmp_path):
+    """0.45: a ficha mostra o topo de cada fonte, a diferença e deixa escolher; a ordem do projeto se edita."""
+    import rfp_util as u
+    from interface_util import foto
+    p = janela.page
+    abrir_projeto(janela)
+    pasta = tmp_path / "ambiente_teste" / "bruto" / "Potiguar" / "1-SIAPP-1-RN" / "Pasta de Poco"
+    pasta.mkdir(parents=True)
+    u.gerar(str(pasta / "1-SIAPP-1-RN_CDPE_7_RFP.pdf"), u.RFP)
+    api = janela.api
+    api._abrir_projeto(str(tmp_path / "ambiente_teste"))
+    api._banco.salvar_fato({"poco_id": "1-SIAPP-1-RN", "tipo": "topo_formacao", "nome": "Açu", "prof_topo": 812.0})
+    p.evaluate("abrirFicha('1-SIAPP-1-RN')")
+    janela.esperar("document.getElementById('fi-topos') !== null")
+    t = p.text_content("#fi-topos")
+    assert "TranscritoRFP" in t.replace(" ", "") and "10,5" in t           # Açu: 812 × 801,5
+    assert p.locator("#fi-topos td.tp-diverge").count() == 1
+    p.click("#aba-mapa")
+    sel = p.locator("#fi-topos select[data-chave='ACU']")
+    assert sel.input_value() == "padrao"
+    sel.select_option("rfp")
+    janela.esperar("document.querySelector(\"#fi-topos select[data-chave='ACU']\").value === 'rfp'")
+    linha = p.locator("#fi-topos tr", has=p.locator("select[data-chave='ACU']"))
+    assert linha.locator("td.tp-usada").text_content() == "801,5"
+    p.locator("#fi-topos").scroll_into_view_if_needed()
+    foto(janela, "tp_1_ficha")
+    # a ordem do projeto
+    ir(p, "dados", "consolidado")
+    janela.esperar("document.querySelectorAll('#co-precedencia li').length === 4")
+    p.locator("#co-precedencia li").nth(2).locator("button", has_text="↑").click()       # RFP sobe
+    p.click("#co-prec-salvar")
+    janela.esperar("historicoStatus.some((m) => m.texto.includes('Ordem das fontes de topo salva'))")
+    assert api.topos_precedencia()["ordem"] == ["agp", "rfp", "transcrito", "calha"]
     assert not janela.erros_js, janela.erros_js

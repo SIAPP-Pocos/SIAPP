@@ -50,12 +50,12 @@ class SecaoAPI:
         self._exigir_projeto()
         nomes = magp.ler_estratigrafia(CAMINHO_ESTRATIGRAFIA)
         cont: dict[str, dict] = {}
+        from motor import topos as mtp
         for pid in [self._id_poco(p) for p in pocos]:
-            g = magp.do_poco(self._banco, pid)
-            for u in magp.unidades_do_poco(self._banco, pid):
-                if u["tip"] != "L" or u["topo"] is None or (g and u["caminho"] != g[0]["caminho"]):
+            # os topos efetivos (escolha do usuário ou precedência entre AGP, transcrito, RFP e calha)
+            for n in mtp.efetivas(self._banco, pid, nomes)[0]:
+                if n["topo"] is None:
                     continue
-                n = msc._normalizar(u, nomes)
                 item = cont.setdefault(n["sigla"].upper(), {"chave": n["sigla"].upper(),
                                                            "nome": msc._rotulo_unidade(n), "pocos": set()})
                 item["pocos"].add(pid)

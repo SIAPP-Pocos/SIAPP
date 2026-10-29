@@ -411,7 +411,7 @@ def montar(banco: Banco, pocos: list[str], *, nivel: str = "formacoes", margem_k
                       f"(a cota dos topos é a do AGP): {', '.join(sem_traj)}.")
     sem = [p["id"] for p in saida if not p["unidades"]]
     if sem:
-        avisos.append(f"Sem {msc.ROTULO_NIVEL[nivel]} com topo no AGP: {', '.join(sem)}.")
+        avisos.append(f"Sem {msc.ROTULO_NIVEL[nivel]} com topo: {', '.join(sem)}.")
 
     xy = np.array([[p["x"], p["y"]] for p in saida] + [[u["x"], u["y"]] for p in saida for u in p["unidades"]])
     hull = contorno_convexo(xy)

@@ -23,6 +23,7 @@ Tabelas:
     fatos      dados com procedência: topo de formação, revestimento, intervalo-alvo…
     pacotes    contribuições exportadas/importadas e bases aplicadas
     leituras   documentos lidos por um leitor de dados do poço (RFP, RFCP…), com versão
+    escolhas   a fonte que o usuário escolheu quando várias trazem o mesmo dado (ex.: topo da formação)
     dados_poco o que cada leitura trouxe, uma linha por dado com profundidade (só leitura:
                refeito ao reler; não entra nos pacotes de contribuição)
 
@@ -244,6 +245,14 @@ MIGRACOES: list[str] = [
         PRIMARY KEY (rel, ordem)
     );
     CREATE INDEX dados_poco_poco ON dados_poco(poco_id, tipo);
+    """,
+    # 11 — escolhas do usuário entre fontes do mesmo dado (SIAPP 0.45): qual topo vale na seção e no bloco
+    """
+    CREATE TABLE escolhas(
+        poco_id TEXT NOT NULL, tema TEXT NOT NULL, chave TEXT NOT NULL,
+        fonte TEXT NOT NULL, autor TEXT, criado_em TEXT NOT NULL,
+        PRIMARY KEY (poco_id, tema, chave)
+    );
     """,
 ]
 

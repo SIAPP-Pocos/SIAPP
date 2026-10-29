@@ -39,7 +39,7 @@ def test_projeto_conta_cada_fonte(tmp_path):
     assert tm["tempo"]["Checkshot (SEG-Y da sísmica de poço)"] == (0, 0)
     assert r["leituras"] == [{"leitor": "cdpe", "documento": "rfp", "n": 1, "erros": 0, "de_outro_poco": 0}]
     assert all(t["usos"] for t in r["temas"])
-    assert any("só os topos do AGP" in x for x in next(t for t in r["temas"] if t["chave"] == "topos")["usos"])
+    assert any("topo efetivo" in x for x in next(t for t in r["temas"] if t["chave"] == "topos")["usos"])
 
 
 def test_poco_lado_a_lado(tmp_path):

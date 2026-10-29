@@ -10,7 +10,7 @@ qual fonte vale; a regra de cada módulo está na coluna "Onde é usado".
 
 | Tema | Fonte | Onde fica | Onde é usado |
 |---|---|---|---|
-| Topos de formação | AGP da ANP | `agp_unidades` | Seção estratigráfica e bloco 3D: só os topos do AGP<br>Perfis: AGP (verde tracejado), RFP (marrom pontilhado), transcritos (roxo)<br>Ficha do poço: todos; os topos sem nome do RFP ganham o nome da calha a até 10 m<br>Avaliação: as unidades do AGP como intervalos candidatos |
+| Topos de formação | AGP da ANP | `agp_unidades` | Seção estratigráfica e bloco 3D: o topo efetivo de cada unidade — o que você escolheu na ficha do poço ou o da primeira fonte da ordem do projeto (padrão: AGP → transcrito → RFP → calha)<br>Perfis: AGP (verde tracejado), RFP (marrom pontilhado), transcritos (roxo)<br>Ficha do poço: todos; os topos sem nome do RFP ganham o nome da calha a até 10 m<br>Avaliação: as unidades do AGP como intervalos candidatos |
 |  | RFP (topos constatados) | `dados_poco · topo` |  |
 |  | Descrição de calha (PAG) | `dados_poco · topo_calha` |  |
 |  | Transcritos (você e a comunidade) | `fatos · topo_formacao` |  |
@@ -48,12 +48,12 @@ qual fonte vale; a regra de cada módulo está na coluna "Onde é usado".
 
 ## Lacunas que a tabela deixa à vista
 
-- **Seção estratigráfica e bloco 3D usam só os topos do AGP.** Num poço sem AGP (caso do 1-BRSA-1304-BA), os topos
-  do RFP, nomeados pela calha do PAG, e os transcritos aparecem na ficha e nos perfis, mas não entram na seção nem no
-  bloco. Levá-los para lá pede uma regra de precedência (AGP > transcrito > RFP > calha?) — para decidir.
+- ~~A seção e o bloco 3D usavam só os topos do AGP.~~ Desde a 0.45, usam o topo efetivo de cada unidade: o que o
+  usuário escolheu na ficha, vendo as diferenças entre AGP, transcrito, RFP e calha, ou o da primeira fonte da ordem do
+  projeto ([`topos.md`](topos.md)).
 - **Temperatura e lama não viram Rw sozinhas**: a avaliação mostra as referências (AGP, RFP, teste a cabo, TFR,
   fluido por fase, salinidade do PAG) e o Rw continua sendo escolha do usuário.
 - **Pressões** ficam na ficha (gradiente, fluido compatível, contato); a viabilidade usa a pressão do reservatório
   que o usuário informa ou a hidrostática pela profundidade.
 - Dados de documentos lidos (`leituras`, `dados_poco`) **não entram nos pacotes de contribuição**: quem baixa o
-  mesmo arquivo obtém a mesma leitura.
+  mesmo arquivo obtém a mesma leitura. As escolhas de topo também não (são do projeto).

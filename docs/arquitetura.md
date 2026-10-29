@@ -32,6 +32,7 @@
     rfp.py          formulários CDPE da ANP pela posição do texto: RFP, RFCP, Perfuração, ND, NPR, Reentrada
     pressoes.py     teste a cabo (DLIS por tempo → estações), TFR (relatório + manômetros no ZIP), gradiente
     pvt.py          análise PVT (liberação diferencial e flash): saturação, Bo/Rs/Bg × pressão, composição
+    topos.py        topos de várias fontes: candidatos por unidade, diferença, escolha do usuário, precedência
     consolidado.py  dados consolidados: por tema, as fontes, a tabela onde ficam e os módulos que as usam
     geoquimica.py   geoquímica: δ¹³C dos gases (planilha XML 2003, xls, xlsx), geoquímica de rocha
     checkshot.py    sísmica de poço: cabeçalhos do SEG-Y → tabela tempo × profundidade, TWT, CSV
@@ -109,6 +110,7 @@ importar = inserir com outra origem. Um código só para os dois lados.
 | `pacotes` | contribuições exportadas e importadas, bases aplicadas |
 | `paginas_revisadas` | texto de página revisado à mão (vale no lugar do texto remontado) |
 | `interpretacoes` | biblioteca de interpretações de perfil (local, pacote ou base) |
+| `escolhas` | a fonte escolhida pelo usuário quando várias trazem o mesmo dado (topo da unidade no poço) ([`topos.md`](topos.md)) |
 | `leituras`, `dados_poco` | documentos lidos por um leitor de dados do poço (RFP, RFCP…) e o que cada um trouxe, por profundidade; só leitura, refeito ao reler ([`formularios-anp.md`](formularios-anp.md)) |
 
 Migrações numeradas (`motor/banco.py:MIGRACOES`) atualizam o banco de quem já usa o

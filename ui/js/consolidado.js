@@ -55,6 +55,44 @@ function desenharConsolidadoProjeto(r) {
       r.leituras.map((x) => [ORIGEM_LEITOR[x.leitor] || x.leitor, x.documento || "—", x.n, x.erros || 0, x.de_outro_poco || 0])));
   }
   box.appendChild(el("p", "ajuda", "Em cinza, fonte sem dado neste projeto. Os leitores rodam ao baixar o arquivo e ao abrir o projeto."));
+  const prec = el("div", "co-precedencia");
+  prec.id = "co-precedencia";
+  box.appendChild(prec);
+  desenharPrecedencia(prec);
+}
+
+// Ordem das fontes de topo: vale onde você não escolheu na ficha do poço (seção e bloco 3D).
+async function desenharPrecedencia(caixa, dados) {
+  const r = dados || await chamar(null, "topos_precedencia");
+  if (!r.ok && !dados) return;
+  limpar(caixa);
+  caixa.appendChild(el("h3", "", "Topos: qual fonte vale quando você não escolhe"));
+  caixa.appendChild(el("p", "ajuda", "Na seção e no bloco 3D, cada unidade usa o topo da primeira fonte desta lista que " +
+    "o tiver. Na ficha do poço dá para escolher outra, unidade por unidade, vendo as diferenças."));
+  const ordem = [...r.ordem];
+  const ul = el("ul", "co-prec");
+  const redesenhar = () => {
+    limpar(ul);
+    ordem.forEach((f, k) => {
+      const li = el("li");
+      const sobe = el("button", "btn secundario pequeno", "↑");
+      sobe.disabled = k === 0;
+      sobe.onclick = () => { [ordem[k - 1], ordem[k]] = [ordem[k], ordem[k - 1]]; redesenhar(); };
+      const desce = el("button", "btn secundario pequeno", "↓");
+      desce.disabled = k === ordem.length - 1;
+      desce.onclick = () => { [ordem[k + 1], ordem[k]] = [ordem[k], ordem[k + 1]]; redesenhar(); };
+      li.append(el("span", "", `${k + 1}. ${r.fontes[f]}`), sobe, desce);
+      ul.appendChild(li);
+    });
+  };
+  redesenhar();
+  const salvar = el("button", "btn pequeno", "Salvar a ordem");
+  salvar.id = "co-prec-salvar";
+  salvar.onclick = async () => {
+    const x = await chamar(salvar, "topos_precedencia", ordem);
+    if (x.ok) { status("Ordem das fontes de topo salva: " + x.ordem.map((f) => x.fontes[f]).join(" → ") + ".", "ok"); desenharPrecedencia(caixa, x); }
+  };
+  caixa.append(ul, salvar);
 }
 
 function desenharConsolidadoPoco(r) {

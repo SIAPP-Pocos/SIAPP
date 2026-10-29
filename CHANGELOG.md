@@ -6,6 +6,22 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 
 ## [Não lançado]
 
+## [0.45.0] — 2026-10-29
+Topos de várias fontes: ver as diferenças, saber de onde vem e escolher.
+### Adicionado
+- **Ficha › "Topos de formação — compare as fontes e escolha"**: por unidade, o topo do AGP, do transcrito, do RFP e
+  da calha, a diferença entre eles (em vermelho acima de 5 m), o documento de cada valor e o topo usado; um seletor
+  escolhe a fonte daquela unidade no poço ("padrão", uma fonte ou "não usar").
+- **Ordem das fontes do projeto** (Dados › Dados consolidados): vale onde você não escolheu. Padrão: AGP →
+  transcrito → RFP → calha.
+- Migração 11: tabela `escolhas`. Toda escolha vai para o histórico do projeto.
+### Mudado
+- **Seção estratigráfica e bloco 3D usam o topo efetivo**, não só o do AGP: um poço sem AGP (como o 1-BRSA-1304-BA)
+  entra na seção pelos topos do RFP nomeados pela calha, ou pelos transcritos. A coluna "fonte" diz de onde veio cada
+  unidade. Onde há AGP e você não escolheu outra coisa, nada muda.
+- O topo do RFP sem nome ganha o nome da formação da calha mais perto, um para um (antes, dois topos do RFP podiam
+  receber o mesmo nome).
+
 ## [0.44.0] — 2026-10-29
 O leitor final dos dados consolidados.
 ### Adicionado

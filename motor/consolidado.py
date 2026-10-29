@@ -26,7 +26,8 @@ TEMAS = [
                 _f("RFP (topos constatados)", "dados_poco · topo", "dp", "topo"),
                 _f("Descrição de calha (PAG)", "dados_poco · topo_calha", "dp", "topo_calha"),
                 _f("Transcritos (você e a comunidade)", "fatos · topo_formacao", "fato", "topo_formacao")],
-     "usos": ["Seção estratigráfica e bloco 3D: só os topos do AGP",
+     "usos": ["Seção estratigráfica e bloco 3D: o topo efetivo de cada unidade — o que você escolheu na ficha do "
+              "poço ou o da primeira fonte da ordem do projeto (padrão: AGP → transcrito → RFP → calha)",
               "Perfis: AGP (verde tracejado), RFP (marrom pontilhado), transcritos (roxo)",
               "Ficha do poço: todos; os topos sem nome do RFP ganham o nome da calha a até 10 m",
               "Avaliação: as unidades do AGP como intervalos candidatos"]},

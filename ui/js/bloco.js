@@ -98,7 +98,7 @@ async function selecionarPocosBloco() {
   // campo isolado: margem 0 (a margem infla a área de um campo delimitado)
   if (r.isolado) $("bl-margem").value = "0";
   desenharListaBloco();
-  status(`${r.pocos.length} poço(s) com topos no AGP.`, r.pocos.length >= 3 ? "ok" : "erro");
+  status(`${r.pocos.length} poço(s) com topos de formação.`, r.pocos.length >= 3 ? "ok" : "erro");
 }
 
 function adicionarPocoBloco(id) {

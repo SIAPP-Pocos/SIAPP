@@ -38,6 +38,9 @@ from .banco import Banco, agora
 
 MAX_POCOS = 20
 LIMIAR_SALTO_M = 100.0
+_CAMINHO_ESTRATIGRAFIA = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                                      "recursos", "estratigrafia.json")
+
 NIVEIS_SECAO = {
     "formacoes": ("F", ""),          # formações e unidades sem nível (Embasamento)
     "membros": ("M", "C"),           # membros e camadas
@@ -151,17 +154,39 @@ def _subamostrar(itens: list, n: int) -> list:
 
 # ===================================================================== dados
 def pocos_com_topos(banco: Banco, bacia: str | None = None) -> list[dict]:
-    """Poços que têm topos litoestratigráficos no AGP e coordenadas no cadastro."""
+    """Poços com coordenadas no cadastro e topos litoestratigráficos: do AGP e, desde a 0.45, das outras fontes."""
     cond, args = "", []
     if bacia:
         cond, args = "AND u.bacia = ?", [bacia]
     with banco.conexao() as c:
-        return [dict(r) for r in c.execute(
+        saida = [dict(r) for r in c.execute(
             f"""SELECT u.poco_id AS id, count(DISTINCT u.sigla) AS n_unidades, p.lat, p.lon, p.campo,
                        group_concat(DISTINCT u.sigla) AS siglas
                 FROM agp_unidades u JOIN pocos p ON p.id = u.poco_id
                 WHERE u.tip = 'L' AND u.topo IS NOT NULL AND p.lat IS NOT NULL {cond}
                 GROUP BY u.poco_id ORDER BY u.poco_id""", args)]
+        # sem AGP, mas com topos de outra fonte (transcrito, RFP, calha): também entram (0.45)
+        from . import topos as mtp
+        vistos = {p["id"] for p in saida}
+        outros = sorted(mtp.pocos_com_topos(banco) - vistos)
+        for pid in outros:
+            q = "SELECT id, lat, lon, campo, bacia FROM pocos WHERE id = ? AND lat IS NOT NULL"
+            r = c.execute(q, (pid,)).fetchone()
+            if r is None or (bacia and (r["bacia"] or "") != bacia
+                             and not c.execute("SELECT 1 FROM reate WHERE poco_id = ? AND bacia = ?", (pid, bacia)).fetchone()):
+                continue
+            saida.append({"id": r["id"], "n_unidades": None, "lat": r["lat"], "lon": r["lon"], "campo": r["campo"],
+                          "siglas": ""})
+    if any(p["n_unidades"] is None for p in saida):
+        from . import agp as _agp
+        from . import topos as mtp
+        nomes = _agp.ler_estratigrafia(_CAMINHO_ESTRATIGRAFIA)
+        for p in saida:
+            if p["n_unidades"] is None:
+                lito = mtp.efetivas(banco, p["id"], nomes)[0]
+                p["n_unidades"], p["siglas"] = len(lito), ",".join(u["sigla"] for u in lito)
+    saida.sort(key=lambda p: p["id"])
+    return [p for p in saida if p["n_unidades"]]
 
 
 def corredor(banco: Banco, poco_a: str, poco_b: str, largura_km: float = 2.0,
@@ -329,10 +354,16 @@ def dados_poco(banco: Banco, pid: str, nomes: dict) -> dict | None:
     lon = cad["lon"] if cad and cad.get("lon") is not None else cab.get("lon")
     if lat is None or lon is None:
         return None
-    todas = [_normalizar(u, nomes) for u in magp.unidades_do_poco(banco, pid)
-             if not g or u["caminho"] == g["caminho"]]
+    # topos: o efetivo de cada unidade, entre AGP, transcrito, RFP e calha (escolha do usuário ou precedência)
+    from . import topos as mtp
+    lito, outras, _ = mtp.efetivas(banco, pid, nomes)
+    if not cab:          # sem AGP: a mesa rotativa e a profundidade final dos formulários da ANP
+        from . import dados_poco as mdp
+        gerais = mdp.gerais(banco, pid)
+        cab = {k: v for k, v in (("mesa_rotativa", gerais.get("mesa_rotativa")),
+                                 ("prof_final", gerais.get("prof_sondador"))) if v is not None}
     return {"id": pid, "lat": float(lat), "lon": float(lon), "cad": cad, "agp": g, "cab": cab,
-            "lito": [u for u in todas if u["tip"] == "L"], "todas": todas}
+            "lito": lito, "todas": outras + lito}
 
 
 def coluna_poco(d: dict, niveis: tuple) -> dict:
@@ -418,7 +449,7 @@ def montar(banco: Banco, pocos: list[str], *, ordem: str = "linha", nivel: str =
             avisos.append(f"{pid}: poço desviado (as cotas do AGP não são mesa − profundidade); "
                           "a curva GR usa os pontos do AGP para converter.")
         if not uns:
-            avisos.append(f"{pid}: o AGP não tem {ROTULO_NIVEL[nivel]} com topo.")
+            avisos.append(f"{pid}: sem {ROTULO_NIVEL[nivel]} com topo (AGP, transcrito, RFP ou calha).")
         lit = []
         if litologia and d["agp"]:
             for c in d["agp"]["dados"].get("litologia", []):
@@ -573,7 +604,7 @@ def montar(banco: Banco, pocos: list[str], *, ordem: str = "linha", nivel: str =
         [u["y_topo"] for u in p["unidades"]] + [u["y_base"] for u in p["unidades"]] +
         ([p["y_mesa"]] if p["y_mesa"] is not None else []) + ([p["y_fundo"]] if p["y_fundo"] is not None else []))]
     if not ys:
-        raise ErroSecao(f"Nenhum dos poços tem {ROTULO_NIVEL[nivel]} com topo no AGP.")
+        raise ErroSecao(f"Nenhum dos poços tem {ROTULO_NIVEL[nivel]} com topo (AGP, transcrito, RFP ou calha).")
     y_max, y_min = max(ys), min(ys)
     if janela:
         a, b = janela

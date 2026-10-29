@@ -108,7 +108,36 @@ class PocosAPI:
                      "arquivo_local": g["arquivo_local"], "lido_em": g["lido_em"], **g["dados"]}
                     for g in magp.do_poco(self._banco, pid)]
         d["dados_poco"] = self._dados_poco_ficha(pid)
+        d["topos"] = self._topos_comparar(pid)
         return d
+
+    def _topos_comparar(self, pid: str) -> dict:
+        from motor import topos as mtp
+        from .bloco import CAMINHO_ESTRATIGRAFIA
+        return mtp.comparar(self._banco, pid, magp.ler_estratigrafia(CAMINHO_ESTRATIGRAFIA))
+
+    @resposta_segura
+    def topos_escolher(self, poco: str, chave: str, fonte: str | None):
+        """Fonte do topo de uma unidade neste poço (None/"padrao" = a precedência do projeto)."""
+        from motor import topos as mtp
+        self._exigir_projeto()
+        pid = mpo.resolver(self._banco, poco)
+        try:
+            mtp.escolher(self._banco, pid, str(chave), fonte, autor=self._autor())
+        except ValueError as e:
+            raise ErroUsuario(str(e)) from e
+        self._projeto.registrar("escolheu_topo", poco=pid, unidade=chave, fonte=fonte or "padrão")
+        return self._topos_comparar(pid)
+
+    @resposta_segura
+    def topos_precedencia(self, ordem: list | None = None):
+        """Ordem das fontes de topo no projeto (lê; com `ordem`, grava)."""
+        from motor import topos as mtp
+        self._exigir_projeto()
+        if ordem:
+            atual = mtp.definir_precedencia(self._banco, [str(x) for x in ordem])
+            self._projeto.registrar("definiu_precedencia_topos", ordem=atual)
+        return {"ordem": mtp.precedencia(self._banco), "fontes": mtp.FONTES}
 
     def _dados_poco_ficha(self, pid: str) -> dict:
         """O que os formulários da ANP (RFP, RFCP, Perfuração) trouxeram, para a ficha."""

@@ -450,6 +450,7 @@ async function abrirFicha(id) {
   corpo.appendChild(ul);
 
   secaoAgpFicha(corpo, r.agp);
+  secaoToposFicha(corpo, r.topos, id);
   secaoDadosPocoFicha(corpo, r.dados_poco, id);
   secaoEsquemasFicha(corpo, r.esquemas, id);
   secaoAcervoFicha(corpo, r.acervo, (r.esquemas || {}).perfis);

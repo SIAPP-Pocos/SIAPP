@@ -131,6 +131,19 @@ Precisa de internet. Comece por uma categoria pequena para ver o tempo.
 - [ ] Sem intervalo marcado, **Calcular** explica que precisa de um intervalo-alvo.
 - [ ] Repetir no `5PX__0011__RN_5PX__0011__RN.tif` (DLIS de 2020).
 
+## 0.45 — topos de várias fontes
+
+- [ ] Ficha do **1-BRSA-1304-BA** › "Topos de formação — compare as fontes e escolha": colunas RFP e Calha (PAG), 10
+      unidades; Pojuca em vermelho (453 × 459 m); o RFP em negrito (vale pela ordem do projeto).
+- [ ] Mude Pojuca para "Calha (PAG)": o negrito passa para 459. Volte para "padrão".
+- [ ] Num poço com AGP, transcreva um topo de uma formação do AGP com outra profundidade: as duas colunas aparecem, com
+      a diferença; o AGP continua valendo até você escolher o transcrito.
+- [ ] Interpretação › Seção: o 1-BRSA-1304-BA aparece entre os poços com topos (antes ficava de fora por não ter
+      AGP). Com outro poço do Recôncavo que tenha topos (AGP ou transcritos), monte a seção: a coluna "fonte" do 1304
+      mostra RFP.
+- [ ] Dados › Dados consolidados › "Topos: qual fonte vale quando você não escolhe": suba a Calha para o primeiro lugar
+      e salve; a ficha do 1304 passa a usar a calha nas unidades sem escolha.
+
 ## 0.44 — dados consolidados
 
 - [ ] Dados › Dados consolidados: a tabela "No projeto" lista os 13 temas; confira alguns números (ex.: "AGP da

@@ -635,3 +635,57 @@ function secaoGeoquimica(caixa, it) {
                       numero(x.extra.ro, 2)])));
   }
 }
+
+
+// ------------------------------------------------ topos de várias fontes: comparar e escolher (0.45)
+function secaoToposFicha(corpo, tp, id) {
+  if (!tp || !(tp.unidades || []).length) return;
+  const caixa = el("div", "tp-secao");
+  caixa.id = "fi-topos";
+  corpo.appendChild(caixa);
+  desenharToposFicha(caixa, tp, id);
+}
+
+function desenharToposFicha(caixa, tp, id) {
+  limpar(caixa);
+  const fontes = Object.keys(tp.fontes);
+  const presentes = fontes.filter((f) => tp.unidades.some((u) => u.fontes[f]));
+  caixa.appendChild(el("h3", "", "Topos de formação — compare as fontes e escolha"));
+  caixa.appendChild(el("p", "ajuda", "O topo usado na seção estratigráfica e no bloco 3D. Sem escolha, vale a primeira " +
+    `fonte da ordem do projeto: ${tp.precedencia.map((f) => tp.fontes[f]).join(" → ")} (mude em Dados › Dados consolidados).` +
+    (tp.divergentes ? ` ${tp.divergentes} unidade(s) com fontes que diferem mais de ${numero(tp.tolerancia_m, 0)} m.` : "")));
+  const t = el("table", "tabela tp-tabela");
+  const cab = el("tr");
+  for (const h of ["Unidade", ...presentes.map((f) => tp.fontes[f]), "Diferença (m)", "Usar"]) cab.appendChild(el("th", "", h));
+  t.appendChild(cab);
+  for (const u of tp.unidades) {
+    const tr = el("tr");
+    tr.appendChild(el("td", "", u.nome));
+    for (const f of presentes) {
+      const c = u.fontes[f];
+      const td = el("td", c && u.usada === f ? "tp-usada" : "", c ? numero(c.topo, 1) : "—");
+      if (c) td.title = [c.nome, c.detalhe, c.ref && c.ref.split("/").pop()].filter(Boolean).join(" · ");
+      tr.appendChild(td);
+    }
+    tr.appendChild(el("td", u.diferenca_m > tp.tolerancia_m ? "tp-diverge" : "", u.diferenca_m ? numero(u.diferenca_m, 1) : "—"));
+    const sel = el("select", "tp-escolha");
+    sel.dataset.chave = u.chave;
+    const padrao = u.escolha ? "padrão do projeto" : `padrão (${u.usada ? tp.fontes[u.usada] : "—"})`;
+    sel.appendChild(new Option(padrao, "padrao"));
+    for (const f of fontes) if (u.fontes[f]) sel.appendChild(new Option(tp.fontes[f], f));
+    sel.appendChild(new Option("não usar", "nenhuma"));
+    sel.value = u.escolha || "padrao";
+    sel.onchange = async () => {
+      const r = await chamar(sel, "topos_escolher", id, u.chave, sel.value);
+      if (!r.ok) return;
+      status(`Topo de ${u.nome}: ${sel.value === "padrao" ? "padrão do projeto" : sel.value === "nenhuma" ? "não usado" : tp.fontes[sel.value]}.`, "ok");
+      desenharToposFicha(caixa, r, id);
+    };
+    const td = el("td");
+    td.appendChild(sel);
+    tr.appendChild(td);
+    t.appendChild(tr);
+  }
+  caixa.appendChild(t);
+  caixa.appendChild(el("p", "ajuda", "Em negrito, o topo usado. Passe o mouse num valor para ver de qual documento veio."));
+}

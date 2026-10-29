@@ -1296,3 +1296,12 @@ td.lv-arqs { font: 11px var(--mono); word-break: break-all; }
 #etapa-consolidado .co-tabela th:nth-child(3) { width: 20%; }
 #etapa-consolidado .co-onde div { overflow-wrap: anywhere; }
 #co-poco { min-width: 280px; }
+
+/* ---------- topos de várias fontes (0.45) ---------- */
+.tp-tabela td, .tp-tabela th { font-size: 12px; }
+td.tp-usada { font-weight: 700; }
+td.tp-diverge { color: var(--erro); font-weight: 600; }
+.tp-escolha { font-size: 12px; }
+.co-prec { list-style: none; padding: 0; margin: 6px 0; display: grid; gap: 4px; max-width: 360px; }
+.co-prec li { display: flex; align-items: center; gap: 6px; font-size: 12.5px; }
+.co-prec li span { flex: 1; }
