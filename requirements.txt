@@ -4,3 +4,5 @@ pymupdf>=1.24
 numpy>=1.24
 dlisio>=1.0
 lasio>=0.31
+xlrd>=2.0
+openpyxl>=3.1

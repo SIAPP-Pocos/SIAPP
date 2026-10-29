@@ -1715,3 +1715,44 @@ def test_pvt_na_ficha(janela, tmp_path):
     p.locator(".dp-pvt").scroll_into_view_if_needed()
     foto(janela, "pvt_1_ficha")
     assert not janela.erros_js, janela.erros_js
+
+
+def test_pag_na_ficha_e_litologia_da_calha_nos_perfis(janela, tmp_path):
+    """0.40: PAG (curvas e descrição de calha) na ficha; sem AGP, a calha faz a trilha de litologia."""
+    import test_pag as tp
+    from interface_util import foto
+    from test_avaliacao import las_reservatorio
+    p = janela.page
+    abrir_projeto(janela)
+    raiz = tmp_path / "ambiente_teste" / "bruto" / "Potiguar" / tp.POCO
+    pag_dir = raiz / "Perfil de Acompanhamento Geologico"
+    pag_dir.mkdir(parents=True)
+    tp.las_pag(pag_dir / f"{tp.POCO}_PAG_curvas.las")
+    # descrição de calha no intervalo do perfil sintético (1000–1040 m)
+    linhas = tp.linhas_dac()[:3] + [tp._linha(str(1000 + 3 * k), "ARN" if 4 <= k < 10 else "FLH", "100",
+                                              formacao="Acu" if k >= 4 else "Jandaira") for k in range(14)]
+    tp.xlsx(str(pag_dir / f"{tp.POCO}_PAG_DAC.xlsx"), linhas)
+    (raiz / "Perfil Convencional").mkdir()
+    las_reservatorio(raiz / "Perfil Convencional" / "siapp.las")
+    janela.api._abrir_projeto(str(tmp_path / "ambiente_teste"))
+    p.evaluate(f"abrirFicha('{tp.POCO}')")
+    janela.esperar("document.getElementById('fi-corpo').textContent.includes('Gás na lama (PAG)')")
+    corpo = p.text_content("#fi-dados-poco")
+    assert "Topos pela descrição de calha (PAG)" in corpo and "Jandaira1.000" in corpo and "Acu1.0121.009" in corpo
+    assert "100–1108.000" in corpo and "8,0 × o fundo" in corpo and "Salinidade da lama (PAG)" in corpo
+    assert "Litologia da calha (PAG)" in corpo
+    p.click("#aba-mapa")
+    p.locator("#fi-dados-poco h3").scroll_into_view_if_needed()
+    foto(janela, "pag_1_ficha")
+    p.click("#aba-perfis")
+    janela.esperar("document.querySelectorAll('#lista-perfis button').length >= 2")
+    p.locator("#lista-perfis button", has_text="siapp.las").click()
+    janela.esperar("document.querySelectorAll('.pf-trilha-lito canvas').length == 1", 30)
+    assert "Litol. (calha)" in p.text_content(".pf-trilha-lito")
+    janela.esperar("!document.getElementById('pf-lito-legenda').hidden")
+    assert "Litologia (calha)" in p.text_content("#pf-lito-legenda")
+    janela.esperar("document.querySelectorAll('.av-int').length >= 1", 30)
+    assert "Gás na lama · 8,0 × o fundo" in p.text_content("#av-intervalos")
+    assert "Salinidade da lama (PAG): 150.000 ppm a 50 m · 200.000 ppm a 150 m" in p.text_content("#av-lama")
+    foto(janela, "pag_2_perfis")
+    assert not janela.erros_js, janela.erros_js

@@ -27,10 +27,10 @@ import json
 import os
 
 from . import pocos as mpo
-from . import pressoes, pvt, rfp
+from . import pag, pressoes, pvt, rfp
 from .banco import Banco, agora
 
-LEITORES = {"cdpe": rfp, "pressoes": pressoes, "pvt": pvt}
+LEITORES = {"cdpe": rfp, "pressoes": pressoes, "pvt": pvt, "pag": pag}
 
 TIPOS = {
     "topo": "Topo estratigráfico", "indicio": "Indício de petróleo/gás", "testemunho": "Testemunho",
@@ -42,6 +42,9 @@ TIPOS = {
     "pressao_formacao": "Pressão da formação (teste a cabo)", "teste_tfr": "Teste de formação (relatório)",
     "manometro": "Registro de manômetro", "pvt": "Análise PVT (liberação diferencial)",
     "composicao": "Composição do fluido (liberação flash)",
+    "gas_lama": "Zona de gás na lama (PAG)", "salinidade_lama": "Salinidade da lama (PAG)",
+    "litologia_calha": "Litologia da calha (PAG)", "indicio_calha": "Fluorescência na calha (PAG)",
+    "topo_calha": "Topo pela calha (PAG)",
 }
 
 
@@ -99,6 +102,10 @@ def ler_arquivo(banco: Banco, pasta_projeto: str, rel: str, *, poco_id: str | No
     caminho = os.path.join(pasta_projeto, rel)
     try:
         dados = LEITORES[leitor].ler(caminho)
+    except ImportError as e:
+        # falta uma biblioteca (ex.: xlrd para .xls): não grava, para ler de novo quando ela for instalada
+        return {"rel": rel, "documento": None, "n": 0, "confere": None,
+                "erro": f"falta a biblioteca Python {e.name or e} (o iniciar.bat instala ao abrir o SIAPP)"}
     except (ValueError, OSError) as e:
         return gravar(banco, rel, poco_id=poco_id, leitor=leitor, dados=None, erro=str(e), sha256=sha256)
     return gravar(banco, rel, poco_id=poco_id, leitor=leitor, dados=dados, sha256=sha256)

@@ -6,6 +6,28 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 
 ## [Não lançado]
 
+## [0.40.0] — 2026-10-29
+Bloco 9, item 4: Perfil de Acompanhamento Geológico (PAG).
+### Adicionado
+- **Curvas do PAG** (`_PAG_curvas.las`): famílias novas na aba Perfis — taxa de penetração, gás total e
+  cromatografia (C1…C5, CO₂, H₂S), peso, viscosidade e salinidade da lama, peso sobre broca, torque, rotação.
+  O leitor tira as **zonas de gás** (acima de 3 × o fundo, com as razões de Haworth quando há cromatografia) e a
+  **salinidade da lama**, com o Rw de uma solução de NaCl equivalente.
+- **Descrição das amostras de calha** (`_PAG_DAC.xls`): rochas e porcentagens de cada amostra, fluorescência e corte,
+  e a formação anotada pelo geólogo de poço → **topos pela calha**.
+- **Ficha**: topos pela calha (com o topo constatado do RFP ao lado), gás na lama, fluorescência na calha,
+  salinidade e o resumo da litologia. Os topos sem nome do RFP ganham o nome da formação da calha a até 10 m
+  (no 1-BRSA-1304-BA: Pojuca, Marfim, Maracangalha, Candeias, Água Grande, Itaparica, Sergi, Aliança, Embasamento).
+- **Perfis**: sem a litologia do AGP, a da calha faz a trilha "Litol. (calha)", com legenda.
+- **Avaliação**: as zonas de gás entram como intervalos candidatos; a salinidade da lama entra na nota do Rw.
+### Mudado
+- Uma família de curva pode exigir unidades: DENS em lb/gal é o peso da lama, não a densidade da rocha. Os arquivos
+  já inventariados são reclassificados ao abrir.
+### Corrigido
+- As planilhas do PVT (0.39) precisavam das bibliotecas `xlrd` e `openpyxl`, que não estavam na lista de
+  dependências: num computador sem elas, a análise PVT não aparecia. Elas entraram no `requirements.txt` (o
+  `iniciar.bat` instala ao abrir) e, se faltarem, o arquivo fica para ser lido na próxima abertura.
+
 ## [0.39.0] — 2026-10-29
 Bloco 9, item 3: PVT.
 ### Adicionado

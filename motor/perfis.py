@@ -74,14 +74,26 @@ class Classificador:
         self._padroes = [(re.compile(p), nome) for nome, f in familias.items()
                          for p in f.get("padroes", [])]
 
-    def familia(self, mnemonico: str) -> str | None:
+    def familia(self, mnemonico: str, unidade: str | None = None) -> str | None:
+        """Família do mnemônico. Família com "unidades" só vale se a unidade da curva for uma delas
+        (DENS em lb/gal é o peso da lama do PAG, não a densidade da rocha)."""
         m = mnemonico.upper().split(":")[-1]
-        if m in self._exato:
-            return self._exato[m]
-        for rx, nome in self._padroes:
-            if rx.match(m):
+        candidatas = ([self._exato[m]] if m in self._exato else []) + [n for rx, n in self._padroes if rx.match(m)]
+        for nome in candidatas:
+            exige = self.familias.get(nome, {}).get("unidades")
+            if not exige:
+                return nome
+            u = (unidade or "").strip().lower().replace(" ", "")
+            if u in [x.lower() for x in exige]:
                 return nome
         return None
+
+    def reclassificar(self, inventario: dict) -> dict:
+        """Famílias pelo arquivo de mnemônicos atual (o inventário guarda as do dia em que foi feito)."""
+        for q in inventario.get("quadros", []):
+            for c in q.get("curvas", []):
+                c["familia"] = self.familia(c["mnemonico"], c.get("unidade"))
+        return inventario
 
     def prioridade(self, familia: str, mnemonico: str) -> int:
         pref = [x.upper() for x in self.familias.get(familia, {}).get("preferencia", [])]
@@ -250,7 +262,7 @@ def inventariar(caminho: str, classificador: Classificador, pasta_cache: str) ->
         arrays = {"__prof__": prof.astype(np.float64)}
         curvas = []
         for mn, c in q["curvas"].items():
-            fam = classificador.familia(mn)
+            fam = classificador.familia(mn, c["unidade"])
             item = {"mnemonico": mn, "unidade": c["unidade"], "dimensao": c["dimensao"],
                     "descricao": q["descricoes"].get(mn, ""), "familia": fam,
                     "n_validas": 0, "topo_m": None, "base_m": None}

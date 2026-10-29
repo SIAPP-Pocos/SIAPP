@@ -157,7 +157,8 @@ function desenharLamaAv() {
   const ts = (av.info && av.info.temperaturas_agp) || [];
   const tf = (av.info && av.info.temperaturas_formularios) || [];
   const ff = (av.info && av.info.fluido_formularios) || [];
-  if (!cs.length && !ts.length && !tf.length && !ff.length) { p.hidden = true; return; }
+  const sl = (av.info && av.info.salinidade_lama) || [];
+  if (!cs.length && !ts.length && !tf.length && !ff.length && !sl.length) { p.hidden = true; return; }
   const partes = cs.map((c) => [`corrida ${c.corrida || "?"}`,
     c.rm != null ? `Rm ${numero(c.rm, 3)} a ${numero(c.t_rm, 1)} °F` : "",
     c.rmf != null ? `Rmf ${numero(c.rmf, 3)} a ${numero(c.t_rmf, 1)} °F` : "",
@@ -173,6 +174,13 @@ function desenharLamaAv() {
     `${numero(t.prof, 0)} m${t.origem ? ` (${t.origem.length > 3 ? t.origem.toLowerCase() : "origem " + t.origem})` : ""}`).join(" · ") + ".");
   if (ff.length) textos.push("Fluido de perfuração: " + ff.map((f) => `${f.fase}${f.fluido ? " " + f.fluido.toLowerCase() : ""}` +
     `${f.peso_lb_gal != null ? ` ${numero(f.peso_lb_gal, 2)} lb/gal` : ""}${f.ate != null ? ` até ${numero(f.ate, 0)} m` : ""}`).join(" · ") + ".");
+  if (sl.length) {
+    const o = [...sl].sort((a, b) => a.prof - b.prof);
+    const ult = o[o.length - 1];
+    textos.push(`Salinidade da lama (PAG): ${o.map((s) => `${numero(s.ppm, 0)} ppm a ${numero(s.prof, 0)} m`).join(" · ")}` +
+      (ult.rw75 != null ? ` — uma solução de NaCl com ${numero(ult.ppm, 0)} ppm tem ${numero(ult.rw75, 3)} Ω·m a 75 °F` +
+        " (em lama base óleo, é a salinidade da fase aquosa; não há Rmf)." : "."));
+  }
   p.textContent = textos.join(" ") + " Referência para escolher o Rw — o SIAPP não converte.";
   p.hidden = false;
 }

@@ -113,7 +113,7 @@ class PerfisAPI:
         inv = mpf.ler_inventario(self._cache(poco), os.path.basename(rel))
         if inv is None:
             return {"rel": rel, "poco": poco, "inventario": None}
-        return self._curvas(rel, poco, inv)
+        return self._curvas(rel, poco, self._cl().reclassificar(inv))
 
     @resposta_segura
     def grafico_perfil(self, rel: str, selecao: list, topo=None, base=None):
@@ -190,7 +190,14 @@ class PerfisAPI:
         canh = [{"nome": c["nome"] or "", "topo": c["prof_topo"], "base": c["prof_base"]}
                 for c in mdp.itens_do_poco(self._banco, poco, "canhoneado")
                 if c["prof_topo"] is not None and c["prof_base"] is not None]
-        return {"topos": topos, "canhoneados": canh}
+        # PAG: litologia descrita pelo geólogo de poço (vira a trilha de litologia quando não há AGP)
+        lito = [{"topo": i["prof_topo"], "base": i["prof_base"], "codigo": (i["extra"].get("rochas") or [{}])[0].get("codigo"),
+                 "rocha": i["texto"] or "", "descricao": i["extra"].get("descricao") or "", "formacao": i["nome"]}
+                for i in mdp.itens_do_poco(self._banco, poco, "litologia_calha")
+                if i["prof_topo"] is not None and i["prof_base"] is not None and i["prof_base"] > i["prof_topo"]]
+        topos_calha = [{"nome": i["nome"], "topo": i["prof_topo"]}
+                       for i in mdp.itens_do_poco(self._banco, poco, "topo_calha") if i["prof_topo"] is not None]
+        return {"topos": topos, "canhoneados": canh, "litologia_calha": lito, "topos_calha": topos_calha}
 
     def _intervalos_formularios(self, poco: str) -> list[dict]:
         """Intervalos dos formulários da ANP como candidatos para a avaliação: análise de perfis
@@ -198,7 +205,7 @@ class PerfisAPI:
         rfp:<tipo>:<topo>-<base>."""
         saida, vistos = [], set()
         rotulos = {"analise_perfil": "Análise de perfis", "canhoneado": "Canhoneado", "teste_formacao": "Teste",
-                   "teste_tfr": "Teste"}
+                   "teste_tfr": "Teste", "gas_lama": "Gás na lama"}
         for tipo, rot in rotulos.items():
             for i in mdp.itens_do_poco(self._banco, poco, tipo):
                 t, b = i["prof_topo"], i["prof_base"]
@@ -213,11 +220,13 @@ class PerfisAPI:
                     partes = (f"{rot} {i['nome'] or ''}".strip(), i["texto"])
                 elif tipo == "analise_perfil":
                     partes = (rot, i["texto"], i["nome"])
+                elif tipo == "gas_lama":
+                    partes = (rot, i["texto"], i["nome"])
                 else:
                     partes = (rot, i["nome"])
                 nome = " · ".join(x for x in partes if x)
                 saida.append({"id": ident, "nome": nome, "prof_topo": t, "prof_base": b,
-                              "origem": (i["documento"] or "rfp").upper()})
+                              "origem": {"pag_curvas": "PAG"}.get(i["documento"] or "", (i["documento"] or "rfp").upper())})
         return saida
 
     def _intervalos_biblioteca(self, id_: str, poco: str) -> tuple[dict | None, list[dict]]:
@@ -272,6 +281,9 @@ class PerfisAPI:
                 "temperaturas_formularios": [
                     {"valor": t["valor"], "unidade": t["unidade"], "prof": t["prof_topo"], "tipo": t["texto"],
                      "origem": t["nome"]} for t in mdp.itens_do_poco(self._banco, poco, "temperatura")],
+                "salinidade_lama": [
+                    {"prof": s["prof_topo"], "ppm": s["valor"], "rw75": s["extra"].get("rw75")}
+                    for s in mdp.itens_do_poco(self._banco, poco, "salinidade_lama")],
                 "fluido_formularios": [
                     {"fase": f["nome"], "ate": f["prof_base"], "fluido": f["texto"], "peso_lb_gal": f["valor"]}
                     for f in mdp.itens_do_poco(self._banco, poco, "fase") if f["valor"] or f["texto"]],

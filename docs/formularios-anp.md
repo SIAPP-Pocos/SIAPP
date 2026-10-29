@@ -89,5 +89,5 @@ arquivo obtém a mesma leitura.
 
 Um leitor novo é um módulo com `VERSAO`, `NOME`, `DOCUMENTOS`, `PRIORIDADE`, `reconhece(rel)` (pelo caminho:
 nome e pasta), `ler(caminho)` e `itens(dados)` (e, opcional, `apelidos(dados)`), registrado em
-`dados_poco.LEITORES`. Os outros leitores: pressões ([`pressoes.md`](pressoes.md)) e PVT ([`pvt.md`](pvt.md)). A leitura no download, na abertura do projeto, a
+`dados_poco.LEITORES`. Os outros leitores: pressões ([`pressoes.md`](pressoes.md)) PVT ([`pvt.md`](pvt.md)) e PAG ([`pag.md`](pag.md)). A leitura no download, na abertura do projeto, a
 gravação, as versões e a ficha já funcionam para ele.

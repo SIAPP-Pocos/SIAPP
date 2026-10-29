@@ -131,6 +131,24 @@ Precisa de internet. Comece por uma categoria pequena para ver o tempo.
 - [ ] Sem intervalo marcado, **Calcular** explica que precisa de um intervalo-alvo.
 - [ ] Repetir no `5PX__0011__RN_5PX__0011__RN.tif` (DLIS de 2020).
 
+## 0.40 — PAG (curvas de lama e gás, descrição de calha)
+
+- [ ] Abra o SIAPP pelo `iniciar.bat` (ele instala `xlrd` e `openpyxl`). Confira na ficha do **1-BRSA-1304-BA**
+      que a "Análise PVT" aparece (se não aparecia na 0.39, era a falta dessas bibliotecas).
+- [ ] Ficha › "Topos pela descrição de calha (PAG)": Sao Sebastiao 9 m, Pojuca 459, Marfim 1.134, Maracangalha
+      1.257, Candeias 1.527, Agua Grande 1.680, Itaparica 1.695, Sergi 1.704, Alianca 1.815, Embasamento 1.905,
+      cada um com o topo do RFP ao lado (453, 1.132, 1.255…).
+- [ ] Ficha › "Topos estratigráficos" (RFP): os topos sem nome mostram "≈ Pojuca (calha, 459 m)" etc.
+- [ ] "Gás na lama (PAG)": 9 zonas, entre elas 1.683–1.694 m (8,5 × o fundo) e 874–882 m (50 × o fundo);
+      "sem cromatografia". "Fluorescência e corte na calha": amostras da Água Grande com EP 20 %.
+- [ ] "Salinidade da lama": 7 leituras (148.000 ppm a 530 m … 211.000 ppm), com o Rw de NaCl.
+- [ ] Perfis › `1-BRSA-1304-BA_PAG_curvas.las`: HYDC aparece como gás total, DENS como peso da lama (não como
+      densidade), ROP como taxa de penetração.
+- [ ] Perfis › um perfil do 1-BRSA-1304-BA (sem AGP lido no projeto): a trilha "Litol. (calha)" aparece com a legenda;
+      o mouse mostra a rocha e a formação.
+- [ ] Avaliação: os intervalos "Gás na lama · …" (origem PAG) aparecem com os dos formulários; a nota do Rw traz
+      a salinidade da lama.
+
 ## 0.39 — análise PVT
 
 - [ ] Abra o projeto `ambiente_teste` e a ficha do **1-BRSA-1304-BA** › "Análise PVT — liberação diferencial

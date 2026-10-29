@@ -85,16 +85,24 @@ function desenharDadosPoco(caixa, dp, id) {
 
   const it = dp.itens || {};
   const topos = it.topo || [];
+  const toposCalha = it.topo_calha || [];
+  // topo sem nome no formulário: a formação da calha (PAG) mais próxima, até 10 m
+  const nomeCalha = (prof) => {
+    let m = null;
+    for (const t of toposCalha) if (Math.abs(t.prof_topo - prof) <= 10 && (!m || Math.abs(t.prof_topo - prof) < Math.abs(m.prof_topo - prof))) m = t;
+    return m ? ` · ≈ ${m.nome} (calha, ${numero(m.prof_topo, 0)} m)` : "";
+  };
   if (topos.length) {
     const semNome = topos.every((x) => !x.nome);
     const c = el("div");
     c.appendChild(tabelaSimples(["Unidade", "Prevista (m)", "Constatada (m)", "Cota (m)", "Diferença (m)"],
-      topos.map((x) => [x.nome || `topo ${x.extra.ordem}`, numero(x.extra.prev_medida, 1), numero(x.prof_topo, 1),
+      topos.map((x) => [x.nome || `topo ${x.extra.ordem}${nomeCalha(x.prof_topo)}`, numero(x.extra.prev_medida, 1), numero(x.prof_topo, 1),
                         numero(x.cota, 1),
                         x.extra.prev_medida != null ? (x.prof_topo - x.extra.prev_medida >= 0 ? "+" : "") +
                           numero(x.prof_topo - x.extra.prev_medida, 1) : ""])));
     if (semNome) c.appendChild(el("p", "ajuda", "Este formulário não traz o nome das unidades, só as profundidades; " +
-      "compare com os topos do AGP ou de um documento do poço."));
+      (toposCalha.length ? "o nome ao lado é a formação que o geólogo de poço anotou na calha (PAG), quando fica a até 10 m."
+        : "compare com os topos do AGP ou de um documento do poço.")));
     blocoDp(caixa, "Topos estratigráficos", topos.length, true, c);
   }
 
@@ -105,6 +113,7 @@ function desenharDadosPoco(caixa, dp, id) {
                                         null, true, secaoPvt(v));
   for (const c of dp.composicao || []) blocoDp(caixa, `Composição do fluido — liberação flash`, c.componentes.length, false,
                                                secaoComposicao(c));
+  secaoPag(caixa, it, topos);
 
   const testes = it.teste_formacao || [];
   if (testes.length) {
@@ -504,4 +513,62 @@ function secaoPvt(v) {
 function secaoComposicao(cp) {
   return tabelaSimples(["Componente", "Óleo estabilizado (%)", "Gás (%)", "Fluido do reservatório (%)"],
     cp.componentes.map((x) => [x.componente, numero(x.oleo_pct, 2), numero(x.gas_pct, 2), numero(x.fluido_pct, 2)]));
+}
+
+
+// ------------------------------------------------ PAG: gás e salinidade da lama, descrição de calha
+function secaoPag(caixa, it, toposRfp) {
+  const tc = it.topo_calha || [], gas = it.gas_lama || [], sal = it.salinidade_lama || [];
+  const lito = it.litologia_calha || [], fl = it.indicio_calha || [];
+  if (tc.length) {
+    const c = el("div");
+    c.appendChild(tabelaSimples(["Formação", "Topo pela calha (m)", "Última amostra acima (m)", "RFP constatado (m)"],
+      tc.map((t) => {
+        const r = (toposRfp || []).filter((x) => x.prof_topo != null && Math.abs(x.prof_topo - t.prof_topo) <= 10)
+          .sort((a, b) => Math.abs(a.prof_topo - t.prof_topo) - Math.abs(b.prof_topo - t.prof_topo))[0];
+        return [t.nome, numero(t.prof_topo, 0), t.extra.acima != null ? numero(t.extra.acima, 0) : "",
+                r ? numero(r.prof_topo, 1) : ""];
+      })));
+    c.appendChild(el("p", "ajuda", "A formação muda entre a última amostra de uma e a primeira da outra: o topo real está " +
+      "nesse intervalo (9 m ou 3 m, conforme a amostragem)."));
+    blocoDp(caixa, "Topos pela descrição de calha (PAG)", tc.length, true, c);
+  }
+  if (gas.length) {
+    const c = el("div");
+    c.appendChild(tabelaSimples(["Intervalo (m)", "Gás total máx. (ppm)", "Acima do fundo", "Razões (Haworth)"],
+      gas.map((z) => [intervaloM(z.prof_topo, z.prof_base), numero(z.valor, 0), z.texto,
+                      z.extra.wh != null ? `Wh ${numero(z.extra.wh, 1)} · Bh ${numero(z.extra.bh, 1)} — ${z.nome || ""}` : "sem cromatografia"])));
+    c.appendChild(el("p", "ajuda", `Zona de gás: gás total acima de 3 × o fundo do poço (${numero((gas[0].extra || {}).fundo, 0)} ppm, ` +
+      "a mediana), com 2 m ou mais. É indício para escolher intervalos; o perfil e o teste confirmam."));
+    blocoDp(caixa, "Gás na lama (PAG)", gas.length, true, c);
+  }
+  if (fl.length) {
+    blocoDp(caixa, "Fluorescência e corte na calha (PAG)", fl.length, fl.length <= 10, tabelaSimples(
+      ["Prof. (m)", "Formação", "Rocha", "Fluorescência", "Corte"],
+      fl.map((x) => {
+        const f = x.extra.fluorescencia || {}, k = x.extra.corte || {};
+        return [intervaloM(x.prof_topo, x.prof_base), x.nome, x.texto,
+                [f.fluor_tipo, f.fluor_pct ? `${f.fluor_pct}%` : "", f.fluor_cor, f.fluor_ton].filter(Boolean).join(" "),
+                [k.velocidade, k.modo].filter(Boolean).join(" ")];
+      })));
+  }
+  if (sal.length) {
+    const c = el("div");
+    c.appendChild(tabelaSimples(["Prof. (m)", "Salinidade (ppm)", "Rw de NaCl equivalente a 75 °F (Ω·m)"],
+      sal.map((s) => [numero(s.prof_topo, 0), numero(s.valor, 0), s.extra.rw75 != null ? numero(s.extra.rw75, 4) : ""])));
+    c.appendChild(el("p", "ajuda", "Resistividade de uma solução de NaCl com essa salinidade (Bateman e Konen, 1977). " +
+      "Em lama base óleo, a salinidade é a da fase aquosa da emulsão e não há Rmf."));
+    blocoDp(caixa, "Salinidade da lama (PAG)", sal.length, false, c);
+  }
+  if (lito.length) {
+    const cont = new Map();
+    for (const a of lito) cont.set(a.texto || "?", (cont.get(a.texto || "?") || 0) + 1);
+    const linhas = [...cont.entries()].sort((a, b) => b[1] - a[1])
+      .map(([r, n]) => [r, n, `${numero(100 * n / lito.length, 0)}%`]);
+    const c = el("div");
+    c.appendChild(tabelaSimples(["Rocha principal", "Amostras", "Das amostras"], linhas));
+    c.appendChild(el("p", "ajuda", "Cada amostra de calha, com a rocha principal, vira a trilha de litologia na aba Perfis " +
+      "quando o poço não tem a litologia do AGP."));
+    blocoDp(caixa, "Litologia da calha (PAG)", lito.length, false, c);
+  }
 }

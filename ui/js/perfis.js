@@ -66,6 +66,9 @@ function mostrarPerfil(r) {
   pf.toposAgp = r.topos_agp || [];
   pf.form = r.formularios || { topos: [], canhoneados: [] };
   pf.litoAgp = r.litologia_agp || [];
+  pf.litoFonte = "AGP";
+  // sem litologia no AGP: a descrição de calha do PAG (geólogo de poço) faz a trilha
+  if (!pf.litoAgp.length && (pf.form.litologia_calha || []).length) { pf.litoAgp = pf.form.litologia_calha; pf.litoFonte = "calha"; }
   pf.selecao = r.padrao.slice();
   pf.limites = [r.inventario.topo_m, r.inventario.base_m];
   pf.topo = pf.limites[0];
@@ -264,8 +267,9 @@ function desenharTrilhas() {
   if ((pf.litoAgp || []).length) {
     const dl = el("div", "pf-trilha pf-trilha-lito");
     const cabL = el("div", "pf-cab-trilha");
-    cabL.appendChild(el("div", "pf-legenda", "Litol. (AGP)"));
-    cabL.title = "Litologia descrita nas amostras de calha (AGP da ANP). Passe o mouse para ver a rocha.";
+    cabL.appendChild(el("div", "pf-legenda", `Litol. (${pf.litoFonte})`));
+    cabL.title = pf.litoFonte === "AGP" ? "Litologia descrita nas amostras de calha (AGP da ANP). Passe o mouse para ver a rocha."
+      : "Litologia da descrição das amostras de calha (PAG, geólogo de poço): a rocha principal de cada amostra.";
     dl.appendChild(cabL);
     cvLito = document.createElement("canvas");
     dl.appendChild(cvLito);
@@ -407,7 +411,7 @@ function desenharLegendaLitologia() {
   box.hidden = !vis.length;
   limpar(box);
   if (!vis.length) return;
-  box.appendChild(el("strong", "", "Litologia (AGP):"));
+  box.appendChild(el("strong", "", `Litologia (${pf.litoFonte || "AGP"}):`));
   const classes = new Map();
   for (const c of vis) {
     const [cor, nome] = classeRocha(c.rocha);
@@ -422,7 +426,7 @@ function desenharLegendaLitologia() {
     const i = el("i");
     i.style.background = k.cor;
     s.append(i, document.createTextNode(nome));
-    s.title = "No AGP: " + [...k.rochas].slice(0, 12).join(", ");
+    s.title = (pf.litoFonte === "calha" ? "Na calha: " : "No AGP: ") + [...k.rochas].slice(0, 12).join(", ");
     box.appendChild(s);
   }
 }
@@ -443,7 +447,7 @@ function desenharLitologia(cv, yDe, dpr) {
   cv.onmousemove = (ev) => {
     const prof = pf.topo + (ev.offsetY / ALTURA_TRILHAS) * (pf.base - pf.topo);
     const c = pf.litoAgp.find((x) => x.topo <= prof && prof <= x.base);
-    cv.title = c ? `${numero(c.topo, 1)}–${numero(c.base, 1)} m: ${c.rocha} ${c.descricao || ""}` : "";
+    cv.title = c ? `${numero(c.topo, 1)}–${numero(c.base, 1)} m: ${c.rocha} ${c.descricao || ""}${c.formacao ? ` (${c.formacao})` : ""}` : "";
   };
 }
 
