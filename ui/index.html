@@ -789,6 +789,7 @@
         </div>
         <p class="pg-aviso" id="pf-aviso" hidden></p>
         <div class="pf-trilhas" id="pf-trilhas"></div>
+        <div class="pf-lito-legenda" id="pf-lito-legenda" hidden></div>
         <p class="ajuda pf-dica">Roda do mouse: rolar · Ctrl + roda: aproximar · arraste na vertical: marcar um intervalo.
           Linhas verdes tracejadas: topos do AGP (passe o mouse no eixo de profundidade).</p>
         <details class="nota-agp" id="pf-nota-agp" hidden>
@@ -841,7 +842,22 @@
                   <option value="linear">linear (IGR)</option>
                   <option value="larionov_antigo">Larionov — rochas mais antigas</option>
                   <option value="larionov_terciario">Larionov — rochas terciárias</option></select></label>
-                <div class="av-par"><label>GR limpo <input id="av-gr_limpo" type="text" inputmode="decimal" placeholder="auto: P5"></label><label>GR argila <input id="av-gr_argila" type="text" inputmode="decimal" placeholder="auto: P95"></label></div>
+                <div class="av-par"><label>GR limpo <input id="av-gr_limpo" type="text" inputmode="decimal" placeholder="auto"></label><label>GR argila <input id="av-gr_argila" type="text" inputmode="decimal" placeholder="auto"></label></div>
+                <div class="av-par av-gr-ref" title="Onde o SIAPP procura o arenito mais limpo e o folhelho quando GR limpo e GR argila ficam em branco">
+                  <label>Procurar em <select id="av-gr_referencia">
+                    <option value="arquivo">arquivo inteiro</option>
+                    <option value="janela">janela (topo–base)</option>
+                    <option value="intervalos">só intervalos</option></select></label>
+                  <label>Usar <select id="av-gr_estatistica">
+                    <option value="percentil">P5 e P95</option>
+                    <option value="extremos">mín. e máx.</option></select></label></div>
+                <div class="av-par" id="av-gr-janela" hidden><label>Janela: topo (m) <input id="av-gr_ref_topo" type="text" inputmode="decimal"></label><label>base (m) <input id="av-gr_ref_base" type="text" inputmode="decimal"></label></div>
+                <details class="av-explica-gr"><summary>Como o GR limpo e o da argila são escolhidos</summary>
+                  <p>IGR = (GR − GR limpo) / (GR argila − GR limpo). O GR limpo é a leitura do arenito mais limpo e o GR da argila, a do
+                    folhelho. Em branco, o SIAPP procura os dois na janela escolhida: <strong>mínimo e máximo</strong> (como no livro) ou
+                    <strong>P5 e P95</strong> — o valor abaixo do qual ficam 5% e 95% das leituras, isto é, o mínimo e o máximo sem os picos
+                    (mineral radioativo, leitura ruim). A janela precisa ter arenito <em>e</em> folhelho: "só os intervalos" serve quando o
+                    intervalo-alvo já tem os dois. As duas linhas aparecem tracejadas na trilha do GR.</p></details>
                 <h4>Porosidade (φ)</h4>
                 <label>Método <select id="av-phi_metodo">
                   <option value="auto">automático (pelas curvas)</option>

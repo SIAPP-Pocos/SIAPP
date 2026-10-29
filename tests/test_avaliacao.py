@@ -143,3 +143,36 @@ def test_duas_avaliacoes_no_mesmo_segundo_nao_se_sobrescrevem(tmp_path, cl):
     pasta = str(tmp_path / "execucoes")
     ids = {av.registrar(pasta, poco="7-TST-1-RN", rel="tst.las", sha256=None, resultado=r)[0] for _ in range(3)}
     assert len(ids) == 3 and len(av.execucoes(pasta)) == 3
+
+
+def test_referencia_do_gr_janela_e_minimo_maximo(tmp_path, cl):
+    """O intervalo 1012–1018 m é só arenito: o P95 DENTRO dele não é folhelho. A referência no
+    arquivo inteiro (padrão desde a 0.36) acha o folhelho; mínimo e máximo pegam o pico de 300 API."""
+    f = tmp_path / "pico.las"
+    las_reservatorio(f)
+    las = lasio.read(str(f))
+    gr = las["GR"].copy()
+    gr[np.argmin(np.abs(las.index - 1035.0))] = 300.0          # um pico radioativo no folhelho
+    las.update_curve(mnemonic="GR", data=gr)
+    las.write(str(f), version=2.0)
+    cache = str(tmp_path / "cache")
+    inv = mpf.inventariar(str(f), cl, cache)
+    curvas = curvas_do_inventario(inv, cl)
+    ints = [{"nome": "Arenito", "topo": 1012, "base": 1018}]
+    with pytest.raises(av.ErroAvaliacao, match="precisa ser maior"):
+        av.avaliar(cache, "pico.las", curvas, ints, {"gr_referencia": "intervalos"})
+    r = av.avaliar(cache, "pico.las", curvas, ints)                            # arquivo inteiro, P5/P95
+    assert r["parametros"]["gr_limpo"] == 30 and r["parametros"]["gr_argila"] == 120
+    assert "arquivo inteiro" in r["automaticos"]["gr_argila"] and not r["avisos"]
+    assert r["referencia_gr"] == {"topo": 1000.0, "base": 1040.0, "tipo": "arquivo", "estatistica": "percentil"}
+    r = av.avaliar(cache, "pico.las", curvas, ints, {"gr_estatistica": "extremos"})
+    assert r["parametros"]["gr_argila"] == 300 and "máximo" in r["automaticos"]["gr_argila"]
+    assert any("picos" in a for a in r["avisos"])
+    r = av.avaliar(cache, "pico.las", curvas, ints, {"gr_referencia": "janela", "gr_ref_topo": "1005",
+                                                     "gr_ref_base": "1025"})
+    assert r["parametros"]["gr_argila"] == 120 and "1005,0–1025,0 m" in r["automaticos"]["gr_argila"]
+    r = av.avaliar(cache, "pico.las", curvas, ints, {"gr_referencia": "janela", "gr_ref_topo": "1012",
+                                                     "gr_ref_base": "1018", "gr_argila": "45"})
+    assert any("diferem só" in a for a in r["avisos"])
+    with pytest.raises(av.ErroAvaliacao, match="Janela de referência"):
+        av.avaliar(cache, "pico.las", curvas, ints, {"gr_referencia": "janela"})

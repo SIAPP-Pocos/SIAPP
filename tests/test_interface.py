@@ -335,6 +335,13 @@ def test_agp_na_ficha_e_na_avaliacao(janela, monkeypatch, tmp_path):
     # litologia das amostras de calha vira uma trilha estreita no gráfico
     janela.esperar("document.querySelectorAll('.pf-trilha-lito canvas').length == 1")
     assert "Litol. (AGP)" in p.text_content(".pf-trilha-lito")
+    # legenda da litologia (0.36): só as classes que aparecem no trecho visível
+    p.evaluate("pf.litoAgp = [{topo: 1000, base: 1020, rocha: 'ARENITO FINO'}, {topo: 1020, base: 1030, rocha: 'FOLHELHO'},"
+               " {topo: 1030, base: 1040, rocha: 'MARGA'}, {topo: 5000, base: 5100, rocha: 'HALITA'}]; desenharTrilhas()")
+    janela.esperar("!document.getElementById('pf-lito-legenda').hidden")
+    leg = p.text_content("#pf-lito-legenda")
+    assert "Litologia (AGP)" in leg and "Arenito" in leg and "Folhelho" in leg and "Evaporito" not in leg
+    assert p.locator("#pf-lito-legenda span").count() == 2          # folhelho e marga na mesma classe
     assert not janela.erros_js, janela.erros_js
 
 
@@ -1541,4 +1548,51 @@ def test_comunidade_painel_biblioteca_compartilhar_comparar_e_refazer(janela, tm
     p.click(".sub-nav [data-com='contribuir']")
     janela.esperar("document.getElementById('com-local').textContent.includes('interpretação')")
     assert "1 interpretação" in p.text_content("#com-local")
+    assert not janela.erros_js, janela.erros_js
+
+
+def test_referencia_do_gr_na_avaliacao_e_selo_do_download(janela, tmp_path):
+    """0.36: onde procurar o GR limpo e o da argila (linhas no GR) e o selo que não saía de "baixando"."""
+    from test_avaliacao import las_reservatorio
+    p = janela.page
+    abrir_projeto(janela)
+    api = janela.api
+    pasta = tmp_path / "ambiente_teste" / "bruto" / "Potiguar" / "7-TST-1-RN" / "Perfil Convencional"
+    pasta.mkdir(parents=True)
+    las_reservatorio(pasta / "tst.las")
+    api._abrir_projeto(str(tmp_path / "ambiente_teste"))
+    rel = "bruto/Potiguar/7-TST-1-RN/Perfil Convencional/tst.las"
+    assert api.salvar_intervalo(rel, {"tipo": "intervalo_alvo", "nome": "Arenito", "prof_topo": "1012",
+                                      "prof_base": "1018"})["ok"]
+    p.click("#aba-perfis")
+    janela.esperar("document.querySelector('#lista-perfis button')")
+    p.click("#lista-perfis button")
+    janela.esperar("document.querySelectorAll('.av-curva').length === 8", 30)
+    assert p.input_value("#av-gr_referencia") == "arquivo" and p.is_hidden("#av-gr-janela")
+    p.select_option("#av-gr_referencia", "janela")
+    assert not p.is_hidden("#av-gr-janela")
+    p.fill("#av-gr_ref_topo", "1005")
+    p.fill("#av-gr_ref_base", "1025")
+    p.click("#av-calcular")
+    janela.esperar("document.querySelector('#av-resultado table') !== null", 30)
+    texto = p.text_content("#av-resultado")
+    assert "GR limpo 30 API" in texto and "GR da argila 120 API" in texto and "1005,0–1025,0 m" in texto
+    assert p.evaluate("pf.grRef.limpo") == 30 and p.evaluate("pf.grRef.topo") == 1005
+    # só o intervalo de arenito: sem folhelho na janela, o cálculo explica por quê
+    p.select_option("#av-gr_referencia", "intervalos")
+    p.click("#av-calcular")
+    janela.esperar("historicoStatus.some((m) => m.texto.includes('precisa ser maior'))")
+    # selo do download: "baixando" vira "baixado" quando o motor avisa o fim
+    p.evaluate("""() => {
+      const li = document.createElement('li'), cb = document.createElement('input'), selo = document.createElement('span');
+      cb.type = 'checkbox'; li.append(cb, selo); document.body.appendChild(li);
+      arquivosGaveta.set('/POCO/x/tst.las', { no: { nome: 'tst.las', tamanho: 10 }, cb, linha: li, selo });
+      window.__item = arquivosGaveta.get('/POCO/x/tst.las'); }""")
+    api._emitir_download({"tipo": "inicio", "caminho": "/POCO/x/tst.las", "nome": "tst.las", "poco": "7-TST-1-RN",
+                          "indice": 1, "total": 1, "tamanho": 10})
+    janela.esperar("__item.selo.textContent === 'baixando'")
+    api._emitir_download({"tipo": "fim", "caminho": "/POCO/x/tst.las", "status": "baixado", "bytes": 10,
+                          "bacia": "Potiguar", "poco": "7-TST-1-RN", "arquivo_local": str(pasta / "tst.las")})
+    janela.esperar("__item.selo.textContent === 'baixado'")
+    assert p.evaluate("__item.no.tipo") == "perfil" and p.evaluate("__item.cb.disabled")
     assert not janela.erros_js, janela.erros_js

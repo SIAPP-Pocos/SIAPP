@@ -125,7 +125,9 @@ class CatalogoAPI:
     def _emitir_download(self, evento: dict):
         if evento.get("arquivo_local") and self._projeto:
             self._ao_terminar_download(evento)
-            evento["tipo"] = mp.tipo_arquivo(evento["arquivo_local"])
+            # "tipo" é o tipo do EVENTO ("fim"); o do arquivo vai à parte (até a 0.35 o
+            # tipo do arquivo sobrescrevia o "fim" e o selo ficava em "baixando")
+            evento["tipo_arquivo"] = mp.tipo_arquivo(evento["arquivo_local"])
             evento["arquivo_local"] = self._projeto.rel(evento["arquivo_local"])
         self._js("eventoDownload", evento)
 

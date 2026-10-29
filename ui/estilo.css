@@ -1049,7 +1049,7 @@ html[data-tema="escuro"] .pal:hover { background: #26324a; }
    Visor do bloco, figura da seção, trilhas dos perfis, página do documento e legendas do mapa
    ficam em fundo branco em qualquer tema, como as figuras exportadas. Dentro delas, as cores
    de texto e linha voltam às do tema claro — no escuro o texto ficava claro sobre branco. */
-.bl-visor, .sec-figura, .pf-trilhas, .v-folha, .pg-quadro, .mapa-legenda, .bl-leg-trilha, .bl-escala, .sec-mini {
+.bl-visor, .sec-figura, .pf-trilhas, .pf-lito-legenda, .v-folha, .pg-quadro, .mapa-legenda, .bl-leg-trilha, .bl-escala, .sec-mini {
   --fundo: #f6f5f1; --painel: #ffffff; --painel2: #f5f7f9; --tinta: #1c2227; --suave: #5f6b73; --linha: #dcdad3;
   --campo: #ffffff; --destaque: #0e5a62; --destaque-claro: #e3efef; --erro: #a3342b; --ok: #2f7d4f;
   color: var(--tinta); color-scheme: light;
@@ -1221,3 +1221,17 @@ html[data-tema="escuro"] .selo.err { background: #3a2220; }
 .av-bib-nota { margin: 4px 0 8px; }
 .av-bib-nota .link { font-size: 13px; }
 #av-compartilhada { align-self: center; }
+
+/* ---------- perfis: legenda da litologia, referência do GR (0.36) ---------- */
+.pf-lito-legenda { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: center; padding: 6px 10px; margin-top: 6px;
+  border: 1px solid var(--linha); border-radius: 6px; font-size: 12px; }
+.pf-lito-legenda[hidden] { display: none; }
+.pf-lito-legenda strong { font-weight: 600; margin-right: 2px; }
+.pf-lito-legenda span { display: inline-flex; align-items: center; gap: 5px; }
+.pf-lito-legenda i { width: 14px; height: 10px; border: 1px solid rgba(0, 0, 0, .25); display: inline-block; }
+.av-gr-ref select { width: 100%; }
+#av-gr-janela[hidden] { display: none; }
+.av-explica-gr { font-size: 12px; margin: 4px 0 8px; }
+.av-explica-gr summary { cursor: pointer; color: var(--destaque); }
+.av-explica-gr p { margin: 6px 0 0; color: var(--suave); }
+.av-avisos { margin: 6px 0 0; }

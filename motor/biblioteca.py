@@ -33,6 +33,8 @@ SOBREPOSICAO = 0.5        # intervalos de autores diferentes "são o mesmo" com 
 
 NOMES_PARAM = {
     "vsh_metodo": "Método do Vsh", "gr_limpo": "GR limpo (API)", "gr_argila": "GR da argila (API)",
+    "gr_referencia": "Onde o GR foi estimado", "gr_estatistica": "Estatística do GR",
+    "gr_ref_topo": "Janela do GR: topo (m)", "gr_ref_base": "Janela do GR: base (m)",
     "phi_metodo": "Método da φ", "rho_matriz": "ρ da matriz (g/cm³)", "rho_fluido": "ρ do fluido (g/cm³)",
     "dt_matriz": "Δt da matriz (µs/pé)", "dt_fluido": "Δt do fluido (µs/pé)", "phi_argila": "φ da argila",
     "sw_metodo": "Método da Sw", "rw": "Rw (ohm·m)", "a": "a (tortuosidade)", "m": "m (cimentação)",

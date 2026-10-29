@@ -66,6 +66,13 @@ medida antes da calculada: `AT90` antes de `RT`) e, no empate, a com mais dados.
   qualidade" na tela): a qualidade é a nota do intérprete da ANP — bom, regular,
   questionável, inferido, não revisto.
 
+## Litologia (0.36)
+
+A trilha estreita "Litol. (AGP)" pinta a rocha descrita nas amostras de calha do AGP. Embaixo do
+gráfico, a legenda mostra só as classes que aparecem no trecho visível (arenito/conglomerado;
+folhelho, argilito, siltito, marga; calcário/dolomito; evaporito; embasamento/ígnea; carvão;
+outra), e o mouse sobre cada classe lista as rochas do AGP que caíram nela.
+
 ## Cache
 
 Na primeira leitura, cada quadro vai para `ambiente_teste/pocos/<poço>/<arquivo>__<quadro>.npz`

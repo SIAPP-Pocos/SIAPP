@@ -234,7 +234,8 @@ class PerfisAPI:
                 "ultima": historico[0] if historico else None,
                 "historico": [{"id": h["id"], "criado_em": h["criado_em"], "metodos": h["metodos"],
                                "intervalos": h["intervalos"], "parametros": h["parametros"],
-                               "parametros_automaticos": h.get("parametros_automaticos", {})}
+                               "parametros_automaticos": h.get("parametros_automaticos", {}),
+                               "avisos": h.get("avisos", []), "referencia_gr": h.get("referencia_gr")}
                               for h in historico[:10]]}
 
     @resposta_segura
@@ -264,7 +265,8 @@ class PerfisAPI:
                                 net_pay_m=sum(i["net_pay_m"] for i in r["intervalos"]))
         return {"id": ident, "registro": self._projeto.rel(caminho).replace(os.sep, "/"),
                 "intervalos": r["intervalos"], "parametros": r["parametros"],
-                "automaticos": r["automaticos"], "passo": r["passo"]}
+                "automaticos": r["automaticos"], "passo": r["passo"], "avisos": r.get("avisos", []),
+                "referencia_gr": r.get("referencia_gr")}
 
     @resposta_segura
     def grafico_avaliacao(self, ident: str, topo=None, base=None):

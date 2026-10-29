@@ -131,6 +131,20 @@ Precisa de internet. Comece por uma categoria pequena para ver o tempo.
 - [ ] Sem intervalo marcado, **Calcular** explica que precisa de um intervalo-alvo.
 - [ ] Repetir no `5PX__0011__RN_5PX__0011__RN.tif` (DLIS de 2020).
 
+## 0.36 — referência do GR, legenda da litologia, selo do download
+
+- [ ] Dados › Catálogo: baixe um arquivo pequeno de um poço. O selo vai de "na fila" a "baixando" e termina em
+      **"baixado"**, com o botão de abrir.
+- [ ] Perfis › `1-brsa-1304-ba_raw-2.dlis` (Recôncavo) › Avaliação: GR limpo e GR argila em branco. "Procurar em"
+      = arquivo inteiro, "Usar" = P5 e P95 → **Calcular**: o resultado mostra os dois valores e a trilha do GR
+      ganha duas linhas tracejadas (limpo e argila).
+- [ ] Troque para "mín. e máx." e calcule: os valores mudam e aparece o aviso dos picos. Troque para "janela" e
+      informe topo e base: as linhas ficam só nesse trecho.
+- [ ] "Só intervalos" com um intervalo todo de arenito: o SIAPP avisa (ou recusa) por falta de folhelho.
+- [ ] Abra "Como o GR limpo e o da argila são escolhidos" e leia: está claro?
+- [ ] Num poço com AGP (ex.: 1-AURI-12-RN), a legenda da litologia aparece embaixo dos perfis; o mouse numa classe
+      mostra as rochas do AGP.
+
 ## 0.35.1 — conexão com o REATE
 
 - [ ] Dados › Catálogo do REATE: conectar o **Recôncavo** (e a Potiguar). Conecta mesmo quando um dos dois servidores

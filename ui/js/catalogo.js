@@ -299,7 +299,7 @@ window.eventoDownload = function (ev) {
     $("dl-num").textContent = `${tamanho(ev.feito)} de ${tamanho(ev.total)} · ${tamanho(ev.velocidade)}/s`;
   } else if (ev.tipo === "fim") {
     $("dl-barra").style.width = "100%";
-    if (item) { item.no.rel = ev.arquivo_local; item.no.tipo = ev.tipo; marcarArquivo(item, "baixado"); }
+    if (item) { item.no.rel = ev.arquivo_local; item.no.tipo = ev.tipo_arquivo; marcarArquivo(item, "baixado"); }
   } else if (ev.tipo === "erro") {
     if (item) { marcarArquivo(item, "erro"); item.selo.title = ev.erro; }
     status(ev.erro, "erro");

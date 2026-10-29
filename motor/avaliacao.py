@@ -9,6 +9,9 @@ citá-lo.
 Fórmulas (unidades: frações, g/cm³, µs/pé, ohm·m):
 
     IGR   = (GR − GR_limpo) / (GR_argila − GR_limpo)            índice de raios gama
+            GR_limpo e GR_argila, se não informados: mínimo e máximo do GR numa janela de
+            referência (padrão: o arquivo inteiro), ou os percentis 5 e 95 — o "mínimo" e o
+            "máximo" sem os 5% de leituras mais baixas e mais altas (picos, minerais radioativos)
     Vsh   = IGR                                                  linear
           = 0,083 · (2^(3,7·IGR) − 1)                            Larionov, rochas terciárias
           = 0,33 · (2^(2·IGR) − 1)                               Larionov, rochas mais antigas
@@ -50,8 +53,12 @@ PAPEIS = {
 
 PADRAO = {
     "vsh_metodo": "linear",          # linear | larionov_terciario | larionov_antigo
-    "gr_limpo": None,                # None = percentil 5 do GR nos intervalos
-    "gr_argila": None,               # None = percentil 95
+    "gr_limpo": None,                # None = estimado na janela de referência (gr_estatistica)
+    "gr_argila": None,
+    "gr_referencia": "arquivo",      # arquivo | intervalos | janela — onde procurar o arenito limpo e o folhelho
+    "gr_estatistica": "percentil",   # percentil (P5 e P95) | extremos (mínimo e máximo)
+    "gr_ref_topo": None,             # m, só com gr_referencia = janela
+    "gr_ref_base": None,
     "phi_metodo": "auto",            # auto | densidade | densidade_neutrao | sonico
     "rho_matriz": 2.65,              # arenito (quartzo); calcário 2,71; dolomito 2,87
     "rho_fluido": 1.0,
@@ -74,6 +81,11 @@ NOMES_METODO = {
     "densidade": "densidade", "densidade_neutrao": "densidade-nêutron", "sonico": "sônico (Wyllie)",
     "archie": "Archie", "simandoux": "Simandoux",
 }
+
+
+REFERENCIAS_GR = {"arquivo": "no arquivo inteiro", "intervalos": "só nos intervalos", "janela": "na janela"}
+ESTATISTICAS_GR = {"percentil": "P5 e P95", "extremos": "mínimo e máximo"}
+CONTRASTE_MIN_GR = 20.0     # API: abaixo disto entre o limpo e a argila, a janela quase não tem folhelho (ou arenito)
 
 
 class ErroAvaliacao(ValueError):
@@ -177,10 +189,17 @@ def parametros(entrada: dict | None) -> dict:
     for k, v in (entrada or {}).items():
         if k in PADRAO:
             p[k] = v
-    for k in ("gr_limpo", "gr_argila", "rho_matriz", "rho_fluido", "dt_matriz", "dt_fluido", "phi_argila",
+    for k in ("gr_limpo", "gr_argila", "gr_ref_topo", "gr_ref_base", "rho_matriz", "rho_fluido", "dt_matriz", "dt_fluido", "phi_argila",
               "rw", "a", "m", "n", "rsh", "corte_vsh", "corte_phi", "corte_sw", "qc_cali_pol",
               "qc_drho", "bs_pol", "passo"):
         p[k] = _num(p, k)
+    if p["gr_referencia"] not in REFERENCIAS_GR:
+        raise ErroAvaliacao(f"Referência do GR desconhecida: {p['gr_referencia']!r}.")
+    if p["gr_estatistica"] not in ESTATISTICAS_GR:
+        raise ErroAvaliacao(f"Estatística do GR desconhecida: {p['gr_estatistica']!r}.")
+    if p["gr_referencia"] == "janela":
+        if p["gr_ref_topo"] is None or p["gr_ref_base"] is None or p["gr_ref_base"] <= p["gr_ref_topo"]:
+            raise ErroAvaliacao("Janela de referência do GR: informe topo e base (base abaixo do topo).")
     for k, minimo in (("rw", 1e-4), ("a", 1e-3), ("m", 0.5), ("n", 0.5)):
         if p[k] is None or p[k] < minimo:
             raise ErroAvaliacao(f"Parâmetro {k} precisa ser um número positivo.")
@@ -203,6 +222,7 @@ def avaliar(pasta_cache: str, arquivo: str, curvas: dict, intervalos: list[dict]
             raise ErroAvaliacao(f"Falta a curva de {papel} (obrigatória).")
     usados = {k: v for k, v in curvas.items() if v and k in PAPEIS}
     auto = {}
+    avisos: list[str] = []
     selecao = [{**v, "papel": k} for k, v in usados.items()]
     if p["passo"] is None:
         # a grade segue o passo do GR (a curva da passada principal); um cáliper
@@ -232,15 +252,37 @@ def avaliar(pasta_cache: str, arquivo: str, curvas: dict, intervalos: list[dict]
     dt = _dt_us_pe(*dados["DT"]) if "DT" in dados else None
 
     # --- argilosidade (parâmetros automáticos registrados)
-    g_in = gr[dentro & np.isfinite(gr)]
-    if not len(g_in):
+    if not (dentro & np.isfinite(gr)).any():
         raise ErroAvaliacao("O GR não tem dados dentro dos intervalos.")
+    ref = p["gr_referencia"]
+    if ref == "intervalos":
+        mref = dentro
+    elif ref == "janela":
+        mref = (grade >= p["gr_ref_topo"]) & (grade <= p["gr_ref_base"])
+    else:
+        mref = np.ones(len(grade), bool)
+    mref = mref & np.isfinite(gr)
+    if not mref.any():
+        raise ErroAvaliacao("O GR não tem dados na janela de referência.")
+    g_ref = gr[mref]
+    janela = (round(float(grade[mref].min()), 2), round(float(grade[mref].max()), 2))
+    onde = (f"{REFERENCIAS_GR[ref]} ({janela[0]:.1f}–{janela[1]:.1f} m)".replace(".", ",")
+            if ref != "intervalos" else REFERENCIAS_GR[ref])
+    extremos = p["gr_estatistica"] == "extremos"
     if p["gr_limpo"] is None:
-        p["gr_limpo"] = round(float(np.percentile(g_in, 5)), 2)
-        auto["gr_limpo"] = "percentil 5 do GR nos intervalos"
+        p["gr_limpo"] = round(float(g_ref.min() if extremos else np.percentile(g_ref, 5)), 2)
+        auto["gr_limpo"] = f"{'mínimo' if extremos else 'percentil 5'} do GR {onde}"
     if p["gr_argila"] is None:
-        p["gr_argila"] = round(float(np.percentile(g_in, 95)), 2)
-        auto["gr_argila"] = "percentil 95 do GR nos intervalos"
+        p["gr_argila"] = round(float(g_ref.max() if extremos else np.percentile(g_ref, 95)), 2)
+        auto["gr_argila"] = f"{'máximo' if extremos else 'percentil 95'} do GR {onde}"
+    if p["gr_argila"] <= p["gr_limpo"]:
+        raise ErroAvaliacao(f"GR da argila ({p['gr_argila']}) precisa ser maior que o GR limpo ({p['gr_limpo']}).")
+    if p["gr_argila"] - p["gr_limpo"] < CONTRASTE_MIN_GR:
+        avisos.append(f"GR limpo e GR da argila diferem só {p['gr_argila'] - p['gr_limpo']:.0f} API: a janela de "
+                      "referência quase não tem folhelho (ou arenito). Use uma janela maior ou digite os valores.")
+    if extremos and ("gr_limpo" in auto or "gr_argila" in auto):
+        avisos.append("Mínimo e máximo pegam picos (minerais radioativos, leitura ruim): confira as linhas no GR.")
+    referencia_gr = {"topo": janela[0], "base": janela[1], "tipo": ref, "estatistica": p["gr_estatistica"]}
     vsh = vsh_de_gr(gr, p["gr_limpo"], p["gr_argila"], p["vsh_metodo"])
 
     # --- porosidade
@@ -316,7 +358,7 @@ def avaliar(pasta_cache: str, arquivo: str, curvas: dict, intervalos: list[dict]
         m = rotulo == k
         resumo.append(_resumir(i, grade, passo, m, valido, reservatorio, pay, vsh, phi, sw, qc_cali, qc_drho))
     return {"prof": grade, "passo": passo, "curvas": saida, "intervalos": resumo,
-            "parametros": p, "automaticos": auto,
+            "parametros": p, "automaticos": auto, "avisos": avisos, "referencia_gr": referencia_gr,
             "curvas_usadas": {k: {"quadro": v["quadro"], "mnemonico": v["mnemonico"], "unidade": v.get("unidade", "")}
                               for k, v in usados.items()}}
 
@@ -361,6 +403,7 @@ def registrar(pasta_execucoes: str, *, poco: str, rel: str, sha256: str | None, 
         "metodos": {"vsh": resultado["parametros"]["vsh_metodo"], "phi": resultado["parametros"]["phi_metodo"],
                     "sw": resultado["parametros"]["sw_metodo"]},
         "parametros": resultado["parametros"], "parametros_automaticos": resultado["automaticos"],
+        "avisos": resultado.get("avisos", []), "referencia_gr": resultado.get("referencia_gr"),
         "passo_m": resultado["passo"], "intervalos": resultado["intervalos"],
         "formulas": __doc__.split("Fórmulas", 1)[1].strip() if "Fórmulas" in (__doc__ or "") else "",
     }

@@ -309,6 +309,7 @@ function desenharTrilhas() {
   for (const c of cabs) c.style.height = altura + "px";
   const dpr = window.devicePixelRatio || 1;
   if (cvLito) desenharLitologia(cvLito, yDe, dpr);
+  desenharLegendaLitologia();
   for (const [cv, t] of telas) {
     const w = cv.parentElement.clientWidth;
     cv.width = w * dpr; cv.height = ALTURA_TRILHAS * dpr;
@@ -368,20 +369,53 @@ function desenharTrilhas() {
       g.stroke();
       g.setLineDash([]);
     }
+    desenharReferenciaGr(g, w, yDe, t);
   }
   ligarInteracao(box, yDe);
 }
 
 const CORES_ROCHA = [
-  [/ARENITO|AREIA|CONGLOMERADO/, "#f2d16b"], [/FOLHELHO|ARGILITO|SILTITO|MARGA/, "#8fa58a"],
-  [/CALC|DOLOMIT|COQUINA/, "#8fb8d9"], [/EVAPORIT|HALITA|ANIDRITA|SAL/, "#d9a3c9"],
-  [/GRANITO|GNAISSE|EMBASAMENTO|BASALTO|DIABASIO/, "#c98f7a"], [/CARVAO|LINHITO/, "#3d3d3d"],
+  [/ARENITO|AREIA|CONGLOMERADO/, "#f2d16b", "Arenito, conglomerado"],
+  [/FOLHELHO|ARGILITO|SILTITO|MARGA/, "#8fa58a", "Folhelho, argilito, siltito"],
+  [/CALC|DOLOMIT|COQUINA/, "#8fb8d9", "Calcário, dolomito"], [/EVAPORIT|HALITA|ANIDRITA|SAL/, "#d9a3c9", "Evaporito"],
+  [/GRANITO|GNAISSE|EMBASAMENTO|BASALTO|DIABASIO/, "#c98f7a", "Embasamento, ígnea"], [/CARVAO|LINHITO/, "#3d3d3d", "Carvão"],
 ];
+const ROCHA_OUTRA = ["#d5d3cc", "Outra / não classificada"];
 
-function corRocha(rocha) {
+function classeRocha(rocha) {
   const r = (rocha || "").toUpperCase();
-  for (const [re, cor] of CORES_ROCHA) if (re.test(r)) return cor;
-  return "#d5d3cc";
+  for (const [re, cor, nome] of CORES_ROCHA) if (re.test(r)) return [cor, nome];
+  return ROCHA_OUTRA;
+}
+
+function corRocha(rocha) { return classeRocha(rocha)[0]; }
+
+// Legenda da trilha de litologia: só as classes que aparecem no trecho visível, com as rochas do AGP de cada uma.
+function desenharLegendaLitologia() {
+  const box = $("pf-lito-legenda");
+  if (!box) return;
+  const vis = (pf.litoAgp || []).filter((c) => c.topo != null && c.base != null && c.base >= pf.topo && c.topo <= pf.base);
+  box.hidden = !vis.length;
+  limpar(box);
+  if (!vis.length) return;
+  box.appendChild(el("strong", "", "Litologia (AGP):"));
+  const classes = new Map();
+  for (const c of vis) {
+    const [cor, nome] = classeRocha(c.rocha);
+    if (!classes.has(nome)) classes.set(nome, { cor, rochas: new Set() });
+    classes.get(nome).rochas.add(String(c.rocha || "?").trim());
+  }
+  const ordem = [...CORES_ROCHA.map((x) => x[2]), ROCHA_OUTRA[1]];
+  for (const nome of ordem) {
+    const k = classes.get(nome);
+    if (!k) continue;
+    const s = el("span");
+    const i = el("i");
+    i.style.background = k.cor;
+    s.append(i, document.createTextNode(nome));
+    s.title = "No AGP: " + [...k.rochas].slice(0, 12).join(", ");
+    box.appendChild(s);
+  }
 }
 
 function desenharLitologia(cv, yDe, dpr) {
@@ -402,6 +436,29 @@ function desenharLitologia(cv, yDe, dpr) {
     const c = pf.litoAgp.find((x) => x.topo <= prof && prof <= x.base);
     cv.title = c ? `${numero(c.topo, 1)}–${numero(c.base, 1)} m: ${c.rocha} ${c.descricao || ""}` : "";
   };
+}
+
+// GR limpo e GR da argila da avaliação mostrada: linhas tracejadas na trilha do GR, na janela usada.
+function desenharReferenciaGr(g, w, yDe, t) {
+  const r = pf.grRef;
+  const mostrar = $("av-mostrar") ? $("av-mostrar").checked : true;
+  const c = t.curvas.find((x) => x.familia === "GR");
+  if (!r || !mostrar || !c) return;
+  const y0 = Math.max(0, r.topo != null ? yDe(r.topo) : 0);
+  const y1 = Math.min(ALTURA_TRILHAS, r.base != null ? yDe(r.base) : ALTURA_TRILHAS);
+  if (y1 <= y0) return;
+  g.save();
+  g.lineWidth = 1.4;
+  g.setLineDash([6, 4]);
+  g.font = "600 10px Segoe UI, system-ui, sans-serif";
+  for (const [v, cor, rot] of [[r.limpo, "#b8860b", "limpo"], [r.argila, "#4f6b4a", "argila"]]) {
+    const x = xDe(v, c._e, w);
+    if (x === null) continue;
+    g.strokeStyle = cor; g.fillStyle = cor;
+    g.beginPath(); g.moveTo(x + 0.5, y0); g.lineTo(x + 0.5, y1); g.stroke();
+    g.fillText(`${rot} ${numero(v, 0)}`, Math.min(Math.max(2, x + 3), w - 52), y0 + 12);
+  }
+  g.restore();
 }
 
 function desenharFatosNaTrilha(g, w, yDe) {

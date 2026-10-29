@@ -6,7 +6,7 @@
 // bibId/bibRel: interpretação da biblioteca sendo refeita neste arquivo (0.35)
 const av = { info: null, id: null, ultimo: null, bibId: null, bibRel: null };
 
-const PARAMS_AV = ["vsh_metodo", "gr_limpo", "gr_argila", "phi_metodo", "rho_matriz", "rho_fluido", "dt_matriz",
+const PARAMS_AV = ["vsh_metodo", "gr_limpo", "gr_argila", "gr_referencia", "gr_estatistica", "gr_ref_topo", "gr_ref_base", "phi_metodo", "rho_matriz", "rho_fluido", "dt_matriz",
                    "dt_fluido", "phi_argila", "sw_metodo", "rw", "rsh", "a", "m", "n", "corte_vsh", "corte_phi",
                    "corte_sw", "qc_cali_pol", "qc_drho", "bs_pol", "passo"];
 const NOMES_PAPEL = { GR: "GR", RHOB: "RHOB", NPHI: "NPHI", DT: "DT", RT: "Rt", CALI: "Cáliper", BS: "Broca", DRHO: "DRHO" };
@@ -26,6 +26,7 @@ function textoParam(v) { return v === null || v === undefined ? "" : String(v).r
 async function carregarAvaliacao() {
   if (!pf.rel) return;
   if (av.bibRel !== pf.rel) { av.bibId = null; av.bibRel = null; }
+  pf.grRef = null;
   const r = await chamar(null, "avaliacao_info", pf.rel, av.bibId);
   if (!r.ok) return;
   av.info = r;
@@ -40,8 +41,10 @@ async function carregarAvaliacao() {
   $("av-form-compart").hidden = true;
   desenharNotasBibAv();
   desenharHistoricoAv();
+  janelaGrVisivel();
   if (r.ultima && !r.biblioteca) mostrarResultadoAv({ id: r.ultima.id, intervalos: r.ultima.intervalos,
-                                     automaticos: r.ultima.parametros_automaticos,
+                                     automaticos: r.ultima.parametros_automaticos, parametros: r.ultima.parametros,
+                                     avisos: r.ultima.avisos, referencia_gr: r.ultima.referencia_gr,
                                      registro: `execucoes/${r.ultima.id}.json` }, true);
 }
 
@@ -188,6 +191,8 @@ function desenharCurvasAv() {
 // Parâmetros estimados pelo motor (GR limpo, Rsh…) voltam como "auto: valor" no
 // placeholder, não como valor fixo: mudando o intervalo, são estimados de novo.
 function preencherParametros(p, automaticos = {}) {
+  // avaliações de antes da 0.36 estimavam o GR só nos intervalos: refazer igual
+  if (p && p.gr_limpo !== undefined && p.gr_referencia === undefined) p = { ...p, gr_referencia: "intervalos", gr_estatistica: "percentil" };
   for (const k of PARAMS_AV) {
     const campo = $("av-" + k);
     if (!campo) continue;
@@ -196,7 +201,7 @@ function preencherParametros(p, automaticos = {}) {
     campo.placeholder = campo.dataset.ph;
     if (campo.tagName === "SELECT") {
       campo.value = auto ? "auto" : (p[k] || campo.options[0].value);
-      if (!campo.value) campo.value = campo.options[0].value;
+      if (!campo.value) campo.value = campo.options[0].value;      // valor que o select não tem (ex.: "auto" do GR)
     } else if (auto) {
       campo.value = "";
       campo.placeholder = `auto: ${textoParam(p[k])}`;
@@ -204,6 +209,11 @@ function preencherParametros(p, automaticos = {}) {
       campo.value = textoParam(p[k]);
     }
   }
+}
+
+function janelaGrVisivel() {
+  const sel = $("av-gr_referencia");
+  if (sel) $("av-gr-janela").hidden = sel.value !== "janela";
 }
 
 function lerParametros() {
@@ -225,6 +235,7 @@ async function calcularAvaliacao() {
   if (!r.ok) return;
   mostrarResultadoAv(r);
   preencherParametros(r.parametros, r.automaticos || {});   // mostra os automáticos que o motor escolheu
+  janelaGrVisivel();
   const pay = r.intervalos.reduce((t, i) => t + i.net_pay_m, 0);
   status(`Avaliação calculada: net pay ${numero(pay, 1)} m em ${r.intervalos.length} intervalo(s). Registro em ${r.registro}.`, "ok");
   const h = await chamar(null, "avaliacao_info", pf.rel, av.bibId);
@@ -235,6 +246,9 @@ function mostrarResultadoAv(r, anterior = false) {
   av.id = r.id;
   av.ultimo = { ...r, anterior };
   $("av-form-compart").hidden = true;
+  // as linhas do GR limpo e da argila na trilha do GR (desenharTrilhas)
+  pf.grRef = r.parametros && r.parametros.gr_limpo != null
+    ? { limpo: r.parametros.gr_limpo, argila: r.parametros.gr_argila, ...(r.referencia_gr || {}) } : null;
   const box = limpar($("av-resultado"));
   if (anterior) box.appendChild(el("p", "ajuda", `Última avaliação deste arquivo (${r.id.split("_").slice(-1)[0]}):`));
   const t = el("table");
@@ -261,11 +275,16 @@ function mostrarResultadoAv(r, anterior = false) {
   t.appendChild(tb);
   box.appendChild(t);
   const auto = Object.entries(r.automaticos || {});
+  if (r.parametros && r.parametros.gr_limpo != null) {
+    box.appendChild(el("p", "ajuda av-auto", `GR limpo ${numero(r.parametros.gr_limpo, 1)} API · GR da argila ` +
+      `${numero(r.parametros.gr_argila, 1)} API (linhas tracejadas na trilha do GR).`));
+  }
   if (auto.length) {
     const p = el("p", "ajuda av-auto", "Estimado automaticamente: ");
     p.append(auto.map(([k, v]) => `${k} (${v})`).join("; "));
     box.appendChild(p);
   }
+  for (const a of r.avisos || []) box.appendChild(el("p", "aviso av-avisos", a));
   $("av-acoes").hidden = false;
   $("av-registro").textContent = `Registro: ${r.registro}`;
   estadoCompartilhadaAv();
@@ -283,8 +302,10 @@ function desenharHistoricoAv() {
     li.title = "Clique para ver no gráfico e retomar os parâmetros";
     li.onclick = () => {
       mostrarResultadoAv({ id: x.id, intervalos: x.intervalos, automaticos: x.parametros_automaticos,
+                           parametros: x.parametros, avisos: x.avisos, referencia_gr: x.referencia_gr,
                            registro: `execucoes/${x.id}.json` });
       preencherParametros(x.parametros, x.parametros_automaticos || {});
+      janelaGrVisivel();
     };
     ul.appendChild(li);
   }
@@ -309,7 +330,8 @@ async function exportarAvaliacao(formato, botao) {
 
 function ligarAvaliacao() {
   ligar("av-calcular", "onclick", calcularAvaliacao);
-  ligar("av-padrao", "onclick", () => av.info && preencherParametros(av.info.padrao));
+  ligar("av-padrao", "onclick", () => { if (av.info) { preencherParametros(av.info.padrao); janelaGrVisivel(); } });
+  ligar("av-gr_referencia", "onchange", janelaGrVisivel);
   ligar("av-mostrar", "onchange", () => atualizarGrafico());
   ligar("av-csv", "onclick", () => exportarAvaliacao("csv", $("av-csv")));
   ligar("av-las", "onclick", () => exportarAvaliacao("las", $("av-las")));

@@ -6,6 +6,21 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 
 ## [Não lançado]
 
+## [0.36.0] — 2026-10-29
+Anotações de 29/10, antes do Bloco 9.
+### Adicionado
+- **Onde procurar o GR limpo e o da argila** (avaliação de formação): no arquivo inteiro, numa janela (topo e base)
+  ou só nos intervalos; com P5 e P95 ou com mínimo e máximo. As duas linhas aparecem tracejadas na trilha do GR, o
+  resultado mostra os valores e uma explicação na tela diz como cada opção funciona.
+- **Legenda da litologia** dos perfis, com as classes de rocha do trecho visível.
+### Mudado
+- O GR limpo e o da argila automáticos passam a ser procurados **no arquivo inteiro** (antes: só nos intervalos).
+  Num intervalo-alvo todo de arenito, o P95 dos intervalos não era folhelho e o Vsh saía alto demais. Avaliações
+  antigas são refeitas do jeito antigo. Avisos quando o contraste entre os dois é pequeno.
+### Corrigido
+- O selo do arquivo ficava em "baixando" depois de terminar o download (o fim chegava, mas com o nome do evento
+  trocado pelo tipo do arquivo). O arquivo já baixava certo; agora o selo vira "baixado" e o botão de abrir aparece.
+
 ## [0.35.1] — 2026-10-28
 ### Corrigido
 - **"Resposta inesperada do portal: HTTP 503" ao conectar uma bacia**, enquanto o portal abria no navegador. O

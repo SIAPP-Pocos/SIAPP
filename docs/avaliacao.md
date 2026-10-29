@@ -46,10 +46,27 @@ Deixados em branco, o SIAPP estima e registra como estimou:
 
 | Parâmetro | Estimativa |
 |---|---|
-| GR limpo / GR argila | percentis 5 e 95 do GR dentro dos intervalos |
+| GR limpo / GR argila | na janela de referência (padrão: o arquivo inteiro): P5 e P95 (padrão) ou mínimo e máximo — ver abaixo |
 | método de φ | densidade-nêutron se houver RHOB e NPHI; senão densidade; senão sônico |
 | Rsh (Simandoux) | mediana de Rt onde Vsh ≥ 0,8 nos intervalos |
 | passo | o do GR |
+
+### GR limpo e GR da argila (0.36)
+
+IGR = (GR − GR limpo) / (GR argila − GR limpo). O GR limpo é a leitura do arenito mais limpo; o da
+argila, a do folhelho. Em branco, o SIAPP procura os dois numa **janela de referência**:
+
+- **arquivo inteiro** (padrão), **uma janela** (topo e base) ou **só os intervalos** (o único modo
+  até a 0.35);
+- **P5 e P95** (padrão) — o valor abaixo do qual ficam 5% e 95% das leituras, ou seja, o mínimo e
+  o máximo sem os picos (mineral radioativo, leitura ruim) — ou **mínimo e máximo**, como nos
+  livros (Asquith e Krygowski), que pega qualquer pico.
+
+A janela precisa ter arenito **e** folhelho. Com só os intervalos, um intervalo-alvo todo de
+arenito dava um "GR da argila" que ainda era arenito, e o Vsh saía alto demais. O SIAPP avisa
+quando o limpo e a argila diferem menos de 20 API, e recusa quando a argila não fica acima do
+limpo. As duas linhas aparecem tracejadas na trilha do GR, na janela usada. Avaliações antigas
+(sem a janela no registro) são refeitas "só nos intervalos", para dar o mesmo número.
 
 **Rw não tem estimativa automática**: depende da água de formação (análise de água, SP ou
 Pickett) — o padrão 0,05 ohm·m é só um ponto de partida e deve ser trocado.
