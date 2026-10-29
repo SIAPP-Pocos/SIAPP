@@ -50,6 +50,8 @@ SITUACOES = {
 # índice de profundidade e canais de enchimento não são curvas medidas
 RE_NAO_CURVA = re.compile(r"^(DEPT|DEPTH|TDEP|INDEX\d*|DUMM|DUMMY)$", re.IGNORECASE)
 FAMILIAS_RESUMO = ("GR", "SP", "CALI", "RES_PROF", "RHOB", "NPHI", "DT", "PE")
+# curvas interpretadas pela operadora (perfil processado): ver motor/operador.py
+FAMILIAS_INTERP = ("VSH", "PHIE", "PHIT", "SW", "PERM")
 
 
 class Cancelado(Exception):
@@ -494,6 +496,8 @@ def resumo(banco: Banco, bacia: str) -> dict:
         "situacoes": {s: por_sit.get(s, 0) for s in SITUACOES},
         "por_categoria": {k: {s: v.get(s, 0) for s in SITUACOES} for k, v in sorted(por_cat.items())},
         "familias": {f: fam.get(f, 0) for f in FAMILIAS_RESUMO}, "pocos_com_curvas": com_curvas,
+        "pocos_com_interpretacao": sum(1 for p in pocos if p["familias"]
+                                       and set(p["familias"].split(",")) & set(FAMILIAS_INTERP)),
         "formatos": dict(formatos_cont.most_common()),
         "extensao_enganosa": dict(enganos.most_common()),
         "arquivos_conferidos": sum(r["n"] for r in arqs if r["verificado"] == "conteudo"),

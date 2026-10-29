@@ -131,6 +131,17 @@ Precisa de internet. Comece por uma categoria pequena para ver o tempo.
 - [ ] Sem intervalo marcado, **Calcular** explica que precisa de um intervalo-alvo.
 - [ ] Repetir no `5PX__0011__RN_5PX__0011__RN.tif` (DLIS de 2020).
 
+## 0.41 — perfis já processados pela operadora
+
+- [ ] Abra o projeto (as famílias do levantamento são refeitas nessa abertura). Dados › Levantamento › Potiguar:
+      a seção "Perfis já processados pela operadora" diz quantos poços têm Vsh/φ/Sw; "Listar os poços" mostra, entre
+      outros, **1-BRSA-1348-RN** (PHIE, SW, VSH no `1-brsa-1348-rn_adic.las`).
+- [ ] Mapa › Com a curva › "interpretação da operadora": só esses poços ficam no mapa.
+- [ ] Baixe o 1-BRSA-1348-RN (o `_conv.las` e o `_adic.las`). Perfis › abra o `_adic.las` (PHIE, SW e VSH aparecem
+      como "interpretação"); depois o `_conv.las` › Avaliação › marque um intervalo e calcule: abaixo do resultado
+      aparece "Comparação com a interpretação da operadora", com as médias das duas.
+- [ ] Mude o Rw e recalcule: a coluna do SIAPP muda, a da operadora não; diferença grande fica em vermelho.
+
 ## 0.40 — PAG (curvas de lama e gás, descrição de calha)
 
 - [ ] Abra o SIAPP pelo `iniciar.bat` (ele instala `xlrd` e `openpyxl`). Confira na ficha do **1-BRSA-1304-BA**

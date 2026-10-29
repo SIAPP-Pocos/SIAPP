@@ -1,6 +1,6 @@
 {
-  "descricao": "Famílias de curvas de perfil: cada família reúne os mnemônicos que medem a mesma grandeza em ferramentas e empresas diferentes. Editável: um mnemônico novo entra na lista da família certa. 'preferencia' ordena qual curva o visualizador mostra quando há várias da mesma família; 'unidades' (opcional) exige uma dessas unidades — DENS em lb/gal é peso da lama, não densidade da rocha.",
-  "versao": 2,
+  "descricao": "Famílias de curvas de perfil: cada família reúne os mnemônicos que medem a mesma grandeza em ferramentas e empresas diferentes. Editável: um mnemônico novo entra na lista da família certa. 'preferencia' ordena qual curva o visualizador mostra quando há várias da mesma família; 'unidades' (opcional) exige uma dessas unidades — DENS em lb/gal é peso da lama, não densidade da rocha; 'interpretacao': true marca as curvas calculadas pela operadora (Vsh, φ, Sw, k), que a pesquisa de perfis processados procura.",
+  "versao": 3,
   "familias": {
     "GR":       {"nome": "Raios gama", "unidade": "gAPI", "escala": [0, 150], "log": false, "cor": "#2f7d4f", "trilha": 1,
                  "preferencia": ["GR", "ECGR", "HGR", "SGR", "CGR", "GRC", "EHGR", "GRD", "GRS", "GRR", "GAM"],
@@ -61,6 +61,16 @@
     "LAMA_VISC": {"nome": "Viscosidade da lama", "unidade": "s", "escala": null, "log": false, "cor": "#0e5a62", "trilha": 0,
                  "preferencia": ["VISC", "MVIS", "FV"], "padroes": [], "unidades": ["s", "sec", "s/qt"]},
     "LAMA_SAL": {"nome": "Salinidade da lama", "unidade": "ppm", "escala": null, "log": false, "cor": "#0e5a62", "trilha": 0,
-                 "preferencia": ["SAL", "SALI", "MSAL"], "padroes": [], "unidades": ["ppm", "mg/l"]}
+                 "preferencia": ["SAL", "SALI", "MSAL"], "padroes": [], "unidades": ["ppm", "mg/l"]},
+    "VSH":      {"nome": "Argilosidade (interpretação)", "unidade": "v/v", "escala": [0, 1], "log": false, "cor": "#6b4f2a", "trilha": 0, "interpretacao": true,
+                 "preferencia": ["VSH", "VCL", "VSHALE", "VCLAY", "VSH_GR", "VCLGR", "VSHL", "VCL_GR", "VSHGR"], "padroes": []},
+    "PHIE":     {"nome": "Porosidade efetiva (interpretação)", "unidade": "v/v", "escala": [0.45, 0], "log": false, "cor": "#2a78d6", "trilha": 0, "interpretacao": true,
+                 "preferencia": ["PHIE", "PHIEF", "PHI_E", "EPOR", "PHIE_ND", "PHIEC", "PIGE"], "padroes": []},
+    "PHIT":     {"nome": "Porosidade total (interpretação)", "unidade": "v/v", "escala": [0.45, 0], "log": false, "cor": "#5f6b73", "trilha": 0, "interpretacao": true,
+                 "preferencia": ["PHIT", "PHIT_ND", "TPOR", "PHIT_D", "PIGN"], "padroes": []},
+    "SW":       {"nome": "Saturação de água (interpretação)", "unidade": "v/v", "escala": [1, 0], "log": false, "cor": "#0e5a62", "trilha": 0, "interpretacao": true,
+                 "preferencia": ["SW", "SWE", "SWT", "SW_AR", "SUWI", "SWU", "SWA", "SW_ARCHIE"], "padroes": []},
+    "PERM":     {"nome": "Permeabilidade (interpretação)", "unidade": "mD", "escala": [0.01, 10000], "log": true, "cor": "#7a4a1f", "trilha": 0, "interpretacao": true,
+                 "preferencia": ["PERM", "KINT", "PERMH", "PERMV", "PERM_T", "KPERM"], "padroes": []}
   }
 }

@@ -1756,3 +1756,47 @@ def test_pag_na_ficha_e_litologia_da_calha_nos_perfis(janela, tmp_path):
     assert "Salinidade da lama (PAG): 150.000 ppm a 50 m · 200.000 ppm a 150 m" in p.text_content("#av-lama")
     foto(janela, "pag_2_perfis")
     assert not janela.erros_js, janela.erros_js
+
+
+def test_perfil_processado_comparado_e_pesquisa_no_levantamento(janela, tmp_path):
+    """0.41: com o perfil processado da operadora aberto, a avaliação mostra a comparação; o levantamento
+    lista os poços com curvas interpretadas."""
+    import test_operador as to
+    from interface_util import foto
+    from test_avaliacao import las_reservatorio
+    p = janela.page
+    abrir_projeto(janela)
+    base = tmp_path / "ambiente_teste" / "bruto" / "Potiguar" / to.POCO
+    (base / "Perfil Convencional").mkdir(parents=True)
+    (base / "Perfil Digital Processado").mkdir()
+    las_reservatorio(base / "Perfil Convencional" / "tst.las")
+    to.las_operador(base / "Perfil Digital Processado" / "tst_adic.las")
+    api = janela.api
+    api._abrir_projeto(str(tmp_path / "ambiente_teste"))
+    assert api.inventariar_perfil(to.REL_OP)["ok"] and api.inventariar_perfil(to.REL)["ok"]
+    api.salvar_intervalo(to.REL, {"tipo": "intervalo_alvo", "nome": "Açu", "prof_topo": "1010", "prof_base": "1020"})
+    p.click("#aba-perfis")
+    janela.esperar("document.querySelectorAll('#lista-perfis button').length >= 2")
+    p.locator("#lista-perfis button", has_text="tst.las").first.click()
+    janela.esperar("document.querySelectorAll('.av-curva').length === 8", 30)
+    p.fill("#av-gr_limpo", "30")
+    p.fill("#av-gr_argila", "120")
+    p.fill("#av-rw", "0,05")
+    p.click("#av-calcular")
+    janela.esperar("document.querySelector('#av-operador table') !== null", 30)
+    op = p.text_content("#av-operador")
+    assert "Comparação com a interpretação da operadora" in op and "PHIE (tst_adic.las)" in op
+    assert "0,21" in op and "0,1" in op
+    p.locator("#av-operador").scroll_into_view_if_needed()
+    foto(janela, "op_1_comparacao")
+    # levantamento: a pesquisa dos poços com perfil processado
+    to._acervo(api._banco)
+    api._banco.definir_meta("mnemonicos_versao", "2")
+    api._abrir_projeto(str(tmp_path / "ambiente_teste"))
+    ir(p, "dados", "levantamento")
+    p.evaluate("desenharResumoLevantamento(Object.assign({bacia: 'Potiguar', pocos: 3, situacoes: {}, familias: {}}, "
+               "{pocos_com_interpretacao: 2}))")
+    p.click("#lv-processados")
+    janela.esperar("document.querySelectorAll('.lv-processados tr').length === 3")
+    assert "1-A-1-RN" in p.text_content(".lv-processados") and "PHIE, SW, VSH" in p.text_content(".lv-processados")
+    assert not janela.erros_js, janela.erros_js

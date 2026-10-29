@@ -306,10 +306,48 @@ function mostrarResultadoAv(r, anterior = false) {
     box.appendChild(p);
   }
   for (const a of r.avisos || []) box.appendChild(el("p", "aviso av-avisos", a));
+  if (av.info && Object.keys(av.info.operador || {}).length) {
+    const op = el("div", "av-operador");
+    op.id = "av-operador";
+    box.appendChild(op);
+    compararOperadorAv(op, r.id);
+  }
   $("av-acoes").hidden = false;
   $("av-registro").textContent = `Registro: ${r.registro}`;
   estadoCompartilhadaAv();
   if ($("av-mostrar").checked) atualizarGrafico();
+}
+
+// SIAPP × operadora: as médias da avaliação ao lado das curvas interpretadas do perfil processado do poço.
+async function compararOperadorAv(caixa, ident) {
+  const r = await chamar(null, "comparar_operador", ident);
+  if (!r.ok || av.id !== ident) return;
+  limpar(caixa);
+  const usadas = Object.entries(r.curvas).map(([k, c]) => `${{ vsh: "Vsh", phi: "φ", sw: "Sw" }[k]} = ${c.mnemonico} (${c.arquivo})`);
+  caixa.appendChild(el("p", "av-sub", "Comparação com a interpretação da operadora: " + usadas.join(" · ")));
+  const t = el("table", "tabela av-op-tabela");
+  const cab = el("tr");
+  for (const h of ["Intervalo", "Vsh SIAPP", "Vsh oper.", "φ SIAPP", "φ oper.", "φ no pay (S / O)", "Sw SIAPP", "Sw oper.", "Sw no pay (S / O)"])
+    cab.appendChild(el("th", "", h));
+  t.appendChild(cab);
+  const f = (v, c = 3) => (v == null ? "—" : numero(v, c));
+  for (const i of r.intervalos) {
+    const tr = el("tr");
+    const celula = (d, c) => {
+      const td = el("td", d.diferenca != null && Math.abs(d.diferenca) > (c === "vsh" ? 0.15 : c === "phi" ? 0.05 : 0.15) ? "av-op-dif" : "", f(d.operador));
+      if (d.diferenca != null) td.title = `SIAPP − operadora = ${numero(d.diferenca, 3)}`;
+      return td;
+    };
+    tr.append(el("td", "", `${i.nome || "—"} (${numero(i.topo, 1)}–${numero(i.base, 1)})`),
+              el("td", "", f(i.vsh.siapp)), celula(i.vsh, "vsh"),
+              el("td", "", f(i.phi.siapp)), celula(i.phi, "phi"), el("td", "", `${f(i.phi.siapp_pay)} / ${f(i.phi.operador_pay)}`),
+              el("td", "", f(i.sw.siapp)), celula(i.sw, "sw"), el("td", "", `${f(i.sw.siapp_pay)} / ${f(i.sw.operador_pay)}`));
+    t.appendChild(tr);
+  }
+  caixa.appendChild(t);
+  caixa.appendChild(el("p", "ajuda", "Médias no intervalo inteiro e no net pay do SIAPP. Em destaque, diferença grande " +
+    "(Vsh ou Sw > 0,15; φ > 0,05): confira os parâmetros e as curvas usadas. Nenhuma das duas é a resposta certa por si." +
+    (r.faltam.length ? ` A operadora não tem: ${r.faltam.map((k) => ({ vsh: "Vsh", phi: "φ", sw: "Sw" }[k])).join(", ")}.` : "")));
 }
 
 function desenharHistoricoAv() {

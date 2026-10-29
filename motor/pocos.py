@@ -341,7 +341,11 @@ def pocos_mapa(banco: Banco, *, bacia: str = "", texto: str = "", terra_mar: str
     elif acervo:
         cond.append("ac.situacao = ?")
         args.append(acervo)
-    if familia:
+    if familia == "INTERP":            # qualquer curva interpretada pela operadora (perfil processado)
+        from .levantamento import FAMILIAS_INTERP
+        cond.append("(" + " OR ".join("(',' || ac.familias || ',') LIKE ?" for _ in FAMILIAS_INTERP) + ")")
+        args.extend(f"%,{f},%" for f in FAMILIAS_INTERP)
+    elif familia:
         cond.append("(',' || ac.familias || ',') LIKE ?")
         args.append(f"%,{familia},%")
     # um poço pode aparecer em mais de uma bacia/categoria do portal: vale a

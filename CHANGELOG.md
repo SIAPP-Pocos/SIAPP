@@ -6,6 +6,18 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 
 ## [Não lançado]
 
+## [0.41.0] — 2026-10-29
+Bloco 9, item 5: perfis já processados pela operadora.
+### Adicionado
+- **Famílias das curvas interpretadas** pela operadora: argilosidade (VSH, VCL…), porosidade efetiva e total (PHIE,
+  PHIT), saturação de água (SW, SWE…) e permeabilidade (PERM, KINT…).
+- **Pesquisa sem baixar**: o levantamento guarda a lista de curvas de cada arquivo, e as famílias são refeitas ao
+  abrir o projeto quando o arquivo de mnemônicos muda. Em Dados › Levantamento, "Perfis já processados pela
+  operadora" conta os poços e lista arquivos e curvas; no Mapa, o filtro "Com a curva" ganha "interpretação da
+  operadora (Vsh, φ ou Sw)" e cada uma delas.
+- **Avaliação × operadora**: com o perfil processado do poço aberto, cada avaliação mostra as médias de Vsh, φ e Sw do
+  SIAPP e da operadora no intervalo e no net pay, com as diferenças grandes em destaque.
+
 ## [0.40.0] — 2026-10-29
 Bloco 9, item 4: Perfil de Acompanhamento Geológico (PAG).
 ### Adicionado

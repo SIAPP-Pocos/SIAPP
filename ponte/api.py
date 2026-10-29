@@ -94,6 +94,7 @@ class API(BaseAPI, JanelasAPI, PocosAPI, CatalogoAPI, DocumentosAPI, Vocabulario
             registro.log.exception("leitura dos dados do poço na abertura falhou")
         self._progresso_abertura(4, passos, "Conferindo o catálogo do REATE")
         self._migrar_pocos()
+        self._reclassificar_acervo()
         self._progresso_abertura(5, passos, "Carregando o índice de texto dos documentos")
         self._indice = md.Indice(os.path.join(self._projeto.pasta, "texto", "indice.sqlite"))
         self._carregar_corretor()
@@ -159,6 +160,24 @@ class API(BaseAPI, JanelasAPI, PocosAPI, CatalogoAPI, DocumentosAPI, Vocabulario
                                           caminho_remoto=evento.get("caminho", ""))
         except OSError:
             registro.log.exception("não consegui registrar %s", evento.get("arquivo_local"))
+
+    def _reclassificar_acervo(self):
+        """Famílias de curva do levantamento pelo recursos/mnemonicos.json atual (o levantamento guarda os
+        mnemônicos): uma família nova — ex.: as curvas interpretadas, 0.41 — vale sem levantar de novo."""
+        import json as _json
+        from motor import operador as mop
+        from .perfis import CAMINHO_FAMILIAS
+        try:
+            with open(CAMINHO_FAMILIAS, encoding="utf-8") as f:
+                versao = str(_json.load(f).get("versao", ""))
+            if self._banco.meta("mnemonicos_versao", "") == versao:
+                return
+            n = mop.reclassificar_acervo(self._banco, self._cl())
+            self._banco.definir_meta("mnemonicos_versao", versao)
+            if n:
+                registro.log.info("levantamento: famílias de %d arquivo(s) refeitas (mnemônicos v%s)", n, versao)
+        except Exception:  # noqa: BLE001 — não pode impedir a abertura
+            registro.log.exception("reclassificação do levantamento falhou")
 
     def _migrar_downloads(self):
         """Arquivos baixados antes do banco existir (ou copiados à mão para

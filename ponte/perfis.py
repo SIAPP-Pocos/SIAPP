@@ -8,6 +8,7 @@ from datetime import datetime
 from motor import agp as magp
 from motor import avaliacao as mav
 from motor import dados_poco as mdp
+from motor import operador as mop
 from motor import formatos
 from motor import perfis as mpf
 from motor import pocos as mpo
@@ -278,6 +279,8 @@ class PerfisAPI:
                                if f["prof_topo"] is not None and f["prof_base"] is not None],
                 "intervalos_agp": self._intervalos_agp(poco),
                 "intervalos_formularios": self._intervalos_formularios(poco),
+                # curvas interpretadas pela operadora nos perfis já abertos do poço (comparação)
+                "operador": mop.curvas_do_poco(self._cache(poco), self._cl()),
                 "temperaturas_formularios": [
                     {"valor": t["valor"], "unidade": t["unidade"], "prof": t["prof_topo"], "tipo": t["texto"],
                      "origem": t["nome"]} for t in mdp.itens_do_poco(self._banco, poco, "temperatura")],
@@ -327,6 +330,24 @@ class PerfisAPI:
                 "intervalos": r["intervalos"], "parametros": r["parametros"],
                 "automaticos": r["automaticos"], "passo": r["passo"], "avisos": r.get("avisos", []),
                 "referencia_gr": r.get("referencia_gr")}
+
+    @resposta_segura
+    def comparar_operador(self, ident: str):
+        """Médias de Vsh, φ e Sw da avaliação ao lado das da operadora (perfil processado do mesmo poço)."""
+        self._exigir_projeto()
+        reg = next((h for h in mav.execucoes(self._pasta_execucoes()) if h["id"] == ident), None)
+        if reg is None:
+            raise ErroUsuario("Avaliação não encontrada.")
+        cache = self._cache(reg["poco"])
+        op = mop.curvas_do_poco(cache, self._cl())
+        if not op:
+            raise ErroUsuario("Nenhum perfil aberto deste poço tem as curvas interpretadas pela operadora "
+                              "(VSH, PHIE/PHIT, SW). Abra o perfil processado na aba Perfis.")
+        try:
+            r = mop.comparar(cache, mav.carregar_curvas(self._pasta_execucoes(), ident), reg, op)
+        except (mav.ErroAvaliacao, mpf.ErroPerfil) as e:
+            raise ErroUsuario(str(e)) from e
+        return r
 
     @resposta_segura
     def grafico_avaliacao(self, ident: str, topo=None, base=None):

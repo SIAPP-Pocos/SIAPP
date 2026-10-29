@@ -6,6 +6,7 @@ import os
 
 from motor import agp as magp
 from motor import levantamento as mlv
+from motor import operador as mop
 from motor import reate
 
 from .base import PASTA_RECURSOS, PASTA_TESSDATA, ErroUsuario, resposta_segura
@@ -33,6 +34,12 @@ class LevantamentoAPI:
         lev = self._levantamento
         return {"resumo": mlv.resumo(self._banco, bacia), "situacoes": mlv.SITUACOES,
                 "ativo": bool(lev and lev.ativo), "bacia_ativa": lev.bacia if lev and lev.ativo else ""}
+
+    @resposta_segura
+    def perfis_processados(self, bacia: str | None = None):
+        """Poços do levantamento com curvas interpretadas pela operadora (Vsh, φ, Sw, k), sem baixar nada."""
+        self._exigir_projeto()
+        return mop.pesquisar(self._banco, list(mlv.FAMILIAS_INTERP), bacia or None)
 
     @resposta_segura
     def levantar_acervo(self, bacia: str, categorias: list, curvas: bool = False,

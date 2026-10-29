@@ -123,6 +123,38 @@ function desenharResumoLevantamento(r) {
     }
     box.appendChild(tf);
   }
+  if (r.pocos_com_interpretacao) {
+    box.appendChild(el("h3", "", "Perfis já processados pela operadora"));
+    box.appendChild(el("p", "ajuda", `${numero(r.pocos_com_interpretacao, 0)} poço(s) com curvas interpretadas ` +
+      "(Vsh, φ, Sw ou k), pela lista de curvas do levantamento — não precisa baixar. No mapa: filtro “Com a curva” › " +
+      "interpretação da operadora."));
+    const b = el("button", "btn secundario pequeno", "Listar os poços");
+    b.id = "lv-processados";
+    const lista = el("div", "lv-processados");
+    b.onclick = async () => {
+      const x = await chamar(b, "perfis_processados", r.bacia);
+      if (!x.ok) return;
+      limpar(lista);
+      lista.appendChild(el("p", "ajuda", `${x.n_pocos} poço(s), ${x.n_arquivos} arquivo(s); ` +
+        `${x.completos} com Vsh, φ e Sw (dá para comparar com a avaliação do SIAPP).`));
+      const t = el("table", "tabela");
+      const cab = el("tr");
+      for (const h of ["Poço", "Categoria", "Curvas da operadora", "Arquivo(s)", ""]) cab.appendChild(el("th", "", h));
+      t.appendChild(cab);
+      for (const p of x.pocos) {
+        const tr = el("tr");
+        const bf = el("button", "btn secundario pequeno", "Ficha");
+        bf.onclick = () => { $("aba-mapa").click(); abrirFicha(p.poco); };
+        const td = el("td");
+        td.appendChild(bf);
+        tr.append(el("td", "", p.poco), el("td", "", p.categoria || "—"), el("td", "", p.familias.join(", ")),
+                  el("td", "lv-arqs", p.arquivos.map((a) => a.nome).join(" · ")), td);
+        t.appendChild(tr);
+      }
+      lista.appendChild(t);
+    };
+    box.append(b, lista);
+  }
   const cats = Object.entries(r.por_categoria || {});
   if (cats.length > 1) {
     box.appendChild(el("h3", "", "Por categoria (digital / só imagem / sem perfil / falta)"));

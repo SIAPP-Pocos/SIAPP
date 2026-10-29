@@ -1271,3 +1271,10 @@ html[data-tema="escuro"] .selo.err { background: #3a2220; }
 .dp-series { flex-wrap: wrap; gap: 6px; align-items: center; margin: 6px 0; }
 .dp-pvt-graf { display: flex; flex-wrap: wrap; gap: 6px; }
 .dp-svg-pvt { width: 32%; min-width: 150px; }
+
+/* ---------- perfis processados pela operadora (0.41) ---------- */
+.av-operador { margin-top: 10px; }
+.av-op-tabela td, .av-op-tabela th { font-size: 12px; }
+td.av-op-dif { color: var(--erro); font-weight: 600; }
+.lv-processados .tabela td, .lv-processados .tabela th { font-size: 12px; }
+td.lv-arqs { font: 11px var(--mono); word-break: break-all; }
