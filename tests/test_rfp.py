@@ -123,3 +123,35 @@ def test_pdf_que_nao_e_formulario(tmp_path):
     (tmp_path / "z_RFP.pdf").write_bytes(b"isto nao e pdf")
     with pytest.raises(rfp.ErroRFP):
         rfp.ler(str(tmp_path / "z_RFP.pdf"))
+
+
+def test_descoberta_perfilagens_e_reentrada(tmp_path):
+    nd = rfp.ler(u.gerar(str(tmp_path / "x_CDPE_3_ND_1.pdf"), u.ND))
+    assert nd["documento"] == "nd" and nd["campos"] == {"data_notificacao": "05/03/2010",
+                                                         "data_descoberta": "01/03/2010", "fluidos": "Petróleo"}
+    assert [(i["topo"], i["ocorrencia"], i["fluorescencia"], i["gas_total"]) for i in nd["indicios"]] == [
+        (812.0, "C", "R", None), (1450.0, "D", None, "UGT - 20,0")]
+    assert nd["analise_perfis"][0]["litologia"] == "ARENITO" and nd["testes"][0]["api"] == 30.0
+    assert nd["secoes_texto"] == [{"titulo": "Estado atual do poço", "texto": "Aguardando a perfilagem final."}]
+    npr = rfp.ler(u.gerar(str(tmp_path / "x_CDPE_2_NPR_1.pdf"), u.NPR))
+    assert npr["documento"] == "npr" and "analise_perfis" not in npr     # "Perfis" de coluna não é seção
+    assert [(p["tipo"], p["perfis"], p["topo"], p["base"]) for p in npr["perfilagens"]] == [
+        ("convencional", "GR", 60.0, 1845.0), ("convencional", "SDL (CAL)", 60.0, 1848.0),
+        ("especial", "SFT/GR", 1420.0, None)]
+    assert npr["perfilagens_resultado"] == [{"n": 3, "perfis": "SFT/GR", "pretestes_conclusivos": 4.0,
+                                             "pretestes_falhos": 1.0, "pagina": 1}]
+    assert npr["campos"]["conclusao_perfilagem"] == "02/03/2010"
+    re_ = rfp.ler(u.gerar(str(tmp_path / "x_CDPE_4_Reentrada_1.pdf"), u.REENTRADA))
+    assert re_["documento"] == "reentrada" and re_["campos"]["prof_final"] == 1850.0
+    assert re_["campos"]["sonda"] == "SPT-00" and re_["campos"]["estado_atual"] == "Poço Equipado."
+    assert [s["titulo"] for s in re_["secoes_texto"]] == ["Motivo da reentrada", "Operações previstas",
+                                                          "Resultado", "Dados adquiridos"]
+    assert "sonda" not in re_["gerais"] and re_["gerais"]["poco"] == "1-SIAPP-1-RN"
+
+
+def test_cdpe_de_titulo_desconhecido(tmp_path):
+    outro = [[(200, 110, "COMUNICAÇÃO DE ABANDONO DE POÇO"), (262, 136, "DADOS GERAIS"),
+              (23, 163, "Poço:"), (23, 176, "1-SIAPP-1-RN"), (23, 300, "Texto livre do formulário.")]]
+    d = rfp.ler(u.gerar(str(tmp_path / "x_CDPE_9_Abandono.pdf"), outro))
+    assert d["documento"] == "cdpe" and d["titulo_formulario"] == "COMUNICAÇÃO DE ABANDONO DE POÇO"
+    assert "Texto livre do formulário." in d["texto"] and d["gerais"]["poco"] == "1-SIAPP-1-RN"

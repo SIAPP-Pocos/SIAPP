@@ -1641,3 +1641,53 @@ def test_formularios_da_anp_na_ficha_nos_perfis_e_na_avaliacao(janela, tmp_path)
     assert p.evaluate("pf.form.canhoneados.length") == 1 and p.evaluate("pf.form.topos.length") == 4
     foto(janela, "dp_2_avaliacao")
     assert not janela.erros_js, janela.erros_js
+
+
+def test_pressoes_gradiente_contato_e_tfr_na_ficha(janela, tmp_path):
+    """0.38: pontos do teste a cabo, do RFP e do TFR no gráfico; gradiente de dois grupos com o
+    contato; curva da estação e do manômetro; relatório do TFR."""
+    import pressoes_util as pu
+    import rfp_util as u
+    from interface_util import foto
+    from test_pressoes import _wft
+    p = janela.page
+    abrir_projeto(janela)
+    base = tmp_path / "ambiente_teste" / "bruto" / "Potiguar" / "1-SIAPP-1-RN"
+    (base / "Pasta de Poco").mkdir(parents=True)
+    u.gerar(str(base / "Pasta de Poco" / "1-SIAPP-1-RN_CDPE_7_RFP.pdf"), u.RFP)
+    u.gerar(str(base / "Pasta de Poco" / "1-SIAPP-1-RN_CDPE_3_ND_1.pdf"), u.ND)
+    (base / "Teste de Formacao").mkdir()
+    (base / "Teste de Formacao" / "1SIAPP1RN_TFR.zip").write_bytes(pu.tfr_zip())
+    janela.api._abrir_projeto(str(tmp_path / "ambiente_teste"))
+    _wft(janela.api._banco, "bruto/Potiguar/1-SIAPP-1-RN/Teste de Formacao a Cabo/1-siapp-1-rn_sft.dlis")
+    p.click("#aba-mapa")
+    p.evaluate("abrirFicha('1-SIAPP-1-RN')")
+    janela.esperar("document.getElementById('fi-corpo').textContent.includes('Pressões × profundidade')")
+    assert p.locator(".dp-pressoes svg circle[fill]").count() == 4            # estações do teste a cabo
+    corpo = p.text_content("#fi-dados-poco")
+    assert "Teste de formação TFR-01 — relatório" in corpo and "525 mD" in corpo and "-1,5" in corpo
+    assert "Relatório de Descoberta" in corpo and "Aguardando a perfilagem final." in corpo
+    assert "Lama na perfilagem: 10 lb/gal (base agua)" in corpo
+    sel = p.locator(".dp-tab-pressoes select")
+    origens = p.locator(".dp-tab-pressoes tr td:nth-child(5)").all_text_contents()
+    cabo = [i for i, o in enumerate(origens) if o == "teste a cabo"]
+    for i in cabo[:2]:
+        sel.nth(i).select_option("A")
+    for i in cabo[2:]:
+        sel.nth(i).select_option("B")
+    p.click("text=Calcular gradiente")
+    janela.esperar("document.querySelector('.dp-grad-res') && document.querySelector('.dp-grad-res').textContent.includes('Grupo B')")
+    res = p.text_content(".dp-grad-res")
+    assert "Grupo A:" in res and "compatível com" in res and "contato provável" in res
+    assert p.locator(".dp-reta").count() == 2 and p.locator(".dp-contato").count() == 1
+    p.locator(".dp-tab-pressoes button", has_text="curva").first.click()
+    janela.esperar("document.querySelector('.dp-serie-box polyline') !== null")
+    assert "estação 1 · 1500.0 m" in p.text_content(".dp-serie-box")
+    p.locator("#fi-dados-poco .dp-pressoes svg").first.scroll_into_view_if_needed()
+    foto(janela, "pr_1_gradiente")
+    p.locator(".dp-tfr button", has_text="11111").click()
+    janela.esperar("document.querySelector('.dp-tfr .dp-serie-box polyline') !== null")
+    assert "manômetro 11111" in p.text_content(".dp-tfr .dp-serie-box")
+    p.locator(".dp-tfr").scroll_into_view_if_needed()
+    foto(janela, "pr_2_tfr")
+    assert not janela.erros_js, janela.erros_js

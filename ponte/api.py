@@ -138,7 +138,7 @@ class API(BaseAPI, JanelasAPI, PocosAPI, CatalogoAPI, DocumentosAPI, Vocabulario
     def _ler_dados_poco(self, rel: str, poco_id: str | None, sha256: str | None = None):
         """Documento com leitor de dados do poço (RFP, RFCP, Perfuração…): lê na hora (só texto
         embutido, frações de segundo). Falha de leitura fica registrada, não interrompe."""
-        if mdp.leitor_para(os.path.basename(rel)) is None:
+        if mdp.leitor_para(rel) is None:
             return None
         try:
             r = mdp.ler_arquivo(self._banco, self._projeto.pasta, rel.replace(os.sep, "/"),

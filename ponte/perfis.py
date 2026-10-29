@@ -197,17 +197,19 @@ class PerfisAPI:
         (RFP), canhoneados (RFCP) e testes de formação com topo e base. id estável:
         rfp:<tipo>:<topo>-<base>."""
         saida, vistos = [], set()
-        rotulos = {"analise_perfil": "Análise de perfis", "canhoneado": "Canhoneado", "teste_formacao": "Teste"}
+        rotulos = {"analise_perfil": "Análise de perfis", "canhoneado": "Canhoneado", "teste_formacao": "Teste",
+                   "teste_tfr": "Teste"}
         for tipo, rot in rotulos.items():
             for i in mdp.itens_do_poco(self._banco, poco, tipo):
                 t, b = i["prof_topo"], i["prof_base"]
                 if t is None or b is None or b <= t:
                     continue
-                ident = f"rfp:{tipo}:{t:g}-{b:g}"
+                # o TFR do relatório e o do RFP são o mesmo intervalo: um só candidato
+                ident = f"rfp:{'teste_formacao' if tipo == 'teste_tfr' else tipo}:{t:g}-{b:g}"
                 if ident in vistos:
                     continue
                 vistos.add(ident)
-                if tipo == "teste_formacao":
+                if tipo in ("teste_formacao", "teste_tfr"):
                     partes = (f"{rot} {i['nome'] or ''}".strip(), i["texto"])
                 elif tipo == "analise_perfil":
                     partes = (rot, i["texto"], i["nome"])

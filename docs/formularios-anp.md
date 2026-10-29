@@ -13,6 +13,10 @@ o CDPE, com nomes como:
 | `<poço>_CDPE_1_Perfuracao.pdf` | Notificação e Relatório de Perfuração | sonda, categoria, profundidade prevista, coordenadas previstas, **fases** (diâmetro, profundidade, revestimento, topo do cimento, **tipo e peso do fluido de perfuração**), tempos e não conformidades |
 | `<poço>_CDPE_<n>_RFP.pdf` | Relatório Final de Poço | datas, profundidade final do sondador e do perfil, mesa rotativa, coordenadas da base/alvo/fundo, resultado (descobridor, fluido, abandono), **topos previstos × constatados**, **indícios**, testemunhos, amostras laterais, **análise de perfis**, **testes de formação**, **temperaturas**, amostragem de calha, observações |
 | `<poço>_CDPE_<n>_RFCP_1.pdf` | Relatório Final de Completação | revestimento de produção, **intervalos canhoneados**, coluna de produção, teste (vazão, °API, BSW, pressão de fluxo) e a **sigla antiga do poço na base da operadora** |
+| `<poço>_CDPE_<n>_ND_1.pdf` (0.38) | Relatório de Descoberta | data da descoberta e fluidos, indícios, intervalos da interpretação de perfis, testes, estado atual do poço — muitos poços têm só este, sem RFP |
+| `<poço>_CDPE_<n>_NPR_1.pdf` (0.38) | Relatório de Perfilagens Realizadas | cada perfilagem (data, companhia, perfis, intervalo); as especiais com a profundidade de cada ponto (estações do teste a cabo, níveis do checkshot) e o resultado (pré-testes conclusivos e falhos, níveis sísmicos) |
+| `<poço>_CDPE_<n>_Reentrada_<k>.pdf` (0.38) | Relatório de Reentrada | nº, datas, sonda, profundidade final, estado atual e os textos: motivo, operações previstas, resultado, dados adquiridos |
+| outro `CDPE` (0.38) | título desconhecido | o título e o texto todo, sem erro ("Formulário CDPE") |
 
 Ao contrário dos relatórios escaneados, esses PDFs têm **texto embutido** e **leiaute fixo** (A4, cada campo sempre
 na mesma posição). Por isso o SIAPP os lê pela posição do texto, sem OCR — sem os erros de leitura do OCR.
@@ -42,6 +46,13 @@ Convenções do formulário respeitadas:
 
 O que não está na posição esperada é ignorado, nunca inventado. Um PDF sem texto (imagem) ou que não é um
 formulário CDPE fica registrado como "não lido", com o motivo.
+
+**Título de seção fica sozinho na linha**: assim o título de coluna "Perfis" do NPR não é tomado pela seção "Perfis"
+do Relatório de Descoberta.
+
+**O mesmo dado em dois formulários** (o intervalo da análise de perfis no ND e no RFP, por exemplo) aparece uma
+vez: vale o do formulário de maior prioridade — RFP, RFCP, Perfuração, Descoberta, Perfilagens, Reentrada — e o
+outro fica anotado ("também em"). Profundidades diferentes contam como dados diferentes.
 
 Leiaute conferido em 29/10/2026 em formulários de três poços: 1-AURI-12-RN e 3-BRSA-1151-RN (Potiguar) e
 1-BRSA-1304-BA (Recôncavo). Alguns RFP não trazem o nome das unidades nos topos, só as profundidades: a ficha avisa.
@@ -76,6 +87,7 @@ arquivo obtém a mesma leitura.
 
 ## Para os próximos leitores (bloco 9)
 
-Um leitor novo é um módulo com `VERSAO`, `NOME`, `reconhece_nome(nome)`, `ler(caminho)` e `itens(dados)` (e,
-opcional, `apelidos(dados)`), registrado em `dados_poco.LEITORES`. A leitura no download, na abertura do projeto, a
+Um leitor novo é um módulo com `VERSAO`, `NOME`, `DOCUMENTOS`, `PRIORIDADE`, `reconhece(rel)` (pelo caminho:
+nome e pasta), `ler(caminho)` e `itens(dados)` (e, opcional, `apelidos(dados)`), registrado em
+`dados_poco.LEITORES`. O segundo leitor é o de pressões ([`pressoes.md`](pressoes.md)). A leitura no download, na abertura do projeto, a
 gravação, as versões e a ficha já funcionam para ele.

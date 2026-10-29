@@ -101,6 +101,10 @@ def _limpar(a: np.ndarray) -> np.ndarray:
 def _quadro(nome, indice_mnem, indice_unid, prof_bruta, curvas_brutas, descricoes):
     """Monta um quadro padronizado (profundidade em m, crescente)."""
     fator = fator_metros(indice_unid)
+    if fator is None and (indice_unid or "").strip().lower() in ("ms", "s", "sec", "msec", "min", "us", "0.5ms", "0.1ms"):
+        raise ErroPerfil(f"Quadro {nome}: indexado por tempo ({indice_mnem} em {indice_unid}), não por profundidade. "
+                         "É o registro de um teste de formação a cabo (pressão × tempo em cada estação): veja a "
+                         "ficha do poço › Pressões.")
     if fator is None:
         raise ErroPerfil(f"Quadro {nome}: índice {indice_mnem!r} em unidade desconhecida "
                          f"{indice_unid!r} (só profundidade é suportada).")

@@ -44,10 +44,9 @@ function secaoDadosPocoFicha(corpo, dp, id) {
 function desenharDadosPoco(caixa, dp, id) {
   limpar(caixa);
   const docs = dp.documentos;
-  caixa.appendChild(el("h3", "", "Formulários da ANP — RFP, completação e perfuração"));
+  caixa.appendChild(el("h3", "", "Formulários da ANP e testes de formação"));
   const ul = el("ul", "dp-docs");
-  const ordem = { rfp: 0, rfcp: 1, perfuracao: 2 };
-  for (const d of [...docs].sort((a, b) => (ordem[a.documento] ?? 9) - (ordem[b.documento] ?? 9))) {
+  for (const d of docs) {                       // já em ordem de prioridade (RFP primeiro)
     const li = el("li");
     const txt = el("div", "dp-doc-txt");
     txt.append(el("strong", "", d.titulo || d.documento || "documento"));
@@ -98,6 +97,10 @@ function desenharDadosPoco(caixa, dp, id) {
       "compare com os topos do AGP ou de um documento do poço."));
     blocoDp(caixa, "Topos estratigráficos", topos.length, true, c);
   }
+
+  const pr = dp.pressoes || {};
+  if ((pr.pontos || []).length) blocoDp(caixa, "Pressões × profundidade", pr.pontos.length, true, secaoPressoes(pr));
+  for (const t of pr.tfr || []) blocoDp(caixa, `Teste de formação ${t.nome || ""} — relatório`, null, true, secaoTfr(t, pr.series || []));
 
   const testes = it.teste_formacao || [];
   if (testes.length) {
@@ -160,12 +163,38 @@ function desenharDadosPoco(caixa, dp, id) {
     blocoDp(caixa, "Testemunhos e amostras laterais", am.length, false, tabelaSimples(["Tipo", "Prof. (m)", "Unidade", "Litologia"],
       am.map(([tp, x]) => [tp, intervaloM(x.prof_topo, x.prof_base), x.nome, x.texto])));
   }
+  const perf = it.perfilagem || [];
+  if (perf.length) {
+    const ord = [...perf].sort((a, b) => String(a.extra.data || "").split("/").reverse().join("")
+      .localeCompare(String(b.extra.data || "").split("/").reverse().join("")) || (a.extra.n - b.extra.n));
+    blocoDp(caixa, "Perfilagens realizadas", perf.length, false, tabelaSimples(["Data", "Tipo", "Perfis", "Intervalo (m)", "Companhia"],
+      ord.map((x) => [x.extra.data, x.extra.tipo, x.nome, intervaloM(x.prof_topo, x.prof_base), x.texto])));
+  }
   const calha = it.calha || [];
   if (calha.length) {
     blocoDp(caixa, "Amostragem de calha", calha.length, false, tabelaSimples(["Intervalo (m)", "Padrão"],
       calha.map((x) => [intervaloM(x.prof_topo, x.prof_base), x.texto])));
   }
   for (const d of docs) {
+    const campos = d.campos || {};
+    const rotulos = { data_descoberta: "Data da descoberta", fluidos: "Fluido(s)", reentrada: "Reentrada nº",
+                      inicio: "Início", fim: "Fim", prof_final: "Profundidade final (m)", sonda: "Sonda",
+                      estado_atual: "Estado atual", conclusao_perfilagem: "Conclusão da perfilagem final" };
+    const linhas = Object.entries(rotulos).filter(([k]) => campos[k] != null && campos[k] !== "");
+    if (linhas.length || (d.secoes_texto || []).length) {
+      const c = el("div");
+      if (linhas.length) {
+        const t2 = el("table", "tabela ficha");
+        for (const [k, rot] of linhas) linhaFicha(t2, rot, k === "prof_final" ? numero(campos[k], 2) : campos[k]);
+        c.appendChild(t2);
+      }
+      for (const sx of d.secoes_texto || []) {
+        c.appendChild(el("p", "dp-sub", sx.titulo));
+        c.appendChild(el("p", "dp-obs", sx.texto));
+      }
+      const titulo = d.documento === "reentrada" && campos.reentrada ? `${d.titulo} ${campos.reentrada}` : d.titulo;
+      blocoDp(caixa, titulo || d.documento, null, false, c);
+    }
     if (d.observacoes) {
       const p = el("p", "dp-obs", d.observacoes);
       blocoDp(caixa, `Observações — ${d.titulo || d.documento}`, null, false, p);
@@ -180,4 +209,231 @@ function desenharDadosPoco(caixa, dp, id) {
     desenharDadosPoco(caixa, r.dados_poco, id);
   };
   caixa.appendChild(b);
+}
+
+
+// ------------------------------------------------ pressões × profundidade e gradiente
+const COR_ORIGEM = { "teste a cabo": "#2a78d6", TFR: "#c0392b" };
+
+function svgEl(tag, attrs) {
+  const e = document.createElementNS("http://www.w3.org/2000/svg", tag);
+  for (const [k, v] of Object.entries(attrs || {})) e.setAttribute(k, v);
+  return e;
+}
+
+function escalaLinear(d0, d1, r0, r1) {
+  const f = d1 === d0 ? 0 : (r1 - r0) / (d1 - d0);
+  return (v) => r0 + (v - d0) * f;
+}
+
+function graficoPressoes(svg, pontos, retas) {
+  while (svg.firstChild) svg.removeChild(svg.firstChild);
+  const W = 440, H = 300, m = { e: 54, d: 12, t: 12, b: 34 };
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  const ps = pontos.flatMap((p) => [p.pressao_kgf_cm2, p.hidrostatica_kgf_cm2]).filter((v) => v != null);
+  const zs = pontos.map((p) => p.prof).filter((v) => v != null);
+  if (!ps.length || !zs.length) return;
+  let [p0, p1] = [Math.min(...ps), Math.max(...ps)];
+  let [z0, z1] = [Math.min(...zs), Math.max(...zs)];
+  const fp = Math.max(1, (p1 - p0) * 0.08), fz = Math.max(2, (z1 - z0) * 0.08);
+  p0 -= fp; p1 += fp; z0 -= fz; z1 += fz;
+  const x = escalaLinear(p0, p1, m.e, W - m.d), y = escalaLinear(z0, z1, m.t, H - m.b);
+  const g = svgEl("g", { class: "dp-graf" });
+  g.appendChild(svgEl("rect", { x: m.e, y: m.t, width: W - m.e - m.d, height: H - m.t - m.b, class: "dp-graf-area" }));
+  for (let k = 0; k <= 4; k++) {
+    const pv = p0 + (p1 - p0) * k / 4, zv = z0 + (z1 - z0) * k / 4;
+    const tx = svgEl("text", { x: x(pv), y: H - m.b + 14, "text-anchor": "middle", class: "dp-graf-txt" });
+    tx.textContent = numero(pv, 0); g.appendChild(tx);
+    const ty = svgEl("text", { x: m.e - 4, y: y(zv) + 3, "text-anchor": "end", class: "dp-graf-txt" });
+    ty.textContent = numero(zv, 0); g.appendChild(ty);
+  }
+  const rx = svgEl("text", { x: (m.e + W - m.d) / 2, y: H - 4, "text-anchor": "middle", class: "dp-graf-txt" });
+  rx.textContent = "pressão (kgf/cm²)"; g.appendChild(rx);
+  const ry = svgEl("text", { x: 10, y: (m.t + H - m.b) / 2, transform: `rotate(-90 10 ${(m.t + H - m.b) / 2})`,
+                              "text-anchor": "middle", class: "dp-graf-txt" });
+  ry.textContent = "profundidade medida (m)"; g.appendChild(ry);
+  for (const r of retas || []) {
+    const zA = z0, zB = z1;
+    const pa = r.gradiente_kgf_cm2_m * zA + r.intercepto_kgf_cm2, pb = r.gradiente_kgf_cm2_m * zB + r.intercepto_kgf_cm2;
+    g.appendChild(svgEl("line", { x1: x(pa), y1: y(zA), x2: x(pb), y2: y(zB), class: `dp-reta dp-reta-${r.grupo}` }));
+  }
+  if (retas && retas.contato != null) {
+    g.appendChild(svgEl("line", { x1: m.e, y1: y(retas.contato), x2: W - m.d, y2: y(retas.contato), class: "dp-contato" }));
+  }
+  for (const p of pontos) {
+    if (p.hidrostatica_kgf_cm2 != null)
+      g.appendChild(svgEl("circle", { cx: x(p.hidrostatica_kgf_cm2), cy: y(p.prof), r: 3, class: "dp-pt-lama" }));
+  }
+  for (const p of pontos) {
+    if (p.pressao_kgf_cm2 == null) continue;
+    const cor = COR_ORIGEM[p.origem] || "#d68a1a";
+    const c = svgEl(p.origem === "teste a cabo" ? "circle" : "rect", p.origem === "teste a cabo"
+      ? { cx: x(p.pressao_kgf_cm2), cy: y(p.prof), r: 3.5, fill: cor }
+      : { x: x(p.pressao_kgf_cm2) - 3, y: y(p.prof) - 3, width: 6, height: 6, fill: "none", stroke: cor, "stroke-width": 1.5 });
+    const tt = svgEl("title"); tt.textContent = `${p.rotulo} · ${numero(p.prof, 1)} m · ${numero(p.pressao_kgf_cm2, 2)} kgf/cm²`;
+    c.appendChild(tt); g.appendChild(c);
+  }
+  svg.appendChild(g);
+}
+
+function secaoPressoes(pr) {
+  const c = el("div", "dp-pressoes");
+  const svg = svgEl("svg", { class: "dp-svg", role: "img", "aria-label": "Pressão versus profundidade" });
+  c.appendChild(svg);
+  const leg = el("p", "ajuda dp-legenda");
+  leg.innerHTML = '<span class="dp-lg" style="background:#2a78d6"></span> teste a cabo (lido do DLIS) · ' +
+    '<span class="dp-lg dp-lg-q" style="border-color:#d68a1a"></span> formulários (RFP…) · ' +
+    '<span class="dp-lg dp-lg-q" style="border-color:#c0392b"></span> TFR (estática extrapolada) · ' +
+    '<span class="dp-lg dp-lg-lama"></span> lama (hidrostática)';
+  c.appendChild(leg);
+  if ((pr.lama || []).length)
+    c.appendChild(el("p", "ajuda", "Lama na perfilagem: " + pr.lama.map((l) => `${numero(l.peso_lb_gal, 1)} lb/gal` +
+      (l.tipo ? ` (${l.tipo.toLowerCase()})` : "")).join(" · ") + "."));
+  const t = el("table", "tabela dp-tabela dp-tab-pressoes");
+  const cab = el("tr");
+  for (const h of ["Grupo", "Prof. (m)", "Pressão (kgf/cm²)", "Lama", "Origem", "Qualidade", ""]) cab.appendChild(el("th", "", h));
+  t.appendChild(cab);
+  for (const p of pr.pontos) {
+    const tr = el("tr");
+    const sel = el("select", "dp-grupo");
+    for (const o of ["—", "A", "B"]) sel.appendChild(new Option(o, o === "—" ? "" : o));
+    sel.dataset.id = p.id;
+    const tdSel = el("td"); tdSel.appendChild(sel);
+    const q = el("td", "", p.qualidade || "—");
+    if (p.anterior_kgf_cm2 != null) q.title = `patamar anterior: ${numero(p.anterior_kgf_cm2, 2)} kgf/cm²`;
+    if (p.inclinacao_psi_min != null) q.title = (q.title ? q.title + " · " : "") + `fim do patamar: ${numero(p.inclinacao_psi_min, 2)} psi/min`;
+    const tdP = el("td", "", numero(p.pressao_kgf_cm2, 2));
+    if (p.pressao_kgf_cm2 != null) tdP.title = `${numero(p.pressao_kgf_cm2 * KGF_PSI, 0)} psi`;
+    const tdO = el("td", "", p.origem);
+    tdO.title = p.rotulo || "";
+    tr.append(tdSel, el("td", "", numero(p.prof, 2)), tdP,
+              el("td", "", p.hidrostatica_kgf_cm2 != null ? numero(p.hidrostatica_kgf_cm2, 1) : "—"), tdO, q);
+    const tdB = el("td");
+    if (p.serie) {
+      const b = el("button", "btn secundario pequeno", "curva");
+      b.onclick = () => mostrarSerie(c, p.serie.rel, p.serie.qual);
+      tdB.appendChild(b);
+    }
+    tr.appendChild(tdB);
+    t.appendChild(tr);
+  }
+  c.appendChild(t);
+  const linha = el("div", "linha dp-grad-acoes");
+  const bg = el("button", "btn secundario pequeno", "Calcular gradiente");
+  const res = el("div", "dp-grad-res");
+  bg.onclick = async () => {
+    const grupos = { A: [], B: [] };
+    for (const s of t.querySelectorAll(".dp-grupo")) {
+      if (!s.value) continue;
+      const p = pr.pontos.find((x) => x.id === s.dataset.id);
+      if (p && p.pressao_kgf_cm2 != null) grupos[s.value].push([p.prof, p.pressao_kgf_cm2]);
+    }
+    const r = await chamar(bg, "gradiente_pressoes", grupos);
+    limpar(res);
+    if (!r.ok) return;
+    const retas = [];
+    for (const k of ["A", "B"]) {
+      const gr = r[k];
+      if (!gr) continue;
+      retas.push({ ...gr, grupo: k });
+      res.appendChild(el("p", "", `Grupo ${k}: ${numero(gr.gradiente_kgf_cm2_m, 4)} kgf/cm²/m = ${numero(gr.gradiente_psi_ft, 3)} psi/ft → ` +
+        `densidade ${numero(gr.densidade_g_cm3, 3)} g/cm³, compatível com ${gr.fluido_compativel} ` +
+        `(${gr.n} pontos, ${numero(gr.topo, 1)}–${numero(gr.base, 1)} m, R² ${numero(gr.r2, 4)})`));
+    }
+    if (r.contato != null) {
+      retas.contato = r.contato;
+      res.appendChild(el("p", "dp-contato-txt", `As duas retas se cruzam a ${numero(r.contato, 1)} m — contato provável entre os fluidos dos grupos A e B.`));
+    }
+    graficoPressoes(svg, pr.pontos, retas);
+  };
+  linha.append(bg, el("span", "ajuda", "Marque A (e B) nos pontos de cada fluido: o SIAPP ajusta a reta, dá a densidade e, com dois grupos, a profundidade do contato."));
+  c.append(linha, res);
+  graficoPressoes(svg, pr.pontos, []);
+  return c;
+}
+
+function graficoSerie(svg, s) {
+  while (svg.firstChild) svg.removeChild(svg.firstChild);
+  const W = 440, H = 200, m = { e: 50, d: 10, t: 10, b: 30 };
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  const ys = s.y.filter((v) => v != null);
+  if (!ys.length) return;
+  const x = escalaLinear(Math.min(...s.x), Math.max(...s.x), m.e, W - m.d);
+  const y = escalaLinear(Math.min(...ys), Math.max(...ys), H - m.b, m.t);
+  const g = svgEl("g", { class: "dp-graf" });
+  g.appendChild(svgEl("rect", { x: m.e, y: m.t, width: W - m.e - m.d, height: H - m.t - m.b, class: "dp-graf-area" }));
+  const pts = s.x.map((xv, i) => s.y[i] == null ? null : `${x(xv).toFixed(1)},${y(s.y[i]).toFixed(1)}`).filter(Boolean).join(" ");
+  g.appendChild(svgEl("polyline", { points: pts, class: "dp-serie" }));
+  for (const [k, v] of Object.entries(s.linhas || {})) {
+    if (v == null) continue;
+    const ln = svgEl("line", { x1: m.e, x2: W - m.d, y1: y(v), y2: y(v), class: k.startsWith("hidro") ? "dp-linha-lama" : "dp-linha-p" });
+    g.appendChild(ln);
+  }
+  for (let k = 0; k <= 3; k++) {
+    const yv = Math.min(...ys) + (Math.max(...ys) - Math.min(...ys)) * k / 3;
+    const t = svgEl("text", { x: m.e - 4, y: y(yv) + 3, "text-anchor": "end", class: "dp-graf-txt" }); t.textContent = numero(yv, 1); g.appendChild(t);
+    const xv = Math.min(...s.x) + (Math.max(...s.x) - Math.min(...s.x)) * k / 3;
+    const amp = Math.max(...s.x) - Math.min(...s.x);
+    const t2 = svgEl("text", { x: x(xv), y: H - m.b + 13, "text-anchor": "middle", class: "dp-graf-txt" });
+    t2.textContent = numero(xv, amp < 3 ? 2 : amp < 30 ? 1 : 0); g.appendChild(t2);
+  }
+  const rx = svgEl("text", { x: (m.e + W) / 2, y: H - 3, "text-anchor": "middle", class: "dp-graf-txt" });
+  rx.textContent = `${s.x_rotulo} · ${s.y_rotulo}`; g.appendChild(rx);
+  svg.appendChild(g);
+}
+
+async function mostrarSerie(caixa, rel, qual) {
+  let box = caixa.querySelector(".dp-serie-box");
+  if (!box) { box = el("div", "dp-serie-box"); caixa.appendChild(box); }
+  limpar(box);
+  const r = await chamar(null, "serie_pressao", rel, qual);
+  if (!r.ok) return;
+  box.appendChild(el("p", "dp-sub", r.titulo));
+  const svg = svgEl("svg", { class: "dp-svg dp-svg-serie", role: "img", "aria-label": r.titulo });
+  box.appendChild(svg);
+  graficoSerie(svg, r);
+  box.scrollIntoView({ block: "nearest" });
+}
+
+function secaoTfr(t, series) {
+  const c = el("div", "dp-tfr");
+  const tb = el("table", "tabela ficha");
+  const n = (v, cs, u) => v == null ? "" : `${numero(v, cs)}${u ? " " + u : ""}`;
+  linhaFicha(tb, "Intervalo", t.topo != null ? `${intervaloM(t.topo, t.base)} m` + (t.formacao ? ` · ${t.formacao}` : "") : "");
+  linhaFicha(tb, "Período", [t.inicio, t.fim].filter(Boolean).join(" → "));
+  linhaFicha(tb, "Pressão estática (extrapolada)", t.pressao_estatica_kgf_cm2 != null
+    ? `${numero(t.pressao_estatica_kgf_cm2, 2)} kgf/cm² (${numero(t.pressao_estatica_kgf_cm2 * KGF_PSI, 0)} psi) a ${numero(t.prof_referencia || t.prof_registro_medida, 2)} m` : "");
+  linhaFicha(tb, "Pressão de fluxo final", n(t.pressao_fluxo_kgf_cm2, 1, "kgf/cm²"));
+  linhaFicha(tb, "Vazão", n(t.vazao_m3_dia, 1, "m³/d"));
+  linhaFicha(tb, "Fluido · °API", [t.fluido_desc, t.api != null ? `${numero(t.api, 1)} °API` : ""].filter(Boolean).join(" · "));
+  linhaFicha(tb, "Permeabilidade efetiva", n(t.permeabilidade_md, 0, "mD"));
+  linhaFicha(tb, "Transmissibilidade (kh/μ)", n(t.transmissibilidade, 1, "mD·m/cP"));
+  linhaFicha(tb, "Mobilidade (k/μ)", n(t.mobilidade, 1, "mD/cP"));
+  linhaFicha(tb, "Efeito de película (skin)", n(t.skin, 1));
+  linhaFicha(tb, "Índice de produtividade", n(t.ip, 2, "m³/d/(kgf/cm²)"));
+  linhaFicha(tb, "Raio de investigação", n(t.raio_investigacao_m, 0, "m"));
+  linhaFicha(tb, "Temperatura máxima", t.temp_max_c != null ? `${numero(t.temp_max_c, 1)} °C` : "");
+  linhaFicha(tb, "Espessura · φ · Sw adotadas", [n(t.espessura_m, 1, "m"), n(t.porosidade_pct, 1, "%"), n(t.sw_pct, 1, "%")].filter(Boolean).join(" · "));
+  linhaFicha(tb, "Modelo", [t.modelo, t.limites].filter(Boolean).join(" "));
+  c.appendChild(tb);
+  if (t.conclusao) { c.appendChild(el("p", "dp-sub", "Conclusão do intérprete")); c.appendChild(el("p", "dp-obs", t.conclusao)); }
+  if ((t.fluxos || []).length) {
+    c.appendChild(tabelaSimples(["Período", "Duração", "Fluido", "Abertura (1/64\")", "Vazão (m³/d)", "RGO (m³/m³)", "P. fluxo final"],
+      t.fluxos.map((f) => [f.periodo, f.duracao, f.fluido, f.abertura_64 != null ? numero(f.abertura_64, 0) : "",
+                           numero(f.vazao_liquido_m3_dia, 1), numero(f.rgo_m3_m3, 1), numero(f.pressao_fluxo_kgf_cm2, 1)])));
+  }
+  const minhas = series.filter((s) => s.rel === t.rel);
+  if (minhas.length) {
+    const linha = el("div", "linha dp-series");
+    linha.appendChild(el("span", "ajuda", "Registros dos manômetros:"));
+    for (const s of minhas) {
+      const b = el("button", "btn secundario pequeno", s.rotulo + (s.interpretacao ? " (usado na interpretação)" : ""));
+      b.onclick = () => mostrarSerie(c, s.rel, s.qual);
+      linha.appendChild(b);
+    }
+    c.appendChild(linha);
+  }
+  if ((t.outros_arquivos || []).length)
+    c.appendChild(el("p", "ajuda", `Também no ZIP: ${t.outros_arquivos.map((o) => o.arquivo.split("/").pop()).join(", ")}.`));
+  return c;
 }

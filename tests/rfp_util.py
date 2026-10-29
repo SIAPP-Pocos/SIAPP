@@ -189,6 +189,77 @@ PERFURACAO = [
 ]
 
 
+ND = [[
+    (194, 110, "RELATÓRIO DE DESCOBERTA DE POÇO"), (262, 136, "DADOS GERAIS"),
+    (23, 163, "Poço:"), (211, 163, "Bloco:"), (385, 163, "Bacia:"),
+    (212, 175, "POT-T-999"), (23, 176, "1-SIAPP-1-RN"), (386, 176, "Potiguar"),
+    (212, 197, "Data da Notificação:"), (23, 198, "Data da Descoberta:"), (385, 198, "Fluído(s):"),
+    (212, 210, "05/03/2010"), (23, 211, "01/03/2010"), (385, 211, "Petróleo"),
+    (279, 258, "Indícios"),
+    (46, 275, "Intervalo (m)"), (131, 275, "Unidade Estratigráfica"), (320, 275, "Tipo"), (364, 275, "Fluor"),
+    (411, 275, "Corte"), (482, 275, "Detetor de Gás"),
+    (34, 287, "Topo"), (88, 287, "Base"), (310, 287, "(C/T/A/D)"), (473, 287, "GT"), (539, 287, "GP"),
+    (28, 303, "812,0"), (82, 303, "815,0"), (131, 303, "FM AÇU"), (326, 303, "C"), (371, 303, "R"), (419, 303, "F"),
+    (475, 303, "-"), (541, 303, "-"),
+    (28, 320, "1.450,0"), (82, 320, "1.452,0"), (326, 320, "D"), (457, 320, "UGT - 20,0"), (541, 320, "-"),
+    (284, 348, "Perfis"),
+    (67, 365, "Intervalo (m)"), (173, 365, "Unidade Estratigráfica"), (413, 365, "Interpretação de Perfis"),
+    (43, 377, "Topo"), (118, 377, "Base"), (413, 377, "Litologia"),
+    (37, 393, "1.392,0"), (112, 393, "1.406,5"), (413, 393, "ARENITO"),
+    (254, 422, "Testes de Formação"),
+    (35, 440, "Tipo"), (87, 440, "Intervalo/Ponto (m)"), (179, 440, "Vazão Estimada"), (335, 440, "Fluido"),
+    (476, 440, "API"), (525, 440, "Depleção"),
+    (38, 469, "PT"), (85, 469, "1.420,0"), (142, 469, "0,0"), (335, 469, "ÓLEO"), (474, 469, "30,0"),
+    (241, 497, "ESTADO ATUAL DO POÇO"),
+    (21, 513, "Aguardando a perfilagem final."),
+    (262, 556, "OBSERVAÇÕES"),
+]]
+
+NPR = [[
+    (182, 107, "RELATÓRIO DE PERFILAGENS REALIZADAS"), (262, 133, "DADOS GERAIS"),
+    (23, 152, "Poço:"), (229, 152, "Bloco:"), (399, 152, "Bacia:"),
+    (229, 166, "POT-T-999"), (399, 166, "Potiguar"), (23, 168, "1-SIAPP-1-RN"),
+    (23, 193, "Data da Conclusão da Perfilagem Final:"), (229, 193, "Operação Feita Durante a Reentrada em Poço:"),
+    (473, 193, "Poço Perfilado?"),
+    (473, 207, "S"), (23, 208, "02/03/2010"), (229, 208, "N"),
+    (209, 246, "OPERAÇÕES DURANTE A PERFURAÇÃO"),
+    (21, 267, "Nº da"), (74, 267, "Data"), (119, 267, "Companhia"), (257, 267, "Tipo de"), (323, 267, "Perfis"),
+    (498, 267, "Intervalos(m)"),
+    (190, 329, "OPERAÇÕES DE PERFILAGENS CONVENCIONAIS"),
+    (21, 347, "Nº da"), (74, 347, "Data"), (141, 347, "Amb."), (185, 347, "Companhia"), (323, 347, "Perfis"),
+    (498, 347, "Intervalos(m)"),
+    (21, 359, "Oper."), (487, 359, "Topo"), (541, 359, "Base"),
+    (27, 377, "1"), (61, 377, "28/02/2010"), (146, 377, "A"), (185, 377, "Fictícia"), (323, 377, "GR"),
+    (482, 377, "60,00"), (532, 377, "1.845,00"),
+    (27, 396, "2"), (61, 396, "28/02/2010"), (146, 396, "A"), (185, 396, "Fictícia"), (323, 396, "SDL (CAL)"),
+    (482, 396, "60,00"), (532, 396, "1.848,00"),
+    (141, 430, "OPERAÇÕES DE PERFILAGENS ESPECIAIS - INTERVALOS ABRANGIDOS"),
+    (21, 448, "Nº da"), (74, 448, "Data"), (136, 448, "Amb."), (179, 448, "Companhia"), (299, 448, "Perfis"),
+    (460, 460, "Topo"), (502, 460, "Base"), (543, 460, "Prof."),
+    (27, 476, "3"), (60, 476, "01/03/2010"), (141, 476, "A"), (179, 476, "Fictícia"), (299, 476, "SFT/GR"),
+    (538, 476, "1.420,00"),
+    (136, 520, "OPERAÇÕES DE PERFILAGENS ESPECIAIS - AMOSTRAGEM E RESULTADO"),
+    (21, 538, "Nº da"), (50, 538, "Perfis"), (211, 538, "Níveis"), (412, 538, "Pré-Testes"), (517, 538, "Testes"),
+    (27, 566, "3"), (50, 566, "SFT/GR"), (401, 566, "4,00"), (452, 566, "1,00"),
+]]
+
+REENTRADA = [[
+    (226, 110, "RELATÓRIO DE REENTRADA"), (267, 139, "DADOS GERAIS"),
+    (22, 164, "Poço:"), (190, 164, "Bloco:"), (371, 164, "Bacia:"),
+    (23, 178, "1-SIAPP-1-RN"), (371, 178, "Potiguar"), (190, 179, "POT-T-999"),
+    (22, 198, "Nº da Reentrada:"), (22, 211, "1"),
+    (22, 235, "Data da Comunicação:"), (191, 236, "Início da Reentrada:"), (371, 236, "Fim da Reentrada:"),
+    (23, 247, "02/04/2010"), (191, 247, "01/04/2010"), (371, 247, "10/04/2010"),
+    (22, 264, "Profundidade Final:"), (191, 266, "Sonda:"), (371, 266, "Licença Ambiental:"),
+    (23, 277, "1.850,00"), (191, 277, "SPT-00"), (371, 277, "123"),
+    (22, 292, "Estado Atual:"), (23, 307, "Poço Equipado."),
+    (22, 335, "MOTIVO DA REENTRADA"), (23, 349, "AVALIAR A FM. AÇU (1395/1400m)."),
+    (23, 384, "OPERAÇÕES PREVISTAS"), (23, 400, "CANHONEAR E EFETUAR TFR-01."),
+    (23, 494, "RESULTADO REENTRADA"), (23, 509, "Equipado poço surgente."),
+    (23, 540, "DADOS ADQUIRIDOS"), (23, 556, "TFR na Fm. Açu: Qo= 45m³/d."),
+]]
+
+
 def gerar(caminho: str, paginas: list) -> str:
     doc = pymupdf.open()
     for n, linhas in enumerate(paginas, 1):

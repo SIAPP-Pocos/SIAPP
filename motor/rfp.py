@@ -34,8 +34,8 @@ from __future__ import annotations
 import re
 import unicodedata
 
-VERSAO = 1
-NOME = "Formulários CDPE da ANP (RFP, RFCP, Perfuração)"
+VERSAO = 2          # 2 (0.38): NPR, Relatório de Descoberta, Reentrada e CDPE de título desconhecido
+NOME = "Formulários CDPE da ANP (RFP, RFCP, Perfuração, Descoberta, Perfilagens, Reentrada)"
 
 # ---------------------------------------------------------------- reconhecimento
 _RE_NOME = re.compile(r"(?:^|[_\-\s])(CDPE|RFP|RFCP|PERFURACAO)(?:[_\-\s.]|\d|$)", re.I)
@@ -44,13 +44,22 @@ DOCUMENTOS = {
     "rfp": "Relatório Final de Poço",
     "rfcp": "Relatório Final de Completação",
     "perfuracao": "Notificação e Relatório de Perfuração",
+    "nd": "Relatório de Descoberta",
+    "npr": "Relatório de Perfilagens Realizadas",
+    "reentrada": "Relatório de Reentrada",
+    "cdpe": "Formulário CDPE",
 }
+# Ordem de preferência quando dois formulários trazem o mesmo dado (ficha, intervalos)
+PRIORIDADE = {"rfp": 0, "rfcp": 1, "perfuracao": 2, "nd": 3, "npr": 4, "reentrada": 5, "cdpe": 9}
 _TITULOS_DOC = (
     ("RELATORIO FINAL DE POCO", "rfp"),
     ("RELATORIO FINAL COMPLETACAO", "rfcp"),
     ("RELATORIO FINAL DE COMPLETACAO", "rfcp"),
     ("NOTIFICACAO DE PERFURACAO DE POCO", "perfuracao"),
     ("RELATORIO DE PERFURACAO DE POCO", "perfuracao"),
+    ("RELATORIO DE DESCOBERTA DE POCO", "nd"),
+    ("RELATORIO DE PERFILAGENS REALIZADAS", "npr"),
+    ("RELATORIO DE REENTRADA", "reentrada"),
 )
 
 
@@ -62,6 +71,10 @@ def reconhece_nome(nome: str) -> bool:
     """Pelo nome do arquivo: só PDFs com CDPE/RFP/RFCP/Perfuracao (o conteúdo confirma)."""
     base = _sem_acento(str(nome or "")).upper()
     return base.endswith(".PDF") and bool(_RE_NOME.search(base))
+
+
+def reconhece(rel: str) -> bool:
+    return reconhece_nome(str(rel or "").replace("\\", "/").rsplit("/", 1)[-1])
 
 
 # ---------------------------------------------------------------- texto
@@ -138,7 +151,29 @@ SECOES = {
     "COORDENADA DA BASE": "coordenada_base", "RELATORIO DE PERFURACAO DE POCO": "relatorio_perfuracao",
     "FASES E DEMAIS INFORMACOES": "fases", "TEMPO DE PERFURACAO (DIAS)": "tempos",
     "NAO CONFORMIDADES": "nao_conformidades",
+    # Relatório de Descoberta (nd)
+    "INDICIOS": "indicios_nd", "PERFIS": "perfis_nd", "TESTES DE FORMACAO": "testes_nd",
+    "ESTADO ATUAL DO POCO": "estado_atual",
+    # Relatório de Perfilagens Realizadas (npr)
+    "OPERACOES DURANTE A PERFURACAO": "perf_operacoes",
+    "OPERACOES DE PERFILAGENS CONVENCIONAIS": "perf_convencionais",
+    "OPERACOES DE PERFILAGENS ESPECIAIS - INTERVALOS ABRANGIDOS": "perf_especiais",
+    "OPERACOES DE PERFILAGENS ESPECIAIS - AMOSTRAGEM E RESULTADO": "perf_resultado",
+    # Reentrada
+    "MOTIVO DA REENTRADA": "motivo", "OPERACOES PREVISTAS": "operacoes_previstas",
+    "RESULTADO REENTRADA": "resultado_reentrada", "DADOS ADQUIRIDOS": "dados_adquiridos",
 }
+
+
+_TITULO_EM_LINHA_DE_COLUNAS = {"TEMPO DE PERFURACAO (DIAS)"}
+
+
+def _eh_titulo(f, k, frags) -> bool:
+    """Título de seção fica sozinho na linha (ou repetido, como "COORDENADAS" × 3). Assim o
+    título de coluna "Perfis" do NPR não é tomado pela seção "Perfis" do Relatório de Descoberta."""
+    if k in _TITULO_EM_LINHA_DE_COLUNAS:
+        return True
+    return all(_norm(g[2]) == k for g in frags if abs(g[1] - f[1]) <= 3)
 
 
 def faixas(frags) -> tuple[list[str], dict[str, list[tuple[float, float, str, int]]]]:
@@ -150,7 +185,7 @@ def faixas(frags) -> tuple[list[str], dict[str, list[tuple[float, float, str, in
         for t, doc in _TITULOS_DOC:
             if k.startswith(t):
                 titulos.append(doc)
-        if k in SECOES and (not inicio or abs(inicio[-1][0] - f[1]) > 3):
+        if k in SECOES and (not inicio or abs(inicio[-1][0] - f[1]) > 3) and _eh_titulo(f, k, frags):
             inicio.append((f[1], SECOES[k]))
     por = {}
     for i, (y0, nome) in enumerate(inicio):
@@ -197,7 +232,7 @@ _RE_COORD = re.compile(r"^-?\d{1,3}:\d{1,2}:\d{1,2}(?:[,.]\d+)?$")
 
 def _eh_rotulo(t: str) -> bool:
     n = _norm(t)
-    return n.endswith(":") or n.endswith("-") or n in _ROTULOS_SEM_DOIS_PONTOS
+    return n.endswith(":") or n.endswith("-") or n.endswith("?") or n in _ROTULOS_SEM_DOIS_PONTOS
 
 
 _ROTULOS_SEM_DOIS_PONTOS = {"UNIDADE ESTRATIGRAFICA", "PROFUNDIDADE FINAL POR PERFIL -"}
@@ -286,6 +321,20 @@ COL_FASES = [("fase", 0), ("diametro", 40), ("prof", 90), ("prof_vertical", 135)
 COL_TEMPOS = [("fase", 0), ("diametro", 40), ("prof", 90), ("prof_vertical", 135), ("util_produtivo", 190),
               ("util_improdutivo", 250), ("perdido", 310), ("total", 360), ("absorcao_bbl", 420),
               ("peso_equivalente", 490)]
+COL_INDICIOS_ND = [("topo", 0), ("base", 75), ("unidade", 125), ("tipo", 300), ("fluorescencia", 350),
+                   ("corte", 400), ("gas_total", 450), ("gas_parcial", 520)]
+COL_PERFIS_ND = [("topo", 0), ("base", 100), ("unidade", 165), ("litologia", 400)]
+COL_TESTES_ND = [("tipo", 0), ("topo", 75), ("base", 130), ("vazao", 170), ("fluido", 320), ("api", 460),
+                 ("deplecao", 515)]
+COL_PERF_OPER = [("n", 0), ("data", 55), ("companhia", 110), ("operacao", 250), ("perfis", 315), ("topo", 470),
+                 ("base", 525)]
+COL_PERF_CONV = [("n", 0), ("data", 55), ("ambiente", 135), ("companhia", 180), ("perfis", 315), ("topo", 470),
+                 ("base", 525)]
+COL_PERF_ESP = [("n", 0), ("data", 55), ("ambiente", 130), ("companhia", 175), ("perfis", 295), ("topo", 455),
+                ("base", 497), ("prof", 533)]
+COL_PERF_RES = [("n", 0), ("perfis", 45), ("niveis_sismicos", 200), ("laterais_programadas", 255),
+                ("laterais_recuperadas", 300), ("laterais_perdidas", 340), ("pretestes_conclusivos", 385),
+                ("pretestes_falhos", 445), ("testes_conclusivos", 485), ("testes_falhos", 530)]
 COL_NC = [("unidade", 0), ("de", 140), ("a", 185), ("de_vertical", 230), ("a_vertical", 275),
           ("peso_antes", 315), ("peso_depois", 355)]
 
@@ -425,6 +474,57 @@ def _nao_conformidades(fs):
              "pagina": ln["_pagina"]} for ln in tabela(fs, COL_NC, "de")]
 
 
+def _sem_traco(v):
+    return None if v in (None, "-", "—") else v
+
+
+def _indicios_nd(fs):
+    return [{"topo": _n(ln, "topo"), "base": _n(ln, "base"), "unidade": _t(ln, "unidade"),
+             "ocorrencia": _sem_traco(_t(ln, "tipo")), "tipo": None,
+             "fluorescencia": _sem_traco(_t(ln, "fluorescencia")), "corte": _sem_traco(_t(ln, "corte")),
+             "gas_total": _sem_traco(_t(ln, "gas_total")), "gas_parcial": _sem_traco(_t(ln, "gas_parcial")),
+             "cromatografia": None, "pagina": ln["_pagina"]}
+            for ln in tabela(fs, COL_INDICIOS_ND, "topo")]
+
+
+def _perfis_nd(fs):
+    return [{"topo": _n(ln, "topo"), "base": _nz(_n(ln, "base")), "unidade": _t(ln, "unidade"),
+             "litologia": _t(ln, "litologia"), "pagina": ln["_pagina"]}
+            for ln in tabela(fs, COL_PERFIS_ND, "topo")]
+
+
+def _testes_nd(fs):
+    saida = []
+    for ln in tabela(fs, COL_TESTES_ND, "topo"):
+        topo, base = _n(ln, "topo"), _nz(_n(ln, "base"))
+        saida.append({"tipo": _t(ln, "tipo"), "topo": topo, "base": base if base and base > (topo or 0) else None,
+                      "vazao_m3_dia": _nz(_n(ln, "vazao")), "fluido": _t(ln, "fluido"), "api": _nz(_n(ln, "api")),
+                      "deplecao_kgf_cm2": _nz(_n(ln, "deplecao")), "pressao_estatica_kgf_cm2": None,
+                      "prof_registrador": None, "pagina": ln["_pagina"]})
+    return saida
+
+
+def _perfilagens(fs, colunas, tipo):
+    saida = []
+    for ln in tabela(fs, colunas, "n"):
+        topo, base, prof = _nz(_n(ln, "topo")), _nz(_n(ln, "base")), _nz(_n(ln, "prof"))
+        saida.append({"n": int(_n(ln, "n")), "tipo": tipo, "data": _t(ln, "data"), "ambiente": _t(ln, "ambiente"),
+                      "companhia": _t(ln, "companhia"), "operacao": _t(ln, "operacao"), "perfis": _t(ln, "perfis"),
+                      "topo": topo if topo is not None else prof, "base": base, "pagina": ln["_pagina"]})
+    return saida
+
+
+ROTULOS_DOC = {
+    "nd": {"DATA DA DESCOBERTA": "data_descoberta", "DATA DA NOTIFICACAO": "data_notificacao",
+           "FLUIDO(S)": "fluidos"},
+    "npr": {"DATA DA CONCLUSAO DA PERFILAGEM FINAL": "conclusao_perfilagem",
+            "OPERACAO FEITA DURANTE A REENTRADA": "durante_reentrada", "POCO PERFILADO": "perfilado"},
+    "reentrada": {"N DA REENTRADA": "reentrada", "Nº DA REENTRADA": "reentrada", "DATA DA COMUNICACAO": "comunicacao",
+                  "INICIO DA REENTRADA": "inicio", "FIM DA REENTRADA": "fim", "PROFUNDIDADE FINAL": "prof_final",
+                  "SONDA:": "sonda", "LICENCA AMBIENTAL": "licenca_ambiental", "ESTADO ATUAL": "estado_atual"},
+}
+
+
 ROTULOS_GERAIS = {
     "POCO:": "poco", "BLOCO:": "bloco", "BACIA:": "bacia", "ESTADO:": "estado", "OPERADOR:": "operador",
     "N CONTRATO": "contrato", "Nº CONTRATO": "contrato", "CADASTRO DO POCO": "cadastro",
@@ -472,7 +572,11 @@ def ler_documento(doc) -> dict:
         raise ErroRFP("O PDF não tem texto embutido (é imagem); este leitor não usa OCR.")
     titulos, s = faixas(frags)
     if not titulos:
-        raise ErroRFP("Não é um formulário CDPE reconhecido (RFP, RFCP ou Perfuração).")
+        # formulário CDPE de outro tipo: o cabeçalho da ANP tem "CDPE" e o rodapé, a SDT
+        topo = doc[0].get_text().upper()
+        if "CDPE" not in topo or "SUPERINTEND" not in topo:
+            raise ErroRFP("Não é um formulário CDPE da ANP.")
+        titulos = ["cdpe"]
     documento = titulos[0]
     gerais = {}
     for nome in ("dados", "resultado", "sonda", "notificacao", "previstas", "inicio", "relatorio_perfuracao"):
@@ -500,6 +604,43 @@ def ler_documento(doc) -> dict:
                 "nao_conformidades": _nao_conformidades}
     dados = {"documento": documento, "titulo": DOCUMENTOS[documento], "paginas": doc.page_count,
              "gerais": gerais}
+    if documento == "cdpe":     # título que o SIAPP não conhece: guarda o título e o texto
+        dados["titulo_formulario"] = frags[0][2]
+        dados["texto"] = _texto_corrido(frags)
+    if documento in ROTULOS_DOC and "dados" in s:
+        c = campos(s["dados"], ROTULOS_DOC[documento])
+        if "prof_final" in c:
+            c["prof_final"] = numero(c["prof_final"])
+        dados["campos"] = c
+    if documento in ("reentrada", "nd"):
+        # campos que no RFP têm outro sentido não entram nos gerais desses formulários
+        for k in ("termino_perfuracao", "inicio_perfuracao", "prof_sondador", "sonda"):
+            gerais.pop(k, None)
+    textos = {"estado_atual": "Estado atual do poço", "motivo": "Motivo da reentrada",
+              "operacoes_previstas": "Operações previstas", "resultado_reentrada": "Resultado",
+              "dados_adquiridos": "Dados adquiridos"}
+    partes = [(rot, _texto_corrido(s[k])) for k, rot in textos.items() if k in s]
+    if any(t for _, t in partes):
+        dados["secoes_texto"] = [{"titulo": rot, "texto": t} for rot, t in partes if t]
+    if "indicios_nd" in s:
+        dados["indicios"] = _indicios_nd(s["indicios_nd"])
+    if "perfis_nd" in s:
+        dados["analise_perfis"] = _perfis_nd(s["perfis_nd"])
+    if "testes_nd" in s:
+        dados["testes"] = _testes_nd(s["testes_nd"])
+    perf = []
+    for k, col, tipo in (("perf_operacoes", COL_PERF_OPER, "durante a perfuração"),
+                         ("perf_convencionais", COL_PERF_CONV, "convencional"),
+                         ("perf_especiais", COL_PERF_ESP, "especial")):
+        if k in s:
+            perf += _perfilagens(s[k], col, tipo)
+    if perf:
+        dados["perfilagens"] = perf
+    if "perf_resultado" in s:
+        dados["perfilagens_resultado"] = [
+            {"n": int(_n(ln, "n")), "perfis": _t(ln, "perfis"),
+             **{c: _n(ln, c) for c, _ in COL_PERF_RES[2:] if _n(ln, c)}, "pagina": ln["_pagina"]}
+            for ln in tabela(s["perf_resultado"], COL_PERF_RES, "n")]
     for nome, f in leitores.items():
         if nome in s:
             dados[nome] = f(s[nome])
@@ -577,6 +718,9 @@ def itens(dados: dict) -> list[dict]:
             prof_topo=None, prof_base=f["prof"], valor=f["peso_lb_gal"], unidade="lb/gal" if f["peso_lb_gal"] else None,
             texto=f["fluido"], pagina=f["pagina"],
             extra={k: f[k] for k in ("fase", "diametro", "rev_diametro", "rev_prof", "cimento_topo", "prof_vertical")})
+    for p in dados.get("perfilagens", []):
+        add("perfilagem", nome=p["perfis"], prof_topo=p["topo"], prof_base=p["base"], texto=p["companhia"],
+            pagina=p["pagina"], extra={k: p[k] for k in ("n", "tipo", "data", "ambiente", "operacao")})
     for n in dados.get("nao_conformidades", []):
         add("nao_conformidade", nome=n["unidade"], prof_topo=n["de"], prof_base=n["a"],
             valor=n["peso_depois_lb_gal"], unidade="lb/gal", pagina=n["pagina"],

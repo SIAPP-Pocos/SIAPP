@@ -1246,3 +1246,26 @@ html[data-tema="escuro"] .selo.err { background: #3a2220; }
 .dp-bloco > summary { cursor: pointer; font-weight: 600; padding: 3px 0; }
 .dp-tabela td, .dp-tabela th { font-size: 12px; }
 .dp-obs { white-space: pre-wrap; font-size: 12px; margin: 4px 0; }
+/* pressões e TFR (0.38) */
+.dp-svg { width: 100%; max-width: 460px; height: auto; display: block; margin: 4px 0; }
+.dp-graf-area { fill: var(--campo); stroke: var(--linha); }
+.dp-graf-txt { font: 10px var(--mono); fill: var(--suave); }
+.dp-pt-lama { fill: none; stroke: #8a8a8a; stroke-width: 1.2; }
+.dp-reta { stroke-width: 1.5; stroke-dasharray: 5 3; }
+.dp-reta-A { stroke: #2f7d4f; }
+.dp-reta-B { stroke: #7b3fa0; }
+.dp-contato { stroke: var(--erro); stroke-width: 1; stroke-dasharray: 2 2; }
+.dp-serie { fill: none; stroke: #2a78d6; stroke-width: 1.2; }
+.dp-linha-p { stroke: #c0392b; stroke-dasharray: 4 3; }
+.dp-linha-lama { stroke: #8a8a8a; stroke-dasharray: 2 3; }
+.dp-legenda { line-height: 1.8; }
+.dp-lg { display: inline-block; width: 9px; height: 9px; border-radius: 50%; vertical-align: middle; }
+.dp-lg-q { border-radius: 0; border: 1.5px solid; background: none; }
+.dp-lg-lama { border: 1.2px solid #8a8a8a; background: none; }
+.dp-tab-pressoes select { font-size: 11px; padding: 0 2px; }
+.dp-tab-pressoes td, .dp-tab-pressoes th { padding: 3px 5px; }
+.dp-grad-acoes { gap: 8px; align-items: center; flex-wrap: wrap; margin: 6px 0; }
+.dp-grad-res p { margin: 3px 0; font-size: 12px; }
+.dp-contato-txt { color: var(--erro); font-weight: 600; }
+.dp-sub { font-weight: 600; font-size: 12px; margin: 8px 0 2px; }
+.dp-series { flex-wrap: wrap; gap: 6px; align-items: center; margin: 6px 0; }

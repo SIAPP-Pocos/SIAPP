@@ -131,6 +131,28 @@ Precisa de internet. Comece por uma categoria pequena para ver o tempo.
 - [ ] Sem intervalo marcado, **Calcular** explica que precisa de um intervalo-alvo.
 - [ ] Repetir no `5PX__0011__RN_5PX__0011__RN.tif` (DLIS de 2020).
 
+## 0.38 — pressões (teste a cabo e TFR) e mais formulários
+
+- [ ] Abra o projeto `ambiente_teste`. Na abertura, o SIAPP lê o `1-brsa-1304-ba_sft-2.dlis` e o
+      `1BRSA1304BA_TFR.zip` do 1-BRSA-1304-BA, e de novo os formulários (leitor novo).
+- [ ] Ficha do **1-BRSA-1304-BA** › "Pressões × profundidade": 8 estações do teste a cabo (círculos azuis), os PT e TC
+      do RFP (quadrados laranja) e a estática do TFR (quadrado vermelho); a lama em círculos cinza. Confira na tabela:
+      1.681,21 m → **167,70**; 1.754,83 m → **174,98** kgf/cm²; todas "estabilizada" (a de 1.728,5 m "quase estável").
+- [ ] Ponha as quatro estações de 1.681–1.688 m no grupo **A** e as de 1.717–1.755 m no **B** → **Calcular
+      gradiente**. Esperado: A ≈ **0,70 g/cm³, óleo**; B ≈ **1,05 g/cm³, água**; contato ≈ **1.694 m** (linha
+      vermelha no gráfico).
+- [ ] Botão "curva" numa estação: o gráfico pressão × tempo mostra a lama, as quedas dos pré-testes e o patamar
+      (linha tracejada vermelha).
+- [ ] Bloco "Teste de formação TFR-01 — relatório": estática **168,88 kgf/cm²** a 1.683,13 m, **k = 258 mD**,
+      skin **7**, IP 8,4, 36,6 °API, 83,5 °C; quatro fluxos (F1 e três aberturas no F2). Botão do manômetro
+      **30768 (usado na interpretação)**: curva de ~176 h com os dois fluxos e as duas estáticas.
+- [ ] Na mesma ficha: "Relatório de Descoberta", "Relatório de Reentrada 1" (motivo, operações, resultado) e
+      "Perfilagens realizadas" (50 linhas: as convencionais com intervalo, as SFT e ASR com a profundidade de cada
+      ponto). Nenhum formulário "não lido".
+- [ ] Perfis › clique no `1-brsa-1304-ba_sft-2.dlis`: a mensagem diz que o arquivo é indexado por tempo e manda
+      para a ficha (antes: erro de "unidade desconhecida").
+- [ ] Avaliação num perfil do 1-BRSA-1304-BA: a nota do Rw inclui "83,5 °C" (TFR) e "178 °F" (sonda a cabo).
+
 ## 0.37 — formulários da ANP (RFP, RFCP, Perfuração)
 
 - [ ] Abra o projeto `ambiente_teste` (que já tem os formulários de 1-BRSA-1304-BA, 3-BRSA-1151-RN e 1-AURI-12-RN

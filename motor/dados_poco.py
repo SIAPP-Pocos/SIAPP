@@ -3,7 +3,10 @@
 Cada **leitor** é um módulo com:
 
 - `VERSAO` (int) e `NOME`;
-- `reconhece_nome(nome) -> bool`: pelo nome do arquivo, barato (decide o que tentar ler);
+- `reconhece(rel) -> bool`: pelo caminho do arquivo no projeto (nome e pasta), barato — decide o
+  que tentar ler;
+- `DOCUMENTOS` (tipo → nome por extenso) e `PRIORIDADE` (tipo → ordem, quando dois documentos
+  trazem o mesmo dado: o de menor número vale na ficha e nos intervalos);
 - `ler(caminho) -> dict`: os dados do documento, com a chave `documento` (tipo do formulário);
   levanta `ValueError` quando o arquivo não é do formato;
 - `itens(dados) -> list[dict]`: uma linha por dado com profundidade — tipo, nome, prof_topo,
@@ -24,10 +27,10 @@ import json
 import os
 
 from . import pocos as mpo
-from . import rfp
+from . import pressoes, rfp
 from .banco import Banco, agora
 
-LEITORES = {"cdpe": rfp}
+LEITORES = {"cdpe": rfp, "pressoes": pressoes}
 
 TIPOS = {
     "topo": "Topo estratigráfico", "indicio": "Indício de petróleo/gás", "testemunho": "Testemunho",
@@ -35,13 +38,21 @@ TIPOS = {
     "teste_formacao": "Teste de formação", "temperatura": "Temperatura", "calha": "Amostragem de calha",
     "revestimento": "Revestimento de produção", "canhoneado": "Intervalo canhoneado",
     "teste_completacao": "Teste na completação", "fase": "Fase da perfuração",
-    "nao_conformidade": "Não conformidade",
+    "nao_conformidade": "Não conformidade", "perfilagem": "Perfilagem realizada",
+    "pressao_formacao": "Pressão da formação (teste a cabo)", "teste_tfr": "Teste de formação (relatório)",
+    "manometro": "Registro de manômetro",
 }
 
 
-def leitor_para(nome: str) -> str | None:
+def prioridade(leitor: str | None, documento: str | None) -> int:
+    mod = LEITORES.get(leitor or "")
+    return getattr(mod, "PRIORIDADE", {}).get(documento or "", 50) + (0 if leitor == "cdpe" else 100)
+
+
+def leitor_para(rel: str) -> str | None:
+    """Leitor que reconhece o arquivo pelo caminho (nome e pasta)."""
     for chave, mod in LEITORES.items():
-        if mod.reconhece_nome(nome):
+        if mod.reconhece(rel):
             return chave
     return None
 
@@ -81,7 +92,7 @@ def gravar(banco: Banco, rel: str, *, poco_id: str | None, leitor: str, dados: d
 def ler_arquivo(banco: Banco, pasta_projeto: str, rel: str, *, poco_id: str | None = None,
                 sha256: str | None = None) -> dict | None:
     """Lê um arquivo do projeto com o leitor que o reconhece pelo nome. None = nenhum leitor."""
-    leitor = leitor_para(os.path.basename(rel))
+    leitor = leitor_para(rel)
     if leitor is None:
         return None
     caminho = os.path.join(pasta_projeto, rel)
@@ -100,7 +111,7 @@ def pendentes(banco: Banco) -> list[dict]:
         arquivos = [dict(r) for r in c.execute("SELECT rel, poco_id, sha256 FROM arquivos ORDER BY rel")]
     saida = []
     for a in arquivos:
-        leitor = leitor_para(os.path.basename(a["rel"]))
+        leitor = leitor_para(a["rel"])
         if leitor is None:
             continue
         lido = lidos.get(a["rel"])
@@ -130,36 +141,74 @@ def _item(r) -> dict:
     return d
 
 
-def do_poco(banco: Banco, poco_id: str) -> dict:
-    """Leituras do poço (com os dados completos) e itens agrupados por tipo."""
+def _sem_repeticao(itens: list[dict]) -> list[dict]:
+    """O mesmo dado em dois formulários (ex.: indício no Relatório de Descoberta e no RFP): fica o
+    do documento de maior prioridade; o outro vai para `tambem_em`."""
+    melhor = {}
+    for i in itens:
+        if i["tipo"] in ("pressao_formacao", "manometro", "perfilagem", "calha", "revestimento", "fase",
+                         "nao_conformidade", "teste_completacao"):
+            k = (i["tipo"], i["rel"], i["ordem"])          # dados que não se repetem entre documentos
+        else:
+            k = (i["tipo"], None if i["prof_topo"] is None else round(i["prof_topo"], 1),
+                 None if i["prof_base"] is None else round(i["prof_base"], 1),
+                 (i.get("nome") or "") if i["tipo"] in ("temperatura", "teste_formacao") else "")
+        atual = melhor.get(k)
+        if atual is None:
+            melhor[k] = i
+        elif i["_prio"] < atual["_prio"]:
+            i.setdefault("tambem_em", []).extend([atual["documento"], *atual.get("tambem_em", [])])
+            melhor[k] = i
+        else:
+            atual.setdefault("tambem_em", []).append(i["documento"])
+    saida = list(melhor.values())
+    for i in saida:
+        i.pop("_prio", None)
+    saida.sort(key=lambda i: (i["tipo"], i["prof_topo"] if i["prof_topo"] is not None else
+                              (i["prof_base"] if i["prof_base"] is not None else 1e12), i["ordem"]))
+    return saida
+
+
+def _consultar(banco: Banco, poco_id: str, tipo: str | None = None, *, so_confere: bool = False) -> list[dict]:
+    cond, args = "d.poco_id = ?", [poco_id]
+    if tipo:
+        cond += " AND d.tipo = ?"
+        args.append(tipo)
+    if so_confere:
+        cond += " AND coalesce(l.confere, 1) = 1"
     with banco.conexao() as c:
-        leituras = [dict(r) for r in c.execute(
-            "SELECT * FROM leituras WHERE poco_id = ? ORDER BY documento, rel", (poco_id,))]
-        itens = [_item(r) for r in c.execute(
-            """SELECT d.*, l.documento FROM dados_poco d JOIN leituras l ON l.rel = d.rel
-               WHERE d.poco_id = ? ORDER BY d.tipo, coalesce(d.prof_topo, d.prof_base), d.ordem""", (poco_id,))]
+        linhas = [_item(r) for r in c.execute(
+            f"""SELECT d.*, l.documento, l.leitor FROM dados_poco d JOIN leituras l ON l.rel = d.rel
+                WHERE {cond}""", args)]
+    for i in linhas:
+        i["_prio"] = prioridade(i.pop("leitor"), i["documento"])
+    return _sem_repeticao(linhas)
+
+
+def do_poco(banco: Banco, poco_id: str) -> dict:
+    """Leituras do poço (com os dados completos), em ordem de prioridade, e itens agrupados por
+    tipo, sem repetição."""
+    with banco.conexao() as c:
+        leituras = [dict(r) for r in c.execute("SELECT * FROM leituras WHERE poco_id = ?", (poco_id,))]
     for le in leituras:
         le["dados"] = json.loads(le["dados"]) if le["dados"] else None
+    leituras.sort(key=lambda le: (prioridade(le["leitor"], le["documento"]), le["rel"]))
     por_tipo = {}
-    for i in itens:
+    for i in _consultar(banco, poco_id):
         por_tipo.setdefault(i["tipo"], []).append(i)
     return {"leituras": leituras, "itens": por_tipo}
 
 
 def itens_do_poco(banco: Banco, poco_id: str, tipo: str) -> list[dict]:
-    with banco.conexao() as c:
-        return [_item(r) for r in c.execute(
-            """SELECT d.*, l.documento FROM dados_poco d JOIN leituras l ON l.rel = d.rel
-               WHERE d.poco_id = ? AND d.tipo = ? AND coalesce(l.confere, 1) = 1
-               ORDER BY coalesce(d.prof_topo, d.prof_base), d.ordem""", (poco_id, tipo))]
+    """Itens de um tipo, só dos documentos que conferem com o poço, sem repetição."""
+    return _consultar(banco, poco_id, tipo, so_confere=True)
 
 
 def gerais(banco: Banco, poco_id: str) -> dict:
     """Campos gerais dos formulários do poço, juntos (o RFP prevalece sobre RFCP e Perfuração)."""
     saida = {}
-    ordem = {"rfp": 0, "rfcp": 1, "perfuracao": 2}
     leituras = [le for le in do_poco(banco, poco_id)["leituras"] if le["dados"] and le.get("confere") != 0]
-    for le in sorted(leituras, key=lambda x: ordem.get(x["documento"], 9)):
+    for le in leituras:                      # já em ordem de prioridade
         for k, v in (le["dados"].get("gerais") or {}).items():
             if v not in (None, "", {}) and k not in saida:
                 saida[k] = v

@@ -29,7 +29,8 @@
     avaliacao.py    Vsh, φ, Sw, net pay no intervalo-alvo (registro em execucoes/)
     agp.py          AGP da ANP: topos, lama, testes, litologia (tabelas agp, agp_unidades)
     dados_poco.py   leitores de dados do poço em documentos (bloco 9): leituras, dados_poco, apelidos
-    rfp.py          formulários CDPE da ANP pela posição do texto: RFP, RFCP, Perfuração
+    rfp.py          formulários CDPE da ANP pela posição do texto: RFP, RFCP, Perfuração, ND, NPR, Reentrada
+    pressoes.py     teste a cabo (DLIS por tempo → estações), TFR (relatório + manômetros no ZIP), gradiente
     secao.py        seção estratigráfica pelos topos do AGP → SVG (PNG/PDF pelo PyMuPDF)
     secao_classica.py  estilo clássico: padrões de rocha, carimbo, mapa de localização
     bloco.py        bloco 3D: contorno convexo, Delaunay, superfícies de topo (só numpy) → janela com three.js

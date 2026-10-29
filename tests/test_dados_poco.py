@@ -134,3 +134,20 @@ def test_intervalos_e_temperaturas_na_avaliacao(api_com_formularios):
     fp = api._formularios_perfil(POCO)
     assert [t["nome"] for t in fp["topos"]][:2] == ["FM BARREIRAS", "FM JANDAÍRA"] and fp["topos"][0]["com_nome"]
     assert fp["canhoneados"] == [{"nome": "FM. AÇU", "topo": 1396.0, "base": 1401.0}]
+
+
+def test_mesmo_dado_em_dois_formularios_aparece_uma_vez(tmp_path):
+    pasta, b = _projeto(tmp_path, docs=("RFP",))
+    rel = f"{PASTA}/{POCO}_CDPE_3_ND_1.pdf"
+    u.gerar(os.path.join(pasta, rel), u.ND)
+    b.registrar_arquivo(rel, bacia="Potiguar", poco_id=POCO, tipo="documento")
+    mdp.ler_pendentes(b, pasta)
+    ap = mdp.itens_do_poco(b, POCO, "analise_perfil")
+    assert len(ap) == 1 and ap[0]["documento"] == "rfp" and ap[0]["tambem_em"] == ["nd"]
+    ind = {i["prof_topo"]: i for i in mdp.itens_do_poco(b, POCO, "indicio")}
+    assert ind[812.0]["documento"] == "rfp" and ind[1450.0]["documento"] == "nd"   # só no ND: entra
+    pts = [t for t in mdp.itens_do_poco(b, POCO, "teste_formacao") if t["prof_topo"] == 1420.0]
+    assert len(pts) == 1 and pts[0]["documento"] == "rfp"
+    docs = [le["documento"] for le in mdp.do_poco(b, POCO)["leituras"]]
+    assert docs == ["rfp", "nd"]                                  # em ordem de prioridade
+    assert mdp.gerais(b, POCO)["prof_sondador"] == 1850.0

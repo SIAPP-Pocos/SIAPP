@@ -6,6 +6,39 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 
 ## [Não lançado]
 
+## [0.38.0] — 2026-10-29
+Bloco 9, item 2: pressões.
+### Adicionado
+- **Teste de formação a cabo** (SFT, RFT, MDT…): o DLIS indexado por tempo é lido estação por estação. Para cada
+  uma, o SIAPP tira a hidrostática da lama, a pressão da formação no último patamar, o patamar anterior, os
+  pré-testes e a inclinação do fim do patamar, e diz se a pressão estabilizou. No 1-BRSA-1304-BA, a diferença para
+  o RFP ficou em até 0,1 kgf/cm² nas 8 estações.
+- **Teste de formação (TFR)**: o ZIP é lido por dentro, inclusive ZIPs dentro do ZIP. Do relatório de
+  interpretação saem a estática, a pressão de fluxo, a vazão, o °API, a temperatura, o IP, a permeabilidade
+  efetiva, o skin, o raio de investigação, o modelo, a conclusão, os fluxos e os parâmetros adotados. Dos
+  manômetros (.TPR) saem a série e os extremos de cada um, com o registrador usado na interpretação marcado.
+- **Ficha › Pressões × profundidade**:
+  - gráfico com os pontos do teste a cabo, dos formulários e do TFR, e a lama;
+  - tabela em que cada ponto vai para o grupo A ou B;
+  - **gradiente** de cada grupo, com a densidade e o fluido compatível;
+  - **contato** entre os dois grupos;
+  - curva pressão × tempo de cada estação e de cada manômetro.
+
+  No 1-BRSA-1304-BA, os grupos dão óleo (0,70 g/cm³) e água (1,05 g/cm³), com contato a 1.694 m.
+- **Ficha › relatório do TFR**: tabela dos resultados e dos fluxos.
+- Formulários CDPE novos: **Relatório de Descoberta**, **Relatório de Perfilagens Realizadas** e **Relatório de
+  Reentrada**. Um CDPE de título desconhecido é guardado com o título e o texto, sem erro.
+- O intervalo do TFR e as temperaturas do TFR e da sonda a cabo entram na avaliação de formação.
+- A sigla do poço na operadora vira apelido. Ela vem do relatório do TFR, dos manômetros e do título do DLIS.
+### Mudado
+- O mesmo dado em dois formulários aparece uma vez, o do formulário de maior prioridade, com a anotação "também
+  em" para o outro.
+- Os leitores reconhecem o arquivo pelo caminho (nome e pasta), não só pelo nome.
+- Leitor dos formulários na versão 2: os formulários já lidos são lidos de novo ao abrir o projeto.
+### Corrigido
+- Abrir o DLIS do teste a cabo na aba Perfis dava o erro "índice ETIM em unidade desconhecida". Agora a mensagem
+  explica que o arquivo é indexado por tempo e indica onde ver os dados.
+
 ## [0.37.0] — 2026-10-29
 Bloco 9, item 1: os formulários da ANP na pasta de poço.
 ### Adicionado
