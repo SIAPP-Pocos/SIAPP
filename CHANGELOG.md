@@ -6,6 +6,17 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 
 ## [Não lançado]
 
+## [0.43.0] — 2026-10-29
+Bloco 9, item 7: geoquímica e apelidos. Com ele, o bloco 9 está completo.
+### Adicionado
+- **Geoquímica**: a planilha da pasta GEOQUIMICADEFLUIDO (XML 2003 do Excel, xls ou xlsx) é lida pelo título das
+  colunas — δ¹³C do metano, etano e propano por intervalo, com a leitura da origem do gás (termogênico, biogênico,
+  misto; ordem normal ou invertida) — e, se houver, a geoquímica de rocha (COT, S1, S2, S3, Tmax, IH, IO, Ro).
+  Um δ¹³C positivo por sinal duplo na fórmula (caso do 1-BRSA-1304-BA) é corrigido, com aviso.
+- **Ficha**: seção de geoquímica; os avisos de cada documento aparecem na lista de documentos; "Também escrito como"
+  diz de onde veio cada grafia do poço.
+- A sigla da operadora na planilha de geoquímica vira apelido (os demais leitores já faziam).
+
 ## [0.42.0] — 2026-10-29
 Bloco 9, item 6: sísmica de poço (checkshot).
 ### Adicionado

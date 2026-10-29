@@ -380,7 +380,8 @@ def ficha(banco: Banco, poco_id: str) -> dict | None:
         arquivos = [dict(r) for r in c.execute(
             "SELECT rel, bytes, tipo, caminho_remoto, baixado_em FROM arquivos WHERE poco_id = ? ORDER BY rel",
             (poco_id,))]
-        apelidos = [r[0] for r in c.execute("SELECT chave FROM apelidos WHERE poco_id = ?", (poco_id,))]
+        ap = [dict(r) for r in c.execute("SELECT chave, origem FROM apelidos WHERE poco_id = ? ORDER BY chave", (poco_id,))]
+        apelidos = [a["chave"] for a in ap]
         curvas = [dict(r) for r in c.execute(
             """SELECT c.familia, count(*) AS n, min(c.topo_m) AS topo, max(c.base_m) AS base
                FROM curvas c JOIN perfis pf ON pf.rel = c.rel
@@ -390,4 +391,4 @@ def ficha(banco: Banco, poco_id: str) -> dict | None:
     d = dict(p) if p else {"id": poco_id}
     d["dados_anp"] = json.loads(d.get("dados_anp") or "{}")
     return {"poco": d, "no_cadastro": p is not None, "reate": reate, "arquivos": arquivos,
-            "apelidos": apelidos, "fatos": banco.fatos(poco_id), "curvas": curvas}
+            "apelidos": apelidos, "apelidos_origem": ap, "fatos": banco.fatos(poco_id), "curvas": curvas}

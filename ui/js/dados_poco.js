@@ -55,6 +55,7 @@ function desenharDadosPoco(caixa, dp, id) {
     if (d.confere === 0)
       txt.append(el("div", "agp-aviso", `O formulário é do poço ${d.poco_documento}: não entra nos dados deste.`));
     txt.append(el("div", "dp-arquivo", d.rel.split("/").pop()));
+    for (const a of d.avisos || []) txt.append(el("div", "agp-aviso dp-aviso", a));
     li.append(txt, botaoAbrir(d.rel, "documento"));
     ul.appendChild(li);
   }
@@ -116,6 +117,7 @@ function desenharDadosPoco(caixa, dp, id) {
   secaoPag(caixa, it, topos);
   for (const ck of dp.checkshot || []) blocoDp(caixa, "Sísmica de poço — tempo × profundidade (checkshot)", ck.niveis.length, true,
                                                secaoCheckshot(ck, id));
+  secaoGeoquimica(caixa, it);
 
   const testes = it.teste_formacao || [];
   if (testes.length) {
@@ -610,4 +612,26 @@ function secaoCheckshot(ck, id) {
   };
   c.appendChild(b);
   return c;
+}
+
+
+// ------------------------------------------------ geoquímica: isótopos do gás, geoquímica de rocha
+function secaoGeoquimica(caixa, it) {
+  const iso = it.isotopo_gas || [], roc = it.geoquimica_rocha || [];
+  if (iso.length) {
+    const c = el("div");
+    c.appendChild(tabelaSimples(["Intervalo (m)", "Amostra", "δ¹³C metano (‰)", "δ¹³C etano (‰)", "δ¹³C propano (‰)", "Leitura"],
+      iso.map((x) => [intervaloM(x.prof_topo, x.prof_base), x.texto, numero(x.extra.C1, 2), numero(x.extra.C2, 2),
+                      numero(x.extra.C3, 2), x.nome])));
+    c.appendChild(el("p", "ajuda", "δ¹³C do metano mais pesado que −50 ‰: gás termogênico; mais leve que −60 ‰: biogênico " +
+      "(Schoell, 1983; Whiticar, 1999). É indício da origem do gás, não prova."));
+    blocoDp(caixa, "Geoquímica — isótopos de carbono do gás", iso.length, true, c);
+  }
+  if (roc.length) {
+    blocoDp(caixa, "Geoquímica de rocha", roc.length, roc.length <= 10, tabelaSimples(
+      ["Prof. (m)", "COT (%)", "S1", "S2", "S3", "Tmax (°C)", "IH", "IO", "Ro (%)"],
+      roc.map((x) => [intervaloM(x.prof_topo, x.prof_base), numero(x.valor, 2), numero(x.extra.s1, 2), numero(x.extra.s2, 2),
+                      numero(x.extra.s3, 2), numero(x.extra.tmax, 0), numero(x.extra.ih, 0), numero(x.extra.io, 0),
+                      numero(x.extra.ro, 2)])));
+  }
 }

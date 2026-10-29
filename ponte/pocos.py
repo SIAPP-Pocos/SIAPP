@@ -125,6 +125,8 @@ class PocosAPI:
                 d["secoes_texto"] = dados["secoes_texto"]
             if dados.get("campos"):
                 d["campos"] = dados["campos"]
+            if dados.get("avisos") and isinstance(dados["avisos"], list):
+                d["avisos"] = [a for a in dados["avisos"] if isinstance(a, str)]
             if dados.get("documento") == "cdpe":
                 d["titulo"] = dados.get("titulo_formulario") or d["titulo"]
         itens = {k: v for k, v in dp["itens"].items() if k not in ("manometro",)}

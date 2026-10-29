@@ -1278,3 +1278,4 @@ html[data-tema="escuro"] .selo.err { background: #3a2220; }
 td.av-op-dif { color: var(--erro); font-weight: 600; }
 .lv-processados .tabela td, .lv-processados .tabela th { font-size: 12px; }
 td.lv-arqs { font: 11px var(--mono); word-break: break-all; }
+.dp-aviso { margin-top: 2px; }

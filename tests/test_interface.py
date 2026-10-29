@@ -1831,3 +1831,21 @@ def test_checkshot_na_ficha_e_twt_nos_perfis(janela, tmp_path):
     janela.esperar("pf.form && pf.form.checkshot && pf.form.checkshot.length === 3", 30)
     assert p.evaluate("Math.round(twtNaProf(1020))") == 1010 and p.evaluate("twtNaProf(50)") is None
     assert not janela.erros_js, janela.erros_js
+
+
+def test_geoquimica_e_apelidos_com_origem_na_ficha(janela, tmp_path):
+    """0.43: isótopos do gás na ficha, aviso do sinal duplo e de onde veio cada grafia do poço."""
+    import test_geoquimica as tg
+    p = janela.page
+    abrir_projeto(janela)
+    pasta = tmp_path / "ambiente_teste" / tg.PASTA
+    pasta.mkdir(parents=True)
+    tg.xml_geoquimica(str(pasta / "Envio de Resultados_ANP_d13C.xml"))
+    janela.api._abrir_projeto(str(tmp_path / "ambiente_teste"))
+    p.evaluate(f"abrirFicha('{tg.POCO}')")
+    janela.esperar("document.getElementById('fi-corpo').textContent.includes('isótopos de carbono do gás')")
+    corpo = p.text_content("#fi-dados-poco")
+    assert "-47,39-31,61-27,38gás termogênico; ordem normal" in corpo and "sinal duplo" in corpo
+    assert "Geoquímica de rocha (2)" in corpo
+    assert "(geoquímica)" in p.text_content("#fi-apelidos")
+    assert not janela.erros_js, janela.erros_js

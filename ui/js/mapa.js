@@ -462,7 +462,16 @@ async function abrirFicha(id) {
   if (!r.fatos.length) corpo.appendChild(el("p", "ajuda", "Nenhum ainda. Transcreva na aba Documentos, a partir da página do documento."));
   else corpo.appendChild(tabelaFatos(r.fatos));
 
-  if (r.apelidos.length) corpo.appendChild(el("p", "ajuda", "Também escrito como: " + r.apelidos.join(", ")));
+  if (r.apelidos.length) {
+    // de onde veio cada grafia (cadastro da ANP, formulários, PVT, teste, sísmica de poço, geoquímica…)
+    const ORIGEM_APELIDO = { anp: "cadastro da ANP", cdpe: "formulários da ANP", pressoes: "teste de formação",
+      pvt: "PVT", checkshot: "sísmica de poço", geoquimica: "geoquímica", pag: "PAG", local: "você", pacote: "comunidade", base: "comunidade" };
+    const ap = r.apelidos_origem && r.apelidos_origem.length ? r.apelidos_origem.map((a) =>
+      ORIGEM_APELIDO[a.origem] ? `${a.chave} (${ORIGEM_APELIDO[a.origem]})` : a.chave) : r.apelidos;
+    const pa = el("p", "ajuda", "Também escrito como: " + ap.join(", "));
+    pa.id = "fi-apelidos";
+    corpo.appendChild(pa);
+  }
 }
 
 // ------------------------------------------------ produção do poço (dados abertos da ANP)

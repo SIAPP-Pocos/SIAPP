@@ -131,6 +131,14 @@ Precisa de internet. Comece por uma categoria pequena para ver o tempo.
 - [ ] Sem intervalo marcado, **Calcular** explica que precisa de um intervalo-alvo.
 - [ ] Repetir no `5PX__0011__RN_5PX__0011__RN.tif` (DLIS de 2020).
 
+## 0.43 — geoquímica e apelidos
+
+- [ ] Ficha do **1-BRSA-1304-BA** › "Geoquímica — isótopos de carbono do gás": 1.680–1.684 m, gás, δ¹³C
+      **−47,39 / −31,61 / −27,38 ‰**, "gás termogênico; ordem normal". Na lista de documentos, a planilha traz o
+      aviso do sinal duplo (`=--47.39`); confira na nota técnica (PDF da mesma pasta).
+- [ ] "Também escrito como": **1-FPA-1-BA**, com a origem (o primeiro documento que gravou; 1FPA1BA e
+      1-FPA-0001-BA são a mesma grafia para o SIAPP). Em Mapa › Destacar poços, 1-FPA-0001-BA cai no 1-BRSA-1304-BA.
+
 ## 0.42 — sísmica de poço (checkshot)
 
 - [ ] Ficha do **1-BRSA-1304-BA** › "Sísmica de poço — tempo × profundidade (checkshot)": 23 níveis, de 90,6 a
