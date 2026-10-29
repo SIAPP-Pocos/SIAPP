@@ -6,6 +6,18 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 
 ## [Não lançado]
 
+## [0.42.0] — 2026-10-29
+Bloco 9, item 6: sísmica de poço (checkshot).
+### Adicionado
+- **Checkshot do SEG-Y**: o cabeçalho de cada traço da sísmica de poço é lido (sem o sinal), pelas posições que o
+  próprio cabeçalho textual declara. Sai a tabela tempo × profundidade: tempo vertical corrigido pelo afastamento da
+  fonte e pela correção ao datum, TWT, velocidade média e intervalar. No 1-BRSA-1304-BA confere com o relatório da
+  empresa.
+- **Ficha**: tabela, gráficos TWT × profundidade e velocidade intervalar, e exportação da tabela em CSV para a
+  sísmica de superfície.
+- **Perfis**: a leitura do mouse mostra o TWT da profundidade.
+- O registro de campo (tiro a tiro) aparece na lista de documentos; a sigla do poço na operadora vira apelido.
+
 ## [0.41.0] — 2026-10-29
 Bloco 9, item 5: perfis já processados pela operadora.
 ### Adicionado

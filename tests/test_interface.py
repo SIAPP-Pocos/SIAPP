@@ -1800,3 +1800,34 @@ def test_perfil_processado_comparado_e_pesquisa_no_levantamento(janela, tmp_path
     janela.esperar("document.querySelectorAll('.lv-processados tr').length === 3")
     assert "1-A-1-RN" in p.text_content(".lv-processados") and "PHIE, SW, VSH" in p.text_content(".lv-processados")
     assert not janela.erros_js, janela.erros_js
+
+
+def test_checkshot_na_ficha_e_twt_nos_perfis(janela, tmp_path):
+    """0.42: tabela tempo × profundidade do SEG-Y da sísmica de poço na ficha; TWT na leitura do mouse."""
+    import test_checkshot as tc
+    from interface_util import foto
+    from test_avaliacao import las_reservatorio
+    p = janela.page
+    abrir_projeto(janela)
+    raiz = tmp_path / "ambiente_teste" / "bruto" / "Potiguar" / tc.POCO
+    (raiz / "Sismica de Poco").mkdir(parents=True)
+    tc.vertical(str(raiz / "Sismica de Poco" / f"{tc.POCO}_asr-3_stack.sgy"))
+    (raiz / "Perfil Convencional").mkdir()
+    las_reservatorio(raiz / "Perfil Convencional" / "siapp.las")
+    janela.api._abrir_projeto(str(tmp_path / "ambiente_teste"))
+    p.evaluate(f"abrirFicha('{tc.POCO}')")
+    janela.esperar("document.getElementById('fi-corpo').textContent.includes('tempo × profundidade (checkshot)')")
+    corpo = p.text_content("#fi-dados-poco")
+    assert "1.4001.4000,61.2002.3334.000" in corpo                         # MD, TVDSD, Tv, TWT, Vméd, Vint
+    assert p.locator("#fi-dados-poco .dp-checkshot svg polyline").count() == 2
+    p.click("#aba-mapa")
+    p.locator("#fi-dados-poco .dp-checkshot").scroll_into_view_if_needed()
+    foto(janela, "ck_1_ficha")
+    p.locator("#fi-dados-poco .dp-checkshot button").click()
+    janela.esperar("historicoStatus.some((m) => m.texto.includes('checkshot_tempo_profundidade.csv'))")
+    p.click("#aba-perfis")
+    janela.esperar("document.querySelectorAll('#lista-perfis button').length >= 1")
+    p.click("#lista-perfis button")
+    janela.esperar("pf.form && pf.form.checkshot && pf.form.checkshot.length === 3", 30)
+    assert p.evaluate("Math.round(twtNaProf(1020))") == 1010 and p.evaluate("twtNaProf(50)") is None
+    assert not janela.erros_js, janela.erros_js

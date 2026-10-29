@@ -27,10 +27,10 @@ import json
 import os
 
 from . import pocos as mpo
-from . import pag, pressoes, pvt, rfp
+from . import checkshot, pag, pressoes, pvt, rfp
 from .banco import Banco, agora
 
-LEITORES = {"cdpe": rfp, "pressoes": pressoes, "pvt": pvt, "pag": pag}
+LEITORES = {"cdpe": rfp, "pressoes": pressoes, "pvt": pvt, "pag": pag, "checkshot": checkshot}
 
 TIPOS = {
     "topo": "Topo estratigráfico", "indicio": "Indício de petróleo/gás", "testemunho": "Testemunho",
@@ -44,7 +44,7 @@ TIPOS = {
     "composicao": "Composição do fluido (liberação flash)",
     "gas_lama": "Zona de gás na lama (PAG)", "salinidade_lama": "Salinidade da lama (PAG)",
     "litologia_calha": "Litologia da calha (PAG)", "indicio_calha": "Fluorescência na calha (PAG)",
-    "topo_calha": "Topo pela calha (PAG)",
+    "topo_calha": "Topo pela calha (PAG)", "checkshot": "Tempo × profundidade (checkshot)",
 }
 
 

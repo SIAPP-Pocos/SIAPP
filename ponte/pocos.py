@@ -13,6 +13,7 @@ from motor import dados_poco as mdp
 from motor import pressoes as mpr
 from motor import levantamento as mlv
 from motor import pocos as mpo
+from motor import projeto as mp
 
 from .base import ErroUsuario, resposta_segura
 
@@ -133,7 +134,11 @@ class PocosAPI:
         comps = [{"rel": le["rel"], "amostra": le["dados"].get("amostra") or {},
                   "componentes": le["dados"].get("componentes") or []}
                  for le in dp["leituras"] if (le["dados"] or {}).get("documento") == "pvt_flash" and le["confere"] != 0]
-        return {"documentos": docs, "gerais": mdp.gerais(self._banco, pid), "itens": itens,
+        cks = [{"rel": le["rel"], "niveis": le["dados"].get("niveis") or [], "referencia": le["dados"].get("referencia") or {},
+                "cabecalho": le["dados"].get("cabecalho") or {}}
+               for le in dp["leituras"] if (le["dados"] or {}).get("documento") == "checkshot" and le["confere"] != 0]
+        itens.pop("checkshot", None)
+        return {"checkshot": cks, "documentos": docs, "gerais": mdp.gerais(self._banco, pid), "itens": itens,
                 "tipos": mdp.TIPOS, "pressoes": mpr.painel(dp), "pvt": pvts, "composicao": comps}
 
     @resposta_segura
@@ -164,6 +169,23 @@ class PocosAPI:
         if "A" in saida and "B" in saida:
             saida["contato"] = mpr.contato(saida["A"], saida["B"])
         return saida
+
+    @resposta_segura
+    def exportar_checkshot(self, poco: str):
+        """Tabela tempo × profundidade do checkshot em CSV (exportacoes/<poço>/), para levar à sísmica."""
+        from motor import checkshot as mck
+        self._exigir_projeto()
+        pid = mpo.resolver(self._banco, poco)
+        cks = self._dados_poco_ficha(pid)["checkshot"]
+        if not cks:
+            raise ErroUsuario("Este poço não tem checkshot lido (SEG-Y da pasta Sismica de Poco).")
+        pasta = os.path.join(self._projeto.pasta_de("exportacoes"), mp.nome_seguro(pid))
+        os.makedirs(pasta, exist_ok=True)
+        saida = os.path.join(pasta, "checkshot_tempo_profundidade.csv")
+        with open(saida, "w", encoding="utf-8", newline="\n") as f:
+            f.write(mck.csv(cks[0]["niveis"], pid))
+        self._projeto.registrar("exportou_checkshot", poco=pid, saida=self._projeto.rel(saida))
+        return {"arquivo": self._projeto.rel(saida).replace(os.sep, "/"), "niveis": len(cks[0]["niveis"])}
 
     @resposta_segura
     def reler_dados_poco(self, poco: str):

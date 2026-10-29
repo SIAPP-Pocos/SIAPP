@@ -114,6 +114,8 @@ function desenharDadosPoco(caixa, dp, id) {
   for (const c of dp.composicao || []) blocoDp(caixa, `Composição do fluido — liberação flash`, c.componentes.length, false,
                                                secaoComposicao(c));
   secaoPag(caixa, it, topos);
+  for (const ck of dp.checkshot || []) blocoDp(caixa, "Sísmica de poço — tempo × profundidade (checkshot)", ck.niveis.length, true,
+                                               secaoCheckshot(ck, id));
 
   const testes = it.teste_formacao || [];
   if (testes.length) {
@@ -453,7 +455,7 @@ function secaoTfr(t, series) {
 
 
 // ------------------------------------------------ PVT
-function graficoXY(svg, xs, ys, xRot, yRot, marcaX) {
+function graficoXY(svg, xs, ys, xRot, yRot, marcaX, inverterY = false) {
   while (svg.firstChild) svg.removeChild(svg.firstChild);
   const W = 220, H = 170, m = { e: 44, d: 8, t: 8, b: 30 };
   svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
@@ -461,11 +463,13 @@ function graficoXY(svg, xs, ys, xRot, yRot, marcaX) {
   if (pts.length < 2) return;
   const vx = pts.map((p) => p[0]), vy = pts.map((p) => p[1]);
   const x = escalaLinear(Math.min(...vx), Math.max(...vx), m.e, W - m.d);
-  const y = escalaLinear(Math.min(...vy), Math.max(...vy), H - m.b, m.t);
+  // inverterY: profundidade crescendo para baixo
+  const y = inverterY ? escalaLinear(Math.min(...vy), Math.max(...vy), m.t, H - m.b)
+    : escalaLinear(Math.min(...vy), Math.max(...vy), H - m.b, m.t);
   const g = svgEl("g", { class: "dp-graf" });
   g.appendChild(svgEl("rect", { x: m.e, y: m.t, width: W - m.e - m.d, height: H - m.t - m.b, class: "dp-graf-area" }));
   if (marcaX != null) g.appendChild(svgEl("line", { x1: x(marcaX), x2: x(marcaX), y1: m.t, y2: H - m.b, class: "dp-linha-p" }));
-  pts.sort((a, b) => a[0] - b[0]);
+  pts.sort((a, b) => (inverterY ? a[1] - b[1] : a[0] - b[0]));     // perfil em profundidade: na ordem da profundidade
   g.appendChild(svgEl("polyline", { points: pts.map(([a, b]) => `${x(a).toFixed(1)},${y(b).toFixed(1)}`).join(" "), class: "dp-serie" }));
   for (const [a, b] of pts) g.appendChild(svgEl("circle", { cx: x(a), cy: y(b), r: 2, fill: "#2a78d6" }));
   const amp = Math.max(...vy) - Math.min(...vy);
@@ -571,4 +575,39 @@ function secaoPag(caixa, it, toposRfp) {
       "quando o poço não tem a litologia do AGP."));
     blocoDp(caixa, "Litologia da calha (PAG)", lito.length, false, c);
   }
+}
+
+
+// ------------------------------------------------ checkshot: tempo × profundidade
+function secaoCheckshot(ck, id) {
+  const c = el("div", "dp-checkshot");
+  const r = ck.referencia || {}, h = ck.cabecalho || {};
+  const t = el("table", "tabela ficha");
+  linhaFicha(t, "Aquisição", [h.companhia, h.data].filter(Boolean).join(" · "));
+  linhaFicha(t, "Referências", [r.elev_mesa_m != null ? `mesa rotativa ${numero(r.elev_mesa_m, 1)} m` : "",
+                                r.datum_sismico_m != null ? `datum sísmico ${numero(r.datum_sismico_m, 1)} m` : "",
+                                r.prof_fonte_m != null ? `fonte a ${numero(r.prof_fonte_m, 1)} m de profundidade` : "",
+                                r.afastamento_m != null ? `afastamento ${numero(r.afastamento_m, 1)} m` : ""].filter(Boolean).join(" · "));
+  c.appendChild(t);
+  const n = ck.niveis;
+  const graf = el("div", "dp-pvt-graf");
+  const s1 = svgEl("svg", { class: "dp-svg dp-svg-pvt", role: "img", "aria-label": "TWT × profundidade" });
+  graficoXY(s1, n.map((x) => x.twt_ms), n.map((x) => x.tvdsd), "TWT (ms)", "prof. (m)", null, true);
+  const s2 = svgEl("svg", { class: "dp-svg dp-svg-pvt", role: "img", "aria-label": "Velocidade intervalar" });
+  graficoXY(s2, n.map((x) => x.vint_m_s), n.map((x) => x.tvdsd), "Vint (m/s)", "prof. (m)", null, true);
+  graf.append(s1, s2);
+  c.appendChild(graf);
+  c.appendChild(tabelaSimples(["MD (m)", "TVD abaixo do datum (m)", "Tempo vertical (s)", "TWT (ms)", "Vméd (m/s)", "Vint (m/s)"],
+    n.map((x) => [numero(x.md, 1), numero(x.tvdsd, 1), numero(x.tcorr_s, 4), numero(x.twt_ms, 1), numero(x.vmed_m_s, 0),
+                  x.vint_m_s != null ? numero(x.vint_m_s, 0) : "—"]), "dp-tab-pvt"));
+  c.appendChild(el("p", "ajuda", "Do cabeçalho de cada traço do SEG-Y: tempo vertical = tempo de chegada × componente " +
+    "vertical do raio + correção da fonte ao datum; TWT = 2 × o tempo vertical. Na aba Perfis, o mouse mostra o TWT " +
+    "de cada profundidade."));
+  const b = el("button", "btn secundario pequeno", "Exportar a tabela (CSV)");
+  b.onclick = async () => {
+    const x = await chamar(b, "exportar_checkshot", id);
+    if (x.ok) status(`Tabela tempo × profundidade (${x.niveis} níveis) em ${x.arquivo}.`, "ok");
+  };
+  c.appendChild(b);
+  return c;
 }

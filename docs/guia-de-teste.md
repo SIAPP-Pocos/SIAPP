@@ -131,6 +131,17 @@ Precisa de internet. Comece por uma categoria pequena para ver o tempo.
 - [ ] Sem intervalo marcado, **Calcular** explica que precisa de um intervalo-alvo.
 - [ ] Repetir no `5PX__0011__RN_5PX__0011__RN.tif` (DLIS de 2020).
 
+## 0.42 — sísmica de poço (checkshot)
+
+- [ ] Ficha do **1-BRSA-1304-BA** › "Sísmica de poço — tempo × profundidade (checkshot)": 23 níveis, de 90,6 a
+      1.944 m; na última linha TWT **1.276,9 ms**, Vméd **3.032 m/s**, Vint **4.263 m/s**. Confira com a tabela
+      "FULL PROFILE DATA" do relatório (`1-brsa-1304-ba_asr-3_field_report.pdf`, págs. 24 e 25).
+- [ ] Os dois gráficos (TWT e velocidade intervalar × profundidade) descem com a profundidade.
+- [ ] "Exportar a tabela (CSV)": o arquivo `exportacoes\1-BRSA-1304-BA\checkshot_tempo_profundidade.csv` abre no
+      Excel com MD, TVD, TVDSD, Tcorr, TWT, Vméd, Vint.
+- [ ] Perfis › um perfil do 1-BRSA-1304-BA: o mouse a 1.680 m mostra "TWT ≈ 1.148 ms".
+- [ ] Na lista de documentos da ficha, o `_raw.sgy` aparece como "registro de campo (tiro a tiro)".
+
 ## 0.41 — perfis já processados pela operadora
 
 - [ ] Abra o projeto (as famílias do levantamento são refeitas nessa abertura). Dados › Levantamento › Potiguar:

@@ -198,7 +198,10 @@ class PerfisAPI:
                 if i["prof_topo"] is not None and i["prof_base"] is not None and i["prof_base"] > i["prof_topo"]]
         topos_calha = [{"nome": i["nome"], "topo": i["prof_topo"]}
                        for i in mdp.itens_do_poco(self._banco, poco, "topo_calha") if i["prof_topo"] is not None]
-        return {"topos": topos, "canhoneados": canh, "litologia_calha": lito, "topos_calha": topos_calha}
+        cs = sorted(({"md": i["prof_topo"], "twt": i["valor"]} for i in mdp.itens_do_poco(self._banco, poco, "checkshot")
+                     if i["prof_topo"] is not None and i["valor"] is not None), key=lambda x: x["md"])
+        return {"topos": topos, "canhoneados": canh, "litologia_calha": lito, "topos_calha": topos_calha,
+                "checkshot": cs}
 
     def _intervalos_formularios(self, poco: str) -> list[dict]:
         """Intervalos dos formulários da ANP como candidatos para a avaliação: análise de perfis

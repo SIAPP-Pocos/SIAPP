@@ -578,6 +578,8 @@ function ligarInteracao(box, yDe) {
       if (arraste && Math.abs(yNa(ev) - arraste.y0) > 2) mostrarFaixa(arraste.y0, yNa(ev));
       const prof = profDe(yNa(ev));
       const partes = [`${numero(prof, 2)} m`];
+      const twt = twtNaProf(prof);
+      if (twt !== null) partes[0] += ` · TWT ${numero(twt, 1)} ms`;
       // perto de um topo do AGP: nome, fonte e qualidade
       const tol = (4 / ALTURA_TRILHAS) * faixa;
       const topoAgp = (pf.toposAgp || []).find((u) => Math.abs(u.topo - prof) <= tol);
@@ -595,6 +597,16 @@ function ligarInteracao(box, yDe) {
       leitura.style.top = ev.clientY + 12 + "px";
     };
   }
+}
+
+// TWT (ms) pelo checkshot do poço, por interpolação entre os níveis (fora deles: nada).
+function twtNaProf(prof) {
+  const cs = (pf.form && pf.form.checkshot) || [];
+  for (let k = 1; k < cs.length; k++) {
+    const a = cs[k - 1], b = cs[k];
+    if (prof >= a.md && prof <= b.md) return b.md === a.md ? a.twt : a.twt + (b.twt - a.twt) * (prof - a.md) / (b.md - a.md);
+  }
+  return null;
 }
 
 function definirJanela(topo, base) {

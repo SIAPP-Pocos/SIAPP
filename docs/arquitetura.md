@@ -32,6 +32,7 @@
     rfp.py          formulários CDPE da ANP pela posição do texto: RFP, RFCP, Perfuração, ND, NPR, Reentrada
     pressoes.py     teste a cabo (DLIS por tempo → estações), TFR (relatório + manômetros no ZIP), gradiente
     pvt.py          análise PVT (liberação diferencial e flash): saturação, Bo/Rs/Bg × pressão, composição
+    checkshot.py    sísmica de poço: cabeçalhos do SEG-Y → tabela tempo × profundidade, TWT, CSV
     operador.py     perfis processados pela operadora: famílias do levantamento refeitas, pesquisa, comparação
     pag.py          PAG: zonas de gás e salinidade da lama (LAS), descrição de calha (xls): litologia, topos, fluorescência
     secao.py        seção estratigráfica pelos topos do AGP → SVG (PNG/PDF pelo PyMuPDF)
