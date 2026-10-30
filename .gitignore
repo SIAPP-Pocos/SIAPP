@@ -16,6 +16,9 @@ recursos/tessdata/
 *.part
 *.tmp
 
+# Atalho criado pelo SIAPP na primeira abertura (caminho deste computador)
+SIAPP.lnk
+
 # Sistema / editores
 .DS_Store
 Thumbs.db

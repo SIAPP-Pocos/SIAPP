@@ -155,6 +155,8 @@ class JanelasAPI:
             min_size=(640, 420), **self._kwargs_geometria(g))
         self._janelas[aba] = janela
         self._vigiar_geometria(janela, aba)
+        from ponte import icone
+        icone.aplicar(janela)
         try:
             janela.events.closed += lambda: self._janela_fechou(aba)
         except AttributeError:

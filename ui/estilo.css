@@ -37,6 +37,7 @@ body {
 }
 .marca { display: flex; align-items: baseline; gap: 14px; }
 .sigla { font: 700 22px var(--serif); letter-spacing: .06em; color: var(--destaque); }
+.marca-icone { width: 24px; height: 24px; align-self: center; margin-right: -6px; flex: none; }
 .nome { color: var(--suave); }
 .versao { font: 12px var(--mono); color: var(--suave); }
 

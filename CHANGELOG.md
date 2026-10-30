@@ -6,6 +6,21 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 
 ## [Não lançado]
 
+## [0.46.0] — 2026-10-30
+O ícone do SIAPP.
+### Adicionado
+- **Ícone próprio**: um "S" formado pelas curvas de raios gama (verde) e resistividade (vermelho), com o amarelo do
+  crossover entre elas, sobre papel de perfil com grade log e cortado por um marcador de topo de formação.
+- `recursos/icone/siapp.ico` com 8 tamanhos (16 a 256 px), **cada faixa com o seu desenho**: a 16 e 20 px, sem
+  grade, com borda e topo encaixados na grade de pixels e cores mais fortes; a 24–40 px, só as linhas principais
+  da grade, cada uma numa coluna de pixel inteira. Fontes em SVG e um LEIA-ME na mesma pasta.
+- No Windows, a janela principal e as janelas de aba mostram o ícone na barra de título, na barra de tarefas e no
+  Alt+Tab (antes, o do `python.exe`). O SIAPP ganha identidade própria na barra de tarefas e não se agrupa mais com
+  outros programas em Python.
+- **Atalho com o ícone**: na primeira abertura no Windows, o SIAPP cria `SIAPP.lnk` na própria pasta (abre pelo
+  `iniciar.bat`); dá para copiar para a Área de Trabalho ou fixar no Iniciar e na barra de tarefas.
+- O ícone aparece também ao lado do nome SIAPP no topo da janela.
+
 ## [0.45.0] — 2026-10-29
 Topos de várias fontes: ver as diferenças, saber de onde vem e escolher.
 ### Adicionado

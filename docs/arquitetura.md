@@ -81,7 +81,11 @@ numa **janela própria** do Windows: `ponte/janelas.py` cria a janela com a mesm
 - posição, tamanho, monitor, divisão, barras recolhidas e abas destacadas ficam em
   `ambiente_teste/preferencias.json` (`motor/preferencias.py`, validado chave a chave) e voltam
   ao abrir; janela cujo monitor sumiu abre na tela principal;
-- fechar a principal fecha as outras (e lembra quais estavam abertas).
+- fechar a principal fecha as outras (e lembra quais estavam abertas);
+- ícone (0.46): no Windows o pywebview usa o ícone do `python.exe`; `ponte/icone.py` dá ao processo
+  um AppUserModelID próprio e, quando cada janela aparece (`events.shown`), troca o ícone pelo
+  `recursos/icone/siapp.ico` com `WM_SETICON`; na primeira abertura cria `SIAPP.lnk` (PowerShell, em segundo
+  plano). Qualquer falha é ignorada — o ícone é cosmético.
 
 ## O banco do projeto
 

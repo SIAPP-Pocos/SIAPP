@@ -21,7 +21,7 @@ import webview
 
 from motor import projeto as mp
 from motor import registro
-from ponte import base
+from ponte import base, icone
 from ponte.api import API
 
 __all__ = ["API", "main"]
@@ -29,6 +29,8 @@ __all__ = ["API", "main"]
 
 def main():
     os.makedirs(base.PASTA_PROJETO, exist_ok=True)
+    icone.preparar_processo()        # identidade própria na barra de tarefas (Windows)
+    icone.criar_atalho()             # SIAPP.lnk com o ícone, uma vez (em segundo plano)
     registro.configurar(base.PASTA_PROJETO)
     api = API()
     # posição e tamanho da última vez (se a tela ainda existir; senão, centralizada)
@@ -39,6 +41,7 @@ def main():
         js_api=api, min_size=(980, 640), **geometria,
     )
     api._janela = janela
+    icone.aplicar(janela)            # ícone do SIAPP no lugar do ícone do python.exe
     api._vigiar_geometria(janela, "principal")
     janela.events.closing += api._ao_fechar_principal
     # http_server=True serve a pasta ui/ por um servidor local interno, o que

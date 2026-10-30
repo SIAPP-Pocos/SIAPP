@@ -131,6 +131,17 @@ Precisa de internet. Comece por uma categoria pequena para ver o tempo.
 - [ ] Sem intervalo marcado, **Calcular** explica que precisa de um intervalo-alvo.
 - [ ] Repetir no `5PX__0011__RN_5PX__0011__RN.tif` (DLIS de 2020).
 
+## 0.46 — ícone do SIAPP
+
+- [ ] A janela abre com o ícone novo na **barra de título** (canto superior esquerdo) e na **barra de tarefas**,
+      não mais o do Python. Passe o mouse e confira que o SIAPP aparece separado de outros programas em Python.
+- [ ] **Alt+Tab** mostra o ícone novo.
+- [ ] Abra uma aba em janela própria (ex.: Mapa › abrir em janela): a janela nova também tem o ícone.
+- [ ] No topo do SIAPP, o ícone aparece à esquerda do nome, alinhado.
+- [ ] Depois da primeira abertura aparece **`SIAPP.lnk`** na pasta do SIAPP, com o ícone. Dois cliques nele abrem o
+      SIAPP; botão direito › *Fixar em Iniciar* / *Fixar na barra de tarefas* também funciona. Pode copiá-lo para a
+      Área de Trabalho.
+
 ## 0.45 — topos de várias fontes
 
 - [ ] Ficha do **1-BRSA-1304-BA** › "Topos de formação — compare as fontes e escolha": colunas RFP e Calha (PAG), 10
