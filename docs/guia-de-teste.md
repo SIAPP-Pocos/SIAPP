@@ -132,6 +132,26 @@ Precisa de internet. Comece por uma categoria pequena para ver o tempo.
 - [ ] Sem intervalo marcado, **Calcular** explica que precisa de um intervalo-alvo.
 - [ ] Repetir no `5PX__0011__RN_5PX__0011__RN.tif` (DLIS de 2020).
 
+## 0.49 — procurar por tipo de dado
+
+Precisa do levantamento do acervo já feito (o seu tem 9.447 poços: Potiguar e Alagoas).
+
+- [ ] **Dados › Procurar por tipo de dado**: a lista de tipos aparece com poços, arquivos e tamanho de cada um
+      (ex.: petrofísica básica ≈ 161 poços, PVT ≈ 13, sísmica de poço ≈ 104). **Nenhum tipo vem marcado.**
+- [ ] Marque **Petrofísica básica** e clique **Procurar**: lista ≈ 161 poços; **nenhum poço vem marcado**.
+- [ ] Marque também **PVT** com "todos os tipos marcados": sobra(m) só o(s) poço(s) com os dois (ex.: 1-BRSA-1034-RN).
+      Troque para "pelo menos um": a lista cresce.
+- [ ] Troque a bacia para **Alagoas**: os números mudam (petrofísica básica ≈ 11 poços).
+- [ ] Marque 2 poços, **Ver os marcados no mapa**: eles ficam destacados no mapa.
+- [ ] **Exportar a busca (CSV)**: abre no Excel, um arquivo do portal por linha, em
+      `ambiente_teste\exportacoes\tipos_de_dado\`.
+- [ ] Marque 1 poço com petrofísica (ex.: 1-ALG-1-RN) e **Baixar os arquivos dos marcados**: mostra o total e pede
+      confirmação; **Cancelar** não baixa nada. Confirmando, só os arquivos de PETROFISICA entram na fila e caem em
+      `bruto\…\Dados de Rochas e Fluidos\PETROFISICA…`.
+- [ ] Depois de baixar, a ficha do poço mostra os blocos de petrofísica (0.48/0.48.1).
+- [ ] **Abra um poço de outra grafia da pasta** (ex.: 1-BRSA-1006-RN ou 7-ET-854-RN, pasta `PETROFISICABASICA`/
+      `Petrofisica_basica`): confira se as planilhas abrem; se alguma não abrir, mande-a.
+
 ## 0.48 — petrofísica básica de testemunho
 
 Use o poço **1-ALG-1-RN** (já baixado: pasta Dados de Rochas e Fluidos › PETROFISICA_BASICA).

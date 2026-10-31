@@ -32,12 +32,13 @@ from .levantamento import LevantamentoAPI
 from .perfis import PerfisAPI
 from .pocos import PocosAPI
 from .secao import SecaoAPI
+from .tipos import TiposAPI
 from .vocabulario import VocabularioAPI
 
 
 class API(BaseAPI, JanelasAPI, PocosAPI, CatalogoAPI, DocumentosAPI, VocabularioAPI, ComunidadeAPI,
           FatosAPI, PerfisAPI, LevantamentoAPI, SecaoAPI, FerramentasAPI,
-          BlocoAPI, ExternosAPI):
+          BlocoAPI, ExternosAPI, TiposAPI):
     def __init__(self):
         self._janela = None
         self._janelas = {}            # abas destacadas em janela própria: {aba: janela}

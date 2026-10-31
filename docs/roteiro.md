@@ -59,7 +59,9 @@ existe e a validação científica ficam **para o final**, antes do lançamento 
 
 ## No final — melhorias do que já existe
 
-- [ ] **Download em lote**: baixar os perfis dos poços de uma seção, de um campo ou do filtro
+- [x] **Procurar por tipo de dado** (0.49): em quais poços há petrofísica, PVT, etc., pelo levantamento; ver no mapa,
+      baixar só os arquivos do tipo e exportar CSV. Ver `docs/tipos-de-dado.md`.
+- [ ] **Download em lote** (o da 0.49 cobre "poços com um tipo de dado"): baixar os perfis dos poços de uma seção, de um campo ou do filtro
       do mapa, com uma tabela por poço (nada pré-marcado; atalhos só para marcar) e leitura
       automática ao terminar. Os rótulos de corrida da 0.17 ajudam a escolher (ex.: só a
       perfilagem convencional, passada principal).

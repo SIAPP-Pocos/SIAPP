@@ -1917,3 +1917,43 @@ def test_topos_comparar_e_escolher_na_ficha(janela, tmp_path):
     janela.esperar("historicoStatus.some((m) => m.texto.includes('Ordem das fontes de topo salva'))")
     assert api.topos_precedencia()["ordem"] == ["agp", "rfp", "transcrito", "calha"]
     assert not janela.erros_js, janela.erros_js
+
+
+def test_procurar_por_tipo_de_dado_nada_marcado_e_busca_no_levantamento(janela, tmp_path):
+    """0.49: Dados › Procurar por tipo de dado: os tipos vêm do levantamento, nada vem marcado, a busca lista os
+    poços e os arquivos só dos tipos pedidos."""
+    import test_tipos_dado as tt
+    p = janela.page
+    abrir_projeto(janela)
+    with janela.api._banco.conexao() as c:
+        for bacia, cam, nome, cat in tt.POCOS:
+            c.execute("INSERT INTO acervo_pocos(bacia, caminho, nome_pasta, poco_id, categoria) VALUES (?,?,?,?,?)",
+                      (bacia, cam, nome, nome, cat))
+        for i, pasta, nome, tam in tt.ARQS:
+            bacia, cam, _, _ = tt.POCOS[i]
+            c.execute("INSERT INTO acervo_arquivos(bacia, caminho, poco_caminho, nome, pasta, tamanho) VALUES (?,?,?,?,?,?)",
+                      (bacia, f"{cam}{pasta}/{nome}", cam, nome, pasta, tam))
+    ir(p, "dados", "tipos")
+    janela.esperar("document.querySelectorAll('#tp-tipos input[type=checkbox]').length > 5")
+    assert p.evaluate("[...document.querySelectorAll('#tp-tipos input[type=checkbox]')].every((c) => !c.checked)")
+    txt = p.text_content("#tp-tipos")
+    assert "Petrofísica básica" in txt and "4 poço(s)" in txt and "levantado(s)" in txt
+    p.click("#tp-procurar")
+    assert "Marque pelo menos um tipo" in janela.status()
+    p.locator("#tp-tipos label", has_text="Petrofísica básica").locator("input").check()
+    p.locator("#tp-tipos label", has_text="PVT").locator("input").check()
+    p.select_option("#tp-modo", "algum")
+    p.click("#tp-procurar")
+    janela.esperar("document.querySelectorAll('#tp-resultado tr').length === 5")
+    assert "4 poço(s) com Petrofísica básica ou PVT" in p.text_content("#tp-resultado")
+    assert p.evaluate("[...document.querySelectorAll('#tp-resultado td input[type=checkbox]')].every((c) => !c.checked)")
+    assert "nenhum marcado" in p.text_content("#tp-resultado")
+    p.locator("#tp-resultado td input[type=checkbox]").first.check()
+    janela.esperar("document.getElementById('tp-resultado').textContent.includes('1 marcado')")
+    p.click("#tp-resultado button:has-text(\"Baixar os arquivos dos marcados\")")
+    assert "Confirmar e baixar" in p.text_content("#tp-resultado")
+    p.click("#tp-resultado button:has-text(\"Cancelar\")")
+    assert "Confirmar e baixar" not in p.text_content("#tp-resultado")
+    p.select_option("#tp-bacia", "Alagoas")
+    p.select_option("#tp-modo", "todos")
+    janela.esperar("document.querySelector('#tp-tipos').textContent.includes('1 poço(s) levantado(s)')")

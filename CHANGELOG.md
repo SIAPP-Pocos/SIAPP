@@ -6,6 +6,19 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 
 ## [Não lançado]
 
+## [0.49.0] — 2026-10-31
+Procurar poços por tipo de dado.
+### Adicionado
+- **Dados › Procurar por tipo de dado**: marque os tipos que procura (petrofísica básica e avançada, PVT, geoquímica,
+  sísmica de poço, teste de formação, perfis, direcionais, AGP, PAG, esquemas, fotos de rocha…) e veja em quais poços
+  há **todos** ou **pelo menos um** deles, com a quantidade e o tamanho dos arquivos de cada tipo. Responde pelo
+  levantamento do acervo já feito: **não baixa nem pede nada ao portal**. Nada vem marcado.
+- O tipo vem do nome da pasta, juntando as várias grafias que o REATE usa para a mesma pasta (inclusive a com erro
+  `Petrofica_basica`).
+- Com os poços que você marcar: **ver no mapa** (até 300), **baixar só os arquivos dos tipos procurados** (com total
+  e confirmação, pela fila de downloads de sempre) e **exportar a busca em CSV** (um arquivo do portal por linha).
+- `docs/tipos-de-dado.md`; testes de motor, de ponte e de interface.
+
 ## [0.48.1] — 2026-10-31
 ### Corrigido
 - **Petrofísica básica: a pasta tem várias grafias no acervo.** O leitor da 0.48 só reconhecia `PETROFISICA_BASICA`

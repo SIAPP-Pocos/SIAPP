@@ -1306,3 +1306,9 @@ td.tp-diverge { color: var(--erro); font-weight: 600; }
 .co-prec { list-style: none; padding: 0; margin: 6px 0; display: grid; gap: 4px; max-width: 360px; }
 .co-prec li { display: flex; align-items: center; gap: 6px; font-size: 12.5px; }
 .co-prec li span { flex: 1; }
+
+/* Dados › Procurar por tipo de dado (0.49) */
+.tp-lista { display: grid; gap: 6px; margin: 8px 0 12px; }
+.tp-tipo { align-items: flex-start; }
+.tp-vazio { opacity: 0.55; }
+.tp-confirmar { margin: 8px 0; }
