@@ -42,9 +42,12 @@ def tipo_pelo_nome(rel: str) -> str | None:
     bruto = str(rel or "").replace("\\", "/")
     if not bruto.lower().endswith((".xls", ".xlsx")):
         return None
-    r = _norm(bruto)
     nome = _norm(bruto.rsplit("/", 1)[-1])
-    if "PETROFISICA BASICA" not in r:
+    # A pasta do REATE tem várias grafias (PETROFISICA_BASICA, PETROFISICABASICA, Petrofisica_basica e até
+    # "Petrofica_basica"): compara sem espaços nem pontuação. A "PETROFISICAAVANCADA" (permeabilidade relativa,
+    # pressão capilar) é outra coisa e não casa.
+    compacto = "".join(c for c in _norm(bruto) if c.isalnum())
+    if "PETROFISICABASICA" not in compacto and "PETROFICABASICA" not in compacto:
         return None
     return "petrofisica_gama" if "COREGAMA" in nome else "petrofisica_plugs"
 

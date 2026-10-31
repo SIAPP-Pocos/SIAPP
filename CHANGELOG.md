@@ -6,6 +6,13 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 
 ## [Não lançado]
 
+## [0.48.1] — 2026-10-31
+### Corrigido
+- **Petrofísica básica: a pasta tem várias grafias no acervo.** O leitor da 0.48 só reconhecia `PETROFISICA_BASICA`
+  (3 poços do acervo); o levantamento mostra 162 poços, a maioria em `PETROFISICABASICA`, e ainda `Petrofisica_basica`,
+  `Petrofisicabasica` e `Petrofica_basica` (com erro de grafia). Agora todas são reconhecidas; a `PETROFISICAAVANCADA`
+  (permeabilidade relativa, pressão capilar) continua fora, por ser outro tipo de dado.
+
 ## [0.48.0] — 2026-10-31
 Petrofísica básica de testemunho (fecha o Bloco 9).
 ### Adicionado

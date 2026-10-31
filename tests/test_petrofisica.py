@@ -16,6 +16,12 @@ def test_reconhece_pela_pasta_e_pelo_nome():
     assert pf.tipo_pelo_nome(f"{PASTA}/00610.119452.xls") == "petrofisica_plugs"          # nome numérico: vale a pasta
     assert pf.tipo_pelo_nome(f"{PASTA}/1-ALG-0001-RN_COREGAMA.xls") == "petrofisica_gama"
     assert pf.tipo_pelo_nome(PASTA.replace("/", "\\") + "\\x_coregama.xlsx") == "petrofisica_gama"
+    # as grafias da pasta que existem no acervo (levantamento de 31/10: 162 poços)
+    for pasta in ("Dados de Rochas e Fluidos/PETROFISICABASICA", "Petrofisica_basica", "Petrofica_basica",
+                  "Petrofisicabasica", "PETROFISICABASICA", "Dados de Rochas de Fluidos/PETROFISICABASICA"):
+        assert pf.tipo_pelo_nome(f"bruto/Potiguar/{POCO}/{pasta}/7-ET-854-RN_COREGAMA.xls") == "petrofisica_gama", pasta
+        assert pf.tipo_pelo_nome(f"bruto/Potiguar/{POCO}/{pasta}/PETROFISICA7ET0854RN-7ET854RN.xls") == "petrofisica_plugs"
+    assert pf.tipo_pelo_nome("a/Dados de Rochas e Fluidos/PETROFISICAAVANCADA/x_PressaoCapilar_7-MAG-50-RN.xls") is None
     assert not pf.reconhece(f"bruto/Potiguar/{POCO}/Pasta de Poco/dados.xls")
     assert not pf.reconhece(f"{PASTA}/relatorio.pdf")
     assert mdp.leitor_para(f"{PASTA}/x_COREGAMA.xls") == "petrofisica"
