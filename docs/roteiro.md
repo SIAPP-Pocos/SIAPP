@@ -57,7 +57,8 @@ existe e a validação científica ficam **para o final**, antes do lançamento 
       algum leitor leu e onde o dado aparece; botões **Abrir**, **Mostrar na pasta** (Explorer com o arquivo selecionado)
       e **Ver na ficha**; busca e filtro. O usuário não deve precisar fuçar as pastas do projeto. **Mostrar o desenho
       ao Ruan antes de programar.**
-- [ ] **Bloco 4 — leitura do OCR**: mais resolução e segunda passada nas páginas ruins.
+- [x] **Bloco 4 — leitura do OCR** (0.53): segunda passada (450 dpi, limiar de Otsu) nas páginas ruins, escolhida pela
+      legibilidade. Ver `docs/ocr.md`. Falta medir em mais documentos e tratar tabelas/manuscrito (limites antigos).
 - [ ] **Viabilidade**: diâmetro do duto pela vazão; custo corrigido pela inflação (IPCA/INCC); restrições
       ambientais (unidades de conservação, terras indígenas); transcrever API e densidade de Guamaré.
 - [ ] **Pendências que dependem do Ruan**: Rw de referência por formação; conferir os números antigos do

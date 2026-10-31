@@ -115,7 +115,7 @@ class DocumentosAPI:
                 "busca_fts": self._indice.fts}
 
     @resposta_segura
-    def processar_documentos(self, rels: list):
+    def processar_documentos(self, rels: list, segunda_passada: bool = True):
         self._exigir_projeto()
         tarefas = []
         for rel in map(mp.rel_padrao, rels):
@@ -131,7 +131,8 @@ class DocumentosAPI:
                                                   corretor=self._corretor)
 
             tarefas.append({"doc": rel, "caminho": caminho, "nome": nome,
-                            "bacia": bacia, "poco": poco, "salvar": salvar})
+                            "bacia": bacia, "poco": poco, "salvar": salvar,
+                            "segunda_passada": bool(segunda_passada)})
         n = self._fila_docs.adicionar(tarefas)
         self._projeto.registrar("pediu_processamento", documentos=len(tarefas))
         return {"enfileirados": n}

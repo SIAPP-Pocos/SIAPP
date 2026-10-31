@@ -206,3 +206,21 @@ Três níveis, do mais barato ao mais robusto — o resultado é sempre **candid
 - [x] PDFs `_pub` antigos têm texto embutido? **Não** — são só imagem. Os CDPE novos sim.
 - [ ] Repetir o teste com o idioma `por` no computador do Ruan (o download do arquivo de idioma foi bloqueado no ambiente de teste)
 - [ ] Confirmar que o SQLite do Python do Windows tem FTS5 habilitado
+
+## Segunda leitura das páginas ruins (0.53)
+
+- **Quando**: página sem texto embutido cuja primeira leitura (300 dpi, limiar fixo 150) tem legibilidade abaixo de 60 %
+  (% das palavras com 5+ letras que são palavras de verdade; `motor/dicionario.py: legibilidade`). Páginas com poucas
+  palavras (menos de 12) não são julgadas e não ganham segunda leitura.
+- **O que muda na segunda**: 450 dpi e limiar de Otsu (calculado na própria página, limitado a 100–200) no lugar do 150
+  fixo; a limpeza das linhas de grade é a mesma.
+- **Escolha**: fica a leitura com maior legibilidade, se a segunda ganhar pelo menos 3 pontos; senão, a primeira. Nada é
+  inventado: o texto é sempre o de uma das duas leituras.
+- **Registro**: em cada página lida por OCR, `ocr: {passadas: [{dpi, limiar, legibilidade}…], escolhida: 1|2}`.
+- **Medida (31/10/2026, 9 páginas escaneadas reais, 3FGT-4-AL)**: 1ª → 2ª legibilidade: 39→49, 47→62, 47→57, 51→41, 55→53,
+  44→51, 58→59, 53→68, 46→55; a segunda foi escolhida em 6 páginas. Amostra pequena de um só documento: indica que ajuda,
+  não prova quanto.
+- **Custo**: cada página que entra na segunda leitura leva cerca de 2× o tempo (na medida, ~17–23 s por página com as duas
+  passadas). A caixa "Segunda leitura das páginas ruins" em Documentos desliga isso.
+- **Limites que continuam**: manuscrito, tabela e carimbo; números do OCR não são confiáveis (ver acima).
+- Documentos já lidos não são relidos sozinhos.

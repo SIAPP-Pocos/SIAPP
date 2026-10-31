@@ -49,7 +49,12 @@ MODELOS_IDIOMA = (   # tenta na ordem: modelo mais preciso, depois o padrão
 URLS_IDIOMA = tuple(u.format(idioma=IDIOMA) for u in MODELOS_IDIOMA)
 MIN_CARACTERES_EMBUTIDO = 40   # menos que isso: página tratada como imagem
 DPI_OCR = 300
-VERSAO_EXTRACAO = 1
+# Segunda passada (0.53): só nas páginas em que a primeira leitura saiu ruim. A página é renderizada de novo em
+# resolução maior e com outro limiar de preto/branco; fica a leitura com mais palavras de verdade (dicionário).
+DPI_OCR_SEGUNDA = 450
+LEGIBILIDADE_SEGUNDA_PASSADA = 60     # % de palavras (5+ letras) conhecidas abaixo da qual vale tentar de novo
+GANHO_MINIMO_SEGUNDA = 3              # pontos de legibilidade que a 2ª passada precisa ganhar para ser a escolhida
+VERSAO_EXTRACAO = 2
 
 
 class ErroDocumento(Exception):
@@ -123,12 +128,29 @@ def _abertura_1d(m: np.ndarray, comprimento: int, eixo: int) -> np.ndarray:
     return r.T if eixo else r
 
 
-def _imagem_para_ocr(page: pymupdf.Page) -> pymupdf.Pixmap:
-    """Renderiza a página, binariza e apaga as linhas longas da grade."""
-    pix = page.get_pixmap(dpi=DPI_OCR, colorspace=pymupdf.csGRAY)
+def limiar_otsu(a: np.ndarray, minimo: int = 100, maximo: int = 200) -> int:
+    """Limiar de preto/branco de Otsu (maximiza a variância entre as classes), limitado a [minimo, maximo]."""
+    h = np.bincount(a.ravel(), minlength=256).astype(np.float64)
+    total = h.sum()
+    if total == 0:
+        return 150
+    niveis = np.arange(256)
+    soma = float((h * niveis).sum())
+    w0 = np.cumsum(h)
+    m0 = np.cumsum(h * niveis)
+    w1 = total - w0
+    with np.errstate(divide="ignore", invalid="ignore"):
+        var = (soma * w0 - total * m0) ** 2 / (w0 * w1)
+    var[~np.isfinite(var)] = 0
+    return int(min(max(int(np.argmax(var)), minimo), maximo))
+
+
+def _imagem_para_ocr(page: pymupdf.Page, dpi: int = DPI_OCR, limiar: str = "fixo") -> pymupdf.Pixmap:
+    """Renderiza a página, binariza e apaga as linhas longas da grade. `limiar`: "fixo" (150, o de sempre) ou "otsu"."""
+    pix = page.get_pixmap(dpi=dpi, colorspace=pymupdf.csGRAY)
     a = np.frombuffer(pix.samples, np.uint8).reshape(pix.height, pix.width)
-    tinta = a < 150
-    traco = int(DPI_OCR * 0.3)                       # ~7,5 mm: maior que qualquer letra
+    tinta = a < (limiar_otsu(a) if limiar == "otsu" else 150)
+    traco = int(dpi * 0.3)                           # ~7,5 mm: maior que qualquer letra
     grade = _abertura_1d(tinta, traco, 0) | _abertura_1d(tinta, traco, 1)
     for _ in range(2):                               # engrossa para apagar a borda serrilhada
         grade = (grade | np.roll(grade, 1, 0) | np.roll(grade, -1, 0)
@@ -138,7 +160,7 @@ def _imagem_para_ocr(page: pymupdf.Page) -> pymupdf.Pixmap:
     # se receber imagem em tons de cinza. Tem que ser RGB. (testado 15/10/2026)
     rgb = np.repeat(limpo[:, :, None], 3, axis=2)
     out = pymupdf.Pixmap(pymupdf.csRGB, pix.width, pix.height, rgb.tobytes(), False)
-    out.set_dpi(DPI_OCR, DPI_OCR)
+    out.set_dpi(dpi, dpi)
     return out
 
 
@@ -159,27 +181,51 @@ def _titulo_provavel(palavras: list) -> str:
     return melhor
 
 
-def extrair_pagina(page: pymupdf.Page, tessdata: str) -> dict:
+def _ocr_pagina(page: pymupdf.Page, tessdata: str, dpi: int = DPI_OCR, limiar: str = "fixo"):
+    """Uma passada de OCR: (página do PDF pesquisável, texto, palavras)."""
+    ocr = pymupdf.open("pdf", _imagem_para_ocr(page, dpi, limiar).pdfocr_tobytes(language=IDIOMA, tessdata=tessdata))
+    fonte = ocr[0]
+    return fonte, fonte.get_text(), fonte.get_text("words")
+
+
+def _legibilidade_ocr(texto: str, conhecida=None):
+    """% de palavras conhecidas no texto lido (None: poucas palavras para julgar)."""
+    from . import dicionario as mdic
+    return mdic.legibilidade(texto, conhecida or mdic.padrao().conhece)
+
+
+def extrair_pagina(page: pymupdf.Page, tessdata: str, segunda_passada: bool = True, conhecida=None) -> dict:
     texto = page.get_text()
+    ocr_info = None
     if len(texto.strip()) >= MIN_CARACTERES_EMBUTIDO:
         metodo, fonte = "embutido", page
         palavras_brutas = page.get_text("words")
     else:
         if not idioma_disponivel(tessdata):
             raise ErroDocumento("Idioma do OCR ausente.")
-        ocr = pymupdf.open("pdf", _imagem_para_ocr(page).pdfocr_tobytes(
-            language=IDIOMA, tessdata=tessdata))
-        fonte = ocr[0]
-        metodo, texto = "ocr", fonte.get_text()
-        palavras_brutas = fonte.get_text("words")
+        fonte, texto, palavras_brutas = _ocr_pagina(page, tessdata)
+        metodo = "ocr"
+        passadas = [{"dpi": DPI_OCR, "limiar": "fixo", "legibilidade": _legibilidade_ocr(texto, conhecida)}]
+        escolhida = 1
+        leg1 = passadas[0]["legibilidade"]
+        if segunda_passada and leg1 is not None and leg1 < LEGIBILIDADE_SEGUNDA_PASSADA:
+            f2, t2, p2 = _ocr_pagina(page, tessdata, DPI_OCR_SEGUNDA, "otsu")
+            leg2 = _legibilidade_ocr(t2, conhecida)
+            passadas.append({"dpi": DPI_OCR_SEGUNDA, "limiar": "otsu", "legibilidade": leg2})
+            if leg2 is not None and leg2 >= leg1 + GANHO_MINIMO_SEGUNDA:
+                fonte, texto, palavras_brutas, escolhida = f2, t2, p2, 2
+        ocr_info = {"passadas": passadas, "escolhida": escolhida}
     w, h = fonte.rect.width or 1, fonte.rect.height or 1
     palavras = [(round(p[0] / w, 4), round(p[1] / h, 4), round(p[2] / w, 4),
                  round(p[3] / h, 4), p[4], p[5], p[6]) for p in palavras_brutas]
-    return {"metodo": metodo, "texto": texto, "titulo": _titulo_provavel(palavras),
-            "palavras": [list(p[:5]) for p in palavras]}
+    r = {"metodo": metodo, "texto": texto, "titulo": _titulo_provavel(palavras),
+         "palavras": [list(p[:5]) for p in palavras]}
+    if ocr_info:
+        r["ocr"] = ocr_info
+    return r
 
 
-def processar_arquivo(caminho: str, tessdata: str, progresso=None, cancelar=None) -> dict:
+def processar_arquivo(caminho: str, tessdata: str, progresso=None, cancelar=None, segunda_passada: bool = True) -> dict:
     try:
         doc = pymupdf.open(caminho)
     except Exception as e:
@@ -192,7 +238,7 @@ def processar_arquivo(caminho: str, tessdata: str, progresso=None, cancelar=None
             raise ProcessamentoCancelado()
         if progresso:
             progresso(i + 1, doc.page_count)
-        paginas.append({"pagina": i + 1, **extrair_pagina(page, tessdata)})
+        paginas.append({"pagina": i + 1, **extrair_pagina(page, tessdata, segunda_passada)})
     return {"n_paginas": doc.page_count, "idioma": IDIOMA, "versao_extracao": VERSAO_EXTRACAO,
             "processado_em": datetime.now().isoformat(timespec="seconds"),
             "bytes_origem": os.path.getsize(caminho), "paginas": paginas}
@@ -599,6 +645,7 @@ class FilaDocumentos:
                     {"tipo": "idioma", "feito": f, "total": tot}))
             r = processar_arquivo(
                 t["caminho"], self._tessdata, cancelar=self._cancelar,
+                segunda_passada=t.get("segunda_passada", True),
                 progresso=lambda p, n: self._emitir({"tipo": "pagina", "doc": t["doc"],
                                                      "pagina": p, "paginas": n}))
             t["salvar"](r)

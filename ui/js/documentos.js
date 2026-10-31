@@ -214,9 +214,15 @@ function ligarDocumentos() {
   $("pg-edicao-auto").onclick = voltarTextoAutomatico;
 }
 
+// A caixa "Segunda leitura das páginas ruins" (0.53): ligada por padrão.
+function segundaPassadaOcr() {
+  const c = $("doc-segunda");
+  return c ? c.checked : true;
+}
+
 async function processarEste() {
   if (!docAtual) return;
-  const r = await chamar($("pg-processar"), "processar_documentos", [docAtual.rel]);
+  const r = await chamar($("pg-processar"), "processar_documentos", [docAtual.rel], segundaPassadaOcr());
   if (!r.ok) return;
   $("pg-processar").disabled = true;
   status("Documento na fila de processamento. O texto aparece aqui quando terminar.", "trab");
@@ -225,7 +231,7 @@ async function processarEste() {
 async function processarPendentes() {
   const rels = docs.filter((d) => d.situacao !== "processado").map((d) => d.rel);
   if (!rels.length) return;
-  const r = await chamar($("btn-processar"), "processar_documentos", rels);
+  const r = await chamar($("btn-processar"), "processar_documentos", rels, segundaPassadaOcr());
   if (r.ok) status(`${r.enfileirados} documento(s) na fila de processamento.`, "trab");
 }
 

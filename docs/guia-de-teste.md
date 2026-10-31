@@ -132,6 +132,15 @@ Precisa de internet. Comece por uma categoria pequena para ver o tempo.
 - [ ] Sem intervalo marcado, **Calcular** explica que precisa de um intervalo-alvo.
 - [ ] Repetir no `5PX__0011__RN_5PX__0011__RN.tif` (DLIS de 2020).
 
+## 0.53 — segunda leitura (OCR) das páginas ruins
+
+- [ ] Em **Documentos**, a caixa **Segunda leitura das páginas ruins (mais lento)** aparece ligada.
+- [ ] Escolha um PDF escaneado (ex.: a pasta de poço do 3-FGT-4-AL) e **Processar este documento**: leva mais tempo que
+      antes nas páginas ruins, mas termina.
+- [ ] Compare o texto de uma página ruim com a imagem: deve estar melhor ou igual ao de antes (números continuam a conferir
+      na imagem).
+- [ ] Desligue a caixa e processe outro documento: volta a ser rápido (só a primeira leitura).
+
 ## 0.52 — viabilidade: diâmetro, inflação e restrições ambientais
 
 Use um campo com produção, camadas e distâncias já medidas (Viabilidade › Medir as distâncias).

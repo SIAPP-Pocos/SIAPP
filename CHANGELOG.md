@@ -6,6 +6,22 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 
 ## [Não lançado]
 
+## [0.53.0] — 2026-10-31
+Segunda leitura (OCR) das páginas ruins.
+### Adicionado
+- **Segunda passada do OCR**: nas páginas escaneadas em que a primeira leitura (300 dpi) tem menos de 60 % das palavras
+  conhecidas pelo dicionário, o SIAPP lê de novo a 450 dpi com outro limiar de preto/branco (Otsu) e **fica com a leitura
+  de mais palavras de verdade**, desde que ganhe pelo menos 3 pontos. As duas leituras ficam registradas na página
+  (`ocr.passadas`, `ocr.escolhida`). Caixa "Segunda leitura das páginas ruins (mais lento)" em Documentos, ligada por padrão.
+- Medido em 9 páginas escaneadas reais de uma pasta de poço: a segunda leitura melhorou 6 páginas (+7 a +15 pontos de
+  legibilidade), piorou 2 (mantida a primeira) e empatou 1. Custo: uma página ruim leva cerca de 2× mais tempo.
+### Alterado
+- `VERSAO_EXTRACAO` passa a 2. Documentos já lidos **não são relidos sozinhos**: para aplicar a segunda leitura, processe-os
+  de novo (Processar este documento).
+### Observação
+- Legibilidade é palavras conhecidas, não exatidão: números (profundidades, datas) continuam pouco confiáveis no OCR e
+  seguem entrando no banco só por transcrição conferida na imagem.
+
 ## [0.52.0] — 2026-10-31
 Viabilidade: diâmetro pela vazão, correção pela inflação e restrições ambientais.
 ### Adicionado
