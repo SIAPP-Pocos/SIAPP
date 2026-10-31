@@ -30,11 +30,25 @@ Código: `motor/petrofisica.py`.
 - **A unidade da densidade não vem na planilha.** Valores perto de 2,65 sugerem densidade de grãos em g/cm³, mas isso
   é leitura nossa; a ficha avisa e o dado fica sem unidade.
 - É medida de **plug**, não de perfil: serve de referência para conferir a porosidade do perfil, não a substitui.
-  Comparar plug × perfil (profundidade, escala de amostragem) é um passo à parte, ainda não feito.
-- O gama do testemunho serve para **casar a profundidade** do testemunho com a do perfil; o SIAPP mostra os dados,
-  mas ainda não calcula o deslocamento.
-- Só um poço foi visto (1-ALG-1-RN, com um único plug); outros poços (são 162 com esse tipo de planilha) podem trazer
+  A comparação plug × perfil está na 0.50 (seção abaixo).
+- O gama do testemunho serve para **casar a profundidade** do testemunho com a do perfil; a 0.50 calcula o
+  deslocamento, sem aplicá-lo sozinha.
+- Só um poço foi visto (1-ALG-1-RN, com um único plug); outros poços (são 161 com esse tipo de planilha) podem trazer
   colunas ou formatos diferentes. Se algum não abrir, mande a planilha para o leitor ser ajustado.
+
+## Testemunho × perfil (0.50)
+
+Na Avaliação de formação, depois do cálculo, o bloco **Comparação com o testemunho** (`motor/testemunho.py`):
+
+- **Plug × perfil**: para cada plug, a porosidade da avaliação na mesma profundidade (interpolada; se a curva tem
+  buraco de mais de 0,3 m ali, o plug fica de fora). Diferença = perfil − plug, em pontos percentuais; estatísticas
+  (n, média, erro absoluto médio, RMSE, correlação com 3 ou mais plugs).
+- **Deslocamento**: perfil = testemunho + deslocamento. Procura o deslocamento (−5 a +5 m, passo 0,05 m) que maximiza a
+  correlação entre o gama do testemunho e o gama do perfil. É dado como confiável só com correlação ≥ 0,6, pico a pelo
+  menos 0,2 acima da mediana da varredura e fora da borda da busca. Se confiável e ≥ 0,05 m, mostra uma segunda
+  tabela já com o deslocamento. Nada é aplicado sozinho.
+- **O que não dizemos**: qual medida está certa. Plug (cm) e perfil (dezenas de cm) têm escalas diferentes; dano ao plug,
+  calibração e profundidade também pesam.
 
 ## Testes
 

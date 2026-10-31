@@ -6,6 +6,18 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 
 ## [Não lançado]
 
+## [0.50.0] — 2026-10-31
+Testemunho × perfil.
+### Adicionado
+- **Avaliação de formação › Comparação com o testemunho**: a porosidade dos plugs (laboratório) ao lado da porosidade da
+  avaliação, na mesma profundidade, com a diferença em pontos percentuais, erro médio, RMSE e correlação. Só aparece
+  quando o poço tem plugs lidos (0.48). Diz o quanto diferem, não qual está certo.
+- **Deslocamento do testemunho pelo gama**: com o gama do testemunho (COREGAMA), o SIAPP procura o deslocamento de
+  profundidade (até ±5 m) que mais aproxima o gama do testemunho do gama do perfil (correlação de Pearson) e mostra a
+  segunda comparação já com ele. Só dá o deslocamento como confiável com correlação ≥ 0,6, pico destacado e fora da
+  borda da busca; senão avisa e não sugere aplicar.
+- `motor/testemunho.py`; testes com dados sintéticos de deslocamento conhecido.
+
 ## [0.49.0] — 2026-10-31
 Procurar poços por tipo de dado.
 ### Adicionado

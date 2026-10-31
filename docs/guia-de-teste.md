@@ -132,6 +132,18 @@ Precisa de internet. Comece por uma categoria pequena para ver o tempo.
 - [ ] Sem intervalo marcado, **Calcular** explica que precisa de um intervalo-alvo.
 - [ ] Repetir no `5PX__0011__RN_5PX__0011__RN.tif` (DLIS de 2020).
 
+## 0.50 — testemunho × perfil
+
+Use o 1-ALG-1-RN (1 plug a 2.021,1 m; gama do testemunho de 2.016 a 2.026,8 m).
+
+- [ ] Abra o perfil do 1-ALG-1-RN, marque o intervalo do testemunho (2.016–2.027 m) e **calcule a avaliação**.
+- [ ] Abaixo do resultado aparece **Comparação com o testemunho**: 1 plug, φ do plug 20,6 %, φ do perfil e a
+      diferença em pontos percentuais.
+- [ ] Se o perfil de GR do arquivo cobre o testemunho, aparece o **deslocamento pelo gama**, com a correlação. Confira no
+      gráfico se faz sentido (picos de gama do testemunho e do perfil alinham com o deslocamento sugerido). Se vier
+      "pouco confiável", o motivo aparece.
+- [ ] Um poço sem plugs lidos **não** mostra o bloco (sem mensagem de erro).
+
 ## 0.49 — procurar por tipo de dado
 
 Precisa do levantamento do acervo já feito (o seu tem 9.447 poços: Potiguar e Alagoas).

@@ -13,6 +13,7 @@ from motor import formatos
 from motor import perfis as mpf
 from motor import pocos as mpo
 from motor import projeto as mp
+from motor import testemunho as mtm
 
 from .base import PASTA_RECURSOS, ErroUsuario, resposta_segura
 
@@ -350,6 +351,43 @@ class PerfisAPI:
             r = mop.comparar(cache, mav.carregar_curvas(self._pasta_execucoes(), ident), reg, op)
         except (mav.ErroAvaliacao, mpf.ErroPerfil) as e:
             raise ErroUsuario(str(e)) from e
+        return r
+
+    @resposta_segura
+    def comparar_testemunho(self, ident: str):
+        """Porosidade dos plugs de testemunho ao lado da porosidade da avaliação, nas mesmas profundidades; e, havendo
+        gama do testemunho (COREGAMA), o deslocamento de profundidade que o casa com o gama do perfil."""
+        self._exigir_projeto()
+        reg = next((h for h in mav.execucoes(self._pasta_execucoes()) if h["id"] == ident), None)
+        if reg is None:
+            raise ErroUsuario("Avaliação não encontrada.")
+        poco = reg["poco"]
+        plugs = [{"prof": i["prof_topo"], "phi_pct": i["valor"], "perm_md": (i.get("extra") or {}).get("permeabilidade"),
+                  "amostra": i.get("nome"), "tambem_em": i.get("tambem_em")}
+                 for i in mdp.itens_do_poco(self._banco, poco, "plug_testemunho") if i["valor"] is not None]
+        if not plugs:
+            raise ErroUsuario("Este poço não tem plugs de testemunho lidos (pasta PETROFISICA_BASICA).")
+        try:
+            curvas = mav.carregar_curvas(self._pasta_execucoes(), ident)
+        except mav.ErroAvaliacao as e:
+            raise ErroUsuario(str(e)) from e
+        if "PHI" not in curvas:
+            raise ErroUsuario("Esta avaliação não calculou a porosidade.")
+        gama = [{"prof": i["prof_topo"], "gr": i["valor"]} for i in mdp.itens_do_poco(self._banco, poco, "gama_testemunho")
+                if i["valor"] is not None]
+        prof_gr = gr = None
+        g = (reg.get("curvas_usadas") or {}).get("GR")
+        if gama and g:
+            try:
+                q = mpf.carregar_quadro(self._cache(poco), os.path.basename(reg["arquivo"]), g["quadro"])
+                prof_gr, gr = q["__prof__"], q[g["mnemonico"]]
+                if getattr(gr, "ndim", 1) != 1:
+                    prof_gr = gr = None
+            except (mpf.ErroPerfil, KeyError):
+                prof_gr = gr = None
+        r = mtm.comparar(curvas["prof"], curvas["PHI"], plugs, gama, prof_gr, gr)
+        r["poco"] = poco
+        r["n_gama"] = len(gama)
         return r
 
     @resposta_segura

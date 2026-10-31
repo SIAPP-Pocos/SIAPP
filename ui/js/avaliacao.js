@@ -312,10 +312,56 @@ function mostrarResultadoAv(r, anterior = false) {
     box.appendChild(op);
     compararOperadorAv(op, r.id);
   }
+  const te = el("div", "av-testemunho");
+  te.id = "av-testemunho";
+  box.appendChild(te);
+  compararTestemunhoAv(te, r.id);
   $("av-acoes").hidden = false;
   $("av-registro").textContent = `Registro: ${r.registro}`;
   estadoCompartilhadaAv();
   if ($("av-mostrar").checked) atualizarGrafico();
+}
+
+// Plugs de testemunho × porosidade da avaliação (0.50). Sem plugs lidos no poço, não mostra nada.
+async function compararTestemunhoAv(caixa, ident) {
+  let r;
+  try { r = await api.comparar_testemunho(ident); } catch (e) { return; }
+  if (!r || !r.ok || av.id !== ident) return;
+  limpar(caixa);
+  caixa.appendChild(el("p", "av-sub", `Comparação com o testemunho (${r.sem_deslocamento.plugs.length} plug(s) de laboratório)`));
+  const f = (v, c = 1) => (v == null ? "—" : numero(v, c));
+  const tabela = (c, titulo) => {
+    const e = c.estatisticas;
+    caixa.appendChild(el("p", "ajuda", `${titulo}: ` + (e.n ? `${e.n} plug(s) cobertos pelo perfil; diferença média (perfil − plug) ` +
+      `${f(e.diferenca_media_pp, 1)} pontos percentuais, erro absoluto médio ${f(e.erro_absoluto_medio_pp, 1)}, ` +
+      `RMSE ${f(e.rmse_pp, 1)}` + (e.correlacao != null ? `, correlação ${f(e.correlacao, 2)}` : "") + "." :
+      "nenhum plug cai dentro do perfil desta avaliação.")));
+    const t = el("table", "tabela av-op-tabela");
+    const cab = el("tr");
+    for (const h of ["Prof. do plug (m)", "Prof. no perfil (m)", "Amostra", "φ plug (%)", "φ perfil (%)", "Dif. (pp)", "k (mD)"]) cab.appendChild(el("th", "", h));
+    t.appendChild(cab);
+    for (const p of c.plugs) {
+      const tr = el("tr");
+      tr.append(el("td", "", f(p.prof, 2)), el("td", "", f(p.prof_perfil, 2)), el("td", "", p.amostra || "—"), el("td", "", f(p.phi_pct, 1)),
+                el("td", "", f(p.perfil_pct, 1)), el("td", "", f(p.diferenca_pp, 1)), el("td", "", f(p.perm_md, 2)));
+      t.appendChild(tr);
+    }
+    caixa.appendChild(t);
+  };
+  tabela(r.sem_deslocamento, "Sem deslocamento");
+  const d = r.deslocamento;
+  if (d) {
+    caixa.appendChild(el("p", d.confiavel ? "ajuda" : "aviso",
+      d.deslocamento_m == null ? `Deslocamento do testemunho pelo gama: não calculado (${d.motivo}).` :
+        `Deslocamento do testemunho pelo gama: ${f(d.deslocamento_m, 2)} m (perfil = testemunho + deslocamento), correlação ` +
+        `${f(d.correlacao, 2)} com ${d.n} pontos; sem deslocamento seria ${f(d.correlacao_sem_deslocamento, 2)}.` +
+        (d.confiavel ? "" : ` Pouco confiável: ${d.motivo}. Não aplique sem conferir no perfil.`)));
+  } else if (r.n_gama) {
+    caixa.appendChild(el("p", "ajuda", "Há gama do testemunho, mas esta avaliação não guardou a curva de GR do perfil para casar."));
+  }
+  if (r.com_deslocamento) tabela(r.com_deslocamento, `Com o deslocamento de ${f(r.deslocamento.deslocamento_m, 2)} m`);
+  caixa.appendChild(el("p", "ajuda", "Plug e perfil medem escalas diferentes (alguns cm contra dezenas de cm) e podem diferir por " +
+    "dano ao plug, calibração ou profundidade; a diferença mostra o quanto, não qual dos dois está certo."));
 }
 
 // SIAPP × operadora: as médias da avaliação ao lado das curvas interpretadas do perfil processado do poço.
