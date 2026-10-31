@@ -124,3 +124,27 @@ def test_pela_ponte(api, banco):
     e = api.exportar_busca_por_tipo(["pvt"], "", "todos")
     assert e["ok"] and e["n_pocos"] == 1 and e["arquivo"].startswith("exportacoes/tipos_de_dado/")
     assert os.path.isfile(os.path.join(api._projeto.pasta, e["arquivo"]))
+
+
+def test_restringir_a_alguns_pocos(banco):
+    r = td.contar(banco, pocos=["1-aaa-1-rn", "7-CCC-3-RN"])             # sem diferenciar maiúsculas
+    assert r["pocos_levantados"] == 2 and r["restrito"] is True
+    assert {t["chave"]: t["n_pocos"] for t in r["tipos"]}["petrofisica_basica"] == 2
+    b = td.buscar(banco, ["petrofisica_basica"], pocos=["1-AAA-1-RN", "1-DDD-4-AL", "nao-existe"])
+    assert sorted(p["poco"] for p in b["pocos"]) == ["1-AAA-1-RN", "1-DDD-4-AL"] and b["restrito"] is True
+    assert td.buscar(banco, ["petrofisica_basica"], pocos=[])["n_pocos"] == 0             # lista vazia: nada, não "tudo"
+    assert td.buscar(banco, ["petrofisica_basica"], pocos=None)["n_pocos"] == 4            # sem restrição: tudo
+
+
+def test_restringir_a_um_campo_pela_ponte(api, banco):
+    with api._banco.conexao() as c:
+        for pid, campo in (("1-AAA-1-RN", "Guamaré"), ("1-BBB-2-RN", "GUAMARE"), ("7-CCC-3-RN", "Ubarana")):
+            c.execute("INSERT INTO pocos(id, campo) VALUES (?, ?)", (pid, campo))
+    assert td.pocos_do_campo(api._banco, "guamaré") == ["1-AAA-1-RN"]
+    c1 = api.buscar_por_tipo(["petrofisica_basica"], "", "todos", {"campo": "Ubarana"})
+    assert c1["ok"] and [p["poco"] for p in c1["pocos"]] == ["7-CCC-3-RN"]
+    assert "não tem poços do campo" in api.buscar_por_tipo(["pvt"], "", "todos", {"campo": "Inexistente"})["erro"]
+    t = api.tipos_de_dado("", {"pocos": ["1-AAA-1-RN"]})
+    assert t["ok"] and t["pocos_levantados"] == 1 and {"campo": "Ubarana", "n": 1} in t["campos"]
+    e = api.exportar_busca_por_tipo(["petrofisica_basica"], "", "todos", {"pocos": ["1-DDD-4-AL"]})
+    assert e["ok"] and e["n_pocos"] == 1

@@ -1,18 +1,58 @@
 // SIAPP — Dados › Procurar por tipo de dado: em quais poços há cada tipo de dado, pelo levantamento do acervo.
 // Nada é baixado para procurar; baixar é uma ação à parte, só dos poços que você marcar.
 
-const tdado = { tipos: [], marcados: new Set(), resultado: null, escolhidos: new Set() };
+const tdado = { tipos: [], marcados: new Set(), resultado: null, escolhidos: new Set(), restrito: null };
 const LIMITE_MAPA = 300;
 const AVISO_DOWNLOAD_BYTES = 2 * 1024 ** 3;
+
+// Restrição da busca: um campo digitado, ou poços vindos da Seção ou do Mapa.
+function restricaoTipos() {
+  const campo = $("tp-campo").value.trim();
+  if (campo) return { campo };
+  if (tdado.restrito) return { pocos: tdado.restrito.pocos };
+  return null;
+}
+
+function desenharRestricaoTipos() {
+  const box = limpar($("tp-restricao"));
+  if (!tdado.restrito) return;
+  const c = el("span", "chip-dic");
+  const x = el("button", "x", "×");
+  x.type = "button";
+  x.title = "Tirar a restrição";
+  x.onclick = () => { tdado.restrito = null; carregarTipos(); };
+  c.append(el("span", "", `Só ${tdado.restrito.rotulo}`), x);
+  box.appendChild(c);
+}
+
+// Chamado pela Seção e pelo Mapa: abre Dados › Procurar por tipo de dado já restrito a esses poços.
+function procurarDadosDosPocos(ids, rotulo) {
+  const lista = [...new Set((ids || []).map((x) => String(x).trim()).filter(Boolean))];
+  if (!lista.length) { status("Não há poços para procurar: adicione poços primeiro.", "erro"); return; }
+  tdado.restrito = { pocos: lista, rotulo };
+  $("tp-campo").value = "";
+  tdado.resultado = null;
+  limpar($("tp-resultado"));
+  irPara("tipos", "carregarTipos");
+}
 
 async function carregarTipos() {
   if (!api || !$("tp-tipos")) return;
   const bacia = $("tp-bacia").value || "";
-  const r = await chamar(null, "tipos_de_dado", bacia);
+  const r = await chamar(null, "tipos_de_dado", bacia, restricaoTipos());
   if (!r.ok) return;
   tdado.tipos = r.tipos;
+  preencherCamposTipos(r.campos || []);
+  desenharRestricaoTipos();
   preencherBaciasTipos(r.bacias || [], bacia);
   desenharTipos(r);
+}
+
+function preencherCamposTipos(campos) {
+  const dl = $("tp-campos");
+  if (dl.options.length === campos.length) return;
+  limpar(dl);
+  for (const c of campos) dl.appendChild(new Option(`${c.n} poço(s)`, c.campo));
 }
 
 function preencherBaciasTipos(bacias, atual) {
@@ -51,7 +91,7 @@ function desenharTipos(r) {
 
 async function procurarPorTipo() {
   if (!tdado.escolhidos.size) { status("Marque pelo menos um tipo de dado.", "erro"); return; }
-  const r = await chamar($("tp-procurar"), "buscar_por_tipo", [...tdado.escolhidos], $("tp-bacia").value, $("tp-modo").value);
+  const r = await chamar($("tp-procurar"), "buscar_por_tipo", [...tdado.escolhidos], $("tp-bacia").value, $("tp-modo").value, restricaoTipos());
   if (!r.ok) return;
   tdado.resultado = r;
   tdado.marcados = new Set();                                    // nada vem marcado
@@ -139,7 +179,7 @@ function desenharResultadoTipos() {
   bNenhum.onclick = () => marcarTodos(false);
   bMapa.onclick = () => verNoMapa(resumoMarcados().pocos);
   bCsv.onclick = async () => {
-    const x = await chamar(bCsv, "exportar_busca_por_tipo", r.tipos, r.bacia, r.modo);
+    const x = await chamar(bCsv, "exportar_busca_por_tipo", r.tipos, r.bacia, r.modo, restricaoTipos());
     if (x.ok) status(`Busca gravada em ${x.arquivo} (${x.n_pocos} poços, ${x.n_arquivos} arquivos).`, "ok");
   };
   bBaixar.onclick = () => pedirDownloadTipos(area, resumoMarcados());
@@ -199,5 +239,6 @@ function iniciarTipos() {
   if (!$("tp-procurar")) return;
   $("tp-procurar").onclick = procurarPorTipo;
   $("tp-bacia").onchange = carregarTipos;
+  $("tp-campo").onchange = () => { if ($("tp-campo").value.trim()) tdado.restrito = null; carregarTipos(); };
 }
 iniciarTipos();

@@ -6,6 +6,15 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 
 ## [Não lançado]
 
+## [0.51.0] — 2026-10-31
+Download em lote por seção, campo e mapa.
+### Adicionado
+- **Procurar por tipo de dado, restrito a um grupo de poços**: pelo **campo** (caixa "Só os poços do campo", pelo
+  cadastro da ANP), pelos **poços da Seção** (botão "Dados destes poços") ou pelos **poços destacados no Mapa** (mesmo
+  botão). Os tipos mostram quantos poços *desse grupo* têm cada dado; dali se marca, vê no mapa, exporta CSV e **baixa
+  só os arquivos do tipo** (nada vem marcado; confirmação com o total). A restrição aparece como uma etiqueta que se tira.
+- Com isso o download em lote cobre seção, campo e mapa; o filtro por tipo evita baixar o poço inteiro.
+
 ## [0.50.0] — 2026-10-31
 Testemunho × perfil.
 ### Adicionado

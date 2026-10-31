@@ -35,6 +35,14 @@ Um arquivo pode contar em mais de um tipo (o perfil digital processado é també
    - **Exportar a busca (CSV)**: um arquivo do portal por linha, em `ambiente_teste/exportacoes/tipos_de_dado/`.
 5. **Ficha** abre o poço no mapa.
 
+## Restringir a um grupo de poços (0.51)
+
+- **Campo**: digite em "Só os poços do campo" (a lista vem do cadastro da ANP). Sem o cadastro baixado, avisa.
+- **Seção**: no painel de poços da Seção, **Dados destes poços** abre esta tela só com eles.
+- **Mapa**: no painel de destaques, **Dados destes poços** faz o mesmo com os poços destacados.
+- A restrição vale para a contagem dos tipos, a busca, o CSV e o download; a etiqueta "Só …" mostra e tira a restrição.
+  Uma lista vazia dá resultado vazio (nunca "tudo").
+
 ## Limites
 
 - A pasta diz que **há** arquivos desse tipo, não que estão completos nem que o SIAPP sabe lê-los. Hoje o SIAPP lê

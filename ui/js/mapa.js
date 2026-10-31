@@ -634,6 +634,7 @@ function ligarMapa() {
   };
   $("dq-enquadrar").onclick = enquadrarDestaques;
   $("dq-limpar").onclick = () => { destaques.clear(); desenharDestaques(); };
+  $("dq-dados").onclick = () => procurarDadosDosPocos([...destaques.keys()], `os ${destaques.size} poço(s) destacado(s) no mapa`);
   $("btn-mapa-linha").onclick = iniciarLinhaMapa;
   $("ml-fechar").onclick = fecharLinhaMapa;
   $("ml-concluir").onclick = () => (linhaMapa.desenhando ? concluirLinha() : buscarPocosLinha());

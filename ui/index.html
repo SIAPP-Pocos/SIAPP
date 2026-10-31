@@ -249,6 +249,11 @@
             <select id="tp-modo"><option value="todos">todos os tipos marcados</option><option value="algum">pelo menos um dos tipos marcados</option></select>
           </label>
         </div>
+        <div class="filtros">
+          <label>Só os poços do campo <input type="text" id="tp-campo" list="tp-campos" placeholder="vazio = todos; ex.: Guamaré" autocomplete="off"></label>
+          <datalist id="tp-campos"></datalist>
+        </div>
+        <div class="chips" id="tp-restricao"></div>
         <div id="tp-tipos"></div>
         <div class="linha">
           <button class="btn" id="tp-procurar">Procurar</button>
@@ -382,6 +387,7 @@
         <div class="linha" id="dq-acoes" hidden>
           <button type="button" class="btn secundario pequeno" id="dq-enquadrar">Enquadrar</button>
           <button type="button" class="btn secundario pequeno" id="dq-limpar">Limpar</button>
+          <button type="button" class="btn secundario pequeno" id="dq-dados" title="Em quais destes poços há petrofísica, PVT, geoquímica…; e baixar só isso">Dados destes poços</button>
         </div>
       </section>
       <section class="etapa">
@@ -968,6 +974,7 @@
         <ol class="sec-lista" id="sec-lista"></ol>
         <div class="linha">
           <button class="btn secundario pequeno" id="sec-limpar">Limpar</button>
+          <button class="btn secundario pequeno" id="sec-dados" title="Em quais destes poços há petrofísica, PVT, geoquímica…; e baixar só isso">Dados destes poços</button>
         </div>
       </section>
       <section class="etapa">

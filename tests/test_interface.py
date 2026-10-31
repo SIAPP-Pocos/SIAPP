@@ -1957,3 +1957,32 @@ def test_procurar_por_tipo_de_dado_nada_marcado_e_busca_no_levantamento(janela, 
     p.select_option("#tp-bacia", "Alagoas")
     p.select_option("#tp-modo", "todos")
     janela.esperar("document.querySelector('#tp-tipos').textContent.includes('1 poço(s) levantado(s)')")
+
+
+def test_dados_destes_pocos_vindo_da_secao_restringe_a_busca(janela):
+    """0.51: o botão da Seção abre a busca por tipo restrita aos poços da seção; a restrição pode ser tirada."""
+    import test_tipos_dado as tt
+    p = janela.page
+    abrir_projeto(janela)
+    with janela.api._banco.conexao() as c:
+        for bacia, cam, nome, cat in tt.POCOS:
+            c.execute("INSERT INTO acervo_pocos(bacia, caminho, nome_pasta, poco_id, categoria) VALUES (?,?,?,?,?)",
+                      (bacia, cam, nome, nome, cat))
+        for i, pasta, nome, tam in tt.ARQS:
+            bacia, cam, _, _ = tt.POCOS[i]
+            c.execute("INSERT INTO acervo_arquivos(bacia, caminho, poco_caminho, nome, pasta, tamanho) VALUES (?,?,?,?,?,?)",
+                      (bacia, f"{cam}{pasta}/{nome}", cam, nome, pasta, tam))
+    p.evaluate("sec.pocos = ['1-AAA-1-RN', '1-BBB-2-RN']")
+    ir(p, "interp", "secao")
+    p.click("#sec-dados")
+    janela.esperar("document.getElementById('tp-restricao').textContent.includes('2 poço(s) da seção')")
+    janela.esperar("document.getElementById('tp-tipos').textContent.includes('2 poço(s) levantado(s)')")
+    p.locator("#tp-tipos label", has_text="Petrofísica básica").locator("input").check()
+    p.click("#tp-procurar")
+    janela.esperar("document.querySelectorAll('#tp-resultado tr').length === 3")       # cabeçalho + 2 poços
+    p.click("#tp-restricao .x")
+    janela.esperar("document.getElementById('tp-tipos').textContent.includes('4 poço(s) levantado(s)')")
+    p.evaluate("sec.pocos = []")
+    p.click("#aba-interp")
+    p.click("#sec-dados")
+    assert "Não há poços para procurar" in janela.status()

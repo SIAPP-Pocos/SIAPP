@@ -132,6 +132,15 @@ Precisa de internet. Comece por uma categoria pequena para ver o tempo.
 - [ ] Sem intervalo marcado, **Calcular** explica que precisa de um intervalo-alvo.
 - [ ] Repetir no `5PX__0011__RN_5PX__0011__RN.tif` (DLIS de 2020).
 
+## 0.51 — download em lote por seção, campo e mapa
+
+- [ ] **Campo**: em Dados › Procurar por tipo de dado, digite um campo (ex.: Guamaré) em "Só os poços do campo": os
+      números dos tipos mudam para só os poços do campo. Procure petrofísica básica e confira.
+- [ ] **Seção**: monte uma seção com 3 ou 4 poços e clique em **Dados destes poços**: abre a busca com a etiqueta
+      "Só os N poço(s) da seção"; **×** na etiqueta volta a mostrar todos.
+- [ ] **Mapa**: destaque 2 ou 3 poços e clique em **Dados destes poços** (painel de destaques).
+- [ ] Marque um poço do resultado e **Baixar os arquivos dos marcados**: confirma com o total e baixa só os arquivos do tipo.
+
 ## 0.50 — testemunho × perfil
 
 Use o 1-ALG-1-RN (1 plug a 2.021,1 m; gama do testemunho de 2.016 a 2.026,8 m).

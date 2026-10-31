@@ -222,6 +222,7 @@ function ligarSecao() {
     $("sec-poco").value = "";
   });
   ligar("sec-limpar", "onclick", () => { sec.pocos = []; desenharListaSecao(); });
+  ligar("sec-dados", "onclick", () => procurarDadosDosPocos(sec.pocos, `os ${sec.pocos.length} poço(s) da seção`));
   ligar("sec-corredor", "onclick", buscarCorredorSecao);
   ligar("sec-no-mapa", "onclick", () => irPara("mapa", "iniciarLinhaMapa"));
   ligar("sec-montar", "onclick", montarSecao);

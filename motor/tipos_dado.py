@@ -90,27 +90,40 @@ def tipos_da_pasta(pasta: str) -> set[str]:
     return achados
 
 
-def _linhas(banco: Banco, bacia: str | None):
+def _chaves(pocos) -> set[str] | None:
+    """Conjunto de nomes (maiúsculas) para restringir a busca; None = sem restrição."""
+    if pocos is None:
+        return None
+    return {str(x).strip().upper() for x in pocos if str(x).strip()}
+
+
+def _linhas(banco: Banco, bacia: str | None, pocos=None):
+    alvo = _chaves(pocos)
+    if alvo is not None and not alvo:
+        return []
     cond, args = [], []
     if bacia:
         cond.append("a.bacia = ?")
         args.append(bacia)
     onde = ("WHERE " + " AND ".join(cond)) if cond else ""
     with banco.conexao() as c:
-        return [dict(r) for r in c.execute(
+        linhas = [dict(r) for r in c.execute(
             f"""SELECT a.bacia, a.poco_caminho, a.caminho, a.nome, a.pasta, a.tamanho,
                        p.nome_pasta, p.poco_id, p.categoria
                 FROM acervo_arquivos a LEFT JOIN acervo_pocos p ON p.bacia = a.bacia AND p.caminho = a.poco_caminho
                 {onde}""", args)]
+    if alvo is None:
+        return linhas
+    return [r for r in linhas if (r["poco_id"] or "").upper() in alvo or (r["nome_pasta"] or "").upper() in alvo]
 
 
-def contar(banco: Banco, bacia: str | None = None) -> dict:
+def contar(banco: Banco, bacia: str | None = None, pocos=None) -> dict:
     """Por tipo: quantos poços e arquivos o levantamento viu. `pocos_levantados` = poços com a lista de arquivos."""
     pocos_por_tipo: dict[str, set] = {t[0]: set() for t in TIPOS}
     arquivos = {t[0]: 0 for t in TIPOS}
     tamanho = {t[0]: 0 for t in TIPOS}
     todos = set()
-    for r in _linhas(banco, bacia):
+    for r in _linhas(banco, bacia, pocos):
         todos.add((r["bacia"], r["poco_caminho"]))
         for t in tipos_da_pasta(r["pasta"]):
             pocos_por_tipo[t].add((r["bacia"], r["poco_caminho"]))
@@ -118,8 +131,20 @@ def contar(banco: Banco, bacia: str | None = None) -> dict:
             tamanho[t] += r["tamanho"] or 0
     tipos = [{"chave": chave, "rotulo": rot, "descricao": desc, "le_com": le, "n_pocos": len(pocos_por_tipo[chave]),
               "n_arquivos": arquivos[chave], "bytes": tamanho[chave]} for chave, rot, desc, le, _p in TIPOS]
-    return {"tipos": tipos, "pocos_levantados": len(todos), "bacia": bacia or "",
+    return {"tipos": tipos, "pocos_levantados": len(todos), "bacia": bacia or "", "restrito": pocos is not None,
             "bacias": bacias_levantadas(banco)}
+
+
+def pocos_do_campo(banco: Banco, campo: str) -> list[str]:
+    """Poços do cadastro da ANP que pertencem ao campo (sem diferenciar maiúsculas)."""
+    with banco.conexao() as c:
+        return [r[0] for r in c.execute("SELECT id FROM pocos WHERE UPPER(campo) = UPPER(?) ORDER BY id", (campo.strip(),))]
+
+
+def campos_do_cadastro(banco: Banco) -> list[dict]:
+    with banco.conexao() as c:
+        return [{"campo": r[0], "n": r[1]} for r in c.execute(
+            "SELECT campo, COUNT(*) FROM pocos WHERE campo IS NOT NULL AND campo <> '' GROUP BY campo ORDER BY campo")]
 
 
 def bacias_levantadas(banco: Banco) -> list[str]:
@@ -127,7 +152,7 @@ def bacias_levantadas(banco: Banco) -> list[str]:
         return [r[0] for r in c.execute("SELECT DISTINCT bacia FROM acervo_arquivos ORDER BY bacia")]
 
 
-def buscar(banco: Banco, tipos: list[str], bacia: str | None = None, modo: str = "todos") -> dict:
+def buscar(banco: Banco, tipos: list[str], bacia: str | None = None, modo: str = "todos", pocos=None) -> dict:
     """Poços que têm **todos** (ou **algum**) dos tipos pedidos, com os arquivos desses tipos (para baixar só eles)."""
     pedidos = [t for t in dict.fromkeys(tipos or []) if t in _POR_CHAVE]
     if not pedidos:
@@ -135,7 +160,7 @@ def buscar(banco: Banco, tipos: list[str], bacia: str | None = None, modo: str =
     if modo not in ("todos", "algum"):
         raise ValueError("Modo de busca inválido (use 'todos' ou 'algum').")
     por: dict[tuple, dict] = {}
-    for r in _linhas(banco, bacia):
+    for r in _linhas(banco, bacia, pocos):
         achados = tipos_da_pasta(r["pasta"]) & set(pedidos)
         if not achados:
             continue
@@ -153,7 +178,7 @@ def buscar(banco: Banco, tipos: list[str], bacia: str | None = None, modo: str =
     pocos.sort(key=lambda p: (p["bacia"], p["poco"]))
     return {"pocos": pocos, "n_pocos": len(pocos), "n_arquivos": sum(len(p["arquivos"]) for p in pocos),
             "bytes": sum(a["tamanho"] for p in pocos for a in p["arquivos"]), "tipos": pedidos, "modo": modo,
-            "bacia": bacia or "", "rotulos": {t: _POR_CHAVE[t][1] for t in pedidos}}
+            "bacia": bacia or "", "restrito": pocos is not None, "rotulos": {t: _POR_CHAVE[t][1] for t in pedidos}}
 
 
 def csv_da_busca(resultado: dict) -> str:
