@@ -11,6 +11,7 @@ from motor import camadas as mca
 from motor import documentos as mdoc
 from motor import economia as mec
 from motor import fluidos as mfl
+from motor import indices as mix
 from motor import producao as mpr
 from motor import viabilidade as mvi
 
@@ -124,6 +125,35 @@ class ExternosAPI:
         return {**r, "camadas": mca.catalogo_com_estado(self._projeto.pasta)}
 
     @resposta_segura
+    def camadas_importar(self, ident: str = "terras_indigenas"):
+        """Escolhe um shapefile (.zip) ou GeoJSON seu e guarda como a camada pedida (ex.: terras indígenas da FUNAI)."""
+        self._exigir_projeto()
+        import webview
+        escolha = self._janela.create_file_dialog(webview.FileDialog.OPEN, directory=self._projeto.pasta,
+                                                  file_types=("Shapefile em zip ou GeoJSON (*.zip;*.geojson;*.json)",
+                                                              "Todos os arquivos (*.*)"))
+        if not escolha:
+            return {"cancelado": True}
+        caminho = escolha[0] if isinstance(escolha, (list, tuple)) else escolha
+        try:
+            reg = mca.importar(self._projeto.pasta, str(ident), caminho)
+        except mca.ErroCamadas as e:
+            raise ErroUsuario(str(e)) from e
+        self._projeto.registrar("importou_camada", camada=ident, arquivo=os.path.basename(caminho), feicoes=reg["feicoes"])
+        return {"camada": reg, "camadas": mca.catalogo_com_estado(self._projeto.pasta)}
+
+    @resposta_segura
+    def viabilidade_restricoes(self, campo: str):
+        """Áreas protegidas (UCs federais, terras indígenas) que a linha reta do campo até cada infraestrutura cruza."""
+        self._exigir_projeto()
+        campo = (campo or "").strip()
+        if not campo:
+            raise ErroUsuario("Escolha o campo.")
+        rel = self._relatorio_vb(campo)
+        return {"campo": campo, "linhas": mvi.restricoes_do_relatorio(self._projeto.pasta, rel["distancias"]),
+                "camadas": [{"id": i, "rotulo": r} for i, r, _ in mvi.CAMADAS_AMBIENTAIS]}
+
+    @resposta_segura
     def abrir_pasta_sig(self):
         self._exigir_projeto()
         _abrir_no_sistema(self._projeto.pasta_de(mca.PASTA_SIG))
@@ -190,8 +220,30 @@ class ExternosAPI:
                 "simbolos": {k: {"descricao": d, "unidade": u} for k, (d, u) in mec.SIMBOLOS.items()},
                 "funcoes": ["min", "max", "abs", "sqrt", "exp", "ln", "log10"]}
 
+    def _com_inflacao(self, parametros: dict | None) -> dict:
+        """Parâmetros com o fator de correção pela inflação calculado (série oficial do Banco Central)."""
+        pr = dict(parametros or {})
+        pr.pop("inflacao", None)
+        try:
+            p0 = mec.parametros(pr)
+        except mec.ErroEconomia as e:
+            raise ErroUsuario(str(e)) from e
+        if p0["corrigir_inflacao"] == "nao":
+            pr["fator_inflacao"] = 1.0
+            return pr
+        ref = next((f for f in mec.FONTES_CUSTO if f["id"] == p0["fonte_custo"]), None)
+        data_base = ref["data_base"] if ref else p0["data_base_custo"]
+        self._status("Buscando a série de inflação no Banco Central…")
+        try:
+            info = mix.corrigir(self._projeto.pasta, p0["corrigir_inflacao"], data_base, p0["data_ref"])
+        except mix.ErroIndices as e:
+            raise ErroUsuario(str(e)) from e
+        pr["fator_inflacao"], pr["inflacao"] = info["fator"], info
+        return pr
+
     def _avaliar(self, campo: str, parametros) -> dict:
         self._exigir_projeto()
+        parametros = self._com_inflacao(parametros)
         campo = (campo or "").strip()
         if not campo:
             raise ErroUsuario("Escolha o campo.")
@@ -201,6 +253,8 @@ class ExternosAPI:
             av = mec.avaliar(self._banco, campo, rel["distancias"], parametros or {}, sugeridos)
         except mec.ErroEconomia as e:
             raise ErroUsuario(str(e)) from e
+        inf = (parametros or {}).get("inflacao") or {}
+        av["avisos"] = list(av.get("avisos") or []) + list(inf.get("avisos") or [])
         return av
 
     @resposta_segura
@@ -300,6 +354,7 @@ class ExternosAPI:
         custo do duto; a execução fica gravada em execucoes/viabilidade/."""
         self._exigir_projeto()
         self._cancela_externos = False
+        parametros = self._com_inflacao(parametros)
         try:
             r = mvi.distancias_areas(self._projeto.pasta, str(ident_areas), str(ident_alvo), progresso=self._status,
                                      cancelar=self._cancelar_externos)

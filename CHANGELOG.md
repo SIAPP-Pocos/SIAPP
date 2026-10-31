@@ -6,6 +6,22 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 
 ## [Não lançado]
 
+## [0.52.0] — 2026-10-31
+Viabilidade: diâmetro pela vazão, correção pela inflação e restrições ambientais.
+### Adicionado
+- **Diâmetro do duto pela vazão**: informando vazão (m³ padrão/dia), pressão e temperatura do duto e a velocidade máxima, o
+  SIAPP calcula o diâmetro interno mínimo (continuidade, com a vazão levada da condição padrão à do duto pela densidade de
+  Peng-Robinson) e, se quiser, sobe para o tamanho comercial (NPS) seguinte. Entra no custo e na memória de cálculo. A
+  velocidade de 15 m/s é só um ponto de partida do SIAPP, declarado como tal; não considera queda de pressão nem parede.
+- **Correção do custo pela inflação**: IPCA ou INCC-M, da data-base da referência de custo até o mês escolhido (padrão: o
+  último da série). As séries vêm do Banco Central (SGS 433 e 192), são baixadas na hora e guardadas em
+  `ambiente_teste/indices/`; sem internet, usa a cópia. O fator, o período e a data do download vão para a memória.
+- **Restrições ambientais**: camada de **UCs federais** (ICMBio, via INDE) em Dados › Camadas geográficas e botão
+  **Importar terras indígenas…** (shapefile em zip ou GeoJSON da FUNAI, porque o servidor da FUNAI não abriu com
+  certificado válido). Na Viabilidade, **Restrições ambientais no traçado** lista as áreas atravessadas pela linha reta
+  até cada infraestrutura, com o trecho dentro (amostrado de 0,1 em 0,1 km). É triagem, não traçado nem licenciamento.
+- `docs/viabilidade.md`; testes com sessão falsa (sem rede) e uma conferência ao vivo da série do Banco Central.
+
 ## [0.51.0] — 2026-10-31
 Download em lote por seção, campo e mapa.
 ### Adicionado

@@ -118,13 +118,23 @@ PADROES = {
     "profundidade_m": None, "pressao_bar": None, "temperatura_c": None, "densidade_kg_m3": None,
     "t_superficie_c": 25.0, "gradiente_t_c_km": 30.0, "gradiente_p_bar_m": 0.1,
     "eficiencia": 1.0, "colchao": 0.5, "api": None, "densidade_gas": None, "estimar_pvt": "sim",
+    # diâmetro pela vazão (0.52)
+    "diametro_modo": "informado", "vazao_sm3_d": None, "p_duto_bar": None, "t_duto_c": None, "vel_max_m_s": 15.0,
+    # correção pela inflação (0.52): o fator é calculado fora (indices.py) e chega aqui
+    "corrigir_inflacao": "nao", "data_ref": None, "data_base_custo": None, "fator_inflacao": 1.0,
 }
+MODOS_DIAMETRO = ("informado", "vazao", "vazao_comercial")
+INDICES_INFLACAO = ("nao", "ipca", "incc")
+# Tamanhos nominais usuais de tubo de aço (NPS, polegadas). Confira com o fornecedor/projeto.
+DIAMETROS_COMERCIAIS_POL = (2, 3, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40, 42, 44, 46, 48)
 LIMITES = {
     "custo_mil_pol_km": (0, 100000), "custo_fixo_km": (0, 1e6), "diametro_pol": (1, 60), "fator_tracado": (1, 3),
     "bo": (0.8, 5), "bg": (0.0001, 0.5), "rs": (0, 5000),
     "profundidade_m": (50, 8000), "pressao_bar": (1, 1500), "temperatura_c": (0, 250), "densidade_kg_m3": (0.01, 2000),
     "t_superficie_c": (-10, 50), "gradiente_t_c_km": (5, 80), "gradiente_p_bar_m": (0.05, 0.3),
     "eficiencia": (0.01, 1), "colchao": (0, 0.95), "api": (5, 70), "densidade_gas": (0.55, 1.8),
+    "vazao_sm3_d": (1, 1e10), "p_duto_bar": (1, 500), "t_duto_c": (-20, 150), "vel_max_m_s": (0.1, 60),
+    "fator_inflacao": (0.5, 20),
 }
 ROTULOS = {"custo_mil_pol_km": "Custo (R$ mil por polegada·km)", "custo_fixo_km": "Parcela fixa (R$ mil por km)",
            "diametro_pol": "Diâmetro (pol)", "fator_tracado": "Fator de traçado", "bo": "Bo", "bg": "Bg", "rs": "Rs",
@@ -132,7 +142,9 @@ ROTULOS = {"custo_mil_pol_km": "Custo (R$ mil por polegada·km)", "custo_fixo_km
            "densidade_kg_m3": "Densidade (kg/m³)", "t_superficie_c": "Temperatura na superfície (°C)",
            "gradiente_t_c_km": "Gradiente de temperatura (°C/km)", "gradiente_p_bar_m": "Gradiente de pressão (bar/m)",
            "eficiencia": "Eficiência", "colchao": "Gás de colchão (fração)", "api": "Grau API do óleo",
-           "densidade_gas": "Densidade relativa do gás"}
+           "densidade_gas": "Densidade relativa do gás", "vazao_sm3_d": "Vazão (m³ padrão/dia)",
+           "p_duto_bar": "Pressão de operação do duto (bar)", "t_duto_c": "Temperatura de operação do duto (°C)",
+           "vel_max_m_s": "Velocidade máxima no duto (m/s)", "fator_inflacao": "Fator de correção pela inflação"}
 
 # ====================================================================== símbolos e equações
 SIMBOLOS = {
@@ -217,8 +229,25 @@ SIMBOLOS.update({"Vp": ("volume útil na condição padrão", "m³"), "E": ("ene
                  "Zg": ("fator de compressibilidade do gás do reservatório", "—"),
                  "p_padrao": ("pressão da condição padrão", "bar"), "t_padrao": ("temperatura da condição padrão", "°C")})
 
+SIMBOLOS.update({
+    "Qstd": ("vazão na condição padrão", "m³/d"), "rho_std": ("densidade do fluido na condição padrão", "kg/m³"),
+    "rho_op": ("densidade do fluido nas condições do duto", "kg/m³"), "Qop": ("vazão nas condições do duto", "m³/d"),
+    "v": ("velocidade máxima admitida no duto", "m/s"), "Dm": ("diâmetro interno mínimo", "m"),
+    "Dcalc": ("diâmetro interno mínimo", "pol"), "f_infl": ("fator de correção pela inflação", "—"),
+})
+
 _ST = "Standing (1947), correlação para óleos da Califórnia; faixa original: 16,5–63,8 °API, 100–258 °F. "
 EQUACOES.update({
+    "vazao_operacao": _e("Vazão nas condições do duto", "Qop", "m³/d", "Qstd * rho_std / rho_op",
+                         "A vazão pedida está na condição padrão; na pressão e temperatura do duto o mesmo fluido ocupa "
+                         "menos (ou mais) volume. Conserva a massa: Q·ρ é o mesmo nas duas condições."),
+    "diametro_vazao": _e("Diâmetro mínimo pela vazão", "Dm", "m", "sqrt(4 * Qop / (3.141592653589793 * v * 86400))",
+                         "Continuidade: Q = v·π·D²/4, resolvida para D. Dá o diâmetro **interno** mínimo para não passar "
+                         "da velocidade máxima. Não considera queda de pressão ao longo do duto nem espessura da parede."),
+    "diametro_pol": _e("Diâmetro mínimo em polegadas", "Dcalc", "pol", "Dm / 0.0254", "1 pol = 0,0254 m."),
+    "custo_km_corrigido": _e("Custo do duto por km, corrigido pela inflação", "custo_km", "R$/km", "custo_km * f_infl",
+                             "Leva o custo da data-base da referência até a data escolhida, multiplicando pelo "
+                             "fator acumulado do índice (IPCA ou INCC-M). Só entra se você pedir a correção."),
     "p_psia": _e("Pressão em psia", "Ppsia", "psia", "P * 14.5038", "Conversão de bar para psia (as correlações "
                  "são em unidades de campo)."),
     "t_f": _e("Temperatura em °F", "TF", "°F", "T * 1.8 + 32", "Conversão de °C para °F."),
@@ -434,8 +463,11 @@ def parametros(dados: dict | None) -> dict:
     for k, v in dados.items():
         if k not in PADROES:
             continue
-        if k in ("fonte_custo", "fluido", "estimar_pvt"):
+        if k in ("fonte_custo", "fluido", "estimar_pvt", "diametro_modo", "corrigir_inflacao"):
             p[k] = str(v) if v else PADROES[k]
+            continue
+        if k in ("data_ref", "data_base_custo"):
+            p[k] = str(v).strip() if v else None
             continue
         x = _num(v)
         if x is None:
@@ -449,6 +481,11 @@ def parametros(dados: dict | None) -> dict:
         raise ErroEconomia(f"Fluido desconhecido: {p['fluido']}.")
     if p["estimar_pvt"] not in ("sim", "nao"):
         raise ErroEconomia("Estimar Bo, Rs e Bg: use sim ou nao.")
+    if p["diametro_modo"] not in MODOS_DIAMETRO:
+        raise ErroEconomia(f"Diâmetro: use {', '.join(MODOS_DIAMETRO)}.")
+    if p["corrigir_inflacao"] not in INDICES_INFLACAO:
+        raise ErroEconomia(f"Correção pela inflação: use {', '.join(INDICES_INFLACAO)}.")
+    p["inflacao"] = dados.get("inflacao") if isinstance(dados.get("inflacao"), dict) else None
     fonte = next((f for f in FONTES_CUSTO if f["id"] == p["fonte_custo"]), None)
     if fonte is None and p["fonte_custo"] != "manual":
         raise ErroEconomia(f"Referência de custo desconhecida: {p['fonte_custo']}.")
@@ -667,18 +704,63 @@ def _custo_por_km(mem: "Memoria", p: dict):
     mem.entrada("custo_pol_km", p["custo_mil_pol_km"],
                 f"{ref['rotulo']}, data-base {ref['data_base']}" if ref else "informado pelo usuário", G)
     mem.entrada("custo_fixo_km", p["custo_fixo_km"], _informado(p, "custo_fixo_km"), G)
-    mem.entrada("D", p["diametro_pol"], _informado(p, "diametro_pol"), G)
+    D, origem_D = _diametro(mem, p)
+    p["diametro_usado_pol"] = D
+    mem.entrada("D", D, origem_D, G)
     mem.entrada("f_fluido", constante(p, f"f_{fl}"), f"constante f_{fl}: " + _fonte_const(p, f"f_{fl}"), G)
     mem.entrada("f_tracado", p["fator_tracado"], _informado(p, "fator_tracado"), G)
-    return mem.calcular("custo_km", "custo"), ref
+    custo = mem.calcular("custo_km", "custo")
+    if p["corrigir_inflacao"] != "nao" and abs(p["fator_inflacao"] - 1.0) > 1e-12:
+        inf = p.get("inflacao") or {}
+        mem.entrada("f_infl", p["fator_inflacao"],
+                    (f"{inf.get('rotulo', p['corrigir_inflacao'].upper())}, de {inf.get('de', '?')} a {inf.get('ate', '?')} "
+                     f"({inf.get('meses', '?')} meses; série baixada em {str(inf.get('baixado_em', '?'))[:10]})"), G)
+        custo = mem.calcular("custo_km_corrigido", "custo")
+    return custo, ref
+
+
+def _diametro(mem: "Memoria", p: dict) -> tuple[float, str]:
+    """Diâmetro usado no custo: o informado ou o calculado pela vazão (com passos na memória de cálculo)."""
+    modo = p["diametro_modo"]
+    if modo == "informado":
+        return p["diametro_pol"], _informado(p, "diametro_pol")
+    faltam = [ROTULOS[k] for k in ("vazao_sm3_d", "p_duto_bar", "t_duto_c") if p[k] is None]
+    if faltam:
+        raise ErroEconomia("Diâmetro pela vazão: informe " + ", ".join(faltam) + ".")
+    fl, G = p["fluido"], "Diâmetro pela vazão"
+    p_std, t_std = constante(p, "p_padrao"), constante(p, "t_padrao")
+    rho_std, rho_op = densidade(fl, p_std, t_std, p), densidade(fl, p["p_duto_bar"], p["t_duto_c"], p)
+    mem.entrada("Qstd", p["vazao_sm3_d"], "informada pelo usuário", G)
+    mem.entrada("rho_std", rho_std,
+                f"Peng-Robinson com translação de Peneloux a {p_std:g} bar e {t_std:g} °C (condição padrão da ANP)", G)
+    mem.entrada("rho_op", rho_op,
+                f"Peng-Robinson com translação de Peneloux a {p['p_duto_bar']:g} bar e {p['t_duto_c']:g} °C (informadas)", G)
+    mem.entrada("v", p["vel_max_m_s"], "informada pelo usuário" if p["vel_max_m_s"] != PADROES["vel_max_m_s"]
+                else "valor de partida do SIAPP, não é norma nem limite de projeto: informe o do seu duto", G)
+    mem.calcular("vazao_operacao", "diametro")
+    mem.calcular("diametro_vazao", "diametro")
+    calc = mem.calcular("diametro_pol", "diametro")
+    if modo == "vazao":
+        return calc, f"calculado pela vazão (diâmetro interno mínimo, {calc:.2f} pol)"
+    cm = next((d for d in DIAMETROS_COMERCIAIS_POL if d >= calc), None)
+    if cm is None:
+        raise ErroEconomia(f"O diâmetro calculado ({calc:.1f} pol) passa do maior tamanho comercial da lista "
+                           f"({DIAMETROS_COMERCIAIS_POL[-1]} pol): reduza a vazão ou aumente a pressão do duto.")
+    mem.nota("Tamanho comercial", "diametro",
+             f"Primeiro tamanho nominal (NPS) da lista usual de tubos de aço igual ou maior que {calc:.2f} pol: {cm} pol. "
+             "Tamanho nominal não é diâmetro interno: confira com o fornecedor.", resultado=cm, unidade="pol")
+    return float(cm), f"{cm} pol: tamanho comercial acima do diâmetro calculado ({calc:.2f} pol)"
 
 
 def _resumo_custo(p: dict, custo_km: float, ref) -> dict:
     fl = p["fluido"]
     return {"r_por_km": custo_km, "fator_fluido": constante(p, f"f_{fl}"),
             "motivo_fator": CONSTANTES[f"f_{fl}"]["fonte"], "r_mil_pol_km": p["custo_mil_pol_km"],
-            "diametro_pol": p["diametro_pol"], "referencia": ref["rotulo"] if ref else "informado pelo usuário",
-            "data_base": ref["data_base"] if ref else None}
+            "diametro_pol": p.get("diametro_usado_pol", p["diametro_pol"]), "diametro_modo": p["diametro_modo"],
+            "referencia": ref["rotulo"] if ref else "informado pelo usuário",
+            "data_base": ref["data_base"] if ref else None,
+            "fator_inflacao": p["fator_inflacao"] if p["corrigir_inflacao"] != "nao" else 1.0,
+            "inflacao": p.get("inflacao") if p["corrigir_inflacao"] != "nao" else None}
 
 
 def custos_duto(dados: dict | None, distancias_km: list) -> dict:

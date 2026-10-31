@@ -132,6 +132,24 @@ Precisa de internet. Comece por uma categoria pequena para ver o tempo.
 - [ ] Sem intervalo marcado, **Calcular** explica que precisa de um intervalo-alvo.
 - [ ] Repetir no `5PX__0011__RN_5PX__0011__RN.tif` (DLIS de 2020).
 
+## 0.52 — viabilidade: diâmetro, inflação e restrições ambientais
+
+Use um campo com produção, camadas e distâncias já medidas (Viabilidade › Medir as distâncias).
+
+- [ ] **Diâmetro pela vazão**: abra "Diâmetro pela vazão e correção pela inflação", escolha *calculado pela vazão*, informe
+      vazão (ex.: 2.000.000 m³/d), pressão e temperatura do duto e calcule: o resumo mostra o diâmetro "(pela vazão)" e a
+      memória traz os passos (vazão no duto, diâmetro em m e em pol). Troque para *tamanho comercial*: o diâmetro sobe para
+      o próximo tamanho e a memória diz isso. Sem vazão/pressão/temperatura, a mensagem diz o que falta.
+- [ ] **Inflação**: escolha IPCA e calcule: o resumo diz "corrigido pelo IPCA de 2024-06 a 20xx-xx (×1,xxxx)". Compare com
+      INCC-M. Confira com o IPCA acumulado do IBGE no período (deve bater). Em `ambiente_teste\indices\` ficam as séries.
+- [ ] Desligue a internet e repita: usa a cópia guardada e avisa.
+- [ ] **UCs**: em Dados › Camadas geográficas, marque "Unidades de Conservação federais (ICMBio)" e baixe (demora).
+- [ ] **Terras indígenas**: baixe o shapefile no site da FUNAI e use "Importar terras indígenas…".
+- [ ] Na Viabilidade, **Restrições ambientais no traçado**: lista as áreas atravessadas pela linha reta até cada
+      infraestrutura. Confira uma no mapa/QGIS.
+- [ ] **API e densidade de Guamaré**: Dados › Procurar por tipo de dado › campo Guamaré › marque *Pasta de poço* (e *PVT*) ›
+      procure › marque os poços › baixe; depois confirme os valores achados em Viabilidade › fluidos do campo.
+
 ## 0.51 — download em lote por seção, campo e mapa
 
 - [ ] **Campo**: em Dados › Procurar por tipo de dado, digite um campo (ex.: Guamaré) em "Só os poços do campo": os

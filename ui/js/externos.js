@@ -194,6 +194,8 @@ function ligarExternos() {
   ligar("cm-baixar", "onclick", baixarCamadas);
   ligar("cm-pasta", "onclick", () => chamar(null, "abrir_pasta_sig"));
   ligar("vb-medir", "onclick", medirDistancias);
+  ligar("vb-restricoes", "onclick", restricoesViabilidade);
+  ligar("cm-importar-ti", "onclick", importarTerrasIndigenas);
   ligar("vb-csv", "onclick", exportarViabilidade);
   ligar("vb-campo", "onchange", () => {
     $("vb-eco").hidden = true;
@@ -339,8 +341,47 @@ async function medirDistancias() {
     limpar($("vb-eco-resultado"));
     $("vb-eco-csv").hidden = true;
     $("vb-eco").hidden = false;
+    $("vb-restricoes").hidden = false;
+    limpar($("vb-restricoes-resultado"));
   }
   status(`Distâncias de ${campo} medidas (polígono: ${r.relatorio.fonte_poligono}).`, "ok");
+}
+
+// Restrições ambientais (0.52): UCs federais e terras indígenas cruzadas pela linha reta até cada infraestrutura.
+async function restricoesViabilidade() {
+  const r = await chamar($("vb-restricoes"), "viabilidade_restricoes", $("vb-campo").value.trim());
+  if (!r.ok) return;
+  const box = limpar($("vb-restricoes-resultado"));
+  box.appendChild(el("h4", "", "Restrições ambientais no traçado"));
+  const faltam = r.camadas.filter((c) => !r.linhas.length || !(r.linhas[0].camadas.find((x) => x.id === c.id) || {}).baixada);
+  if (faltam.length) {
+    box.appendChild(el("p", "aviso", `Camada(s) não baixada(s): ${faltam.map((c) => c.rotulo).join(", ")}. ` +
+      "Baixe as UCs em Dados › Camadas geográficas; as terras indígenas, importe o arquivo da FUNAI. Sem a camada, ela não entra na conta."));
+  }
+  if (!r.linhas.length) { box.appendChild(el("p", "ajuda", "Nenhuma infraestrutura medida com traçado para testar (meça as distâncias antes).")); return; }
+  const t = el("table", "tabela");
+  const cab = el("tr");
+  for (const h of ["Infraestrutura", "Distância (km)", "Áreas protegidas atravessadas (km dentro)"]) cab.appendChild(el("th", "", h));
+  t.appendChild(cab);
+  for (const l of r.linhas) {
+    const tr = el("tr");
+    const txt = l.cruza.length ? l.cruza.map((c) => `${c.nome} (${c.rotulo}, ${numero(c.km_dentro, 1)} km)`).join("; ") : "nenhuma nas camadas baixadas";
+    tr.append(el("td", "", l.rotulo), el("td", "n", numero(l.distancia_km, 1)), el("td", l.cruza.length ? "vb-falta" : "", txt));
+    t.appendChild(tr);
+  }
+  box.appendChild(t);
+  box.appendChild(el("p", "ajuda", "É a linha reta do campo até a infraestrutura mais próxima, não um traçado real; o trecho dentro " +
+    "é medido de 0,1 em 0,1 km. Serve de triagem: licenciamento e traçado de verdade pedem estudo próprio. Só entram UCs federais " +
+    "(ICMBio) e as terras indígenas que você importou."));
+}
+
+async function importarTerrasIndigenas() {
+  const r = await chamar($("cm-importar-ti"), "camadas_importar", "terras_indigenas");
+  if (!r.ok || r.cancelado) return;
+  ext.camadas = r.camadas;
+  desenharCamadas();
+  desenharListaMapaCamadas();
+  status(`Terras indígenas importadas: ${numero(r.camada.feicoes, 0)} feição(ões).`, "ok");
 }
 
 function desenharViabilidade(rel) {
@@ -623,8 +664,10 @@ function desenharEconomia(av) {
   const box = limpar($("vb-eco-resultado"));
   const c = av.custo;
   box.appendChild(el("p", "ajuda", `Duto: R$ ${numero(c.r_por_km / 1e6, 2)} milhões por km — ${c.referencia}` +
-    `${c.data_base ? ", data-base " + c.data_base : ""}; ${numero(c.diametro_pol, 1)}″, ×${numero(c.fator_fluido, 2)} pelo fluido` +
-    `${av.parametros.fator_tracado !== 1 ? `, traçado ×${numero(av.parametros.fator_tracado, 2)}` : ""}.`));
+    `${c.data_base ? ", data-base " + c.data_base : ""}; ${numero(c.diametro_pol, 1)}″` +
+    `${c.diametro_modo && c.diametro_modo !== "informado" ? " (pela vazão)" : ""}, ×${numero(c.fator_fluido, 2)} pelo fluido` +
+    `${av.parametros.fator_tracado !== 1 ? `, traçado ×${numero(av.parametros.fator_tracado, 2)}` : ""}` +
+    `${c.inflacao ? `, corrigido pelo ${c.inflacao.rotulo.split(" ")[0]} de ${c.inflacao.de} a ${c.inflacao.ate} (×${numero(c.fator_inflacao, 4)})` : ""}.`));
   box.appendChild(el("p", "ajuda", `Produção acumulada: ${av.acumulados.fonte}.`));
 
   box.appendChild(el("h4", "", "Capacidade de injeção"));

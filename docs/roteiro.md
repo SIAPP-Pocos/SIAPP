@@ -35,8 +35,9 @@ existe e a validação científica ficam **para o final**, antes do lançamento 
       alternativas prontas ou por fórmula do usuário.
 - [x] **API e densidade do gás das pastas de poço** (0.29): dados transcritos (tipo propriedade_fluido) e leitura
       automática do texto dos documentos dos poços do campo, com a página como fonte.
-- [ ] Viabilidade — próximos refinamentos (com o Ruan): diâmetro pela vazão,
-      correção do custo pela inflação (IPCA/INCC), restrições ambientais (UCs, terras indígenas).
+- [x] Viabilidade — refinamentos (0.52): diâmetro pela vazão, correção do custo pela inflação (IPCA/INCC) e restrições
+      ambientais (UCs federais e terras indígenas importadas). Ver `docs/viabilidade.md`. Falta transcrever API e densidade de Guamaré
+      (depende dos documentos dos poços baixados: ver o guia, seção 0.52).
 - [x] **Gasodutos e blocos exploratórios** (0.28): distância de cada bloco exploratório (ou campo) à feição mais
       próxima da camada escolhida e o custo do duto; mapa colorido por distância; CSV com fórmulas e entradas.
 - [x] **Bo, Rs e Bg estimados por correlação** (0.28): Standing (pede o API) e Sutton + Papay, com aviso de faixa.

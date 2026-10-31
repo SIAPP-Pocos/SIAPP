@@ -321,6 +321,82 @@ def relatorio(banco: Banco, pasta_projeto: str, campo: str) -> dict:
             "distancias": distancias(pasta_projeto, poli), "deplecao": deplecao(banco, campo)}
 
 
+# ====================================================================== restrições ambientais (0.52)
+CAMADAS_AMBIENTAIS = [("icmbio_ucs", "Unidade de Conservação federal", ["nomeuc", "grupouc", "esferaadm", "biomas"]),
+                      ("terras_indigenas", "Terra indígena", None)]
+PASSO_AMOSTRA_KM = 0.1
+
+
+def _nome_feicao(props: dict, preferidos) -> str:
+    for k in (preferidos or []) + ["nomeuc", "terrai_nom", "nome", "NOME", "name", "terra_indigena", "TERRAI_NOM"]:
+        if props.get(k) not in (None, "", " "):
+            return str(props[k])
+    for v in props.values():
+        if isinstance(v, str) and v.strip():
+            return v.strip()
+    return "(sem nome)"
+
+
+def _poligonos(geo) -> list[tuple[list, list]]:
+    """[(anel externo lon, lat)…] de um Polygon/MultiPolygon do GeoJSON, ignorando furos."""
+    if not geo:
+        return []
+    if geo["type"] == "Polygon":
+        partes = [geo["coordinates"]]
+    elif geo["type"] == "MultiPolygon":
+        partes = geo["coordinates"]
+    else:
+        return []
+    return [([c[0] for c in poly[0]], [c[1] for c in poly[0]]) for poly in partes if poly and poly[0]]
+
+
+def cruzamentos_linha(pasta_projeto: str, a: list[float], b: list[float]) -> dict:
+    """Em quais áreas protegidas (UCs federais do ICMBio e terras indígenas importadas) a linha reta a→b entra.
+    `a`, `b`: [lat, lon]. Amostra a linha de 0,1 em 0,1 km; o quilômetro dentro é aproximado por essa amostragem
+    (erro de até ~0,1 km por entrada). É a linha reta, não um traçado real: serve de triagem, não de licenciamento."""
+    n = max(2, int(math.ceil(haversine_km(a[0], a[1], b[0], b[1]) / PASSO_AMOSTRA_KM)) + 1)
+    lat = np.linspace(a[0], b[0], n)
+    lon = np.linspace(a[1], b[1], n)
+    km = haversine_km(a[0], a[1], b[0], b[1])
+    passo = km / (n - 1) if n > 1 else 0.0
+    idx = mca.indice(pasta_projeto)["camadas"]
+    achados, camadas = [], []
+    for ident, rotulo, campos in CAMADAS_AMBIENTAIS:
+        reg = idx.get(ident)
+        if not reg:
+            camadas.append({"id": ident, "rotulo": rotulo, "baixada": False})
+            continue
+        camadas.append({"id": ident, "rotulo": rotulo, "baixada": True, "fonte": reg.get("fonte"),
+                        "baixado_em": reg.get("baixado_em")})
+        with open(os.path.join(pasta_projeto, reg["arquivo"]), encoding="utf-8") as f:
+            g = json.load(f)
+        for feat in g.get("features", []):
+            dentro = np.zeros(n, bool)
+            for xs, ys in _poligonos(feat.get("geometry")):
+                x0, x1, y0, y1 = min(xs), max(xs), min(ys), max(ys)
+                cand = (lon >= x0) & (lon <= x1) & (lat >= y0) & (lat <= y1)
+                if cand.any():
+                    dentro[cand] |= _dentro(lon[cand], lat[cand], np.asarray(xs), np.asarray(ys))
+            if dentro.any():
+                props = feat.get("properties") or {}
+                achados.append({"camada": ident, "rotulo": rotulo, "nome": _nome_feicao(props, campos),
+                                "km_dentro": round(float(dentro.sum()) * passo, 2),
+                                "atributos": {k: props.get(k) for k in (campos or []) if props.get(k) not in (None, "", " ")}})
+    achados.sort(key=lambda x: -x["km_dentro"])
+    return {"comprimento_km": round(km, 2), "cruza": achados, "camadas": camadas}
+
+
+def restricoes_do_relatorio(pasta_projeto: str, distancias_: list[dict]) -> list[dict]:
+    """Para cada infraestrutura medida (com os dois pontos da menor distância), as áreas protegidas que a linha reta cruza."""
+    saida = []
+    for d in distancias_:
+        if not d.get("ponto_campo") or not d.get("ponto_feicao") or d.get("toca_o_campo"):
+            continue
+        r = cruzamentos_linha(pasta_projeto, d["ponto_campo"], d["ponto_feicao"])
+        saida.append({"id": d["id"], "rotulo": d["rotulo"], "distancia_km": d.get("distancia_km"), **r})
+    return saida
+
+
 COLUNAS_CSV = ["camada", "fonte", "distancia_km", "toca_o_campo", "lat_campo", "lon_campo", "lat_feicao", "lon_feicao",
                "atributos"]
 

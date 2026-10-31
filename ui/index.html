@@ -313,6 +313,7 @@
         <div class="cm-lista" id="cm-lista"></div>
         <div class="linha">
           <button class="btn secundario" id="cm-baixar">Baixar as marcadas</button>
+          <button class="btn secundario pequeno" id="cm-importar-ti" title="Escolha o shapefile (.zip) ou GeoJSON das terras indígenas baixado do site da FUNAI">Importar terras indígenas…</button>
           <button class="btn secundario pequeno" id="cm-pasta">Abrir a pasta</button>
         </div>
         <ul class="sec-avisos" id="cm-erros"></ul>
@@ -466,6 +467,10 @@
           <button class="btn secundario pequeno" id="vb-csv" hidden>CSV</button>
         </div>
         <div class="pr-resumo" id="vb-resultado"></div>
+        <div class="linha">
+          <button class="btn secundario pequeno" id="vb-restricoes" hidden title="Que unidades de conservação e terras indígenas a linha reta até cada infraestrutura atravessa">Restrições ambientais no traçado</button>
+        </div>
+        <div class="pr-resumo" id="vb-restricoes-resultado"></div>
         <fieldset class="vb-eco" id="vb-eco" hidden>
           <legend>Viabilidade econômica</legend>
           <p class="ajuda">Custo do duto até cada infraestrutura medida ÷ quanto o campo comporta. Três jeitos de
@@ -483,6 +488,33 @@
             <label title="Usada pelas equações alternativas de custo (afim ou valor por km informado)">Parcela fixa (R$ mil/km)
               <input type="text" class="curto" inputmode="decimal" data-vb="custo_fixo_km"></label>
           </div>
+          <details class="vb-avancado" id="vb-det-diametro">
+            <summary>Diâmetro pela vazão e correção pela inflação</summary>
+            <p class="ajuda">Em vez de informar o diâmetro, o SIAPP calcula o diâmetro <b>interno mínimo</b> para a vazão
+              (continuidade: Q = v·π·D²/4, com a vazão levada da condição padrão para a pressão e a temperatura do duto).
+              Não considera queda de pressão, espessura da parede nem normas. A velocidade 15 m/s é só um <b>ponto de
+              partida do SIAPP</b>: use a do seu projeto.</p>
+            <div class="filtros vb-form">
+              <label>Diâmetro <select id="vb-diametro-modo" data-vb="diametro_modo">
+                <option value="informado">o informado acima</option>
+                <option value="vazao">calculado pela vazão</option>
+                <option value="vazao_comercial">pela vazão, no tamanho comercial acima</option></select></label>
+              <label>Vazão (m³ padrão/dia) <input type="text" class="curto" inputmode="decimal" data-vb="vazao_sm3_d" placeholder="ex.: 2000000"></label>
+              <label>Pressão do duto (bar) <input type="text" class="curto" inputmode="decimal" data-vb="p_duto_bar"></label>
+              <label>Temperatura do duto (°C) <input type="text" class="curto" inputmode="decimal" data-vb="t_duto_c"></label>
+              <label>Velocidade máxima (m/s) <input type="text" class="curto" inputmode="decimal" data-vb="vel_max_m_s"></label>
+            </div>
+            <p class="ajuda">A <b>correção pela inflação</b> leva o custo da data-base da referência até o mês escolhido,
+              com o IPCA ou o INCC-M (construção) do Banco Central, baixados na hora e guardados no projeto. Sem
+              internet, usa a cópia guardada.</p>
+            <div class="filtros vb-form">
+              <label>Corrigir pela inflação <select id="vb-inflacao" data-vb="corrigir_inflacao">
+                <option value="nao">não</option><option value="ipca">IPCA</option>
+                <option value="incc">INCC-M (construção civil)</option></select></label>
+              <label title="Vazio = o último mês da série">Até o mês <input type="text" class="curto" data-vb="data_ref" placeholder="ex.: 2026-09"></label>
+              <label title="Só para custo informado por você (referência manual)">Data-base do custo <input type="text" class="curto" data-vb="data_base_custo" placeholder="ex.: jun/2024"></label>
+            </div>
+          </details>
           <p class="ajuda" id="vb-custo-ajuda"></p>
           <details class="vb-avancado">
             <summary>Espaço poroso — Bo, Bg, Rs do campo (ou estimados)</summary>

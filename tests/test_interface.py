@@ -1986,3 +1986,18 @@ def test_dados_destes_pocos_vindo_da_secao_restringe_a_busca(janela):
     p.click("#aba-interp")
     p.click("#sec-dados")
     assert "Não há poços para procurar" in janela.status()
+
+
+def test_viabilidade_052_campos_novos_e_botoes(janela):
+    """0.52: diâmetro pela vazão, correção pela inflação, restrições ambientais e importação das terras indígenas."""
+    p = janela.page
+    abrir_projeto(janela)
+    assert p.evaluate("['vb-diametro-modo', 'vb-inflacao', 'vb-restricoes', 'cm-importar-ti'].every((i) => document.getElementById(i))")
+    lido = p.evaluate("""() => {
+      document.getElementById('vb-diametro-modo').value = 'vazao';
+      document.getElementById('vb-inflacao').value = 'ipca';
+      document.querySelector('[data-vb=vazao_sm3_d]').value = '2000000';
+      return lerParametrosVb();
+    }""")
+    assert lido["diametro_modo"] == "vazao" and lido["corrigir_inflacao"] == "ipca" and lido["vazao_sm3_d"] == "2000000"
+    assert p.evaluate("document.getElementById('vb-restricoes').hidden")                # só aparece depois de medir

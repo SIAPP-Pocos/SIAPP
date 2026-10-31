@@ -91,10 +91,23 @@ CATALOGO = [
     {"id": "ibge_rodovias", "fonte": "IBGE", "shp": "rod_trecho_rodoviario_l", "nome": "Rodovias", "tipo": "linha",
      "padrao": False, "desc": "Trechos rodoviários (~45 MB)"},
 ]
+# Restrições ambientais (0.52): UCs federais do ICMBio e Terras Indígenas (importadas por você).
+CATALOGO += [
+    {"id": "icmbio_ucs", "fonte": "ICMBio", "wfs": "ICMBio:limiteucsfederais_a", "tipo": "poligono", "padrao": False,
+     "nome": "Unidades de Conservação federais (ICMBio)",
+     "desc": "Limites das UCs federais (só as federais: UCs estaduais e municipais não estão aqui). Pode passar de 20 MB"},
+    {"id": "terras_indigenas", "fonte": "Importada", "tipo": "poligono", "padrao": False,
+     "nome": "Terras indígenas (FUNAI) — você importa o arquivo",
+     "desc": "O servidor de mapas da FUNAI não abriu com certificado válido: baixe o shapefile (zip) ou GeoJSON no "
+             "site da FUNAI e use “Importar terras indígenas…”"},
+]
 POR_ID = {c["id"]: c for c in CATALOGO}
 FONTES = {"IBGE": "IBGE — Base Cartográfica Contínua 1:250.000 (BC250)",
           "EPE": "EPE — WebMap (Empresa de Pesquisa Energética)",
-          "ANP": "ANP — dados georreferenciados das bacias sedimentares"}
+          "ANP": "ANP — dados georreferenciados das bacias sedimentares",
+          "ICMBio": "ICMBio — unidades de conservação (via INDE)",
+          "Importada": "Arquivos que você importou"}
+ICMBIO_WFS = "https://geoservicos.inde.gov.br/geoserver/ICMBio/ows"
 
 
 class ErroCamadas(ValueError):
@@ -428,6 +441,11 @@ def baixar(pasta_projeto: str, ids: list[str], *, sessao=None, progresso=None, c
                 g = epe_feicoes(item["camada"], sessao, servico=servico,
                                 progresso=lambda n: prog(f"Camada {k} de {len(pedidos)}: {item['nome']} — {n} feições"))
                 feitos.append(_guardar(pasta_projeto, item, g, f"{servico}{item['camada']}"))
+            elif item["fonte"] == "Importada":
+                raise ErroCamadas("Esta camada vem de um arquivo seu: use “Importar terras indígenas…”.")
+            elif item["fonte"] == "ICMBio":
+                g = wfs_geojson(sessao, ICMBIO_WFS, item["wfs"])
+                feitos.append(_guardar(pasta_projeto, item, g, f"{ICMBIO_WFS}?typeName={item['wfs']}"))
             elif item["fonte"] == "ANP":
                 url = ANP_GEO + item["arquivo"]
                 r = sessao.get(url, timeout=(30, 300), headers=AGENTE)
@@ -469,6 +487,58 @@ def catalogo_com_estado(pasta_projeto: str | None) -> list[dict]:
              "baixada": idx.get(c["id"])} for c in CATALOGO]
 
 
+def wfs_geojson(sessao, url: str, camada: str, timeout: float = 300) -> dict:
+    """Todas as feições de uma camada WFS (GeoServer), em WGS84, como GeoJSON."""
+    r = sessao.get(url, timeout=(30, timeout), headers=AGENTE,
+                   params={"service": "WFS", "version": "1.0.0", "request": "GetFeature", "typeName": camada,
+                           "outputFormat": "application/json", "srsName": "EPSG:4326"})
+    if r.status_code != 200:
+        raise ErroCamadas(f"O servidor respondeu HTTP {r.status_code} para a camada {camada}.")
+    try:
+        g = r.json()
+    except ValueError as e:
+        raise ErroCamadas(f"O servidor não devolveu GeoJSON para a camada {camada}.") from e
+    if g.get("type") != "FeatureCollection" or not g.get("features"):
+        raise ErroCamadas(f"A camada {camada} veio sem feições.")
+    return g
+
+
+def importar(pasta_projeto: str, ident: str, caminho: str) -> dict:
+    """Guarda uma camada a partir de um arquivo seu: shapefile em .zip (WGS84 ou SIRGAS 2000, em graus) ou GeoJSON."""
+    item = POR_ID.get(ident)
+    if not item or item["fonte"] != "Importada":
+        raise ErroCamadas("Esta camada não é importada de arquivo.")
+    nome = os.path.basename(caminho)
+    arqs = None
+    try:
+        if nome.lower().endswith(".zip"):
+            z = zipfile.ZipFile(caminho)
+            arqs = {os.path.basename(n): z.read(n) for n in z.namelist() if re.search(r"\.(shp|shx|dbf|prj|cpg)$", n, re.I)}
+            shp = next((v for n, v in arqs.items() if n.lower().endswith(".shp")), None)
+            dbf = next((v for n, v in arqs.items() if n.lower().endswith(".dbf")), None)
+            cpg = next((v for n, v in arqs.items() if n.lower().endswith(".cpg")), None)
+            if shp is None or dbf is None:
+                raise ErroCamadas("O zip não tem .shp e .dbf.")
+            prj = next((v for n, v in arqs.items() if n.lower().endswith(".prj")), b"").decode("latin-1", "ignore").upper()
+            if prj and not any(t in prj for t in ("GCS_", "GEOGCS", "SIRGAS", "WGS")) or "PROJCS" in prj:
+                raise ErroCamadas("O shapefile está em coordenadas projetadas (metros). Reprojete para graus (WGS84 ou "
+                                  "SIRGAS 2000) no QGIS e importe de novo.")
+            g = shapefile_geojson(shp, dbf, cpg)
+        elif nome.lower().endswith((".geojson", ".json")):
+            with open(caminho, encoding="utf-8") as f:
+                g = json.load(f)
+            if g.get("type") != "FeatureCollection" or not g.get("features"):
+                raise ErroCamadas("O GeoJSON precisa ser uma FeatureCollection com feições.")
+        else:
+            raise ErroCamadas("Use um shapefile em .zip ou um arquivo .geojson/.json.")
+    except (OSError, ValueError, zipfile.BadZipFile) as e:
+        raise ErroCamadas(f"Não consegui ler {nome}: {e}") from e
+    box = caixa(g)
+    if not box or not (-180 <= box[0] <= box[2] <= 180 and -90 <= box[1] <= box[3] <= 90):
+        raise ErroCamadas("As coordenadas não parecem graus de longitude/latitude (WGS84/SIRGAS 2000).")
+    return _guardar(pasta_projeto, item, g, f"arquivo importado: {nome}", arqs)
+
+
 def url_fonte(item: dict) -> str:
     if item["fonte"] == "EPE":
         if item.get("servico"):
@@ -476,4 +546,8 @@ def url_fonte(item: dict) -> str:
         return urljoin(EPE_SERVICO, str(item["camada"]))
     if item["fonte"] == "ANP":
         return ANP_GEO + item["arquivo"]
+    if item["fonte"] == "ICMBio":
+        return f"{ICMBIO_WFS}?typeName={item['wfs']}"
+    if item["fonte"] == "Importada":
+        return "arquivo importado por você"
     return IBGE_BC250
