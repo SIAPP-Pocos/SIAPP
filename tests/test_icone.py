@@ -75,22 +75,48 @@ def test_janela_sem_eventos_nao_quebra(monkeypatch):
     assert icone.aplicar(types.SimpleNamespace(title="x")) is False
 
 
-def test_atalho_so_no_windows_e_so_uma_vez(monkeypatch, tmp_path):
+def _lnk_falso(caminho, *textos):
+    """Um .lnk de mentira: o que importa é que os caminhos aparecem em UTF-16, como no formato real."""
+    caminho.write_bytes(b"L\x00\x00\x00" + b"".join(t.encode("utf-16-le") for t in textos))
+
+
+def test_atalho_so_no_windows_e_so_se_estiver_desatualizado(monkeypatch, tmp_path):
     monkeypatch.setattr(sys, "platform", "linux")
     assert icone.criar_atalho(sincrono=True) is False
     monkeypatch.setattr(sys, "platform", "win32")
     lnk = tmp_path / "SIAPP.lnk"
-    lnk.write_text("x")
     monkeypatch.setattr(icone, "CAMINHO_ATALHO", str(lnk))
-    assert icone.criar_atalho(sincrono=True) is False      # já existe: não recria
+    _lnk_falso(lnk, os.path.join(base.PASTA_APP, icone.NOME_LANCADOR), base.PASTA_APP)
+    assert icone.criar_atalho(sincrono=True) is False      # aponta para esta pasta: não recria
 
 
-def test_comando_do_atalho_aponta_para_o_bat_com_o_icone_e_escapa_aspas():
-    cmd = icone._comando_atalho(r"C:\x\SIAPP.lnk", r"C:\Ana's\iniciar.bat", r"C:\x\recursos\icone\siapp.ico", r"C:\x")
+def test_atalho_de_pasta_antiga_ou_do_bat_e_recriado(monkeypatch, tmp_path):
+    monkeypatch.setattr(sys, "platform", "win32")
+    lnk = tmp_path / "SIAPP.lnk"
+    monkeypatch.setattr(icone, "CAMINHO_ATALHO", str(lnk))
+    rodou = []
+    import subprocess
+    monkeypatch.setattr(subprocess, "run", lambda cmd, **kw: rodou.append(cmd))
+    _lnk_falso(lnk, r"C:\x\pasta_antiga\SIAPP.vbs", r"C:\x\pasta_antiga")            # pasta com o nome antigo
+    assert icone.criar_atalho(sincrono=True) is True
+    _lnk_falso(lnk, os.path.join(base.PASTA_APP, "iniciar.bat"), base.PASTA_APP)   # atalho da 0.46
+    assert icone.criar_atalho(sincrono=True) is True
+    assert len(rodou) == 2
+
+
+def test_atalho_atual_ignora_maiusculas_e_arquivo_ausente(tmp_path):
+    lnk = tmp_path / "a.lnk"
+    assert icone.atalho_atual(str(lnk), r"C:\SIAPP\SIAPP.vbs", r"C:\SIAPP") is False
+    _lnk_falso(lnk, r"c:\siapp\siapp.vbs", r"c:\siapp")
+    assert icone.atalho_atual(str(lnk), r"C:\SIAPP\SIAPP.vbs", r"C:\SIAPP") is True
+
+
+def test_comando_do_atalho_aponta_para_o_lancador_silencioso_e_escapa_aspas():
+    cmd = icone._comando_atalho(r"C:\x\SIAPP.lnk", r"C:\Ana's\SIAPP.vbs", r"C:\x\recursos\icone\siapp.ico", r"C:\x")
     assert cmd[0] == "powershell" and cmd[-2] == "-Command"
     s = cmd[-1]
-    assert "TargetPath=$env:ComSpec" in s
-    assert "Arguments='/c \"C:\\Ana''s\\iniciar.bat\"'" in s
+    assert r"System32\wscript.exe" in s and "iniciar.bat" not in s
+    assert "Arguments='//nologo \"C:\\Ana''s\\SIAPP.vbs\"'" in s
     assert "IconLocation='C:\\x\\recursos\\icone\\siapp.ico,0'" in s
 
 

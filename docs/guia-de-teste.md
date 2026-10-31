@@ -5,7 +5,8 @@ falhar, envie a mensagem da barra inferior **e** o arquivo `ambiente_teste\siapp
 
 ## Como rodar
 
-1. Dê **dois cliques em `iniciar.bat`**. Na primeira vez (e quando a lista de dependências
+1. Dê **dois cliques em `SIAPP.lnk`** (ou em `iniciar.bat`; sem janela de prompt desde a 0.47; para ver o console, use
+   `SIAPP - diagnóstico.bat`). Na primeira vez (e quando a lista de dependências
    muda, como agora), ele instala o que falta no ambiente `.venv`: `dlisio` e `lasio` são
    novos na 0.9. Leva um ou dois minutos.
    *Se mover a pasta do SIAPP de lugar, apague a `.venv` — ela é recriada sozinha.*
@@ -130,6 +131,28 @@ Precisa de internet. Comece por uma categoria pequena para ver o tempo.
 - [ ] **Exportar CSV** e **LAS**: arquivos em `exportacoes\1-AURI-12-RN\`.
 - [ ] Sem intervalo marcado, **Calcular** explica que precisa de um intervalo-alvo.
 - [ ] Repetir no `5PX__0011__RN_5PX__0011__RN.tif` (DLIS de 2020).
+
+## 0.47 — abrir como um programa, sem janela de prompt
+
+Antes: renomeie a pasta do SIAPP para **`SIAPP`** no Explorer (era `siapp.vf`). A `.venv` antiga deixa de funcionar
+e o atalho antigo aponta para o caminho velho — os dois são refeitos sozinhos.
+
+- [ ] Dois cliques em **`SIAPP.vbs`** (ou em `iniciar.bat`): **nenhum console** aparece, nem na tela nem na barra de
+      tarefas. Surge uma janelinha com o ícone, **SIAPP**, a versão (0.47.0) e uma barra de progresso.
+- [ ] Na primeira abertura depois de renomear a pasta, a janelinha mostra "Refazendo os componentes — leva alguns
+      minutos" e, depois, "Preparando os componentes". Sem nenhuma janela preta.
+- [ ] A janelinha mostra "Conferindo os arquivos", "Preparando os componentes", "Abrindo o projeto" e **some quando
+      a janela principal aparece**.
+- [ ] Nas aberturas seguintes (nada novo para instalar) o carregamento é rápido.
+- [ ] Na barra de tarefas, janelinha e janela principal têm o **mesmo ícone** e ficam no mesmo botão (sem duplicar).
+- [ ] Depois da primeira abertura, **`SIAPP.lnk`** é recriado apontando para esta pasta (botão direito ›
+      Propriedades: destino `wscript.exe //nologo "…\SIAPP.vbs"`). Dois cliques nele abrem o SIAPP sem console.
+      Fixar na barra de tarefas e no Iniciar continua funcionando.
+- [ ] **Erro claro**: renomeie `requirements.txt` para `requirements.txt.bak` e abra: a janelinha diz que faltam
+      arquivos, com **Copiar detalhes** (cole num bloco de notas para conferir) e **Fechar**; nenhum console pisca.
+      Desfaça o nome depois. O detalhe também fica em `ambiente_teste\lancador.log`.
+- [ ] **`SIAPP - diagnóstico.bat`** abre o console com cada passo (o que o `iniciar.bat` fazia antes).
+- [ ] Se algum antivírus reclamar do `SIAPP.vbs`, anote qual e a mensagem.
 
 ## 0.46 — ícone do SIAPP
 

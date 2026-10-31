@@ -6,8 +6,8 @@ O pywebview, no Windows, põe em cada janela o ícone do executável que a abriu
   não se agrupar com outros programas em Python nem herdar o ícone deles;
 - `aplicar(janela)` troca o ícone da janela pelo `recursos/icone/siapp.ico` assim que ela aparece, no tamanho
   pequeno (barra de título, 16 px a 100 %) e no grande (barra de tarefas e Alt+Tab);
-- `criar_atalho()` cria, uma vez, `SIAPP.lnk` na pasta do SIAPP, com o ícone, para copiar para a Área de
-  Trabalho ou fixar no Iniciar.
+- `criar_atalho()` cria `SIAPP.lnk` na pasta do SIAPP, com o ícone e apontando para o lançador silencioso
+  (`SIAPP.vbs`), para copiar para a Área de Trabalho ou fixar no Iniciar; recria se o destino ou a pasta mudaram.
 
 Fora do Windows, ou se algo falhar, não faz nada: o ícone é cosmético e nunca pode impedir o SIAPP de abrir.
 """
@@ -81,28 +81,38 @@ def aplicar_no_hwnd(hwnd: int, caminho: str = CAMINHO_ICO) -> int:
 
 
 CAMINHO_ATALHO = os.path.join(base.PASTA_APP, "SIAPP.lnk")
+NOME_LANCADOR = "SIAPP.vbs"
 
 
-def _comando_atalho(atalho: str, bat: str, ico: str, pasta: str) -> list[str]:
-    """PowerShell que cria um atalho para o iniciar.bat (via cmd, para poder ser fixado) com o ícone do SIAPP."""
+def _comando_atalho(atalho: str, vbs: str, ico: str, pasta: str) -> list[str]:
+    """PowerShell que cria um atalho para o lançador silencioso (wscript + SIAPP.vbs, sem console)."""
     q = lambda s: s.replace("'", "''")      # noqa: E731  (aspas simples no PowerShell)
     script = ("$s=(New-Object -ComObject WScript.Shell).CreateShortcut('{a}');"
-              "$s.TargetPath=$env:ComSpec;"
-              "$s.Arguments='/c \"{b}\"';"
+              "$s.TargetPath=$env:windir+'\\System32\\wscript.exe';"
+              "$s.Arguments='//nologo \"{b}\"';"
               "$s.WorkingDirectory='{p}';"
               "$s.IconLocation='{i},0';"
               "$s.Description='SIAPP';"
-              "$s.Save()").format(a=q(atalho), b=q(bat), p=q(pasta), i=q(ico))
+              "$s.Save()").format(a=q(atalho), b=q(vbs), p=q(pasta), i=q(ico))
     return ["powershell", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", script]
 
 
-def criar_atalho(sincrono: bool = False) -> bool:
-    """Cria `SIAPP.lnk` na pasta do SIAPP, uma vez, em segundo plano. Devolve True se disparou a criação."""
-    bat = os.path.join(base.PASTA_APP, "iniciar.bat")
-    if not _no_windows() or os.path.exists(CAMINHO_ATALHO) or not os.path.exists(CAMINHO_ICO) \
-            or not os.path.exists(bat):
+def atalho_atual(atalho: str, vbs: str, pasta: str) -> bool:
+    """True se o .lnk existe e aponta para este lançador, nesta pasta (o .lnk guarda os caminhos em UTF-16)."""
+    try:
+        with open(atalho, "rb") as f:
+            dados = f.read().lower()
+    except OSError:
         return False
-    cmd = _comando_atalho(CAMINHO_ATALHO, bat, CAMINHO_ICO, base.PASTA_APP)
+    return all(t.lower().encode("utf-16-le") in dados for t in (vbs, pasta))
+
+
+def criar_atalho(sincrono: bool = False) -> bool:
+    """Cria (ou recria, se o destino ou a pasta mudaram) `SIAPP.lnk`, em segundo plano. True = disparou."""
+    vbs = os.path.join(base.PASTA_APP, NOME_LANCADOR)
+    if not _no_windows() or not os.path.exists(CAMINHO_ICO) or not os.path.exists(vbs)             or atalho_atual(CAMINHO_ATALHO, vbs, base.PASTA_APP):
+        return False
+    cmd = _comando_atalho(CAMINHO_ATALHO, vbs, CAMINHO_ICO, base.PASTA_APP)
 
     def rodar():
         try:

@@ -40,7 +40,7 @@ _Como o SIAPP trata cada tipo de arquivo, com os testes em documentos reais e os
 
 | Pergunta | Resposta |
 |---|---|
-| Precisa instalar programa no computador do usuário? | **Não.** O PyMuPDF traz o motor do Tesseract embutido; só precisa do arquivo de idioma (`por.traineddata`, alguns MB), que pode ir dentro da `siapp.vf` |
+| Precisa instalar programa no computador do usuário? | **Não.** O PyMuPDF traz o motor do Tesseract embutido; só precisa do arquivo de idioma (`por.traineddata`, alguns MB), que pode ir dentro da `SIAPP` |
 | Funciona sem internet? | Sim, é 100% local |
 | Velocidade | ~0,6 s por página no teste (página sintética); documentos reais escaneados devem levar mais |
 | Dá a posição das palavras? | Sim — permite destacar o termo encontrado na imagem da página |

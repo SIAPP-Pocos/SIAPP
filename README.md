@@ -2,7 +2,7 @@
 
 [![testes](https://github.com/SIAPP-Pocos/siapp/actions/workflows/testes.yml/badge.svg)](https://github.com/SIAPP-Pocos/siapp/actions/workflows/testes.yml)
 [![licença: AGPL-3.0](https://img.shields.io/badge/licen%C3%A7a-AGPL--3.0-blue)](LICENSE)
-![versão](https://img.shields.io/badge/vers%C3%A3o-0.46.0-informational)
+![versão](https://img.shields.io/badge/vers%C3%A3o-0.47.0-informational)
 
 Ferramenta aberta para transformar o acervo **público** de dados de poços da ANP
 (portal [REATE](https://reate.cprm.gov.br/anp/TERRESTRE), ANP/CPRM) em dados
@@ -43,10 +43,11 @@ qual documento, página e trecho o sustentam.
 
 1. Instale o Python 3.10 ou mais novo ([python.org](https://www.python.org/downloads/)).
 2. Baixe ou clone este repositório.
-3. Dê dois cliques em **`iniciar.bat`**.
+3. Dê dois cliques em **`iniciar.bat`** (ou no atalho `SIAPP.lnk`, que o SIAPP cria na primeira abertura).
 
-Na primeira execução, o `iniciar.bat` encontra um Python válido, cria um ambiente
-isolado (`.venv`) e instala as dependências. No primeiro documento escaneado, o
+Não aparece janela de prompt: uma janelinha de carregamento mostra os passos. Na primeira execução ela
+encontra um Python válido, cria um ambiente isolado (`.venv`) e instala as dependências. Para ver o console
+(diagnóstico), use `SIAPP - diagnóstico.bat`; detalhes em [`docs/lancador.md`](docs/lancador.md). No primeiro documento escaneado, o
 SIAPP baixa o modelo de português do OCR (~8 MB); na aba Dados › Cadastro da ANP, a Tabela de
 Poços da ANP (~12 MB).
 
@@ -105,7 +106,7 @@ SIAPP baixa e produz fica nela, em formatos abertos (JSON, SQLite, LAS, CSV), co
 histórico de cada ação em `siapp.json`. Detalhes em [`docs/arquitetura.md`](docs/arquitetura.md),
 [`docs/comunidade.md`](docs/comunidade.md), [`docs/perfis.md`](docs/perfis.md),
 [`docs/levantamento.md`](docs/levantamento.md), [`docs/avaliacao.md`](docs/avaliacao.md),
-[`docs/agp.md`](docs/agp.md), [`docs/formularios-anp.md`](docs/formularios-anp.md), [`docs/pressoes.md`](docs/pressoes.md), [`docs/pvt.md`](docs/pvt.md), [`docs/pag.md`](docs/pag.md), [`docs/perfis-processados.md`](docs/perfis-processados.md), [`docs/checkshot.md`](docs/checkshot.md), [`docs/geoquimica.md`](docs/geoquimica.md), [`docs/dados-consolidados.md`](docs/dados-consolidados.md), [`docs/topos.md`](docs/topos.md), [`docs/secao.md`](docs/secao.md), [`docs/ferramentas.md`](docs/ferramentas.md) e [`docs/bloco.md`](docs/bloco.md).
+[`docs/agp.md`](docs/agp.md), [`docs/formularios-anp.md`](docs/formularios-anp.md), [`docs/pressoes.md`](docs/pressoes.md), [`docs/pvt.md`](docs/pvt.md), [`docs/pag.md`](docs/pag.md), [`docs/perfis-processados.md`](docs/perfis-processados.md), [`docs/checkshot.md`](docs/checkshot.md), [`docs/geoquimica.md`](docs/geoquimica.md), [`docs/dados-consolidados.md`](docs/dados-consolidados.md), [`docs/topos.md`](docs/topos.md), [`docs/secao.md`](docs/secao.md), [`docs/ferramentas.md`](docs/ferramentas.md), [`docs/bloco.md`](docs/bloco.md) e [`docs/lancador.md`](docs/lancador.md).
 
 ## Dados e procedência
 

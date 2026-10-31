@@ -42,6 +42,20 @@ existe e a validação científica ficam **para o final**, antes do lançamento 
 - [x] **Bo, Rs e Bg estimados por correlação** (0.28): Standing (pede o API) e Sutton + Papay, com aviso de faixa.
 - [x] **Painel de preenchimento e biblioteca de interpretações** (0.35): quanto do acervo está preenchido e
       quem contribuiu; avaliações de formação compartilhadas, comparadas e refeitas com os mesmos parâmetros.
+- [x] **Abrir como um software** (0.47): dois cliques no atalho abrem uma janelinha de carregamento, sem console.
+      Ver `docs/lancador.md`.
+
+## Em aberto — o que falta (atualizado na 0.47)
+
+- [ ] **Validar no Windows as versões 0.37–0.46** pelo `docs/guia-de-teste.md` (o Ruan testa; o Claude corrige).
+- [ ] **Bloco 9 — petrofísica básica**: porosidade e permeabilidade de testemunho, GR de testemunho (planilhas
+      `_COREGAMA.xls` / `Petrofisica Basica.xls`; 162 poços; exemplo: 1-ALG-1-RN). Depende de o Ruan baixar um
+      arquivo de exemplo.
+- [ ] **Bloco 4 — leitura do OCR**: mais resolução e segunda passada nas páginas ruins.
+- [ ] **Viabilidade**: diâmetro do duto pela vazão; custo corrigido pela inflação (IPCA/INCC); restrições
+      ambientais (unidades de conservação, terras indígenas); transcrever API e densidade de Guamaré.
+- [ ] **Pendências que dependem do Ruan**: Rw de referência por formação; conferir os números antigos do
+      relatório (LIS convertidos); disponibilidade de RHOB/NPHI/DT pelo levantamento do acervo.
 
 ## No final — melhorias do que já existe
 
@@ -51,7 +65,8 @@ existe e a validação científica ficam **para o final**, antes do lançamento 
       perfilagem convencional, passada principal).
 - [x] **Seção pelo mapa** (0.34): a linha desenhada no mapa (A, pontos intermediários, B) escolhe os
       poços e abre a seção nessa ordem.
-- [ ] **Instalador para Windows** (.exe que roda sem instalar Python).
+- [ ] **Instalador para Windows** (.exe que roda sem instalar Python). A 0.47 (lançador silencioso) é um passo
+      nessa direção.
 - [ ] Ajustes finos do estilo clássico da seção a partir de uma figura de referência
       (ex.: Boletim de Geociências da Petrobras).
 - [ ] Esquemas: ampliar o dicionário de ferramentas (Halliburton, Baker, Weatherford) com

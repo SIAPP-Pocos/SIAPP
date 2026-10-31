@@ -6,6 +6,28 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 
 ## [Não lançado]
 
+## [0.47.0] — 2026-10-31
+O SIAPP abre como um programa, sem a janela de prompt.
+### Adicionado
+- **Lançador silencioso** (`lancador/`, `SIAPP.pyw`, `SIAPP.vbs`): dois cliques no atalho abrem uma janelinha de
+  carregamento com o ícone, o nome, a versão e uma barra de progresso, com os passos "Conferindo os arquivos",
+  "Preparando os componentes" e "Abrindo o projeto". Ela some quando a janela principal aparece (o SIAPP avisa o
+  lançador por um arquivo-sinal). Nenhum console aparece, nem na tela nem na barra de tarefas.
+- A primeira abertura (sem `.venv`, ou com a `.venv` quebrada, por exemplo depois de renomear ou mover a pasta)
+  passa pela janelinha: o ambiente é criado e as dependências instaladas escondidas; as dependências só são
+  reinstaladas quando o `requirements.txt` muda.
+- **Erros na própria janelinha**, em português simples, com **Copiar detalhes**; o detalhe vai para
+  `ambiente_teste/lancador.log` (e o que o app imprimir, para `ambiente_teste/siapp-saida.log`).
+- **`SIAPP - diagnóstico.bat`**: o antigo `iniciar.bat`, com console e cada passo, para investigar problemas.
+- A janelinha e a janela principal usam o mesmo ícone e a mesma identidade na barra de tarefas
+  (`SIAPP.Pocos.SIAPP`).
+- Testes de unidade do lançador (`tests/test_lancador.py`), que rodam fora do Windows.
+- `CLAUDE.md` com as regras do projeto e as fontes de contexto; `docs/roteiro.md` com o que falta.
+### Alterado
+- `iniciar.bat` não mostra mais o prompt: só chama o `SIAPP.vbs`.
+- `SIAPP.lnk` abre o lançador silencioso e é **recriado** quando o destino ou a pasta não batem com a pasta atual.
+- A pasta do app passa a se chamar **SIAPP** (era `siapp.vf`); as menções foram trocadas.
+
 ## [0.46.0] — 2026-10-30
 O ícone do SIAPP.
 ### Adicionado

@@ -179,7 +179,8 @@ ambiente_teste/
 
 - O OCR embutido do PyMuPDF devolve **texto vazio, sem erro**, se receber imagem em tons de cinza.
 - No Windows, `python` pode apontar para a cópia incompleta do Python do MySQL Shell — o
-  `iniciar.bat` nunca usa `python` puro nem `activate.bat`.
+  lançador (`lancador/`) e o `SIAPP - diagnóstico.bat` nunca usam `python` puro nem `activate.bat`
+  (ver [`lancador.md`](lancador.md)).
 - `"CONVENCIONAIS"` não contém `"CONVENCIONAL"`: a busca de pasta usa o radical `CONVENCION`.
 - Servidor que ignora `Range` e responde 200 corromperia o arquivo se o download fosse anexado.
 - Categorias grandes do REATE vêm divididas em subpastas `…_parteN`.

@@ -20,6 +20,7 @@ import sys
 import webview
 
 from motor import projeto as mp
+from lancador import passos
 from motor import registro
 from ponte import base, icone
 from ponte.api import API
@@ -42,6 +43,7 @@ def main():
     )
     api._janela = janela
     icone.aplicar(janela)            # ícone do SIAPP no lugar do ícone do python.exe
+    janela.events.shown += lambda *_: passos.avisar_abertura()    # a janelinha do lançador some
     api._vigiar_geometria(janela, "principal")
     janela.events.closing += api._ao_fechar_principal
     # http_server=True serve a pasta ui/ por um servidor local interno, o que
