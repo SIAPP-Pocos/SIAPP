@@ -6,6 +6,22 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 
 ## [Não lançado]
 
+## [0.48.0] — 2026-10-31
+Petrofísica básica de testemunho (fecha o Bloco 9).
+### Adicionado
+- **Leitor de petrofísica básica** (`motor/petrofisica.py`), para a pasta `PETROFISICA_BASICA` do REATE:
+  plugs (profundidade, porosidade, densidade, permeabilidade longitudinal, pressão, tipo, direção e número da
+  amostra) e **gama do testemunho** (`*_COREGAMA.xls`). Lê `.xls` e `.xlsx`, acha as colunas pelo cabeçalho,
+  entende números em texto com vírgula decimal ("206,39"; "1.234,5") e guarda colunas desconhecidas em
+  `extra.colunas`, sem perder nada. Testado com as planilhas do 1-ALG-1-RN.
+- **Ficha do poço**: blocos "Petrofísica de testemunho — plugs" (tabela, faixas de porosidade e permeabilidade) e
+  "Gama do testemunho (COREGAMA)". Os mesmos plugs vindos em duas planilhas aparecem uma vez, com a outra em
+  "também em".
+- **Dados consolidados**: tema "Petrofísica de testemunho" com as duas fontes.
+- `docs/petrofisica.md`; testes com planilhas sintéticas (`tests/petrofisica_util.py`).
+### Observação
+- A planilha não declara a unidade da **densidade**; o SIAPP a mostra como vem, sem unidade, e avisa na ficha.
+
 ## [0.47.0] — 2026-10-31
 O SIAPP abre como um programa, sem a janela de prompt.
 ### Adicionado

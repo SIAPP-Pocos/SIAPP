@@ -55,7 +55,7 @@ Python 3.13 da Microsoft Store pelo `py`, e a `.venv` da pasta do app (`.venv\Sc
 Detalhe em `docs/roteiro.md`. Resumo:
 
 1. Validar no Windows as versões 0.37–0.46 pelo guia de teste (o Ruan testa; o Claude corrige).
-2. Bloco 9: petrofísica básica de testemunho (depende de um arquivo de exemplo).
+2. Bloco 9 (petrofísica básica de testemunho): leitor pronto na 0.48; falta comparar plug × perfil e validar outros poços.
 3. Bloco 4: melhorar a leitura do OCR.
 4. Viabilidade: diâmetro do duto, correção pela inflação, restrições ambientais, API e densidade de Guamaré.
 5. Melhorias: download em lote, instalador `.exe`, estilo clássico da seção, dicionário de ferramentas.

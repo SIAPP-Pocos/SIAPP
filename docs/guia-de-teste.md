@@ -132,6 +132,21 @@ Precisa de internet. Comece por uma categoria pequena para ver o tempo.
 - [ ] Sem intervalo marcado, **Calcular** explica que precisa de um intervalo-alvo.
 - [ ] Repetir no `5PX__0011__RN_5PX__0011__RN.tif` (DLIS de 2020).
 
+## 0.48 — petrofísica básica de testemunho
+
+Use o poço **1-ALG-1-RN** (já baixado: pasta Dados de Rochas e Fluidos › PETROFISICA_BASICA).
+
+- [ ] Abra o projeto; a leitura dos documentos novos roda sozinha. Em **Dados › Dados consolidados**, o tema
+      **Petrofísica de testemunho** aparece com as duas fontes e a contagem de itens.
+- [ ] Abra a **ficha do 1-ALG-1-RN**: bloco **"Petrofísica de testemunho — plugs"** com 1 plug a 2.021,10 m
+      (porosidade 20,6 %, permeabilidade 206,39 mD, densidade 2,65, pressão 2.330 psi, amostra "1 VH1", tipo Plug).
+      Os dois arquivos de plugs (`…Petrofisica Basica.xls` e `00610.119452.xls`) aparecem **uma vez**, com a outra
+      planilha em "também em".
+- [ ] Bloco **"Gama do testemunho (COREGAMA)"**: 55 pontos, de 2.016,00 a 2.026,80 m, gama entre 4,6 e 25,1 API.
+- [ ] O aviso da densidade (a planilha não diz a unidade) aparece na ficha.
+- [ ] Os valores com vírgula (206,39) saem certos, sem virar 20639 nem erro.
+- [ ] Baixe outro poço com `PETROFISICA_BASICA` (162 têm) e confira se abre; se alguma planilha não abrir, mande-a.
+
 ## 0.47 — abrir como um programa, sem janela de prompt
 
 Antes: renomeie a pasta do SIAPP para **`SIAPP`** no Explorer (era `siapp.vf`). A `.venv` antiga deixa de funcionar

@@ -118,6 +118,7 @@ function desenharDadosPoco(caixa, dp, id) {
   for (const ck of dp.checkshot || []) blocoDp(caixa, "Sísmica de poço — tempo × profundidade (checkshot)", ck.niveis.length, true,
                                                secaoCheckshot(ck, id));
   secaoGeoquimica(caixa, it);
+  secaoPetrofisica(caixa, it);
 
   const testes = it.teste_formacao || [];
   if (testes.length) {
@@ -633,6 +634,39 @@ function secaoGeoquimica(caixa, it) {
       roc.map((x) => [intervaloM(x.prof_topo, x.prof_base), numero(x.valor, 2), numero(x.extra.s1, 2), numero(x.extra.s2, 2),
                       numero(x.extra.s3, 2), numero(x.extra.tmax, 0), numero(x.extra.ih, 0), numero(x.extra.io, 0),
                       numero(x.extra.ro, 2)])));
+  }
+}
+
+
+// ------------------------------------------------ petrofísica básica de testemunho: plugs e gama (0.48)
+function faixaTexto(valores, casas) {
+  const v = valores.filter((x) => x != null);
+  if (!v.length) return "—";
+  return `${numero(Math.min(...v), casas)} a ${numero(Math.max(...v), casas)}`;
+}
+
+function secaoPetrofisica(caixa, it) {
+  const plugs = it.plug_testemunho || [], gama = it.gama_testemunho || [];
+  if (plugs.length) {
+    const c = el("div");
+    c.appendChild(tabelaSimples(["Prof. (m)", "Amostra", "Tipo", "Porosidade (%)", "Permeabilidade long. (mD)", "Densidade", "Pressão (psi)"],
+      plugs.map((x) => [numero(x.prof_topo, 2), x.nome, x.texto, numero(x.valor, 1), numero(x.extra.permeabilidade, 2),
+                        numero(x.extra.densidade, 2), numero(x.extra.pressao, 0)])));
+    c.appendChild(el("p", "ajuda", `${plugs.length} plug(s): porosidade ${faixaTexto(plugs.map((x) => x.valor), 1)} %; ` +
+      `permeabilidade ${faixaTexto(plugs.map((x) => x.extra.permeabilidade), 2)} mD. A planilha não diz a unidade da ` +
+      "densidade (valores perto de 2,65 sugerem densidade de grãos em g/cm³, mas confira com a operadora). " +
+      "É medida em plug de testemunho, não perfil: serve de referência para a porosidade do perfil, não a substitui."));
+    blocoDp(caixa, "Petrofísica de testemunho — plugs", plugs.length, true, c);
+  }
+  if (gama.length) {
+    const prof = gama.map((x) => x.prof_topo);
+    const c = el("div");
+    c.appendChild(el("p", "ajuda", `${gama.length} pontos de gama do testemunho, de ${numero(Math.min(...prof), 1)} a ` +
+      `${numero(Math.max(...prof), 1)} m: ${faixaTexto(gama.map((x) => x.valor), 1)} API. Serve para casar a profundidade ` +
+      "do testemunho com a do perfil de raios gama (a diferença é o deslocamento do testemunho)."));
+    c.appendChild(tabelaSimples(["Testemunho", "Prof. (m)", "Gama (API)"],
+      gama.map((x) => [x.nome, numero(x.prof_topo, 2), numero(x.valor, 1)])));
+    blocoDp(caixa, "Gama do testemunho (COREGAMA)", gama.length, gama.length <= 10, c);
   }
 }
 

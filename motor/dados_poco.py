@@ -27,11 +27,11 @@ import json
 import os
 
 from . import pocos as mpo
-from . import checkshot, geoquimica, pag, pressoes, pvt, rfp
+from . import checkshot, geoquimica, pag, petrofisica, pressoes, pvt, rfp
 from .banco import Banco, agora
 
 LEITORES = {"cdpe": rfp, "pressoes": pressoes, "pvt": pvt, "pag": pag, "checkshot": checkshot,
-            "geoquimica": geoquimica}
+            "geoquimica": geoquimica, "petrofisica": petrofisica}
 
 TIPOS = {
     "topo": "Topo estratigráfico", "indicio": "Indício de petróleo/gás", "testemunho": "Testemunho",
@@ -47,6 +47,7 @@ TIPOS = {
     "litologia_calha": "Litologia da calha (PAG)", "indicio_calha": "Fluorescência na calha (PAG)",
     "topo_calha": "Topo pela calha (PAG)", "checkshot": "Tempo × profundidade (checkshot)",
     "isotopo_gas": "Isótopos de carbono do gás", "geoquimica_rocha": "Geoquímica de rocha (COT, pirólise)",
+    "plug_testemunho": "Plug de testemunho (porosidade, permeabilidade)", "gama_testemunho": "Gama do testemunho",
 }
 
 
@@ -162,7 +163,7 @@ def _sem_repeticao(itens: list[dict]) -> list[dict]:
         else:
             k = (i["tipo"], None if i["prof_topo"] is None else round(i["prof_topo"], 1),
                  None if i["prof_base"] is None else round(i["prof_base"], 1),
-                 (i.get("nome") or "") if i["tipo"] in ("temperatura", "teste_formacao") else "")
+                 (i.get("nome") or "") if i["tipo"] in ("temperatura", "teste_formacao", "plug_testemunho") else "")
         atual = melhor.get(k)
         if atual is None:
             melhor[k] = i

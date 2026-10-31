@@ -48,9 +48,9 @@ existe e a validação científica ficam **para o final**, antes do lançamento 
 ## Em aberto — o que falta (atualizado na 0.47)
 
 - [ ] **Validar no Windows as versões 0.37–0.46** pelo `docs/guia-de-teste.md` (o Ruan testa; o Claude corrige).
-- [ ] **Bloco 9 — petrofísica básica**: porosidade e permeabilidade de testemunho, GR de testemunho (planilhas
-      `_COREGAMA.xls` / `Petrofisica Basica.xls`; 162 poços; exemplo: 1-ALG-1-RN). Depende de o Ruan baixar um
-      arquivo de exemplo.
+- [x] **Bloco 9 — petrofísica básica** (0.48): plugs (porosidade, permeabilidade, densidade) e gama do testemunho
+      (planilhas `_COREGAMA.xls` / `Petrofisica Basica.xls`; 162 poços). Visto só no 1-ALG-1-RN; ver `docs/petrofisica.md`.
+      Falta comparar plug × perfil (próximo passo, a combinar).
 - [ ] **Bloco 4 — leitura do OCR**: mais resolução e segunda passada nas páginas ruins.
 - [ ] **Viabilidade**: diâmetro do duto pela vazão; custo corrigido pela inflação (IPCA/INCC); restrições
       ambientais (unidades de conservação, terras indígenas); transcrever API e densidade de Guamaré.
