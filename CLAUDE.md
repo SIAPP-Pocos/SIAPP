@@ -54,12 +54,20 @@ Python 3.13 da Microsoft Store pelo `py`, e a `.venv` da pasta do app (`.venv\Sc
 
 Detalhe em `docs/roteiro.md`. Resumo:
 
-1. Validar no Windows as versões 0.37–0.46 pelo guia de teste (o Ruan testa; o Claude corrige).
-2. Bloco 9 (petrofísica básica de testemunho): leitor pronto na 0.48; falta comparar plug × perfil e validar outros poços.
-3. Bloco 4: melhorar a leitura do OCR.
-4. Viabilidade: diâmetro do duto, correção pela inflação, restrições ambientais, API e densidade de Guamaré.
-5. Melhorias: download em lote, instalador `.exe`, estilo clássico da seção, dicionário de ferramentas.
-6. Validação científica (Rw publicado, carta estratigráfica, avaliação em lote, 100 esquemas).
-7. Por último: análise do 1-BRSA-1304-BA × à mão e a bibliografia completa.
-8. Antes da 1.0: termos de uso da ANP, DOI no Zenodo, repositórios públicos.
-9. Pendências do Ruan: Rw de referência por formação; números antigos do relatório (LIS); RHOB/NPHI/DT no acervo.
+1. Validar no Windows as versões 0.37–0.46 pelo guia de teste (o Ruan testa; o Claude corrige). A 0.47 (lançador) já
+   foi testada; faltam 0.48, 0.48.1 e 0.49.
+2. Bloco 9 (petrofísica básica de testemunho): leitor pronto (0.48/0.48.1); falta comparar plug × perfil e validar
+   outros poços (outras grafias de pasta e de planilha).
+3. Dados › Arquivos baixados (pedido de 31/10): tudo o que foi baixado, de qualquer formato, em bacia › poço › pasta,
+   com tipo, formato, tamanho, data, leitor e onde o dado aparece; Abrir, Mostrar na pasta (Explorer com o arquivo
+   selecionado), Ver na ficha; busca e filtro. **Mostrar o desenho ao Ruan antes de programar.**
+4. Bloco 4: melhorar a leitura do OCR.
+5. Viabilidade: diâmetro do duto, correção pela inflação, restrições ambientais, API e densidade de Guamaré.
+6. Melhorias: download em lote (a 0.49 já baixa por tipo de dado; falta por seção, campo ou filtro do mapa),
+   instalador `.exe`, estilo clássico da seção, dicionário de ferramentas.
+7. Validação científica (Rw publicado, carta estratigráfica, avaliação em lote, 100 esquemas).
+8. Por último: análise do 1-BRSA-1304-BA × à mão; revisão guiada da pasta do projeto (o que é cada pasta, arquivo,
+   extensão e nome; glossário da interface e do código, ex.: "árvore"; vira `docs/estrutura-da-pasta.md`); e a
+   bibliografia completa.
+9. Antes da 1.0: termos de uso da ANP, DOI no Zenodo, repositórios públicos.
+10. Pendências do Ruan: Rw de referência por formação; números antigos do relatório (LIS); RHOB/NPHI/DT no acervo.
