@@ -52,7 +52,7 @@ existe e a validação científica ficam **para o final**, antes do lançamento 
 - [x] **Bloco 9 — petrofísica básica** (0.48): plugs (porosidade, permeabilidade, densidade) e gama do testemunho
       (planilhas `_COREGAMA.xls` / `Petrofisica Basica.xls`; 162 poços). Visto só no 1-ALG-1-RN; ver `docs/petrofisica.md`.
       Falta comparar plug × perfil (próximo passo, a combinar).
-- [ ] **Dados › Arquivos baixados** (pedido de 31/10, "achar e abrir o que já existe"): tudo o que foi baixado, de
+- [x] **Dados › Arquivos baixados** (0.54; pedido de 31/10, "achar e abrir o que já existe"): tudo o que foi baixado, de
       qualquer formato (CSV, XLS, ZIP, SEG-Y…), em níveis bacia › poço › pasta, com tipo, formato, tamanho, data, se
       algum leitor leu e onde o dado aparece; botões **Abrir**, **Mostrar na pasta** (Explorer com o arquivo selecionado)
       e **Ver na ficha**; busca e filtro. O usuário não deve precisar fuçar as pastas do projeto. **Mostrar o desenho

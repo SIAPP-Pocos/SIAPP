@@ -20,6 +20,7 @@ from motor.downloads import FilaDownloads
 
 from . import base
 from .base import BaseAPI, ErroUsuario, mesma_pasta, resposta_segura
+from .arquivos import ArquivosAPI
 from .bloco import BlocoAPI
 from .catalogo import CatalogoAPI
 from .comunidade import ComunidadeAPI
@@ -38,7 +39,7 @@ from .vocabulario import VocabularioAPI
 
 class API(BaseAPI, JanelasAPI, PocosAPI, CatalogoAPI, DocumentosAPI, VocabularioAPI, ComunidadeAPI,
           FatosAPI, PerfisAPI, LevantamentoAPI, SecaoAPI, FerramentasAPI,
-          BlocoAPI, ExternosAPI, TiposAPI):
+          BlocoAPI, ExternosAPI, TiposAPI, ArquivosAPI):
     def __init__(self):
         self._janela = None
         self._janelas = {}            # abas destacadas em janela própria: {aba: janela}

@@ -6,6 +6,23 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 
 ## [Não lançado]
 
+## [0.54.0] — 2026-10-31
+Dados › Arquivos baixados.
+### Adicionado
+- **Arquivos baixados**: tudo o que está em `ambiente_teste\bruto`, de qualquer formato (planilhas, SEG-Y, ZIP, textos… e não só
+  PDF e perfis), em **árvore** (bacia › poço › pasta) e **lista**. Cada arquivo mostra formato, tamanho, data do download, **o que o
+  SIAPP fez com ele** (lido, texto extraído, perfil inventariado, ainda não lido, sem leitor, com erro, incompleto) e **onde o
+  dado aparece** (ficha do poço, Perfis, Documentos, Seção, Bloco 3D…). O AGP, os dados direcionais e os esquemas de
+  ferramentas, lidos pelo levantamento, também aparecem como lidos.
+- Busca por nome, poço ou pasta; filtros por tipo, "lido?" e bacia.
+- **Abrir** (programa padrão do Windows; programas e scripts como `.exe`, `.bat`, `.vbs`, `.ps1`, `.lnk` **nunca** abrem pelo
+  SIAPP), **Mostrar na pasta** (Explorer com o arquivo selecionado), **Ver na ficha** (ficha do poço no Mapa) e **Apagar**.
+- **Apagar manda para a Lixeira do Windows** (dá para restaurar; se a Lixeira falhar, não apaga). Antes, a tela mostra o que sai do
+  SIAPP (dados lidos do arquivo, perfil inventariado, texto extraído e a busca nele) e o que **fica** (suas transcrições e
+  páginas corrigidas continuam no banco; só perdem o arquivo de origem). O registro de procedência dos downloads não pode ser apagado.
+### Corrigido
+- Na nova tela, a busca só reage ao digitar (não ao sair do campo): clicar num botão logo depois de digitar não perde mais o clique.
+
 ## [0.53.1] — 2026-10-31
 ### Corrigido
 - **O atalho e a janela do SIAPP agora são o mesmo botão na barra de tarefas.** Antes, o `SIAPP.lnk` (que abre o `wscript` e

@@ -466,6 +466,12 @@ class Indice:
         with self._trava, self._con() as c:
             self._gravar(c, doc_id, bacia, poco, arquivo, paginas, corretor)
 
+    def remover_documento(self, doc_id: str) -> None:
+        """Tira o documento do índice de busca (o arquivo foi apagado)."""
+        with self._trava, self._con() as c:
+            c.execute("DELETE FROM paginas WHERE doc = ?" if self.fts else "DELETE FROM paginas_simples WHERE doc = ?",
+                      (doc_id,))
+
     def _gravar(self, c, doc_id, bacia, poco, arquivo, paginas, corretor):
         linhas = list(self._linhas(doc_id, bacia, poco, arquivo, paginas, corretor))
         if self.fts:

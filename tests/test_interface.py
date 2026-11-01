@@ -2001,3 +2001,49 @@ def test_viabilidade_052_campos_novos_e_botoes(janela):
     }""")
     assert lido["diametro_modo"] == "vazao" and lido["corrigir_inflacao"] == "ipca" and lido["vazao_sm3_d"] == "2000000"
     assert p.evaluate("document.getElementById('vb-restricoes').hidden")                # só aparece depois de medir
+
+
+def test_arquivos_baixados_arvore_filtros_e_apagar_para_a_lixeira(janela, monkeypatch):
+    """0.54: árvore bacia › poço › pasta, lista com situação, filtros, programas sem 'Abrir', apagar com confirmação."""
+    import test_arquivos_baixados as tab
+    from motor import arquivos_baixados as mab
+    p = janela.page
+    abrir_projeto(janela)
+    raiz = tab.montar(janela.api)
+    ir(p, "dados", "baixados")
+    janela.esperar("document.querySelectorAll('#ab-lista tr').length > 5")
+    assert "arquivo(s)" in p.text_content("#ab-resumo")
+    assert p.locator("#ab-arvore .ab-rotulo", has_text="Potiguar").count() == 1
+    p.locator("#ab-arvore .ab-rotulo", has_text="Potiguar").click()
+    janela.esperar("document.querySelectorAll('#ab-arvore .ab-rotulo').length >= 3")         # a bacia abriu: aparece o poço
+    p.locator("#ab-arvore .ab-rotulo", has_text=tab.POCO).click()
+    janela.esperar("document.querySelectorAll('#ab-arvore .ab-rotulo').length > 4")          # e as pastas do poço
+    p.locator("#ab-arvore .ab-rotulo", has_text="PETROFISICABASICA").click()
+    janela.esperar("document.querySelectorAll('#ab-lista tr').length === 3")                 # cabeçalho + 2 planilhas
+    assert "Petrofísica de testemunho" in p.text_content("#ab-lista")
+    # filtros
+    p.locator("#ab-arvore .ab-rotulo", has_text="Todos os arquivos").click()
+    p.select_option("#ab-estado", "nao_lidos")
+    janela.esperar("!document.getElementById('ab-lista').textContent.includes('COREGAMA')")
+    assert "notas.txt" in p.text_content("#ab-lista")
+    p.select_option("#ab-estado", "")
+    p.fill("#ab-busca", "instalar")
+    janela.esperar("document.querySelectorAll('#ab-lista tr').length === 2")
+    abrir = p.locator("#ab-lista tr", has_text="instalar.exe").locator("button", has_text="Abrir")
+    assert abrir.is_disabled()                                                              # programa: nunca abre pelo SIAPP
+    # apagar: confirmação mostra o impacto; cancelar não apaga; confirmar manda para a Lixeira
+    enviados = []
+    monkeypatch.setattr(mab, "enviar_para_lixeira", lambda c: enviados.append(c) or os.remove(c) or "lixeira")
+    p.fill("#ab-busca", "notas.txt")
+    janela.esperar("document.querySelectorAll('#ab-lista tr').length === 2")
+    p.locator("#ab-lista tr", has_text="notas.txt").locator("button", has_text="Apagar").dispatch_event("click")      # a linha é redesenhada no clique: sem reclique do Playwright
+    janela.esperar("document.querySelector('.ab-confirmar') && document.querySelector('.ab-confirmar').textContent.includes('Lixeira')")
+    assert "Dá para restaurar" in p.text_content(".ab-confirmar")
+    p.click(".ab-confirmar button:has-text('Cancelar')")                                    # clique de verdade, logo depois de digitar
+    janela.esperar("!document.querySelector('.ab-confirmar')")
+    assert not enviados and os.path.exists(os.path.join(raiz, *tab.BASE.split("/"), "Pasta de Poco", "notas.txt"))
+    p.locator("#ab-lista tr", has_text="notas.txt").locator("button", has_text="Apagar").dispatch_event("click")      # a linha é redesenhada no clique: sem reclique do Playwright
+    janela.esperar("document.querySelector('.ab-confirmar button.perigo')")
+    p.click(".ab-confirmar button.perigo")
+    janela.esperar("!document.getElementById('ab-lista').textContent.includes('notas.txt')")
+    assert len(enviados) == 1 and enviados[0].endswith("notas.txt") and not os.path.exists(enviados[0])

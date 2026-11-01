@@ -54,19 +54,16 @@ Python 3.13 da Microsoft Store pelo `py`, e a `.venv` da pasta do app (`.venv\Sc
 
 Detalhe em `docs/roteiro.md`. Resumo:
 
-1. Validar no Windows as versões 0.37–0.46 e 0.48–0.53 pelo guia de teste (o Ruan testa; o Claude corrige). A 0.47
+1. Validar no Windows as versões 0.37–0.46 e 0.48–0.54 pelo guia de teste (o Ruan testa; o Claude corrige). A 0.47
    (lançador) já foi testada.
 2. Bloco 9: petrofísica de testemunho lida (0.48/0.48.1) e comparada ao perfil (0.50); falta validar outros poços
    (outras grafias de pasta e de planilha, ex.: 1-BRSA-1006-RN, 7-ET-854-RN).
-3. Dados › Arquivos baixados (pedido de 31/10): tudo o que foi baixado, de qualquer formato, em bacia › poço › pasta,
-   com tipo, formato, tamanho, data, leitor e onde o dado aparece; Abrir, Mostrar na pasta (Explorer com o arquivo
-   selecionado), Ver na ficha; busca e filtro. **Mostrar o desenho ao Ruan antes de programar.**
-4. Viabilidade: API e densidade de Guamaré (depende de baixar as pastas de poço do campo: ver guia, seção 0.52).
-5. Melhorias: instalador `.exe`, estilo clássico da seção, dicionário de ferramentas (Halliburton, Baker, Weatherford).
-6. Validação científica (Rw publicado, carta estratigráfica, avaliação em lote por formação, 100 esquemas).
-7. Por último: análise do 1-BRSA-1304-BA × à mão; revisão guiada da pasta do projeto (o que é cada pasta, arquivo,
+3. Viabilidade: API e densidade de Guamaré (depende de baixar as pastas de poço do campo: ver guia, seção 0.52).
+4. Melhorias: instalador `.exe`, estilo clássico da seção, dicionário de ferramentas (Halliburton, Baker, Weatherford).
+5. Validação científica (Rw publicado, carta estratigráfica, avaliação em lote por formação, 100 esquemas).
+6. Por último: análise do 1-BRSA-1304-BA × à mão; revisão guiada da pasta do projeto (o que é cada pasta, arquivo,
    extensão e nome; glossário da interface e do código, ex.: "árvore"; vira `docs/estrutura-da-pasta.md`); e a
    bibliografia completa.
-8. Antes da 1.0: termos de uso da ANP, DOI no Zenodo, repositórios públicos.
-9. Pendências do Ruan: Rw de referência por formação; números antigos do relatório (LIS); RHOB/NPHI/DT no acervo; terras
+7. Antes da 1.0: termos de uso da ANP, DOI no Zenodo, repositórios públicos.
+8. Pendências do Ruan: Rw de referência por formação; números antigos do relatório (LIS); RHOB/NPHI/DT no acervo; terras
    indígenas da FUNAI (baixar o shapefile e importar); unidade da densidade nas planilhas de petrofísica.

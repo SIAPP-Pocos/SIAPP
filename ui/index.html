@@ -143,6 +143,7 @@
         <button class="sub-btn" data-sub="cadastro">Cadastro da ANP</button>
         <button class="sub-btn" data-sub="levantamento">Levantamento do acervo</button>
         <button class="sub-btn" data-sub="tipos">Procurar por tipo de dado</button>
+        <button class="sub-btn" data-sub="baixados">Arquivos baixados</button>
         <button class="sub-btn" data-sub="producao">Produção da ANP</button>
         <button class="sub-btn" data-sub="camadas">Camadas geográficas</button>
         <button class="sub-btn" data-sub="consolidado">Dados consolidados</button>
@@ -260,6 +261,29 @@
           <span class="ajuda" id="tp-aviso"></span>
         </div>
         <div id="tp-resultado"></div>
+      </section>
+      </div>
+      <div class="sub-painel cartoes" data-sub-painel="baixados" hidden>
+      <section class="etapa" id="etapa-baixados">
+        <h2>Arquivos baixados</h2>
+        <p class="ajuda">Tudo o que já foi baixado para este projeto (<code>ambiente_teste\bruto</code>), de qualquer formato, por
+          bacia › poço › pasta, e o que o SIAPP fez com cada arquivo: se foi lido, por qual leitor e <strong>onde o dado aparece</strong>.
+          Aqui você abre, mostra no Explorer, vai para a ficha do poço ou manda o arquivo para a Lixeira.</p>
+        <div class="filtros">
+          <label>Buscar <input type="text" id="ab-busca" placeholder="nome, poço ou pasta" autocomplete="off"></label>
+          <label>Tipo <select id="ab-categoria"></select></label>
+          <label>Lido? <select id="ab-estado">
+            <option value="">todos</option><option value="lidos">lidos pelo SIAPP</option>
+            <option value="nao_lidos">ainda não lidos</option><option value="problema">com problema</option></select></label>
+          <label>Bacia <select id="ab-bacia"></select></label>
+          <button class="btn secundario pequeno" id="ab-limpar">Limpar filtros</button>
+          <button class="btn secundario pequeno" id="ab-atualizar" title="Ler a pasta de novo">↻ Atualizar</button>
+        </div>
+        <p class="ajuda" id="ab-resumo"></p>
+        <div class="ab-grade">
+          <div class="ab-arvore" id="ab-arvore"></div>
+          <div class="ab-lista" id="ab-lista"></div>
+        </div>
       </section>
       </div>
       <div class="sub-painel cartoes" data-sub-painel="consolidado" hidden>
@@ -1723,6 +1747,7 @@
   <script src="js/dados_poco.js"></script>
   <script src="js/consolidado.js"></script>
   <script src="js/tipos_dado.js"></script>
+  <script src="js/arquivos_baixados.js"></script>
   <script src="js/ferramentas.js"></script>
   <script src="js/perfis.js"></script>
   <script src="js/avaliacao.js"></script>

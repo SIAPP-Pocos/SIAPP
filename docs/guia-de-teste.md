@@ -132,6 +132,21 @@ Precisa de internet. Comece por uma categoria pequena para ver o tempo.
 - [ ] Sem intervalo marcado, **Calcular** explica que precisa de um intervalo-alvo.
 - [ ] Repetir no `5PX__0011__RN_5PX__0011__RN.tif` (DLIS de 2020).
 
+## 0.54 — Arquivos baixados
+
+- [ ] **Dados › Arquivos baixados**: a árvore mostra as bacias (Alagoas, Potiguar, Recôncavo, Sergipe) com a quantidade e o tamanho;
+      clique numa bacia, depois num poço e numa pasta: a lista à direita mostra só aquilo.
+- [ ] A lista traz **todos** os formatos (planilhas, SEG-Y, ZIP, textos), com a situação e **onde o dado aparece**. Confira o
+      1-ALG-1-RN: as planilhas de petrofísica aparecem como "lido" com "Ficha do poço › Petrofísica de testemunho".
+- [ ] Os `_agp.txt` e `_dados_direcionais.txt` aparecem como lidos pelo levantamento (não como "sem leitor").
+- [ ] **Busca** (ex.: `coregama`) e os filtros **Tipo**, **Lido?** e **Bacia** funcionam; "Limpar filtros" volta ao todo.
+- [ ] **Abrir** num PDF e numa planilha abre no programa padrão. **Mostrar na pasta** abre o Explorer **com o arquivo selecionado**.
+- [ ] **Ver na ficha** abre a ficha do poço no Mapa.
+- [ ] **Apagar** (use um arquivo de teste que você possa baixar de novo): a confirmação mostra o que sai e o que fica; **Cancelar** não faz
+      nada; **Mandar para a Lixeira** tira da lista e o arquivo está na **Lixeira do Windows** (dá para restaurar). Se o arquivo tinha
+      dados na ficha, eles somem da ficha.
+- [ ] Digite na busca e, em seguida, clique num botão da lista: o primeiro clique funciona.
+
 ## 0.53.1 — atalho e janela são o mesmo botão na barra de tarefas
 
 - [ ] **Desafixe** o SIAPP da barra de tarefas (botão direito › Desafixar da barra de tarefas), se estiver fixado.
