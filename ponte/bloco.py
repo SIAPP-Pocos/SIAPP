@@ -22,6 +22,7 @@ from motor import direcionais as mdi
 from motor import guia_interpolacao as mguia
 from motor import interpolacao as mint
 from motor import reate
+from motor import zonas as mzo
 from motor import secao as msc
 
 from .base import PASTA_RECURSOS, ErroUsuario, resposta_segura
@@ -139,8 +140,9 @@ class BlocoAPI:
                 nomes=magp.ler_estratigrafia(CAMINHO_ESTRATIGRAFIA), slots=msc.ler_slots(CAMINHO_ESTRATIGRAFIA),
                 pasta_execucoes=self._projeto.pasta_de("execucoes"), base_cota=self._num(op.get("base")),
                 interpolacao=op.get("interpolacao") or None,
-                escala=op.get("escala") if op.get("escala") in mint.ESCALAS else None)
-        except mbl.ErroBloco as e:
+                escala=op.get("escala") if op.get("escala") in mint.ESCALAS else None,
+                zonas=self._config_zonas(op.get("zonas")) if op.get("nivel") == "zonas" else None)
+        except (mbl.ErroBloco, mzo.ErroZonas) as e:
             raise ErroUsuario(str(e)) from e
         modelo["titulo"] = (op.get("titulo") or "").strip()
         if op.get("ambiente"):
@@ -149,6 +151,83 @@ class BlocoAPI:
         self._projeto.registrar("montou_bloco", execucao=ident, pocos=len(modelo["pocos"]),
                                 area_km2=modelo["area_km2"], parametros=modelo["parametros"])
         return {"id": ident, "modelo": modelo, "autor": self._autor()}
+
+    # ------------------------------------------------------------ zonas produtoras (0.55)
+    def _leitura_da_pagina(self, rel, pagina) -> str:
+        """"digital" (texto embutido no PDF), "ocr" (lido por reconhecimento de imagem: confira os números) ou ""."""
+        try:
+            texto = self._projeto.ler_texto(rel) if rel else None
+            pg = (texto or {}).get("paginas") or []
+            if pagina and 1 <= int(pagina) <= len(pg):
+                return {"embutido": "digital", "ocr": "ocr"}.get(pg[int(pagina) - 1].get("metodo"), "")
+        except (ValueError, TypeError, OSError):
+            pass
+        return ""
+
+    def _config_zonas(self, z: dict | None) -> dict:
+        """A escolha da janela (fontes, regra, tolerância, reservatórios, ajustes) mais a tabela guardada, se for usada."""
+        z = dict(z or {})
+        cfg = {"fontes": [f for f in z.get("fontes", mzo.PRIORIDADE_PADRAO) if f in mzo.FONTES],
+               "regra": z.get("regra") or "prioridade",
+               "tolerancia_m": self._num(z.get("tolerancia_m"), mzo.TOLERANCIA_PADRAO_M),
+               "ativas": list(z["ativas"]) if z.get("ativas") is not None else None,
+               "ajustes": z.get("ajustes") or {}, "nomes": {k: str(v) for k, v in (z.get("nomes") or {}).items() if str(v).strip()},
+               "usar_coordenadas_da_tabela": bool(z.get("usar_coordenadas_da_tabela")),
+               "leitura": self._leitura_da_pagina}
+        if "tabela" in cfg["fontes"] or cfg["usar_coordenadas_da_tabela"]:
+            cfg["tabela"] = mzo.tabela_guardada(self._projeto.pasta)
+        return cfg
+
+    @resposta_segura
+    def bloco_zonas_previa(self, pocos: list, opcoes: dict | None = None):
+        """Intervalos candidatos de cada poço e os reservatórios que eles formam, para conferir antes de montar."""
+        self._exigir_projeto()
+        op = opcoes or {}
+        ids = [self._id_poco(p) for p in pocos if str(p).strip()]
+        if not ids:
+            raise ErroUsuario("Escolha os poços do bloco primeiro.")
+        try:
+            return mbl.previa_zonas(self._banco, ids, self._config_zonas(op.get("zonas")),
+                                    nomes=magp.ler_estratigrafia(CAMINHO_ESTRATIGRAFIA))
+        except (mbl.ErroBloco, mzo.ErroZonas) as e:
+            raise ErroUsuario(str(e)) from e
+
+    def _resumo_tabela(self, t: dict | None) -> dict | None:
+        if not t:
+            return None
+        return {"origem": t.get("origem", ""), "n_linhas": len(t["linhas"]), "n_pocos": t.get("n_pocos"),
+                "ref": t.get("ref"), "com_coordenadas": t.get("com_coordenadas"), "colunas": t.get("colunas"),
+                "avisos": t.get("avisos", [])}
+
+    @resposta_segura
+    def bloco_zonas_tabela(self):
+        """A tabela sua que está guardada no projeto (ou nenhuma)."""
+        self._exigir_projeto()
+        return {"tabela": self._resumo_tabela(mzo.tabela_guardada(self._projeto.pasta))}
+
+    @resposta_segura
+    def bloco_zonas_importar_tabela(self, ref: str = "md", utm_zona=None, utm_sul: bool = True):
+        """Escolhe o seu CSV ou Excel (poço, topo, base, e coordenadas e reservatório se tiver) e guarda no projeto."""
+        self._exigir_projeto()
+        import webview
+        escolha = self._janela.create_file_dialog(webview.FileDialog.OPEN, directory=self._projeto.pasta,
+                                                  file_types=("Tabela (*.csv;*.txt;*.xlsx;*.xls)", "Todos os arquivos (*.*)"))
+        if not escolha:
+            return {"cancelado": True}
+        caminho = escolha[0] if isinstance(escolha, (list, tuple)) else escolha
+        try:
+            zona = int(utm_zona) if str(utm_zona or "").strip() else None
+            t = mzo.ler_tabela(caminho, self._banco, ref=ref, utm_zona=zona, utm_sul=bool(utm_sul))
+        except (mzo.ErroZonas, OSError, ValueError) as e:
+            raise ErroUsuario(str(e)) from e
+        mzo.guardar_tabela(self._projeto.pasta, t, os.path.basename(caminho))
+        self._projeto.registrar("importou_tabela_zonas", arquivo=os.path.basename(caminho), linhas=len(t["linhas"]))
+        return {"tabela": self._resumo_tabela({**t, "origem": os.path.basename(caminho)})}
+
+    @resposta_segura
+    def bloco_zonas_apagar_tabela(self):
+        self._exigir_projeto()
+        return {"apagada": mzo.apagar_tabela(self._projeto.pasta)}
 
     @resposta_segura
     def bloco_execucoes(self):

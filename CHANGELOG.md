@@ -6,6 +6,30 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 
 ## [Não lançado]
 
+## [0.55.0] — 2026-11-01
+Zonas produtoras (net pay) no bloco 3D.
+### Adicionado
+- **Bloco 3D › Unidades › "zonas produtoras (net pay)"**: em vez dos topos de formação do AGP, o bloco usa o **topo e a base de cada
+  reservatório**, poço a poço. Cada reservatório gera uma superfície de **topo** e outra de **base**; a espessura (isópaca) sai da
+  diferença. Os mapas (GeoTIFF e XYZ), o CSV, o bloco fechado, a validação cruzada, o ECLIPSE e o modelo 3D funcionam com elas.
+- **Intervalos de várias fontes**: canhoneados (RFCP), testes de formação (RFP/TFR), análise de perfis do operador (RFP), amostra de
+  fluido (PVT), zonas-reservatório do AGP, intervalos que você marcou e a **sua tabela**. A ordem das fontes é a prioridade, e dá para
+  usar a de maior prioridade ou o **envelope** (do menor topo ao maior fim).
+- **Mais de um reservatório**: os intervalos de todos os poços são agrupados pela profundidade (tolerância editável, 20 m) e numerados do
+  mais raso ao mais fundo. Dá para **escolher quais reservatórios mostrar** (por exemplo, só o raso), renomeá-los e **mover, ignorar ou
+  corrigir** cada intervalo.
+- **Aviso de OCR**: cada intervalo diz se veio de página com texto digital ou lida por **OCR (conferir)**, com o documento e a página, e o
+  resumo conta quantos dos intervalos usados vêm de OCR.
+- **Sua tabela** (CSV ou Excel: poço, topo, base, reservatório opcional, lat/lon ou X/Y em UTM com zona): vira fonte, pode fornecer as
+  coordenadas dos poços e é **comparada** com o que o SIAPP escolheu (diferença de topo e de base por poço).
+- **CSV de zonas** (`<bloco>_zonas.csv`): um intervalo por linha (poço, reservatório, fonte, topo e base em profundidade medida e cota,
+  espessura, lat/lon e UTM), no desenho da tabela que se faz à mão.
+- `docs/zonas-produtoras.md`; testes (motor, saídas e interface).
+### Limites
+- O agrupamento é pela profundidade, não pela geologia: falhas podem dividir um reservatório. Aumente a tolerância ou mova os intervalos.
+- "Zona produtora" aqui é o intervalo que os documentos indicam, não o net pay por corte de Vsh, φ e Sw (esse continua na avaliação).
+- Os números de OCR erram: confira cada profundidade na imagem do documento.
+
 ## [0.54.0] — 2026-10-31
 Dados › Arquivos baixados.
 ### Adicionado

@@ -40,6 +40,7 @@ from . import __version__
 from . import avaliacao as mav
 from . import direcionais as mdi
 from . import secao as msc
+from . import zonas as mzo
 from .banco import Banco, agora
 
 MAX_POCOS = 1000
@@ -48,7 +49,7 @@ FRACAO_COLINEAR = 0.04        # largura / comprimento do contorno abaixo disso =
 TRAJ_MIN_M = 5.0              # afastamento abaixo disso: o poço é tratado como vertical
 LONGE_KM = 100.0              # poço a mais que isso (e 5× a distância mediana) do centro: fora
 FOLGA_FUNDO_M = 10.0          # topo mais fundo que o fundo do poço + isso: não foi perfurado
-NIVEIS = msc.NIVEIS_SECAO
+NIVEIS = {**msc.NIVEIS_SECAO, "zonas": ()}      # "zonas": zonas produtoras (net pay), 0.55
 
 
 # propriedades da avaliação que podem colorir o topo de uma unidade
@@ -290,7 +291,7 @@ def montar(banco: Banco, pocos: list[str], *, nivel: str = "formacoes", margem_k
            celulas: int = CELULAS_PADRAO, dist_max_km: float | None = None, nomes: dict | None = None,
            slots: dict | None = None, usar_trajetorias: bool = True,
            pasta_execucoes: str | None = None, base_cota: float | None = None,
-           interpolacao: dict | None = None, escala: str | None = None) -> dict:
+           interpolacao: dict | None = None, escala: str | None = None, zonas: dict | None = None) -> dict:
     """Modelo do bloco (só dados; o desenho é da janela): as superfícies e, da mesma
     montagem, o bloco fechado (motor/bloco_solido.py), em `solido`."""
     pocos = list(dict.fromkeys(p for p in pocos if p))
@@ -303,6 +304,9 @@ def montar(banco: Banco, pocos: list[str], *, nivel: str = "formacoes", margem_k
     celulas = int(min(max(celulas or CELULAS_PADRAO, 20), 300))
     margem_km = max(0.0, float(margem_km or 0))
     nomes, slots = nomes or {}, slots or {}
+    if nivel == "zonas":                       # cores dos reservatórios (a base de cada um fica cinza)
+        slots = {**mzo.SLOTS_ZONA, **slots}
+    zonas = dict(zonas or {})
     avisos: list[str] = []
     from . import interpolacao as mint
     try:
@@ -314,6 +318,8 @@ def montar(banco: Banco, pocos: list[str], *, nivel: str = "formacoes", margem_k
     dados = []
     for pid in pocos:
         d = msc.dados_poco(banco, pid, nomes)
+        if d is not None and nivel == "zonas" and zonas.get("usar_coordenadas_da_tabela"):
+            d["lat"], d["lon"] = mzo.coordenadas_da_tabela(zonas.get("tabela")).get(pid, (d["lat"], d["lon"]))
         if d is None:
             avisos.append(f"{pid}: sem coordenadas — fora do bloco.")
             continue
@@ -333,6 +339,18 @@ def montar(banco: Banco, pocos: list[str], *, nivel: str = "formacoes", margem_k
                       f"as coordenadas e o AGP: {', '.join(longe)}.")
         dados = [(d, c) for d, c in dados if d["id"] not in longe]
     x, y, lat0, lon0 = plano([d["lat"] for d, _ in dados], [d["lon"] for d, _ in dados])
+    plano_zonas = None
+    if nivel == "zonas":
+        plano_zonas = _planejar_zonas(banco, dados, zonas, usar_trajetorias)
+        avisos.extend(plano_zonas["avisos"])
+        nomes_z = {z["chave"]: z["nome"] for z in plano_zonas["zonas"]}
+        for k, (d, col) in enumerate(dados):
+            uns = mzo.unidades_do_poco(plano_zonas["por_poco"].get(d["id"], []), zonas.get("ativas"), nomes_z,
+                                       col["prof_final"], col["cota_fundo"])
+            dados[k] = (d, dict(col, unidades=uns))
+        if not any(col["unidades"] for _, col in dados):
+            raise ErroBloco("Nenhum poço tem intervalo de zona produtora nas fontes escolhidas. "
+                            + " ".join(plano_zonas["avisos"][:3] or ["Escolha outras fontes ou importe a sua tabela."]))
 
     saida = []
     sem_traj, com_traj = [], []
@@ -411,7 +429,7 @@ def montar(banco: Banco, pocos: list[str], *, nivel: str = "formacoes", margem_k
                       f"(a cota dos topos é a do AGP): {', '.join(sem_traj)}.")
     sem = [p["id"] for p in saida if not p["unidades"]]
     if sem:
-        avisos.append(f"Sem {msc.ROTULO_NIVEL[nivel]} com topo: {', '.join(sem)}.")
+        avisos.append(f"Sem {msc.ROTULO_NIVEL.get(nivel, 'zonas produtoras')} com topo: {', '.join(sem)}.")
 
     xy = np.array([[p["x"], p["y"]] for p in saida] + [[u["x"], u["y"]] for p in saida for u in p["unidades"]])
     hull = contorno_convexo(xy)
@@ -438,7 +456,10 @@ def montar(banco: Banco, pocos: list[str], *, nivel: str = "formacoes", margem_k
                         "cor": msc.CORES.get(slot, msc.COR_SEM_SLOT), "n_pocos": len(trios),
                         "posicao": float(np.mean([r for _, _, r in trios])),
                         "cota_media": float(np.mean([u["cota_topo"] for _, u, _ in trios]))})
-    legenda.sort(key=lambda u: (u["posicao"], -u["cota_media"]))
+    if nivel == "zonas":                       # poços com números diferentes de reservatórios: a ordem é pela cota
+        legenda.sort(key=lambda u: -u["cota_media"])
+    else:
+        legenda.sort(key=lambda u: (u["posicao"], -u["cota_media"]))
     cor = {u["chave"]: u["cor"] for u in legenda}
     for p in saida:
         for u in p["unidades"]:
@@ -541,6 +562,7 @@ def montar(banco: Banco, pocos: list[str], *, nivel: str = "formacoes", margem_k
         "area_km2": round(area, 3), "margem_km": margem_km,
         "grade": {"x0": float(lo[0]), "y0": float(lo[1]), "passo": passo, "nx": nx, "ny": ny},
         "cota_max": max(cotas) if cotas else 0.0, "cota_min": min(cotas) if cotas else -1000.0,
+        "zonas": _zonas_publicas(plano_zonas, zonas) if plano_zonas else None,
         "parametros": {"nivel": nivel, "margem_km": margem_km, "celulas": celulas, "dist_max_km": dist_max_km,
                        "base_cota": base_cota, "interpolacao": cfg, "escala": escala,
                        "pocos": [p["id"] for p in saida]},
@@ -549,6 +571,81 @@ def montar(banco: Banco, pocos: list[str], *, nivel: str = "formacoes", margem_k
     modelo["solido"] = bloco_solido.montar(modelo, base_cota=base_cota)
     return modelo
 
+
+
+# ============================================================ zonas produtoras (0.55)
+def _conversor_do_poco(col: dict, traj: dict | None, md_max: float):
+    """Profundidade medida → cota do poço: trajetória (direcionais), pontos de controle do AGP, ou vertical pela mesa."""
+    mesa = col["mesa"] if col["mesa"] is not None else (traj or {}).get("elevacao_ref")
+    if mesa is None:
+        return None
+    if traj and traj["afastamento_max"] >= TRAJ_MIN_M:
+        return mzo.Conversor(lambda md, t=traj, m=mesa: m - mdi.posicao(t, md)[2], md_max)
+    ctrl = col["ctrl"]
+    if ctrl[2]:
+        return mzo.Conversor(lambda md, m=mesa, c=ctrl: msc._md_para_cota(np.asarray(md, float), m, c), md_max)
+    return mzo.Conversor(lambda md, m=mesa: m - np.asarray(md, float), md_max)
+
+
+def _planejar_zonas(banco: Banco, dados: list, zonas: dict, usar_trajetorias: bool) -> dict:
+    """Intervalos candidatos de cada poço, agrupados em reservatórios (motor/zonas.py)."""
+    fontes = [f for f in zonas.get("fontes", mzo.PRIORIDADE_PADRAO) if f in mzo.FONTES]
+    tabela = (zonas.get("tabela") or {}).get("linhas") or []
+    if "tabela" in fontes and not tabela:
+        fontes = [f for f in fontes if f != "tabela"]
+    cands, convs = {}, {}
+    for d, col in dados:
+        pid = d["id"]
+        lista = mzo.coletar(banco, pid, fontes, tabela, zonas.get("leitura"))
+        traj = mdi.do_poco(banco, pid) if usar_trajetorias else None
+        fundo = max([float(col["prof_final"] or 0), float((traj or {}).get("md_final") or 0)] +
+                    [c["base"] for c in lista if c["ref"] == "md"] + [1.0])
+        mesa = col["mesa"] if col["mesa"] is not None else (traj or {}).get("elevacao_ref")
+        for c in lista:                        # a tabela em cota: a profundidade medida de partida é a vertical
+            if c["ref"] == "cota" and mesa is not None:
+                fundo = max(fundo, mesa - c["base"])
+        conv = _conversor_do_poco(col, traj, fundo * 1.1 + 100)
+        if conv is not None:
+            convs[pid] = conv
+        cands[pid] = lista
+    return mzo.planejar(cands, convs, {k: zonas.get(k) for k in ("regra", "tolerancia_m", "ajustes", "nomes", "ativas")
+                                       if zonas.get(k) is not None} | {"fontes": fontes})
+
+
+def previa_zonas(banco: Banco, pocos: list[str], zonas: dict | None = None, usar_trajetorias: bool = True,
+                 nomes: dict | None = None) -> dict:
+    """Os intervalos candidatos e os reservatórios, sem montar o bloco (rápido): é o que a janela mostra para você
+    conferir, mover, ignorar e corrigir antes de montar. Com a sua tabela, vem também a comparação com o que o SIAPP escolheu."""
+    zonas = dict(zonas or {})
+    dados = []
+    for pid in dict.fromkeys(p for p in pocos if p):
+        d = msc.dados_poco(banco, pid, nomes or {})
+        if d is None:
+            continue
+        if zonas.get("usar_coordenadas_da_tabela"):
+            d["lat"], d["lon"] = mzo.coordenadas_da_tabela(zonas.get("tabela")).get(pid, (d["lat"], d["lon"]))
+        dados.append((d, msc.coluna_poco(d, ())))
+    if not dados:
+        raise ErroBloco("Nenhum dos poços tem coordenadas no cadastro.")
+    plano = _planejar_zonas(banco, dados, zonas, usar_trajetorias)
+    pub = _zonas_publicas(plano, zonas)
+    pub["avisos"] = plano["avisos"]
+    tab = zonas.get("tabela") or {}
+    pub["comparacao"] = None
+    if tab.get("linhas"):
+        sem = _planejar_zonas(banco, dados, {**zonas, "fontes": [f for f in plano["config"]["fontes"] if f != "tabela"]}, usar_trajetorias)
+        pub["comparacao"] = mzo.comparar(sem, tab)
+    return pub
+
+
+def _zonas_publicas(plano: dict, zonas: dict) -> dict:
+    """O que a janela precisa para mostrar e editar os reservatórios (sem objetos internos)."""
+    campos = ("id", "poco", "fonte", "fonte_rotulo", "nome", "topo", "base", "topo_orig", "base_orig", "ref", "zona", "usado",
+              "ignorado", "editado", "aviso", "documento", "rel", "pagina", "leitura", "cota_topo", "cota_base")
+    return {"zonas": plano["zonas"], "config": plano["config"],
+            "candidatos": [{k: c.get(k) for k in campos} for c in plano["candidatos"]],
+            "por_poco": plano["por_poco"], "com_tabela": bool((zonas.get("tabela") or {}).get("linhas")),
+            "usar_coordenadas_da_tabela": bool(zonas.get("usar_coordenadas_da_tabela"))}
 
 
 # ============================================================ trilhas e propriedades
@@ -767,4 +864,34 @@ def exportar_csv(modelo: dict, pasta: str, ident: str) -> list[str]:
                 xx, yy = g["x0"] + i * g["passo"], g["y0"] + j * g["passo"]
                 la, lo = para_geo(xx, yy, o["lat"], o["lon"])
                 w.writerow([n(xx, 3), n(yy, 3), n(float(la), 6), n(float(lo), 6)] + [n(v) for v in vals])
-    return [topos, grade]
+    saida = [topos, grade]
+    if modelo.get("zonas"):
+        saida.append(_csv_zonas(modelo, pasta, ident, n))
+    return saida
+
+
+def _csv_zonas(modelo: dict, pasta: str, ident: str, n) -> str:
+    """Um intervalo por linha (poço, reservatório, fonte, topo e base, cota, coordenadas em graus e UTM): o mesmo desenho
+    da tabela que se faz à mão, para interpolar fora do SIAPP ou conferir."""
+    from . import utm as mutm
+    caminho = os.path.join(pasta, f"{ident}_zonas.csv")
+    nomes = {z["chave"]: z["nome"] for z in modelo["zonas"]["zonas"]}
+    ativas = {z["chave"] for z in modelo["zonas"]["zonas"] if z["ativa"]}
+    por_id = {p["id"]: p for p in modelo["pocos"]}
+    with open(caminho, "w", newline="", encoding="utf-8-sig") as f:
+        w = csv.writer(f, delimiter=";")
+        w.writerow(["poco", "reservatorio", "fonte", "topo_md_m", "base_md_m", "cota_topo_m", "cota_base_m", "espessura_m",
+                    "lat", "lon", "utm_leste_m", "utm_norte_m", "utm_zona"])
+        for pid, lista in modelo["zonas"]["por_poco"].items():
+            p = por_id.get(pid)
+            if p is None:
+                continue
+            zona = mutm.fuso(p["lon"])
+            le, no = mutm.para_utm(p["lat"], p["lon"], zona, p["lat"] < 0)
+            for e in lista:
+                if e["zona"] not in ativas:
+                    continue
+                w.writerow([pid, nomes.get(e["zona"], e["zona"]), e["fonte"], n(e["topo"]), n(e["base"]), n(e["cota_topo"]),
+                            n(e["cota_base"]), n(e["cota_topo"] - e["cota_base"]), n(p["lat"], 6), n(p["lon"], 6),
+                            n(float(np.ravel(le)[0])), n(float(np.ravel(no)[0])), zona])
+    return caminho

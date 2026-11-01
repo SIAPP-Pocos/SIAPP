@@ -1338,3 +1338,11 @@ td.tp-diverge { color: var(--erro); font-weight: 600; }
 .ab-estado.erro, .ab-estado.incompleto { color: var(--erro); border-color: var(--erro); }
 .ab-confirmar td { background: var(--aviso-fundo); }
 @media (max-width: 900px) { .ab-grade { grid-template-columns: 1fr; } }
+
+/* Bloco 3D › Zonas produtoras (0.55) */
+.bz-fonte { display: flex; align-items: center; gap: 8px; margin: 2px 0; }
+.bz-tabela input.curto { width: 78px; }
+.bz-tabela td { vertical-align: middle; }
+.bz-nao-usado { opacity: 0.6; }
+.bz-ocr { color: var(--erro); font-weight: 600; }
+.bl-titulo-zonas { font-size: 1.1em; margin: 0 0 6px; }

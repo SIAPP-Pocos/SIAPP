@@ -2047,3 +2047,48 @@ def test_arquivos_baixados_arvore_filtros_e_apagar_para_a_lixeira(janela, monkey
     p.click(".ab-confirmar button.perigo")
     janela.esperar("!document.getElementById('ab-lista').textContent.includes('notas.txt')")
     assert len(enviados) == 1 and enviados[0].endswith("notas.txt") and not os.path.exists(enviados[0])
+
+
+def test_bloco_zonas_produtoras_reservatorios_ajustes_e_tabela(janela, tmp_path):
+    """0.55: nível "zonas produtoras": prévia dos intervalos, escolher um só reservatório, ignorar intervalo, importar a tabela
+    e montar o bloco com topo e base de cada reservatório."""
+    import test_zonas as tz
+    p = janela.page
+    abrir_projeto(janela)
+    tz.popular(janela.api._banco)
+    ir(p, "interp", "bloco")
+    p.select_option("#bl-nivel", "zonas")
+    assert p.is_visible("#bl-zonas") and "Tabela sua" in p.text_content("#bz-fontes")
+    ids = [pid for pid, _, _ in tz.POCOS]
+    p.evaluate("(ids) => { bl.pocos = ids; desenharListaBloco(); }", ids)
+    p.click("#bz-previa")
+    janela.esperar("document.querySelectorAll('#bz-resultado table').length >= 2", 30)
+    txt = p.text_content("#bz-resultado")
+    assert "Reservatório 1" in txt and "Reservatório 2" in txt and "intervalo(s) candidato(s) em 6 poço(s)" in txt
+    # ignorar o canhoneado do primeiro poço: a prévia refaz e mostra "ignorado"
+    linha = p.locator("#bz-resultado .bz-tabela tr", has_text="1-ZZ-1-RN").filter(has_text="Canhoneados").first
+    linha.locator("select").select_option("ignorar")
+    janela.esperar("document.querySelector('#bz-resultado .bz-tabela').textContent.includes('ignorado')", 30)
+    # só o reservatório raso
+    p.locator("#bz-resultado table").first.locator("input[type=checkbox]").nth(1).uncheck()
+    p.click("#bl-montar")
+    janela.esperar("!document.getElementById('bl-painel').hidden", 60)
+    janela.esperar("window.BlocoVisor && window.BlocoVisor.estado().superficies === 2", 60)
+    chaves = p.evaluate("bl.modelo.legenda.map((u) => u.chave)")
+    assert chaves == ["ZP1", "ZP1_B"] and p.evaluate("bl.modelo.parametros.nivel") == "zonas"
+    assert "Reservatório 1" in p.text_content("#bl-unidades")
+    # a tabela sua: importar, usar como fonte e comparar
+    tab = tmp_path / "manual.csv"
+    linhas = ["Poço;Topo;Base;Reservatório"] + [f"{pid};{str(round(tz.topo_raso(pid) + 1, 2)).replace('.', ',')};"
+                                                  f"{str(round(tz.topo_raso(pid) + 13, 2)).replace('.', ',')};Raso" for pid in ids]
+    tab.write_text("\n".join(linhas), encoding="latin-1")
+    janela.api._janela.escolha = (str(tab),)
+    p.click("#bz-importar")
+    janela.esperar("document.getElementById('bz-tabela-info').textContent.includes('manual.csv')", 30)
+    assert "6 linha(s)" in p.text_content("#bz-tabela-info") and p.is_visible("#bz-apagar-tabela")
+    p.click("#bz-previa")
+    janela.esperar("document.querySelector('#bz-resultado').textContent.includes('Sua tabela × o que o SIAPP escolheu')", 30)
+    assert "comparado" in p.text_content("#bz-resultado")
+    p.click("#bz-apagar-tabela")
+    janela.esperar("document.getElementById('bz-tabela-info').textContent.includes('Nenhuma tabela')", 30)
+    assert not janela.erros_js, janela.erros_js

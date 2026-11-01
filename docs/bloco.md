@@ -1,5 +1,7 @@
 # Bloco 3D
 
+> **0.55:** o bloco também aceita **zonas produtoras (net pay)** no lugar dos topos de formação: ver [`zonas-produtoras.md`](zonas-produtoras.md).
+
 Os poços no espaço, as **superfícies de topo** das unidades e o **bloco fechado** (0.20), a partir dos topos que a
 operadora registrou no AGP. Código: `motor/bloco.py` (modelo) e `ui/js/bloco3d.js`
 (visor, com [three.js](https://threejs.org/) em `ui/vendor/three/`, licença MIT).

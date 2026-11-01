@@ -132,6 +132,24 @@ Precisa de internet. Comece por uma categoria pequena para ver o tempo.
 - [ ] Sem intervalo marcado, **Calcular** explica que precisa de um intervalo-alvo.
 - [ ] Repetir no `5PX__0011__RN_5PX__0011__RN.tif` (DLIS de 2020).
 
+## 0.55 — zonas produtoras (net pay) no bloco 3D
+
+Use o **1-BRSA-1304-BA** (tem canhoneado, teste e análise de perfis lidos) e, para o Guamaré, os poços que você baixar.
+
+- [ ] **Bloco 3D › Unidades › zonas produtoras (net pay)**: aparece o passo 3b com as fontes, a regra e a tolerância.
+- [ ] Escolha 3 ou mais poços e **Ler os intervalos dos poços**: a tela mostra os **reservatórios** e todos os **intervalos candidatos**
+      (fonte, topo, base, leitura digital ou **OCR: conferir**, reservatório, usado).
+- [ ] Confira **2 ou 3 intervalos na imagem do documento** (a coluna Leitura mostra o documento e a página ao passar o mouse). Anote
+      quantos números do OCR estavam errados: é o argumento para revisar as profundidades.
+- [ ] **Corrija um número** na tabela (topo ou base) e veja o intervalo ficar "(editado)"; **mova** um intervalo para outro
+      reservatório; **ignore** outro.
+- [ ] **Importe a sua tabela** do Guamaré (poço, topo, base e coordenadas; informe a zona UTM, 24, se for UTM): a seção
+      **Sua tabela × o que o SIAPP escolheu** mostra as diferenças poço a poço.
+- [ ] Marque a tabela como fonte (e "usar as coordenadas da minha tabela") e **monte só o reservatório raso**: o mapa de topo e o de base
+      devem parecer com os que você fez em Python. Compare os valores nos poços.
+- [ ] Monte o **reservatório fundo** à parte e o **bloco com os dois**. Confira o aviso de "pouco controle" no fundo.
+- [ ] Exporte os mapas (topo, base e isópaca) e o CSV de zonas; abra o `_zonas.csv` no Excel.
+
 ## 0.54 — Arquivos baixados
 
 - [ ] **Dados › Arquivos baixados**: a árvore mostra as bacias (Alagoas, Potiguar, Recôncavo, Sergipe) com a quantidade e o tamanho;

@@ -1233,6 +1233,7 @@
               <option value="formacoes">formações</option>
               <option value="membros">membros e camadas</option>
               <option value="grupos">grupos</option>
+              <option value="zonas">zonas produtoras (net pay)</option>
             </select></label>
           <label>Margem além do contorno dos poços (km) <input type="text" id="bl-margem" value="0" inputmode="decimal"></label>
           <label>Esconder onde o poço mais próximo está a mais de (km)
@@ -1244,6 +1245,34 @@
         <p class="ajuda">Fora do contorno dos poços que têm a unidade, o valor da borda; os métodos lisos ficam
           presos à faixa dos dados. Campo isolado: margem 0. A mesma montagem faz o bloco fechado, do terreno
           à base.</p>
+      </section>
+      <section class="etapa" id="bl-zonas" hidden>
+        <h3 class="bl-titulo-zonas"><span class="bl-passo">3b</span> Zonas produtoras (net pay)</h3>
+        <p class="ajuda">Em vez dos topos de formação do AGP, o bloco usa o <strong>topo e a base de cada reservatório</strong>, poço a poço,
+          tirados da pasta de poço (canhoneados, testes de formação, análise de perfis, amostra de fluido…), das zonas do AGP, dos
+          intervalos que você marcou ou da <strong>sua tabela</strong>. Os intervalos de todos os poços são agrupados em reservatórios pela
+          profundidade (do mais raso ao mais fundo). Cada reservatório gera uma superfície de <strong>topo</strong> e uma de <strong>base</strong>;
+          a espessura sai da diferença. Você confere, move, ignora ou corrige cada intervalo e escolhe quais reservatórios mostrar.</p>
+        <h3>Fontes dos intervalos <span class="ajuda">(a ordem é a prioridade)</span></h3>
+        <div id="bz-fontes"></div>
+        <div class="filtros">
+          <label>Se há mais de uma fonte no mesmo reservatório
+            <select id="bz-regra"><option value="prioridade">usar a de maior prioridade</option>
+              <option value="envelope">usar o envelope (do menor topo ao maior fim)</option></select></label>
+          <label>Juntar no mesmo reservatório intervalos a menos de (m) <input type="text" id="bz-tol" value="20" class="curto" inputmode="decimal"></label>
+        </div>
+        <h3>Sua tabela</h3>
+        <div class="filtros">
+          <label>Profundidade da tabela
+            <select id="bz-ref"><option value="md">medida (MD)</option><option value="cota">cota (negativa abaixo do nível do mar)</option></select></label>
+          <label>Zona UTM <input type="text" id="bz-utm" class="curto" inputmode="numeric" placeholder="se tiver X e Y"></label>
+          <button class="btn secundario pequeno" id="bz-importar">Importar minha tabela…</button>
+          <button class="btn secundario pequeno" id="bz-apagar-tabela" hidden>Remover a tabela</button>
+        </div>
+        <p class="ajuda" id="bz-tabela-info"></p>
+        <label class="opcao"><input type="checkbox" id="bz-coord" disabled> <span>Usar as coordenadas da minha tabela (em vez das do cadastro)</span></label>
+        <div class="linha"><button class="btn" id="bz-previa">Ler os intervalos dos poços</button></div>
+        <div id="bz-resultado"></div>
       </section>
       <section class="etapa bl-etapa-montar">
         <h2><span class="bl-passo">4</span> Montar</h2>
@@ -1736,6 +1765,7 @@
   <script src="js/comum.js"></script>
   <script src="js/secao.js"></script>
   <script src="js/bloco.js"></script>
+  <script src="js/bloco_zonas.js"></script>
   <script src="js/externos.js"></script>
   <script src="js/catalogo.js"></script>
   <script src="js/documentos.js"></script>

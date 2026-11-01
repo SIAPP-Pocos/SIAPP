@@ -120,7 +120,8 @@ function desenharListaBloco() {
 function opcoesBloco() {
   return { nivel: $("bl-nivel").value, margem: $("bl-margem").value, dist_max: $("bl-distmax").value,
            celulas: $("bl-celulas").value, titulo: $("bl-titulo").value, base: $("bl-base").value,
-           escala: $("bl-escala").value, interpolacao: lerInterpolacao(), ambiente: $("bl-ambiente").value };
+           escala: $("bl-escala").value, interpolacao: lerInterpolacao(), ambiente: $("bl-ambiente").value,
+           zonas: typeof lerZonasBloco === "function" ? lerZonasBloco() : undefined };
 }
 
 // ---------------------------------------------------------------- interpolação e escala

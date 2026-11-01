@@ -43,6 +43,9 @@ existe e a validação científica ficam **para o final**, antes do lançamento 
 - [x] **Bo, Rs e Bg estimados por correlação** (0.28): Standing (pede o API) e Sutton + Papay, com aviso de faixa.
 - [x] **Painel de preenchimento e biblioteca de interpretações** (0.35): quanto do acervo está preenchido e
       quem contribuiu; avaliações de formação compartilhadas, comparadas e refeitas com os mesmos parâmetros.
+- [x] **Zonas produtoras no bloco 3D** (0.55): topo e base de cada reservatório (canhoneado, teste, análise de perfis, fluido,
+      AGP, marcados e a tabela do usuário), vários reservatórios com escolha de quais mostrar, comparação com a tabela feita à mão e
+      aviso de OCR por intervalo. Ver `docs/zonas-produtoras.md`.
 - [x] **Abrir como um software** (0.47): dois cliques no atalho abrem uma janelinha de carregamento, sem console.
       Ver `docs/lancador.md`.
 

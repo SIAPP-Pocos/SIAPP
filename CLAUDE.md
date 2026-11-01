@@ -54,7 +54,7 @@ Python 3.13 da Microsoft Store pelo `py`, e a `.venv` da pasta do app (`.venv\Sc
 
 Detalhe em `docs/roteiro.md`. Resumo:
 
-1. Validar no Windows as versões 0.37–0.46 e 0.48–0.54 pelo guia de teste (o Ruan testa; o Claude corrige). A 0.47
+1. Validar no Windows as versões 0.37–0.46 e 0.48–0.55 pelo guia de teste (o Ruan testa; o Claude corrige). A 0.47
    (lançador) já foi testada.
 2. Bloco 9: petrofísica de testemunho lida (0.48/0.48.1) e comparada ao perfil (0.50); falta validar outros poços
    (outras grafias de pasta e de planilha, ex.: 1-BRSA-1006-RN, 7-ET-854-RN).
