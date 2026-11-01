@@ -132,6 +132,17 @@ Precisa de internet. Comece por uma categoria pequena para ver o tempo.
 - [ ] Sem intervalo marcado, **Calcular** explica que precisa de um intervalo-alvo.
 - [ ] Repetir no `5PX__0011__RN_5PX__0011__RN.tif` (DLIS de 2020).
 
+## 0.53.1 — atalho e janela são o mesmo botão na barra de tarefas
+
+- [ ] **Desafixe** o SIAPP da barra de tarefas (botão direito › Desafixar da barra de tarefas), se estiver fixado.
+- [ ] Abra o SIAPP pelo `SIAPP.lnk` (ele é refeito na primeira abertura; a janelinha e a janela principal devem aparecer sob
+      **um** botão chamado **SIAPP**, com o ícone do SIAPP, e **não** "Python").
+- [ ] Passe o mouse no botão: o nome é SIAPP. Botão direito no botão › **Fixar na barra de tarefas**.
+- [ ] Feche o SIAPP: o botão fixado continua, com o ícone do SIAPP. Clique nele: o SIAPP abre (janelinha e janela) **e o botão
+      fixado vira o botão da janela aberta** (fica destacado), sem um segundo botão "Python" ao lado.
+- [ ] Abra uma aba em janela própria: ela fica no mesmo grupo SIAPP.
+- [ ] Se aparecer um segundo botão, anote: o nome, o ícone e se ele surge só durante a janelinha.
+
 ## 0.53 — segunda leitura (OCR) das páginas ruins
 
 - [ ] Em **Documentos**, a caixa **Segunda leitura das páginas ruins (mais lento)** aparece ligada.

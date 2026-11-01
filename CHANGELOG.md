@@ -6,6 +6,19 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 
 ## [Não lançado]
 
+## [0.53.1] — 2026-10-31
+### Corrigido
+- **O atalho e a janela do SIAPP agora são o mesmo botão na barra de tarefas.** Antes, o `SIAPP.lnk` (que abre o `wscript` e
+  o `SIAPP.vbs`) não tinha identidade (AppUserModelID), e as janelas tinham a `SIAPP.Pocos.SIAPP`: o Windows via dois programas.
+  O atalho fixado ficava de um lado e a janela aberta, rotulada "Python" (o nome do `pythonw.exe`), do outro.
+  Agora o atalho recebe a mesma identidade, e cada janela do SIAPP (principal, de aba e a janelinha de carregamento) recebe
+  também o nome **SIAPP**, o ícone e o comando de reabertura pelo lançador silencioso. Fixar a janela aberta na barra cria um
+  atalho que abre o SIAPP, não o `pythonw.exe`.
+- O `SIAPP.lnk` da 0.47 (sem identidade) é refeito sozinho na próxima abertura.
+### Para quem já fixou o SIAPP na barra
+- O atalho **já fixado** é uma cópia que o Windows guardou: ele não ganha a correção. Desafixe (botão direito › Desafixar) e
+  fixe de novo, a partir da janela aberta ou do `SIAPP.lnk` novo.
+
 ## [0.53.0] — 2026-10-31
 Segunda leitura (OCR) das páginas ruins.
 ### Adicionado

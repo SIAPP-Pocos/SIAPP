@@ -86,8 +86,8 @@ def test_atalho_so_no_windows_e_so_se_estiver_desatualizado(monkeypatch, tmp_pat
     monkeypatch.setattr(sys, "platform", "win32")
     lnk = tmp_path / "SIAPP.lnk"
     monkeypatch.setattr(icone, "CAMINHO_ATALHO", str(lnk))
-    _lnk_falso(lnk, os.path.join(base.PASTA_APP, icone.NOME_LANCADOR), base.PASTA_APP)
-    assert icone.criar_atalho(sincrono=True) is False      # aponta para esta pasta: não recria
+    _lnk_falso(lnk, os.path.join(base.PASTA_APP, icone.NOME_LANCADOR), base.PASTA_APP, icone.APP_ID)
+    assert icone.criar_atalho(sincrono=True) is False      # destino, pasta e identidade certos: não recria
 
 
 def test_atalho_de_pasta_antiga_ou_do_bat_e_recriado(monkeypatch, tmp_path):
@@ -107,8 +107,10 @@ def test_atalho_de_pasta_antiga_ou_do_bat_e_recriado(monkeypatch, tmp_path):
 def test_atalho_atual_ignora_maiusculas_e_arquivo_ausente(tmp_path):
     lnk = tmp_path / "a.lnk"
     assert icone.atalho_atual(str(lnk), r"C:\SIAPP\SIAPP.vbs", r"C:\SIAPP") is False
-    _lnk_falso(lnk, r"c:\siapp\siapp.vbs", r"c:\siapp")
+    _lnk_falso(lnk, r"c:\siapp\siapp.vbs", r"c:\siapp", icone.APP_ID.lower())
     assert icone.atalho_atual(str(lnk), r"C:\SIAPP\SIAPP.vbs", r"C:\SIAPP") is True
+    _lnk_falso(lnk, r"c:\siapp\siapp.vbs", r"c:\siapp")                  # o atalho da 0.47: sem identidade
+    assert icone.atalho_atual(str(lnk), r"C:\SIAPP\SIAPP.vbs", r"C:\SIAPP") is False
 
 
 def test_comando_do_atalho_aponta_para_o_lancador_silencioso_e_escapa_aspas():

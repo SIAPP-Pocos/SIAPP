@@ -7,9 +7,9 @@ import queue
 import sys
 import threading
 
-from lancador import passos
+from lancador import identidade, passos
 
-APP_ID = "SIAPP.Pocos.SIAPP"        # o mesmo de ponte/icone.py: janelinha e janela principal se agrupam
+APP_ID = identidade.APP_ID        # o mesmo de ponte/icone.py: janelinha e janela principal se agrupam
 LARGURA, ALTURA = 460, 250
 
 
@@ -40,6 +40,13 @@ def main(argumentos=()) -> None:
     try:
         raiz.iconbitmap(ico)
     except tk.TclError:
+        pass
+    try:                                                  # mesmo grupo "SIAPP" da barra de tarefas que a janela principal
+        raiz.update_idletasks()
+        import ctypes
+        hwnd = ctypes.windll.user32.GetParent(raiz.winfo_id()) or raiz.winfo_id()
+        identidade.aplicar_na_janela(hwnd, pasta)
+    except Exception:
         pass
 
     cabeca = ttk.Frame(raiz, padding=(20, 18, 20, 4))

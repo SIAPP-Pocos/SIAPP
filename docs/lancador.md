@@ -41,7 +41,18 @@ cada passo do `pip`. Use para investigar quando a janelinha não bastar.
 
 ## Identidade na barra de tarefas
 
-Janelinha e janela principal usam o `AppUserModelID` `SIAPP.Pocos.SIAPP` e o mesmo `siapp.ico`.
+O Windows agrupa os botões pelo **AppUserModelID**. Tudo do SIAPP usa `SIAPP.Pocos.SIAPP` (`lancador/identidade.py`):
+
+- o **processo** (`SetCurrentProcessExplicitAppUserModelID`), na janelinha e na janela principal;
+- o **arquivo `SIAPP.lnk`** (propriedade `System.AppUserModel.ID` do atalho, gravada depois que o PowerShell o cria);
+- **cada janela** (principal, de aba, janelinha): além do ID, o `RelaunchCommand` (`wscript.exe //nologo "…\SIAPP.vbs"`), o
+  `RelaunchIconResource` (o `siapp.ico`) e o `RelaunchDisplayNameResource` ("SIAPP").
+
+Efeito: o atalho fixado e a janela aberta são um botão só; o grupo se chama SIAPP (não "Python"); e se você fixar a janela
+aberta, o atalho criado pelo Windows abre o SIAPP pelo lançador, não o `pythonw.exe`. Atalhos já fixados antes da 0.53.1 são
+cópias do Windows: desafixe e fixe de novo.
+
+Tudo via `ctypes` (COM: `IShellLink` → `IPropertyStore`; `SHGetPropertyStoreForWindow`). Falha silenciosa: identidade é cosmética.
 
 ## Testes
 

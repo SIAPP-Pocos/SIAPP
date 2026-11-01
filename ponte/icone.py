@@ -17,10 +17,11 @@ from __future__ import annotations
 import os
 import sys
 
+from lancador import identidade
 from ponte import base
 
 CAMINHO_ICO = os.path.join(base.PASTA_RECURSOS, "icone", "siapp.ico")
-APP_ID = "SIAPP.Pocos.SIAPP"
+APP_ID = identidade.APP_ID
 
 _WM_SETICON = 0x0080
 _ICON_SMALL, _ICON_BIG = 0, 1
@@ -98,13 +99,14 @@ def _comando_atalho(atalho: str, vbs: str, ico: str, pasta: str) -> list[str]:
 
 
 def atalho_atual(atalho: str, vbs: str, pasta: str) -> bool:
-    """True se o .lnk existe e aponta para este lançador, nesta pasta (o .lnk guarda os caminhos em UTF-16)."""
+    """True se o .lnk existe, aponta para este lançador nesta pasta e tem a identidade do SIAPP (0.53.1). O .lnk guarda
+    os caminhos e o ID em UTF-16."""
     try:
         with open(atalho, "rb") as f:
             dados = f.read().lower()
     except OSError:
         return False
-    return all(t.lower().encode("utf-16-le") in dados for t in (vbs, pasta))
+    return all(t.lower().encode("utf-16-le") in dados for t in (vbs, pasta, APP_ID))      # destino, pasta e identidade
 
 
 def criar_atalho(sincrono: bool = False) -> bool:
@@ -119,6 +121,8 @@ def criar_atalho(sincrono: bool = False) -> bool:
             import subprocess
             subprocess.run(cmd, timeout=30, capture_output=True,
                            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+            # a mesma identidade das janelas: o atalho fixado e a janela aberta viram um botão só (0.53.1)
+            identidade.aplicar_no_atalho(CAMINHO_ATALHO)
         except Exception:
             pass
 
@@ -140,6 +144,7 @@ def aplicar(janela) -> bool:
             h = _hwnd(janela)
             if h:
                 aplicar_no_hwnd(h)
+                identidade.aplicar_na_janela(h, base.PASTA_APP)      # grupo "SIAPP" (e não "Python") e reabertura certa
         except Exception:
             pass
 
