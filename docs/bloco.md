@@ -380,6 +380,17 @@ interpolação bilinear; fora do contorno do bloco, sem dado.
   decimal), mais o `.prj`. Abre no Excel, Surfer, Petrel, QGIS (texto delimitado).
 - Sem bloco fechado, saem os topos das superfícies.
 
+### Mapa 2D com curvas de nível (0.56)
+
+Quadro "Mapa 2D com curvas de nível" (abaixo da validação): vista de cima do terreno, do topo ou da espessura de cada camada
+ou zona produtora. Usa os mesmos valores dos mapas para SIG (grade UTM do bloco, só dentro do contorno dos poços mais a margem
+pedida na montagem) e desenha em SVG, sem biblioteca de gráficos: as curvas de nível saem de um *marching squares* próprio
+(`motor/bloco_mapa2d.py`). Cores por faixa (48 níveis), curvas rotuladas, poços em círculos brancos e eixos em metros a partir
+do centro do bloco. O intervalo das curvas é automático (cerca de 12 curvas) ou o que se digitar. "Profundidade" troca a cota
+(negativa abaixo do mar) pela profundidade positiva; com "inverter as cores", o raso fica claro. Salva em SVG, PNG (300 ppp) e PDF.
+Limites: não extrapola além do contorno (use a margem do bloco); o pixel segue o passo da grade do bloco (no máximo 200 células
+por lado).
+
 ### Simulador (.DATA, formato ECLIPSE)
 
 `motor/bloco_eclipse.py`. Deck que o tNavigator, o OPM Flow, o Petrel e o ResInsight leem.

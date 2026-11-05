@@ -26,14 +26,18 @@ async function carregarBloco() {
       sc.appendChild(o);
     }
     if (atualC) sc.value = atualC;
-    const sb = $("bl-bacia"), atualB = sb.value;
-    limpar(sb);
+    // bacias: caixas de marcação (uma ou mais); mantém o que já estava marcado
+    const caixaB = $("bl-bacias"), marcadas = new Set(bacias_marcadas_bloco());
+    limpar(caixaB);
     for (const b of r.bacias) {
-      const o = document.createElement("option");
-      o.value = o.textContent = b;
-      sb.appendChild(o);
+      const rot = el("label", "opcao");
+      const cx = el("input");
+      cx.type = "checkbox";
+      cx.value = b;
+      cx.checked = marcadas.has(b);
+      rot.append(cx, el("span", "", ` ${b} (${numero((r.bacias_pocos || {})[b] || 0, 0)} poços)`));
+      caixaB.appendChild(rot);
     }
-    if (atualB) sb.value = atualB;
     if (r.interpolacao) prepararInterpolacao(r.interpolacao);
     pedirGuia();
     $("bl-disponiveis").textContent = r.total
@@ -42,6 +46,12 @@ async function carregarBloco() {
   }
   desenharListaBloco();
   carregarHistoricoBloco();
+}
+
+// as bacias marcadas na lista (0.56: pode ser mais de uma)
+function bacias_marcadas_bloco() {
+  const caixa = $("bl-bacias");
+  return caixa ? [...caixa.querySelectorAll("input:checked")].map((c) => c.value) : [];
 }
 
 function trocarModoBloco() {
@@ -89,8 +99,10 @@ async function selecionarPocosBloco() {
            bl.pocos.length ? "ok" : "erro");
     return;
   }
+  const bacias = bacias_marcadas_bloco();
+  if (modo === "todos" && !bacias.length) { status("Marque ao menos uma bacia.", "erro"); return; }
   const r = await chamar($("bl-selecionar"), "bloco_selecionar", modo, $("bl-campo").value, $("bl-centro").value.trim(),
-                         $("bl-raio").value.replace(",", "."), $("bl-bacia").value);
+                         $("bl-raio").value.replace(",", "."), "", bacias);
   if (!r.ok) return;
   bl.pocos = r.pocos;
   bl.isolado = r.isolado;
@@ -473,6 +485,10 @@ function ligarAparencia() {
 // ------------------------------------------------ saídas: mapas, simulador, volumetria, 3D
 function prepararSaidas(temSolido) {
   bl.saidasDe = null;
+  bl.mapa2dDe = null;
+  limpar($("bl-m2d-fig"));
+  $("bl-m2d-info").textContent = "";
+  if ($("bl-m2d").open) carregarMapa2d();
   for (const id of ["bl-ecl-box", "bl-vol-box", "bl-glb-box"]) {
     $(id).classList.toggle("desligado", !temSolido);
     for (const c of $(id).querySelectorAll("button, input")) c.disabled = !temSolido;
@@ -528,6 +544,53 @@ async function exportarEcl() {
     `(${numero(r.ativas, 0)} ativas), células de ${numero(r.dx, 0)} m, ${r.pocos} poço(s). ` + r.notas.join("; ") +
     ". Permeabilidade, PVT, curvas relativas e contatos: provisórios (veja o LEIA-ME).";
   status(`Deck exportado: ${r.pasta}/${r.deck}`, "ok");
+}
+
+// ------------------------------------------------ mapa 2D com curvas de nível (0.56)
+async function carregarMapa2d() {
+  if (!bl.ultimo || bl.mapa2dDe === bl.ultimo) return;
+  const r = await chamar(null, "bloco_mapa2d_lista", bl.ultimo);
+  if (!r.ok) return;
+  bl.mapa2dDe = bl.ultimo;
+  const sm = limpar($("bl-m2d-mapa"));
+  for (const m of r.mapas) {
+    const o = document.createElement("option");
+    o.value = m.nome;
+    o.textContent = m.titulo;
+    sm.appendChild(o);
+  }
+  const sp = limpar($("bl-m2d-paleta"));
+  for (const p of r.paletas) {
+    const o = document.createElement("option");
+    o.value = p.chave;
+    o.textContent = p.nome;
+    sp.appendChild(o);
+  }
+  // o primeiro topo (ou o terreno, se não houver) já aparece desenhado
+  const primeiro = r.mapas.find((m) => m.nome.startsWith("topo_")) || r.mapas[0];
+  if (primeiro) sm.value = primeiro.nome;
+  desenharMapa2d();
+}
+
+function opcoesMapa2d() {
+  return { intervalo: $("bl-m2d-int").value.replace(",", "."), rotulo_cada: $("bl-m2d-rot").value, paleta: $("bl-m2d-paleta").value,
+           inverter: $("bl-m2d-inv").checked, profundidade: $("bl-m2d-prof").checked, desde_mesa: $("bl-m2d-mesa").checked, preencher: $("bl-m2d-preencher").checked,
+           curvas: $("bl-m2d-curvas").checked, pocos: $("bl-m2d-pocos").checked, nomes_pocos: $("bl-m2d-nomes").checked,
+           titulo: $("bl-m2d-titulo").value };
+}
+
+async function desenharMapa2d(formato) {
+  const nome = $("bl-m2d-mapa").value;
+  if (!bl.ultimo || !nome) return;
+  const r = await chamar(formato ? $(`bl-m2d-${formato}`) : null, "bloco_mapa2d", bl.ultimo, nome, opcoesMapa2d(), formato || "");
+  if (!r.ok) return;
+  if (formato) {
+    $("bl-exportado").textContent = `Salvo em ambiente_teste/${r.arquivo}`;
+    status(`Mapa salvo: ${r.arquivo}`, "ok");
+    return;
+  }
+  $("bl-m2d-fig").innerHTML = r.svg;
+  $("bl-m2d-info").textContent = `${r.titulo}: de ${numero(r.min, 1)} a ${numero(r.max, 1)} m, ${r.n_curvas} curvas a cada ${numero(r.intervalo_m, 1)} m.`;
 }
 
 async function exportarMapas() {
@@ -1131,6 +1194,11 @@ function ligarBloco() {
   for (const id of ["bl-margem", "bl-celulas", "bl-distmax"]) ligar(id, "onchange", interpolacaoMudou);
   ligar("bl-saidas", "ontoggle", () => { if ($("bl-saidas").open) carregarSaidas(); });
   ligar("bl-mapas", "onclick", exportarMapas);
+  ligar("bl-m2d", "ontoggle", () => { if ($("bl-m2d").open) carregarMapa2d(); });
+  ligar("bl-m2d-mapa", "onchange", () => desenharMapa2d());
+  for (const id of ["bl-m2d-int", "bl-m2d-rot", "bl-m2d-paleta", "bl-m2d-prof", "bl-m2d-mesa", "bl-m2d-inv", "bl-m2d-preencher",
+                    "bl-m2d-curvas", "bl-m2d-pocos", "bl-m2d-nomes", "bl-m2d-titulo"]) ligar(id, "onchange", () => desenharMapa2d());
+  for (const f of ["svg", "png", "pdf"]) ligar(`bl-m2d-${f}`, "onclick", () => desenharMapa2d(f));
   ligar("bl-ecl", "onclick", exportarEcl);
   for (const id of ["bl-ecl-nz", "bl-ecl-dx", "bl-ecl-max"]) ligar(id, "onchange", () => previaEcl());
   ligar("bl-vol-calc", "onclick", calcularVolumetria);

@@ -1151,7 +1151,10 @@
             <label>Poço <input type="text" id="bl-centro" list="bl-lista-pocos" autocomplete="off"></label>
             <label>Raio (km) <input type="text" id="bl-raio" value="10" inputmode="decimal"></label>
           </div>
-          <label id="bl-bacia-box" hidden>Bacia <select id="bl-bacia"></select></label>
+          <div id="bl-bacia-box" hidden>
+            <span>Bacia(s) — marque uma ou mais (ex.: Alagoas e Sergipe juntas, a bacia Sergipe-Alagoas)</span>
+            <div class="bl-bacias" id="bl-bacias"></div>
+          </div>
         </div>
         <div class="linha">
           <button class="btn secundario" id="bl-selecionar">Trazer os poços</button>
@@ -1456,6 +1459,36 @@
           <table class="bl-tabela estreita" id="bl-val-faixas"></table>
           <ul class="sec-avisos" id="bl-val-avisos"></ul>
         </section>
+        <details class="bl-quadro" id="bl-m2d">
+          <summary><h3>Mapa 2D com curvas de nível</h3></summary>
+          <p class="ajuda">Vista de cima do terreno, do topo ou da espessura de cada camada ou zona produtora, com curvas de
+            nível rotuladas, poços e eixos em metros (a partir do centro do bloco). Para o mapa cobrir mais área além dos
+            poços, aumente a "margem além do contorno" e monte o bloco de novo.</p>
+          <div class="linha">
+            <label>Mapa <select id="bl-m2d-mapa"></select></label>
+            <label>Curvas a cada (m) <input type="text" id="bl-m2d-int" class="curto" inputmode="decimal" placeholder="auto"></label>
+            <label>Rotular 1 a cada <input type="text" id="bl-m2d-rot" class="curto" inputmode="numeric" value="1"
+                   title="1 = todas as curvas; 0 = sem rótulos"></label>
+            <label>Cores <select id="bl-m2d-paleta"></select></label>
+          </div>
+          <div class="linha">
+            <label class="opcao"><input type="checkbox" id="bl-m2d-prof" checked> profundidade (positiva para baixo)</label>
+            <label class="opcao"><input type="checkbox" id="bl-m2d-mesa"> contada da mesa rotativa (como nas tabelas de poço)</label>
+            <label class="opcao"><input type="checkbox" id="bl-m2d-inv" checked> inverter as cores</label>
+            <label class="opcao"><input type="checkbox" id="bl-m2d-preencher" checked> cores de fundo</label>
+            <label class="opcao"><input type="checkbox" id="bl-m2d-curvas" checked> curvas</label>
+            <label class="opcao"><input type="checkbox" id="bl-m2d-pocos" checked> poços</label>
+            <label class="opcao"><input type="checkbox" id="bl-m2d-nomes"> nomes dos poços</label>
+          </div>
+          <div class="linha">
+            <label>Título <input type="text" id="bl-m2d-titulo" class="largo" placeholder="automático"></label>
+            <button class="btn secundario pequeno" id="bl-m2d-svg">Salvar SVG</button>
+            <button class="btn secundario pequeno" id="bl-m2d-png">Salvar PNG</button>
+            <button class="btn secundario pequeno" id="bl-m2d-pdf">Salvar PDF</button>
+          </div>
+          <p class="ajuda" id="bl-m2d-info"></p>
+          <div id="bl-m2d-fig" class="bl-m2d-fig"></div>
+        </details>
         <details class="bl-quadro bl-saidas" id="bl-saidas">
           <summary><h3>Saídas do bloco: mapas para SIG, simulador (.DATA), volumetria, modelo 3D</h3></summary>
           <div class="bl-saida">

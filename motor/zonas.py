@@ -284,7 +284,7 @@ def unidades_do_poco(escolhidos: list[dict], ativas: list[str] | None, nomes_zon
 
 # ------------------------------------------------------------------------------------------------------ tabela do usuário
 SINONIMOS = {
-    "poco": ("poco", "pocos", "poço", "poços", "well", "nome", "nome do poco", "id"),
+    "poco": ("poco", "pocos", "poço", "poços", "well", "nome", "nome do poco", "id", "id well", "id poco", "id do poco"),
     "topo": ("topo", "top", "prof topo", "prof_topo", "topo md", "topo m", "profundidade topo", "top depth"),
     "base": ("base", "bottom", "prof base", "prof_base", "base md", "base m", "profundidade base", "fundo", "bottom depth"),
     "zona": ("zona", "reservatorio", "reservatório", "camada", "horizonte", "formacao", "formação", "reservoir"),
@@ -314,6 +314,26 @@ def _numero(v):
         return float(t)
     except ValueError:
         return None
+
+
+def resolver_nome(banco: Banco, nome: str) -> str:
+    """Id do poço para o nome escrito na tabela do usuário. Além das grafias que o cadastro já conhece, aceita o nome
+    sem a sigla do estado (7-GMR-28A → 7-GMR-28A-RN, se só houver um) e com o número do intervalo no fim
+    (7-GMR-8-1 → 7-GMR-8-RN), como nas tabelas feitas à mão com uma linha por intervalo (0.56)."""
+    partes = [p for p in re.split(r"\s*-\s*", str(nome).strip()) if p]
+    candidatos = [str(nome)]
+    if len(partes) >= 4 and partes[-1].isdigit():
+        candidatos.append("-".join(partes[:-1]))
+    with banco.conexao() as c:
+        for cand in candidatos:
+            pid = mpo.resolver(banco, cand)
+            if c.execute("SELECT 1 FROM pocos WHERE id = ?", (pid,)).fetchone():
+                return pid
+            base = re.sub(r"\s+", "", cand).upper()
+            achados = [r[0] for r in c.execute("SELECT id FROM pocos WHERE id LIKE ?", (f"{base}-__",))]
+            if len(achados) == 1:
+                return achados[0]
+    return mpo.resolver(banco, str(nome))
 
 
 def _linhas_arquivo(caminho: str) -> list[list]:
@@ -376,7 +396,7 @@ def ler_tabela(caminho: str, banco: Banco, ref: str = "md", utm_zona: int | None
         if ref == "cota" and base >= topo:
             avisos.append(f"Linha {n} ({nome}): em cota a base ({base:g}) deveria ser menor que o topo ({topo:g}); ignorada.")
             continue
-        pid = mpo.resolver(banco, nome)
+        pid = resolver_nome(banco, nome)
         r = {"poco": nome, "poco_id": pid, "topo": topo, "base": base, "ref": ref, "zona": str(cel("zona") or "").strip(),
              "lat": None, "lon": None}
         if "lat" in mapa and "lon" in mapa:

@@ -6,6 +6,23 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 
 ## [Não lançado]
 
+## [0.56.0] — 2026-11-04
+Várias bacias no bloco 3D, tabela do usuário com nomes à mão e mapa 2D com curvas de nível.
+### Adicionado
+- **Bloco 3D › Poços › "todos os poços da bacia"**: a lista de bacias virou **caixas de marcação**, com a contagem de poços de
+  cada uma. Dá para marcar Alagoas e Sergipe juntas (a bacia Sergipe-Alagoas) e montar um só bloco.
+- **Tabela de zonas do usuário** (Bloco 3D › Unidades › zonas produtoras): o cabeçalho `ID_well` vale como coluna do poço, e os
+  nomes são achados mesmo **sem a sigla do estado** (`7-GMR-28A` → `7-GMR-28A-RN`) e **com o número do intervalo no fim**
+  (`7-GMR-8-1`, `7-GMR-8-2` → poço `7-GMR-8-RN`), como na tabela feita à mão do modelo de Guamaré.
+- **Bloco 3D › "Mapa 2D com curvas de nível"**: vista de cima do terreno, do topo ou da espessura de cada camada ou zona
+  produtora, no estilo dos mapas de artigo: cores por faixa, **curvas rotuladas** a cada N metros (automático ou o que você
+  digitar), poços em círculos brancos (com ou sem nome), eixos em **metros a partir do centro do bloco** e barra de cores.
+  Opções: paleta (viridis, plasma, azuis, relevo, cinza), inverter as cores, mostrar como **profundidade** (positiva para baixo, do nível do mar ou **da mesa rotativa**, como nas tabelas de poço),
+  ligar ou desligar cores de fundo, curvas e poços, rotular 1 a cada N curvas e título. Salva em SVG, PNG (300 ppp) e PDF.
+  Sem biblioteca de gráficos: as curvas saem de um marching squares próprio (`motor/bloco_mapa2d.py`).
+### Alterado
+- A API `bloco_selecionar` aceita `bacias` (lista); o texto único `bacia` continua valendo.
+
 ## [0.55.0] — 2026-11-01
 Zonas produtoras (net pay) no bloco 3D.
 ### Adicionado

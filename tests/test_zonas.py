@@ -338,3 +338,86 @@ def test_saidas_do_bloco_aceitam_o_modelo_de_zonas(banco, tmp_path):
     assert eclipse
     glb = mbg.exportar(m, str(tmp_path / "bloco.glb"))
     assert glb["bytes"] > 0 and os.path.getsize(glb["arquivo"]) == glb["bytes"]
+
+
+def test_tabela_com_nome_sem_estado_e_com_numero_do_intervalo(banco, tmp_path):
+    """Tabela feita à mão: "1-ZZ-1" (sem a sigla do estado) e "1-ZZ-2-1"/"1-ZZ-2-2" (um intervalo por linha) acham o poço;
+    o cabeçalho ID_well vale como coluna do poço (0.56)."""
+    arq = tmp_path / "mao.csv"
+    arq.write_text("ID_well,latitude,longitude,topo,base,formação\n"
+                   "1-ZZ-1,-5.1,-36.4,100,110,2A\n1-ZZ-2-1,-5.2,-36.4,120,130,2A\n1-ZZ-2-2,-5.2,-36.4,140,150,3\n"
+                   "9-XX-7-1,-5.3,-36.4,10,20,2A\n", encoding="utf-8")
+    t = mz.ler_tabela(str(arq), banco)
+    ids = [r["poco_id"] for r in t["linhas"]]
+    assert ids[:3] == [POCOS[0][0], POCOS[1][0], POCOS[1][0]]
+    assert ids[3] == "9XX71"                                  # sem cadastro: segue a regra antiga e avisa
+    assert any("não reconheceu" in a for a in t["avisos"])
+    assert t["colunas"]["poco"] == "ID_well" and t["colunas"]["zona"] == "formação"
+
+
+# ------------------------------------------------------------------------------------------------------- mapa 2D (0.56)
+def test_curvas_de_nivel_de_um_cone():
+    """Marching squares: as curvas de um cone são círculos fechados do raio certo; sem dado, sem curva."""
+    from motor import bloco_mapa2d as mm2
+    xs = np.arange(-50, 51, 2.0)
+    ys = xs[::-1]
+    X, Y = np.meshgrid(xs, ys)
+    z = np.hypot(X, Y)
+    cs = mm2.curvas(z, xs, ys, 20.0)
+    assert len(cs) == 1 and cs[0][0]
+    assert np.allclose(np.hypot(cs[0][1][:, 0], cs[0][1][:, 1]), 20.0, atol=0.3)
+    assert mm2.curvas(z, xs, ys, 500.0) == []
+    assert mm2.curvas(np.full_like(z, np.nan), xs, ys, 20.0) == []
+    meio = z.copy()
+    meio[:, : len(xs) // 2] = np.nan                                  # a metade sem dado: a curva é aberta
+    assert all(not f for f, _ in mm2.curvas(meio, xs, ys, 20.0))
+
+
+def test_mapa_2d_do_bloco_de_zonas(banco, tmp_path):
+    from motor import bloco_figura as mbf
+    from motor import bloco_mapa2d as mm2
+    ids = [p for p, _, _ in POCOS]
+    m = mb.montar(banco, ids, nivel="zonas", zonas={"fontes": ["canhoneado", "teste", "analise_perfil", "fluido"]})
+    nomes = {x["nome"] for x in mm2.lista(m)}
+    assert {"topo_zp1", "isopaca_zp1", "terreno"} <= nomes
+    r = mm2.desenhar(m, "topo_zp1", intervalo_m=10, profundidade=True, inverter=True, nomes_pocos=True, titulo="Guamaré")
+    assert r["svg"].startswith("<svg") and "Guamaré" in r["svg"] and r["intervalo_m"] == 10 and r["niveis"]
+    assert r["min"] > 0                                                # profundidade positiva
+    assert r["svg"].count("<circle") == len(POCOS) and "profundidade" in r["titulo"]
+    assert "<path" in r["svg"] and mm2.desenhar(m, "topo_zp1", curvas_nivel=False, pocos=False, preencher=False)["svg"]
+    for paleta in mm2.PALETAS:
+        assert mm2.desenhar(m, "topo_zp1", paleta=paleta)["svg"]
+    with pytest.raises(mm2.ErroMapa2D):
+        mm2.desenhar(m, "nao_existe")
+    with pytest.raises(mm2.ErroMapa2D):
+        mm2.desenhar(m, "topo_zp1", paleta="arco-iris")
+    with pytest.raises(mm2.ErroMapa2D):
+        mm2.desenhar(m, "topo_zp1", intervalo_m=0.001)
+    for f in ("svg", "png", "pdf"):
+        saida = mbf.exportar(r["svg"], str(tmp_path / f"mapa.{f}"), f)
+        assert tmp_path.joinpath(f"mapa.{f}").stat().st_size > 500 and saida
+
+
+def test_mapa_2d_profundidade_desde_a_mesa(banco):
+    from motor import bloco_mapa2d as mm2
+    ids = [p for p, _, _ in POCOS]
+    m = mb.montar(banco, ids, nivel="zonas", zonas={"fontes": ["canhoneado", "teste", "analise_perfil", "fluido"]})
+    mar = mm2.desenhar(m, "topo_zp1", profundidade=True)
+    mesa = mm2.desenhar(m, "topo_zp1", profundidade=True, desde_mesa=True)
+    assert "mesa rotativa" in mesa["titulo"] and "nível do mar" in mar["titulo"]
+    assert mesa["min"] == pytest.approx(mar["min"] + MESA, abs=0.01)         # todos os poços têm a mesa a 50 m
+
+
+def test_mapa_2d_plano_nao_trava_e_sem_curvas():
+    """Mapa com o mesmo valor em todo lugar (ou só com ruído de ponto flutuante) desenha sem curvas e termina rápido (0.56)."""
+    import time
+
+    from motor import bloco_mapa2d as mm2
+    z = np.full((30, 40), 45.0)
+    z[0, 0] = 45.0 + 1e-13
+    xs = np.arange(40) * 100.0 - 2000
+    ys = (np.arange(30) * 100.0 - 1500)[::-1]
+    t0 = time.time()
+    r = mm2.desenhar_grade(z, xs, ys, 100.0, [("p", 0.0, 0.0)], "terreno (cota, m)")
+    assert time.time() - t0 < 10 and r["niveis"] == [] and r["svg"].startswith("<svg") and len(r["svg"]) < 200_000   # sem milhares de marcas
+    assert mm2._niveis(0.0, 100.0, 10.0)[1][:3] == [0.0, 10.0, 20.0]

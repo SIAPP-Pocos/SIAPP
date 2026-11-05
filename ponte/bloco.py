@@ -14,6 +14,7 @@ from motor import bloco as mbl
 from motor import bloco_figura as mbf
 from motor import bloco_eclipse as mbe
 from motor import bloco_glb as mbg
+from motor import bloco_mapa2d as mm2
 from motor import bloco_mapas as mbm
 from motor import bloco_solido as mbs
 from motor import bloco_validacao as mbv
@@ -53,10 +54,11 @@ class BlocoAPI:
         self._exigir_projeto()
         pocos = mbl.pocos_disponiveis(self._banco)
         with self._banco.conexao() as c:
-            bacias = [r[0] for r in c.execute(
+            contagem = c.execute(
                 "SELECT bacia, count(DISTINCT poco_id) FROM agp_unidades WHERE tip = 'L' AND topo IS NOT NULL "
-                "GROUP BY bacia ORDER BY 2 DESC")]
-        return {"bacias": bacias, "campos": mbl.campos(self._banco),
+                "GROUP BY bacia ORDER BY 2 DESC").fetchall()
+        bacias = [r[0] for r in contagem]
+        return {"bacias": bacias, "bacias_pocos": {r[0]: r[1] for r in contagem}, "campos": mbl.campos(self._banco),
                 "pocos": [{"id": p["id"], "campo": p["campo"], "n_unidades": p["n_unidades"]} for p in pocos],
                 "total": len(pocos), "interpolacao": self._info_interpolacao()}
 
@@ -99,12 +101,15 @@ class BlocoAPI:
         return mguia.recomendar(ambiente or "nao_sei", dados, comparacao)
 
     @resposta_segura
-    def bloco_selecionar(self, modo: str, campo: str = "", poco: str = "", raio_km=5.0, bacia: str = ""):
+    def bloco_selecionar(self, modo: str, campo: str = "", poco: str = "", raio_km=5.0, bacia="", bacias=None):
+        """`bacias` (lista): uma ou mais bacias para o modo "todos" (ex.: Alagoas e Sergipe juntas); `bacia` (texto) é
+        o jeito antigo, com uma só."""
         self._exigir_projeto()
+        escolhidas = [str(b) for b in (bacias or []) if str(b).strip()] or ([bacia] if bacia else [])
         try:
             ids = mbl.selecionar(self._banco, modo=modo, campo=campo or "",
                                  poco=self._id_poco(poco) if poco else "",
-                                 raio_km=self._num(raio_km, 5.0), bacia=bacia or None)
+                                 raio_km=self._num(raio_km, 5.0), bacia=escolhidas or None)
         except mbl.ErroBloco as e:
             raise ErroUsuario(str(e)) from e
         return {"pocos": ids, "isolado": modo == "campo"}
@@ -438,6 +443,46 @@ class BlocoAPI:
         self._projeto.registrar("exportou_bloco", execucao=ident, formato="mapas", epsg=r["epsg"], passo_m=r["passo_m"])
         return {"pasta": self._rel(r["pasta"]), "mapas": r["mapas"], "epsg": r["epsg"], "passo_m": r["passo_m"],
                 "nx": r["nx"], "ny": r["ny"]}
+
+    @resposta_segura
+    def bloco_mapa2d_lista(self, ident: str):
+        """Os mapas que o bloco permite desenhar em 2D (terreno, topo e espessura de cada camada ou zona)."""
+        self._exigir_projeto()
+        reg = self._registro_bloco(self._ident_bloco(ident))
+        try:
+            return {"mapas": mm2.lista(reg), "paletas": [{"chave": k, "nome": v} for k, v in mm2.NOMES_PALETAS.items()]}
+        except mbm.ErroMapa as e:
+            raise ErroUsuario(str(e)) from e
+
+    @resposta_segura
+    def bloco_mapa2d(self, ident: str, nome: str, opcoes: dict | None = None, formato: str = ""):
+        """Mapa 2D com curvas de nível. Sem `formato`, devolve o SVG para a tela; com svg | pdf | png, grava o arquivo."""
+        self._exigir_projeto()
+        ident = self._ident_bloco(ident)
+        reg = self._registro_bloco(ident)
+        op = opcoes or {}
+        try:
+            r = mm2.desenhar(reg, str(nome), intervalo_m=self._num(op.get("intervalo")),
+                             rotulo_cada=int(self._num(op.get("rotulo_cada"), 1) or 0),
+                             paleta=str(op.get("paleta") or "viridis"), inverter=bool(op.get("inverter")),
+                             profundidade=bool(op.get("profundidade")), desde_mesa=bool(op.get("desde_mesa")),
+                             preencher=op.get("preencher") is not False,
+                             curvas_nivel=op.get("curvas") is not False, pocos=op.get("pocos") is not False,
+                             nomes_pocos=bool(op.get("nomes_pocos")), titulo=str(op.get("titulo") or ""),
+                             passo_m=self._num(op.get("passo_m")))
+        except (mm2.ErroMapa2D, mbm.ErroMapa) as e:
+            raise ErroUsuario(str(e)) from e
+        out = {"svg": r["svg"], "intervalo_m": r["intervalo_m"], "min": r["min"], "max": r["max"], "titulo": r["titulo"],
+               "n_curvas": len(r["niveis"])}
+        if formato:
+            if formato not in ("svg", "pdf", "png"):
+                raise ErroUsuario(f"Formato desconhecido: {formato}")
+            pasta = os.path.join(self._projeto.pasta, PASTA_EXPORTACAO)
+            saida = mbf.exportar(r["svg"], os.path.join(pasta, f"{ident}_mapa_{nome}.{formato}"), formato)
+            self._projeto.registrar("exportou_bloco", execucao=ident, formato=f"mapa2d_{formato}")
+            out["arquivo"] = self._rel(saida)
+            out["svg"] = ""
+        return out
 
     def _opcoes_eclipse(self, op: dict) -> dict:
         nz = self._num(op.get("nz"))

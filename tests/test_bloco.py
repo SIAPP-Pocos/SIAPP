@@ -258,3 +258,18 @@ def test_figura_com_a_aparencia_dos_pocos(banco, tmp_path):
     assert 'fill="#ff00aa"' in svg and "poço (cabeça)" in svg and 'stroke="#00aa00"' in svg
     assert 'stroke="#123456"' in svg and "<ellipse" not in svg          # sem discos nos topos
     assert "poço (cabeça)" not in bf.desenhar(m, aparencia={"marcador": {"forma": "nenhum"}})
+
+
+def test_selecionar_varias_bacias_juntas(banco):
+    """0.56: Alagoas e Sergipe (a bacia Sergipe-Alagoas) podem entrar no mesmo bloco."""
+    with banco.conexao() as c:
+        c.execute("UPDATE agp_unidades SET bacia = 'Sergipe' WHERE poco_id IN ('1-AA-1-RN', '1-AA-2-RN')")
+    assert len(mb.selecionar(banco, modo="todos", bacia="Potiguar")) == 3                      # texto: o jeito antigo
+    assert len(mb.selecionar(banco, modo="todos", bacia=["Sergipe"])) == 2
+    juntas = mb.selecionar(banco, modo="todos", bacia=["Potiguar", "Sergipe"])
+    assert sorted(juntas) == ["1-AA-1-RN", "1-AA-2-RN", "1-AA-3-RN", "1-AA-4-RN", "1-AA-5-RN"]
+    assert len(mb.selecionar(banco, modo="todos", bacia=("Sergipe", "Sergipe", ""))) == 2       # repetidas e vazias não contam
+    assert len(mb.pocos_disponiveis(banco, ["Potiguar", "Sergipe"])) == 5 and len(mb.pocos_disponiveis(banco)) == 5
+    for nada in (None, "", [], [""]):
+        with pytest.raises(mb.ErroBloco, match="ao menos uma bacia"):
+            mb.selecionar(banco, modo="todos", bacia=nada)

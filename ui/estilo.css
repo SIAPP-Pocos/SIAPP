@@ -1346,3 +1346,6 @@ td.tp-diverge { color: var(--erro); font-weight: 600; }
 .bz-nao-usado { opacity: 0.6; }
 .bz-ocr { color: var(--erro); font-weight: 600; }
 .bl-titulo-zonas { font-size: 1.1em; margin: 0 0 6px; }
+.bl-bacias { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 4px 0 8px; }
+.bl-m2d-fig { overflow: auto; margin-top: 8px; }
+.bl-m2d-fig svg { max-width: 100%; height: auto; background: #fff; }

@@ -2092,3 +2092,65 @@ def test_bloco_zonas_produtoras_reservatorios_ajustes_e_tabela(janela, tmp_path)
     p.click("#bz-apagar-tabela")
     janela.esperar("document.getElementById('bz-tabela-info').textContent.includes('Nenhuma tabela')", 30)
     assert not janela.erros_js, janela.erros_js
+
+
+def test_bloco_escolher_varias_bacias_juntas(janela):
+    """0.56: no bloco regional dá para marcar mais de uma bacia (ex.: Alagoas e Sergipe) e trazer os poços de todas."""
+    from test_secao import poco
+    p = janela.page
+    abrir_projeto(janela)
+    b = janela.api._banco
+    for pid, la, lo in [("1-AA-1-AL", -5.00, -37.00), ("1-AA-2-AL", -5.00, -36.96), ("1-AA-3-SE", -5.04, -37.00),
+                        ("1-AA-4-SE", -5.04, -36.96), ("1-AA-5-SE", -5.02, -36.98)]:
+        poco(b, pid, la, lo, 50.0, [("F", "JANDAI", 20, 300), ("F", "ACU", 300, 700)], prof_final=900)
+    with b.conexao() as c:
+        c.execute("UPDATE agp_unidades SET bacia = 'Alagoas' WHERE poco_id LIKE '%-AL'")
+        c.execute("UPDATE agp_unidades SET bacia = 'Sergipe' WHERE poco_id LIKE '%-SE'")
+    ir(p, "interp", "bloco")
+    janela.esperar("document.getElementById('bl-disponiveis').textContent.includes('5 poço')")
+    p.select_option("#bl-modo", "todos")
+    janela.esperar("document.querySelectorAll('#bl-bacias input').length === 2")
+    assert "Sergipe (3 poços)" in p.text_content("#bl-bacias") and "Alagoas (2 poços)" in p.text_content("#bl-bacias")
+    p.click("#bl-selecionar")
+    assert "Marque ao menos uma bacia" in janela.status()                                       # nada marcado: avisa
+    p.locator("#bl-bacias label", has_text="Alagoas").locator("input").check()
+    p.click("#bl-selecionar")
+    janela.esperar("document.getElementById('bl-n').textContent === '2'")
+    p.locator("#bl-bacias label", has_text="Sergipe").locator("input").check()
+    p.click("#bl-selecionar")
+    janela.esperar("document.getElementById('bl-n').textContent === '5'")                       # as duas juntas
+    assert not janela.erros_js, janela.erros_js
+
+
+def test_bloco_mapa_2d_com_curvas_de_nivel(janela, tmp_path):
+    from test_secao import poco
+    p = janela.page
+    abrir_projeto(janela)
+    b = janela.api._banco
+    for pid, la, lo in [("1-AA-1-RN", -5.00, -37.00), ("1-AA-2-RN", -5.00, -36.96), ("1-AA-3-RN", -5.04, -37.00),
+                        ("1-AA-4-RN", -5.04, -36.96), ("1-AA-5-RN", -5.02, -36.98)]:
+        leste = (lo + 37.00) * 111.0
+        poco(b, pid, la, lo, 50.0, [("F", "JANDAI", 20, 300 + 10 * leste), ("F", "ACU", 300 + 10 * leste, 700)],
+             prof_final=900)
+    ir(p, "interp", "bloco")
+    janela.esperar("document.getElementById('bl-disponiveis').textContent.includes('5 poço')")
+    p.click("#bl-selecionar")
+    janela.esperar("document.getElementById('bl-n').textContent === '5'")
+    p.click("#bl-montar")
+    janela.esperar("window.BlocoVisor && window.BlocoVisor.estado().superficies === 2", 30)
+    p.click("#bl-m2d summary")
+    janela.esperar("document.querySelector('#bl-m2d-fig svg') !== null", 30)
+    assert p.locator("#bl-m2d-mapa option").count() >= 2 and p.locator("#bl-m2d-fig circle").count() == 5
+    assert "curvas a cada" in p.inner_text("#bl-m2d-info")
+    p.fill("#bl-m2d-int", "20")
+    p.dispatch_event("#bl-m2d-int", "change")
+    janela.esperar("document.getElementById('bl-m2d-info').textContent.includes('a cada 20')", 30)
+    p.uncheck("#bl-m2d-pocos")
+    janela.esperar("document.querySelectorAll('#bl-m2d-fig circle').length === 0", 30)
+    pasta = tmp_path / "ambiente_teste" / "exportacoes" / "blocos"
+    for f in ("svg", "png", "pdf"):
+        p.click(f"#bl-m2d-{f}")
+        janela.esperar(f"document.getElementById('bl-exportado').textContent.includes('_mapa_') && "
+                       f"document.getElementById('bl-exportado').textContent.includes('.{f}')", 60)
+        assert any(pasta.glob(f"*_mapa_*.{f}"))
+    assert not janela.erros_js, janela.erros_js

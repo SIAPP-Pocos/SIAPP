@@ -132,6 +132,23 @@ Precisa de internet. Comece por uma categoria pequena para ver o tempo.
 - [ ] Sem intervalo marcado, **Calcular** explica que precisa de um intervalo-alvo.
 - [ ] Repetir no `5PX__0011__RN_5PX__0011__RN.tif` (DLIS de 2020).
 
+## 0.56 — várias bacias no bloco 3D e tabela com nomes à mão
+
+- [ ] **Bloco 3D › Poços › "todos os poços da bacia"**: aparecem **caixas de marcação**, uma por bacia, com o número de poços.
+- [ ] Sem marcar nada, **Selecionar** avisa "Marque ao menos uma bacia."
+- [ ] Marque **Alagoas e Sergipe** juntas: a contagem de poços selecionados é a soma das duas e o bloco monta com poços das duas.
+- [ ] **Zonas produtoras › importar tabela**: use `guamare_modelo\dados\pocos_estrutural.csv` (cabeçalho `ID_well`, nomes como
+      `7-GMR-8-1`). A tela deve dizer que achou **26 poços** (sem aviso de "não reconheceu") e a coluna `formação` vira o reservatório.
+- [ ] **Mapa 2D com curvas de nível** (quadro novo, abaixo da validação): abra com um bloco montado. Aparece o mapa do primeiro
+      topo, com cores, curvas rotuladas, poços brancos e eixos em metros.
+- [ ] Troque o **mapa** (topo, base, espessura, terreno), o **intervalo das curvas** (ex.: 15), a **paleta** e **inverter as cores**:
+      o desenho muda na hora. Marcado "profundidade" + "inverter as cores" + viridis dá o estilo do seu modelo à mão.
+- [ ] Marque **contada da mesa rotativa**: o mapa 2A do Guamaré deve ir de ~572 a ~688 m, como o seu modelo à mão.
+- [ ] Desligue **poços**, **cores de fundo** e **curvas**; ligue **nomes dos poços**. Rotular "2" mostra um rótulo a cada duas curvas.
+- [ ] **Salvar SVG, PNG e PDF**: os três arquivos saem em `exportacoes/blocos/` e abrem certo.
+- [ ] Com o bloco de zonas do Guamaré (tabela importada), compare o mapa do topo do reservatório 2A com a figura do seu modelo.
+- [ ] Na linha `7-GMR-18-9` a coluna `formação` está vazia (o `O` do fluido ficou no lugar): corrija no CSV antes de importar.
+
 ## 0.55 — zonas produtoras (net pay) no bloco 3D
 
 Use o **1-BRSA-1304-BA** (tem canhoneado, teste e análise de perfis lidos) e, para o Guamaré, os poços que você baixar.

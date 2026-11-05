@@ -153,11 +153,20 @@ def _subamostrar(itens: list, n: int) -> list:
 
 
 # ===================================================================== dados
-def pocos_com_topos(banco: Banco, bacia: str | None = None) -> list[dict]:
-    """Poços com coordenadas no cadastro e topos litoestratigráficos: do AGP e, desde a 0.45, das outras fontes."""
+def lista_de_bacias(bacia) -> list[str]:
+    """Uma bacia (texto), várias (lista) ou nenhuma: sempre uma lista (0.56: o bloco aceita várias bacias, ex.: SEAL)."""
+    if not bacia:
+        return []
+    return [bacia] if isinstance(bacia, str) else [b for b in dict.fromkeys(bacia) if b]
+
+
+def pocos_com_topos(banco: Banco, bacia: str | list[str] | None = None) -> list[dict]:
+    """Poços com coordenadas no cadastro e topos litoestratigráficos: do AGP e, desde a 0.45, das outras fontes.
+    `bacia`: uma bacia, várias ou nenhuma (todas)."""
+    bacias = lista_de_bacias(bacia)
     cond, args = "", []
-    if bacia:
-        cond, args = "AND u.bacia = ?", [bacia]
+    if bacias:
+        cond, args = f"AND u.bacia IN ({','.join('?' * len(bacias))})", list(bacias)
     with banco.conexao() as c:
         saida = [dict(r) for r in c.execute(
             f"""SELECT u.poco_id AS id, count(DISTINCT u.sigla) AS n_unidades, p.lat, p.lon, p.campo,
@@ -172,8 +181,9 @@ def pocos_com_topos(banco: Banco, bacia: str | None = None) -> list[dict]:
         for pid in outros:
             q = "SELECT id, lat, lon, campo, bacia FROM pocos WHERE id = ? AND lat IS NOT NULL"
             r = c.execute(q, (pid,)).fetchone()
-            if r is None or (bacia and (r["bacia"] or "") != bacia
-                             and not c.execute("SELECT 1 FROM reate WHERE poco_id = ? AND bacia = ?", (pid, bacia)).fetchone()):
+            if r is None or (bacias and (r["bacia"] or "") not in bacias
+                             and not c.execute(f"SELECT 1 FROM reate WHERE poco_id = ? AND bacia IN ({','.join('?' * len(bacias))})",
+                                               [pid, *bacias]).fetchone()):
                 continue
             saida.append({"id": r["id"], "n_unidades": None, "lat": r["lat"], "lon": r["lon"], "campo": r["campo"],
                           "siglas": ""})

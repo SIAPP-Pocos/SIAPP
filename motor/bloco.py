@@ -250,7 +250,7 @@ def distancia_mais_proximo(pts, gx, gy) -> tuple[np.ndarray, np.ndarray]:
 
 
 # =================================================================== dados
-def pocos_disponiveis(banco: Banco, bacia: str | None = None) -> list[dict]:
+def pocos_disponiveis(banco: Banco, bacia: str | list[str] | None = None) -> list[dict]:
     return msc.pocos_com_topos(banco, bacia)
 
 
@@ -264,12 +264,12 @@ def campos(banco: Banco) -> list[dict]:
 
 
 def selecionar(banco: Banco, *, modo: str, campo: str = "", poco: str = "", raio_km: float = 5.0,
-               bacia: str | None = None) -> list[str]:
-    """Ids dos poços com topos: todos (da bacia), de um campo ou num raio em torno de um poço."""
+               bacia: str | list[str] | None = None) -> list[str]:
+    """Ids dos poços com topos: todos (de uma ou mais bacias), de um campo ou num raio em torno de um poço."""
     todos = msc.pocos_com_topos(banco, bacia)
     if modo == "todos":
-        if not bacia:
-            raise ErroBloco("Escolha a bacia.")
+        if not msc.lista_de_bacias(bacia):
+            raise ErroBloco("Marque ao menos uma bacia.")
         return [p["id"] for p in todos]
     if modo == "campo":
         return [p["id"] for p in todos if (p["campo"] or "").upper() == campo.upper()]
