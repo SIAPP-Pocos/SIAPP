@@ -98,3 +98,8 @@ As preferências (cores, atalhos, arranjo, lista de projetos) são do computador
 `ambiente_teste\preferencias.json` para todos os projetos.
 
 Ajuda › **Novidades desta versão** mostra as três últimas versões do `CHANGELOG.md`.
+
+## Largura da barra lateral (0.59)
+
+Arraste a borda direita de qualquer barra lateral (o cursor vira ↔) para alargar ou estreitar, de 240 a 720 px. Fica
+guardado por aba (preferência `larguras`); dois cliques na borda voltam ao padrão.

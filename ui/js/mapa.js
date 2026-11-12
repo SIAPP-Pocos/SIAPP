@@ -229,6 +229,16 @@ async function destacarPocos(nomes, cor) {
   return r.pocos;
 }
 
+// "Só os destacados" (0.59): esconde a camada dos outros poços; a dos destaques continua
+function soDestacados(ligar) {
+  $("dq-so").setAttribute("aria-pressed", String(ligar));
+  $("dq-so").classList.toggle("ativo", ligar);
+  $("dq-so").textContent = ligar ? "Mostrar todos" : "Só os destacados";
+  if (!mapa || !camadaPocos) return;
+  if (ligar) mapa.removeLayer(camadaPocos);
+  else if (!mapa.hasLayer(camadaPocos)) camadaPocos.addTo(mapa);
+}
+
 function enquadrarDestaques() {
   const pts = [...destaques.values()].map((d) => [d.lat, d.lon]);
   if (pts.length === 1) mapa.setView(pts[0], Math.max(mapa.getZoom(), 12));
@@ -633,7 +643,8 @@ function ligarMapa() {
     $("dq-poco").value = "";
   };
   $("dq-enquadrar").onclick = enquadrarDestaques;
-  $("dq-limpar").onclick = () => { destaques.clear(); desenharDestaques(); };
+  $("dq-limpar").onclick = () => { destaques.clear(); soDestacados(false); desenharDestaques(); };
+  $("dq-so").onclick = () => soDestacados($("dq-so").getAttribute("aria-pressed") !== "true");
   $("dq-dados").onclick = () => procurarDadosDosPocos([...destaques.keys()], `os ${destaques.size} poço(s) destacado(s) no mapa`);
   $("btn-mapa-linha").onclick = iniciarLinhaMapa;
   $("ml-fechar").onclick = fecharLinhaMapa;

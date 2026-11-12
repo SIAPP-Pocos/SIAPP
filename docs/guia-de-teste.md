@@ -132,6 +132,38 @@ Precisa de internet. Comece por uma categoria pequena para ver o tempo.
 - [ ] Sem intervalo marcado, **Calcular** explica que precisa de um intervalo-alvo.
 - [ ] Repetir no `5PX__0011__RN_5PX__0011__RN.tif` (DLIS de 2020).
 
+## 0.59 — Modelo 3D em receita, OCR sem travar e pedidos pequenos
+
+**Modelo 3D**
+- [ ] A lateral mostra 1 Poços, 2 Método, 3 Unidades e grade, cada um com uma linha do que está escolhido e "Alterar".
+      **Montar o bloco** fica no pé da lateral, sempre à vista.
+- [ ] Mude o método ou o número de células: a linha do passo muda na hora.
+- [ ] Monte um bloco: o botão vira **Montar de novo**. Sobre o visor: **Visualizar**, **Validar** (deixar um poço de fora,
+      comparar métodos, prognóstico), **Mapa 2D** (abre o mapa sozinho) e **Exportar** (figura, PNG, CSV, SIG, .DATA).
+
+**Janela e barras**
+- [ ] Arraste a borda direita de qualquer barra lateral: ela alarga. Feche e abra o SIAPP: a largura continua. Dois cliques
+      na borda: volta ao padrão.
+- [ ] Feche o SIAPP com a janela dividida e abra de novo: abre no arranjo padrão (Configurações › "Lembrar o arranjo" liga
+      de volta).
+
+**OCR**
+- [ ] **Documentos › Processar pendentes** num PDF escaneado de muitas páginas. Enquanto roda, troque de aba, abra a ficha
+      de um poço, role a lista: a janela responde (antes: "Não respondendo").
+- [ ] **Cancelar** no rodapé: para na hora. No Gerenciador de Tarefas, um segundo "Python" aparece durante o OCR e some
+      quando a fila termina.
+- [ ] Com o levantamento rodando, o mapa e a ficha abrem sem esperar. Abrir o projeto fica mais rápido da segunda vez.
+
+**Pedidos pequenos**
+- [ ] Documentos: um PDF com marcadores mostra **Sumário (n)** ao lado das setas; escolher uma seção pula para a página.
+- [ ] Documentos: filtre por um poço e use **Reler os N do filtro**.
+- [ ] Documentos: numa página que você editou à mão, a legenda explica "texto revisado" e o texto tem uma barra ao lado.
+- [ ] Perfis: digite `gmr13` no filtro: só os arquivos desse poço ficam na lista.
+- [ ] Poços: destaque dois poços e clique **Só os destacados**: os outros somem; **Mostrar todos** volta.
+- [ ] Acervo › Buscar por tipo: preencha um campo e clique **Todos os tipos** › Procurar: aparecem todos os poços do campo
+      com algum dado.
+- [ ] Acervo › Produção da ANP: passe o mouse em "óleo in place" e "produzido até".
+
 ## 0.58 — projetos, módulos no Início e o atalho que se atualiza
 
 Esta é a última vez que você precisa do `git pull`: a partir dela, o atalho traz cada versão nova.

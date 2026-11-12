@@ -117,6 +117,19 @@ importar = inserir com outra origem. Um código só para os dois lados.
 | `escolhas` | a fonte escolhida pelo usuário quando várias trazem o mesmo dado (topo da unidade no poço) ([`topos.md`](topos.md)) |
 | `leituras`, `dados_poco` | documentos lidos por um leitor de dados do poço (RFP, RFCP…) e o que cada um trouxe, por profundidade; só leitura, refeito ao reler ([`formularios-anp.md`](formularios-anp.md)) |
 
+**Leituras sem fila (0.59).** As escritas passam uma de cada vez (`Banco.conexao()`, com trava). As consultas que a tela
+faz enquanto um trabalho longo grava (mapa, ficha, busca de poço, resumo do levantamento, Início) usam
+`Banco.leitura()`: conexão só de leitura, sem a trava; com o banco em WAL, elas não esperam o levantamento, os downloads
+ou o OCR terminarem de gravar.
+
+**Abertura (0.59).** A conferência do tipo de cada arquivo pelo conteúdo (`mp.tipo_arquivo`) roda inteira uma vez por
+versão da regra (`TIPO_CONFERIDO` em `ponte/api.py`, guardada em `meta`); nas aberturas seguintes, só nos arquivos cujo
+tamanho mudou.
+
+**Testes de interface (0.59).** Como no pywebview, o que o motor manda para a página durante uma chamada roda antes de a
+resposta chegar (`tests/interface_util.py`). Foi essa diferença de ordem que escondeu o erro da aba que não recarregava ao
+abrir o projeto.
+
 Migrações numeradas (`motor/banco.py:MIGRACOES`) atualizam o banco de quem já usa o
 SIAPP sem perder nada. Nunca se edita uma migração publicada: acrescenta-se outra.
 

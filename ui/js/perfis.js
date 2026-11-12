@@ -38,9 +38,29 @@ async function carregarPerfis() {
     b.title = p.rel;
     b.onclick = () => abrirPerfil(p);
     const li = el("li");
+    li.dataset.chave = chaveBuscaPoco(`${p.poco || ""} ${p.nome}`);
     li.appendChild(b);
     ul.appendChild(li);
   }
+  filtrarPerfisPorPoco();
+}
+
+// Filtro da lista de arquivos (0.59): por poço ou nome, em qualquer grafia (7-GMR-0013 = gmr13)
+function chaveBuscaPoco(t) {
+  return String(t || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase()
+    .replace(/[^A-Z0-9 ]/g, "").replace(/(^|[^0-9])0+(?=[0-9])/g, "$1");
+}
+function filtrarPerfisPorPoco() {
+  const alvo = chaveBuscaPoco($("pf-poco-busca").value).replace(/ /g, "");
+  const itens = [...document.querySelectorAll("#lista-perfis > li")];
+  let n = 0;
+  for (const li of itens) {
+    const ok = !alvo || li.dataset.chave.replace(/ /g, "").includes(alvo);
+    li.hidden = !ok;
+    if (ok) n++;
+  }
+  $("pf-poco-n").hidden = !alvo;
+  $("pf-poco-n").textContent = n ? `${n} de ${itens.length} arquivo(s)` : "Nenhum arquivo desse poço.";
 }
 
 async function abrirPerfil(p) {
@@ -658,6 +678,7 @@ async function exportarCurvas(formato, botao) {
 
 function ligarPerfis() {
   ligarAvaliacao();
+  ligar("pf-poco-busca", "oninput", filtrarPerfisPorPoco);
   $("pf-padrao").onclick = async () => {
     const r = await chamar(null, "curvas_perfil", pf.rel);
     if (r.ok && r.inventario) { pf.selecao = r.padrao.slice(); desenharListaCurvas(); atualizarGrafico(); }

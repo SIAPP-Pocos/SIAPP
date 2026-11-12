@@ -141,6 +141,8 @@ def test_abrir_janela_destacada_e_devolver(api, monkeypatch):
 def test_reabrir_o_arranjo_e_fechar_tudo_com_a_principal(api, monkeypatch):
     criadas = _webview_com_janelas(monkeypatch, telas=[(0, 0, 1920, 1080)])
     api._janela.get_current_url = lambda: "http://127.0.0.1:5555/index.html"
+    assert api._preferencias().ler()["lembrar_arranjo"] is False      # 0.59: padrão desligado (reabre no padrão)
+    api.salvar_preferencias({"lembrar_arranjo": True})
     api.salvar_preferencias({"abertas": ["mapa", "perfis"],
                              "janelas": {"mapa": {"x": 100, "y": 80, "largura": 900, "altura": 650},
                                          "perfis": {"x": 4000, "y": 80, "largura": 900, "altura": 650}}})
@@ -235,3 +237,9 @@ def test_novidades_do_changelog(tmp_path):
     assert len(v) == 1 and v[0]["versao"] == "0.2.0" and v[0]["resumo"] == "Resumo da 0.2."
     assert v[0]["secoes"][0]["itens"] == ["Coisa nova com código e continuação."]
     assert [s["titulo"] for s in v[0]["secoes"]] == ["Adicionado", "Corrigido"]
+
+
+def test_larguras_da_lateral():
+    p = mpf.normalizar({"larguras": {"docs": 420, "bloco": 9999, "x y": 300, "secao": True, "mapa": 260.6}})
+    assert p["larguras"] == {"docs": 420, "mapa": 260}
+    assert mpf.mesclar(p, {"larguras": {"docs": None}})["larguras"] == {"mapa": 260}

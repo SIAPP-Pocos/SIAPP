@@ -38,6 +38,10 @@ from .tipos import TiposAPI
 from .vocabulario import VocabularioAPI
 
 
+# versão da regra de tipo pelo conteúdo (mp.tipo_arquivo); mudou a regra, sobe aqui e a abertura reconfere tudo
+TIPO_CONFERIDO = "1"
+
+
 class API(BaseAPI, JanelasAPI, PocosAPI, CatalogoAPI, DocumentosAPI, VocabularioAPI, ComunidadeAPI,
           FatosAPI, PerfisAPI, LevantamentoAPI, SecaoAPI, FerramentasAPI,
           BlocoAPI, ExternosAPI, TiposAPI, ArquivosAPI, ProjetosAPI):
@@ -187,13 +191,21 @@ class API(BaseAPI, JanelasAPI, PocosAPI, CatalogoAPI, DocumentosAPI, Vocabulario
         bruto/) entram na tabela arquivos, com hash. Roda a cada abertura, mas só
         calcula o hash do que ainda não está no banco."""
         conhecidos = {}
+        # o tipo passou a vir do conteúdo (0.11.1): DLIS com extensão .tif vira perfil. A conferência completa
+        # roda uma vez por versão da regra; depois, só nos arquivos cujo tamanho mudou (0.59: abertura rápida)
+        completa = self._banco.meta("tipo_conferido", "") != TIPO_CONFERIDO
         for a in self._banco.arquivos():
             conhecidos[a["rel"]] = a
             caminho = os.path.join(self._projeto.pasta, a["rel"])
-            # o tipo passou a vir do conteúdo (0.11.1): DLIS com extensão .tif vira perfil
-            if os.path.isfile(caminho) and (t := mp.tipo_arquivo(caminho)) != a["tipo"]:
+            if not os.path.isfile(caminho):
+                continue
+            if not completa and os.path.getsize(caminho) == (a["bytes"] or 0):
+                continue
+            if (t := mp.tipo_arquivo(caminho)) != a["tipo"]:
                 self._banco.definir_tipo(a["rel"], t)
                 registro.log.info("tipo de %s corrigido pelo conteúdo: %s -> %s", a["rel"], a["tipo"], t)
+        if completa:
+            self._banco.definir_meta("tipo_conferido", TIPO_CONFERIDO)
         origem = {mp.rel_padrao(v["arquivo_local"]): v
                   for v in self._projeto.registro_downloads().values()}
         for raiz, _, nomes in os.walk(self._projeto.pasta_bruto):

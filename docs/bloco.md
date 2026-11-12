@@ -11,6 +11,22 @@ operadora registrou no AGP. Código: `motor/bloco.py` (modelo) e `ui/js/bloco3d.
 > resultado quantitativo continua sendo a seção (aba Seção) e a avaliação (aba Perfis).
 > (Especificação Funcional, M4.)
 
+## A tela em "receita" (0.59)
+
+A lateral do Modelo 3D é uma receita de três passos recolhidos, cada um com uma linha do que está escolhido e **Alterar**:
+
+1. **Poços**: quantos e de onde ("12 poço(s) · GUAMARÉ");
+2. **Método**: o método dos topos e a escala ("Krigagem · escala reservatório");
+3. **Unidades e grade**: formações, membros, grupos ou zonas produtoras, e o número de células.
+
+**Montar o bloco** (depois de montado, **Montar de novo**) e **Ler as trajetórias** ficam sempre à vista no pé da lateral;
+**Blocos anteriores** vem recolhido. As explicações longas ficam atrás de um "?".
+
+Sobre o visor, quatro abas: **Visualizar** (só o bloco e os controles da vista), **Validar** (deixar um poço de fora,
+comparar métodos, prognóstico num ponto), **Mapa 2D** (abre e desenha o mapa com curvas de nível) e **Exportar** (figura
+estilo artigo, PNG, CSV e as saídas para SIG, simulador, volumetria e .glb). Os modos (superfícies, bloco fechado) e as
+vistas (oblíqua, de cima, do sul, do oeste) ficam sempre à vista.
+
 ## Escolha dos poços
 
 Só entram poços com topos litoestratigráficos no AGP lido e coordenadas no cadastro da ANP:

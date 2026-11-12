@@ -351,6 +351,7 @@ function mostrarBloco(r) {
   bl.autor = r.autor || "";
   $("bl-vazio").hidden = true;
   $("bl-painel").hidden = false;
+  resumirPassosBloco();
   $("bl-exportado").textContent = "";
   const m = r.modelo;
   limpar($("bl-unidades"));          // bloco novo: todas as unidades ligadas
@@ -1127,7 +1128,40 @@ async function lerDirecionaisBloco() {
                    "Monte o bloco de novo para usar.", "ok");
 }
 
+// ---------------------------------------------------------------- receita (0.59)
+// Os passos da lateral ficam recolhidos, cada um com uma linha do que está escolhido; "Montar" fica no pé.
+function textoOpcao(id) {
+  const s = $(id);
+  return s && s.selectedOptions[0] ? s.selectedOptions[0].textContent.trim() : "";
+}
+function resumirPassosBloco() {
+  const n = bl.pocos.length;
+  const modo = $("bl-modo").value;
+  const campo = modo === "campo" ? textoOpcao("bl-campo").replace(/\s*\(.*\)$/, "") : "";
+  $("bl-resumo-1").textContent = (n ? `${n} poço(s)` : "nenhum ainda") + (campo ? ` · ${campo}` : "");
+  const metodo = textoOpcao("bl-m-estrutura").split("(")[0].trim() || "—";
+  $("bl-resumo-2").textContent = `${metodo} · escala ${textoOpcao("bl-escala").split("(")[0].trim()}`;
+  $("bl-resumo-3").textContent = `${textoOpcao("bl-nivel").split("(")[0].trim()} · ${$("bl-celulas").value || "160"} células`;
+  $("bl-montar").textContent = bl.ultimo ? "Montar de novo" : "Montar o bloco";
+}
+
+// Abas do visor: Visualizar (só o bloco), Validar, Mapa 2D e Exportar mostram cada uma o seu grupo.
+function abaBloco(nome) {
+  for (const b of document.querySelectorAll(".bl-aba")) {
+    b.classList.toggle("ativa", b.dataset.blAba === nome);
+    b.setAttribute("aria-selected", String(b.dataset.blAba === nome));
+  }
+  for (const e of document.querySelectorAll("[data-no-bl-aba]")) e.classList.toggle("fora-da-aba", e.dataset.noBlAba !== nome);
+  if (nome === "mapa2d" && !$("bl-m2d").open) $("bl-m2d").open = true;          // abrir já carrega
+  if (nome === "exportar" && !$("bl-saidas").open) $("bl-saidas").open = true;
+}
+
 function ligarBloco() {
+  for (const b of document.querySelectorAll(".bl-aba")) b.onclick = () => abaBloco(b.dataset.blAba);
+  abaBloco("ver");
+  for (const tipo of ["change", "input"]) $("vista-bloco").addEventListener(tipo, () => resumirPassosBloco(), true);
+  new MutationObserver(() => resumirPassosBloco()).observe($("bl-n"), { childList: true, characterData: true, subtree: true });
+  resumirPassosBloco();
   ligar("bl-direcionais", "onclick", lerDirecionaisBloco);
   ligar("bl-modo", "onchange", () => { trocarModoBloco(); campoEscolhidoBloco(); });
   ligar("bl-campo", "onchange", campoEscolhidoBloco);

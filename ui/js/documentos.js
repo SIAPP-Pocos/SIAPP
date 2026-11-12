@@ -122,6 +122,8 @@ function desenharDocs() {
   const filtrando = filtroAtivo();
   $("df-resumo").textContent = filtrando ? `${lista.length} de ${docs.length} documento(s) no filtro.` : "";
   $("df-limpar").hidden = !filtrando;
+  $("btn-reler-filtro").hidden = !filtrando || !lista.length;
+  $("btn-reler-filtro").textContent = `Reler os ${lista.length} do filtro`;
   atualizarEscopo();
   if (!lista.length) {
     if (docs.length) caixa.appendChild(el("p", "ajuda", "Nenhum documento neste filtro."));
@@ -193,6 +195,8 @@ function atualizarEscopo() {
 }
 
 function ligarDocumentos() {
+  ligar("btn-reler-filtro", "onclick", relerFiltro);
+  ligar("pg-sumario", "onchange", () => { const v = Number($("pg-sumario").value); if (v && docAtual) abrirPagina(docAtual.rel, v); });
   $("df-texto").oninput = desenharDocs;
   $("df-bacia").onchange = () => { preencherFiltrosDocs(); desenharDocs(); };
   for (const id of ["df-campo", "df-situacao", "df-agrupar"]) $(id).onchange = desenharDocs;
@@ -226,6 +230,14 @@ async function processarEste() {
   if (!r.ok) return;
   $("pg-processar").disabled = true;
   status("Documento na fila de processamento. O texto aparece aqui quando terminar.", "trab");
+}
+
+// Reler os documentos do filtro, inclusive os já lidos (0.59): ex.: aplicar a segunda leitura (0.53) a uma pasta
+async function relerFiltro() {
+  const rels = docsFiltrados().map((d) => d.rel);
+  if (!rels.length) return;
+  const r = await chamar($("btn-reler-filtro"), "processar_documentos", rels, segundaPassadaOcr());
+  if (r.ok) status(`${r.enfileirados} documento(s) na fila para ler de novo.`, "trab");
 }
 
 async function processarPendentes() {
@@ -362,6 +374,7 @@ async function abrirPagina(rel, pagina, termo) {
   $("pg-processar").disabled = false;
   $("pg-texto-box").hidden = !r.processado;
   $("pg-img").src = r.imagem;
+  desenharSumario(r);
   iniciarTranscricao(r);
   fecharEditor();
   fecharEdicaoPagina();
@@ -370,6 +383,29 @@ async function abrirPagina(rel, pagina, termo) {
   document.querySelectorAll("#lista-docs button").forEach((b) => b.classList.toggle("ativo", b.dataset.rel === r.rel));
   marcarAchado(r.rel, r.pagina);
   atualizarEscopo();
+}
+
+// Sumário do PDF (0.59): os marcadores do arquivo, quando ele tem, para pular para a seção.
+function desenharSumario(r) {
+  const s = $("pg-sumario");
+  const itens = r.sumario || [];
+  s.hidden = !itens.length;
+  if (s.dataset.rel === r.rel && s.options.length) { marcarSumario(r.pagina); return; }
+  s.dataset.rel = r.rel;
+  limpar(s);
+  if (!itens.length) return;
+  s.appendChild(new Option(`Sumário (${itens.length})`, ""));
+  for (const it of itens) {
+    const o = new Option(`${"\u2003".repeat(Math.max(0, it.nivel - 1))}${it.titulo} · p. ${it.pagina}`, String(it.pagina));
+    s.appendChild(o);
+  }
+  marcarSumario(r.pagina);
+}
+function marcarSumario(pagina) {
+  const s = $("pg-sumario");
+  let melhor = "";
+  for (const o of s.options) if (o.value && Number(o.value) <= pagina) melhor = o.value;
+  s.value = melhor;
 }
 
 function fecharPagina() {
@@ -406,6 +442,7 @@ function desenharTextoPagina() {
   $("pg-ver-final").classList.toggle("ativo", verTexto === "final");
   $("pg-ver-ocr").classList.toggle("ativo", verTexto === "ocr");
   $("pg-ver-final").textContent = r.modo_texto === "revisado" ? "Texto revisado" : "Texto arrumado";
+  $("pg-texto").classList.toggle("revisado", r.modo_texto === "revisado");   // 0.59: a página editada à mão fica marcada
   const corpo = $("pg-texto");
   corpo.classList.toggle("ocr", verTexto === "ocr");
   if (verTexto === "ocr") {

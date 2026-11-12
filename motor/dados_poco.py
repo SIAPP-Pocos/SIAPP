@@ -232,7 +232,7 @@ def gerais(banco: Banco, poco_id: str) -> dict:
 
 
 def resumo(banco: Banco) -> dict:
-    with banco.conexao() as c:
+    with banco.leitura() as c:
         por_doc = {r[0] or "erro": r[1] for r in c.execute(
             "SELECT documento, count(*) FROM leituras GROUP BY documento")}
         por_tipo = {r[0]: r[1] for r in c.execute("SELECT tipo, count(*) FROM dados_poco GROUP BY tipo")}

@@ -32,7 +32,7 @@ PADRAO = {
     "tema": "claro",
     "fonte": "M",
     "abrir_ao_iniciar": True,
-    "lembrar_arranjo": True,
+    "lembrar_arranjo": False,  # 0.59: reabre no arranjo padrão (pedido do Ruan); ligar em Configurações
     "recolhidas": {},          # {aba: True} barras laterais recolhidas
     "layout": {"ativa": "projeto", "dividida": False, "direita": "mapa", "razao": 0.5,
                "sub_dados": "catalogo", "sub_interp": "secao", "sub_com": "contribuir"},
@@ -45,6 +45,7 @@ PADRAO = {
     "projeto_atual": "",       # pasta do projeto que abre ao iniciar ("" = ambiente_teste)
     "projetos": [],            # pastas de projeto conhecidas, além da principal e das de projetos/
     "atualizar_ao_abrir": True,  # o atalho traz a versão nova do GitHub antes de abrir (lançador)
+    "larguras": {},            # {vista: px} largura da barra lateral escolhida arrastando a borda
 }
 
 FORMAS_MARCADOR = ("esfera", "cubo", "losango", "cone", "cilindro", "nenhum")
@@ -173,6 +174,10 @@ def normalizar(d) -> dict:
         if ap:
             p["bloco"]["aparencia"] = ap
     p["atalhos"] = _atalhos(d.get("atalhos"))
+    if isinstance(d.get("larguras"), dict):
+        p["larguras"] = {k: int(v) for k, v in list(d["larguras"].items())[:20]
+                         if isinstance(k, str) and k.isalpha() and len(k) <= 20
+                         and isinstance(v, (int, float)) and not isinstance(v, bool) and 240 <= v <= 720}
     if isinstance(d.get("projeto_atual"), str) and len(d["projeto_atual"]) < 500:
         p["projeto_atual"] = d["projeto_atual"]
     if isinstance(d.get("projetos"), list):
@@ -190,9 +195,9 @@ def mesclar(atual: dict, mudancas) -> dict:
     if not isinstance(mudancas, dict):
         return normalizar(novo)
     for k, v in mudancas.items():
-        if k in ("layout", "janelas", "recolhidas", "bloco", "atalhos", "avisos_vistos") and isinstance(v, dict) and isinstance(novo.get(k), dict):
+        if k in ("layout", "janelas", "recolhidas", "bloco", "atalhos", "avisos_vistos", "larguras") and isinstance(v, dict) and isinstance(novo.get(k), dict):
             novo[k] = {**novo[k], **v}
-            if k in ("atalhos", "avisos_vistos"):          # None tira a chave (volta ao padrão)
+            if k in ("atalhos", "avisos_vistos", "larguras"):          # None tira a chave (volta ao padrão)
                 novo[k] = {a: x for a, x in novo[k].items() if x is not None}
         else:
             novo[k] = v

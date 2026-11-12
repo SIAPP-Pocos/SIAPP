@@ -305,6 +305,17 @@ class Banco:
             finally:
                 c.close()
 
+    @contextmanager
+    def leitura(self):
+        """Conexão só de leitura, sem a trava das escritas (0.59): com o banco em WAL, a tela lê enquanto o
+        levantamento, os downloads ou o OCR gravam, sem esperar a vez. Qualquer escrita nela dá erro."""
+        c = sqlite3.connect(f"file:{self.caminho}?mode=ro", uri=True, timeout=30)
+        c.row_factory = sqlite3.Row
+        try:
+            yield c
+        finally:
+            c.close()
+
     # ------------------------------------------------------------------ meta
     def meta(self, chave: str, padrao=None, c=None):
         if c is None:

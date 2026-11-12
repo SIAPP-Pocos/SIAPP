@@ -470,7 +470,7 @@ class Levantamento:
 
 # ================================================================== resumo
 def resumo(banco: Banco, bacia: str) -> dict:
-    with banco.conexao() as c:
+    with banco.leitura() as c:
         pocos = [dict(r) for r in c.execute("SELECT * FROM acervo_pocos WHERE bacia = ?", (bacia,))]
         arqs = c.execute("""SELECT ext, formato, envelope, verificado, count(*) AS n, sum(tamanho) AS b
                             FROM acervo_arquivos WHERE bacia = ? AND candidato = 1

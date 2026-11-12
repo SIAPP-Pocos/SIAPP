@@ -107,7 +107,7 @@ class ProjetosAPI:
         b = self._banco
 
         def um(sql, args=()):
-            with b.conexao() as c:
+            with b.leitura() as c:
                 r = c.execute(sql, args).fetchone()
             return (r[0] if r and r[0] is not None else 0) if r else 0
 
@@ -137,5 +137,5 @@ class ProjetosAPI:
         }
 
     def _consultar(self, sql: str, args=()):
-        with self._banco.conexao() as c:
+        with self._banco.leitura() as c:
             return c.execute(sql, args).fetchall()

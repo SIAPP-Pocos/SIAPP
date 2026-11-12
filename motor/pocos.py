@@ -244,7 +244,7 @@ def buscar(banco: Banco, texto: str, limite: int = 10) -> list[dict]:
             achados[pid] = {"id": pid, "bacia": bacia or "", "campo": campo or "", "como": como,
                             "_nivel": nivel}
 
-    with banco.conexao() as c:
+    with banco.leitura() as c:
         for r in c.execute("SELECT id, bacia, campo FROM pocos"):
             anotar(r[0], r[0], r[1], r[2])
         for r in c.execute("""SELECT a.chave, a.poco_id, p.bacia, p.campo FROM apelidos a
@@ -406,7 +406,7 @@ def pocos_mapa(banco: Banco, *, bacia: str = "", texto: str = "", terra_mar: str
                      ac.situacao AS acervo, ac.familias AS familias
               FROM pocos p LEFT JOIN ac ON ac.poco_id = p.id
               WHERE {' AND '.join(cond)} LIMIT ?"""
-    with banco.conexao() as c:
+    with banco.leitura() as c:
         linhas = c.execute(sql, [*args, limite + 1]).fetchall()
     colunas = (*_CAMPOS_MAPA, "reate", "baixados", "fatos", "acervo", "familias")
     return {"colunas": colunas, "linhas": [list(r) for r in linhas[:limite]],
@@ -414,7 +414,7 @@ def pocos_mapa(banco: Banco, *, bacia: str = "", texto: str = "", terra_mar: str
 
 
 def ficha(banco: Banco, poco_id: str) -> dict | None:
-    with banco.conexao() as c:
+    with banco.leitura() as c:
         p = c.execute("SELECT * FROM pocos WHERE id = ?", (poco_id,)).fetchone()
         reate = [dict(r) for r in c.execute(
             "SELECT * FROM reate WHERE poco_id = ? ORDER BY bacia, categoria", (poco_id,))]

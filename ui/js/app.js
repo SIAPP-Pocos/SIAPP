@@ -67,6 +67,7 @@ async function iniciar() {
   for (const b of document.querySelectorAll("[data-ir]")) b.onclick = () => trocarAba(b.dataset.ir);
   ligarJanelas();
   ligarInterface();
+  ligarLarguraLateral();
   ligarInicio();
 
   // projeto
@@ -136,6 +137,7 @@ async function iniciar() {
   // preferências (cores, arranjo) antes de mostrar a primeira aba
   await carregarPreferencias();
   atualizarTeclasVisiveis();
+  aplicarLarguras();
   if (typeof preencherAparencia === "function") preencherAparencia();
   const est = await chamar(null, "estado");
   if (est.ok && est.projeto_aberto) {

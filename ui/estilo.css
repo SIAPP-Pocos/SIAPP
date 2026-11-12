@@ -1555,3 +1555,33 @@ details.avancado > .etapa { border-bottom: 0; padding-top: 0; }
 .novidades h2 { font: 700 15px var(--serif); margin: 14px 0 4px; }
 .novidades h3 { font: 600 11.5px var(--sans); letter-spacing: .06em; text-transform: uppercase; color: var(--suave); margin: 10px 0 2px; }
 .novidades ul { margin: 2px 0 6px; }
+
+/* ================================================================ Modelo 3D em receita (0.59) */
+details.passo { border-bottom: 1px solid var(--linha); }
+details.passo > summary { display: flex; align-items: baseline; gap: 6px; padding: 12px 0; cursor: pointer; list-style: none;
+  font: 600 14px var(--sans); color: var(--tinta); }
+details.passo > summary::-webkit-details-marker { display: none; }
+details.passo > summary::after { content: "Alterar"; margin-left: auto; font: 500 12px var(--sans); color: var(--destaque);
+  white-space: nowrap; }
+details.passo[open] > summary::after { content: "Fechar"; color: var(--suave); }
+details.passo > summary .bl-passo { flex: none; align-self: center; }
+.passo-nome { flex: none; }
+.passo-resumo { min-width: 0; color: var(--suave); font-weight: 400; font-size: 12.5px; overflow: hidden; text-overflow: ellipsis;
+  white-space: nowrap; }
+details.passo > .etapa { border-bottom: 0; padding-top: 0; }
+details.passo > .etapa > h2:first-child { font-size: 12px; color: var(--suave); text-transform: uppercase; letter-spacing: .05em; }
+.bl-abas { display: flex; gap: 2px; border-bottom: 1px solid var(--linha); margin-bottom: 10px; }
+.bl-aba { border: 0; border-bottom: 2px solid transparent; background: none; padding: 8px 14px; cursor: pointer; color: var(--suave);
+  font: 600 13px var(--sans); }
+.bl-aba:hover { color: var(--tinta); }
+.bl-aba.ativa { color: var(--destaque); border-bottom-color: var(--destaque); }
+.fora-da-aba { display: none !important; }
+
+/* barra lateral com largura ajustável: arraste a borda direita (dois cliques volta ao padrão) */
+.lateral.na-borda, .lateral.arrastando { cursor: col-resize; }
+.lateral.arrastando { user-select: none; }
+body.arrastando-lateral, body.arrastando-lateral * { cursor: col-resize !important; user-select: none !important; }
+
+/* 0.59: rótulo com explicação ao passar o mouse */
+th.com-dica { text-decoration: underline dotted; text-underline-offset: 3px; cursor: help; }
+.pg-texto-corpo.revisado { border-left: 3px solid var(--destaque); padding-left: 10px; }

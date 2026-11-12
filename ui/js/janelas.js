@@ -80,6 +80,7 @@ function aplicarAparencia() {
 function preferenciasMudaram(p) {
   prefs = p;
   aplicarAparencia();
+  aplicarLarguras();
   if (!$("config").hidden) preencherConfig();
   if (typeof atualizarTeclasVisiveis === "function") atualizarTeclasVisiveis();
 }
@@ -280,6 +281,50 @@ function montarRecolher() {
     const rot = el("span", "rotulo-vertical", lat.dataset.titulo || "");
     rot.setAttribute("aria-hidden", "true");
     lat.prepend(rot);
+  }
+}
+
+// Largura da barra lateral (0.59): arraste a borda direita; dois cliques nela voltam ao padrão.
+const BORDA_LATERAL = 6;
+function aplicarLarguras() {
+  const larg = (prefs && prefs.larguras) || {};
+  for (const lat of document.querySelectorAll(".grade > .lateral")) {
+    const main = lat.parentElement;
+    const w = larg[main.id.slice(6)];
+    main.style.gridTemplateColumns = w ? `${w}px minmax(0, 1fr) auto` : "";
+  }
+}
+function ligarLarguraLateral() {
+  for (const lat of document.querySelectorAll(".grade > .lateral")) {
+    const main = lat.parentElement;
+    const k = main.id.slice(6);
+    const naBorda = (e) => e.clientX >= lat.getBoundingClientRect().right - BORDA_LATERAL;
+    lat.addEventListener("mousemove", (e) => lat.classList.toggle("na-borda", naBorda(e)));
+    lat.addEventListener("mouseleave", () => lat.classList.remove("na-borda"));
+    lat.addEventListener("dblclick", (e) => {
+      if (!naBorda(e)) return;
+      main.style.gridTemplateColumns = "";
+      guardarPreferencias({ larguras: { [k]: null } });
+    });
+    lat.addEventListener("mousedown", (e) => {
+      if (e.button !== 0 || !naBorda(e) || main.classList.contains("recolhida")) return;
+      e.preventDefault();
+      const x0 = e.clientX, w0 = lat.getBoundingClientRect().width;
+      let w = w0;
+      document.body.classList.add("arrastando-lateral");
+      const mover = (ev) => {
+        w = Math.round(Math.min(720, Math.max(240, w0 + ev.clientX - x0)));
+        main.style.gridTemplateColumns = `${w}px minmax(0, 1fr) auto`;
+      };
+      const soltar = () => {
+        document.removeEventListener("mousemove", mover);
+        document.removeEventListener("mouseup", soltar);
+        document.body.classList.remove("arrastando-lateral");
+        if (Math.abs(w - w0) > 2) guardarPreferencias({ larguras: { [k]: w } });
+      };
+      document.addEventListener("mousemove", mover);
+      document.addEventListener("mouseup", soltar);
+    });
   }
 }
 

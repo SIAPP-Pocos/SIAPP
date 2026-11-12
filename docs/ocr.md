@@ -13,6 +13,21 @@ _Como o SIAPP trata cada tipo de arquivo, com os testes em documentos reais e os
 > Esquemas de ferramentas (0.17) usam o mesmo OCR com o modelo **inglês "fast"**
 > (`eng.traineddata`, ~4 MB): ver [`ferramentas.md`](ferramentas.md).
 
+## O OCR roda num processo à parte (0.59)
+
+O Tesseract, chamado pelo PyMuPDF, não solta a trava global do Python enquanto lê uma página. Rodando numa linha de execução
+do próprio app, ele parava a janela por segundos a cada página: o Windows mostrava "Não respondendo" (medido na revisão de
+11/11: até 5,4 s parado). Desde a 0.59, a fila de documentos (`motor/documentos.py`, `FilaDocumentos`) manda cada
+documento para um **processo trabalhador** (`motor/ocr_processo.py`):
+
+- é o mesmo Python do app (no Windows, o `pythonw.exe` da `.venv`, sem console), criado na primeira tarefa e reaproveitado
+  pela fila inteira; quando a fila esvazia, ele é encerrado e devolve a memória;
+- o progresso (página k de n) volta por uma fila; o texto da página volta pronto e é gravado pelo app, como antes;
+- **Cancelar** encerra o processo na hora, no meio da página; o próximo documento abre outro;
+- um documento com erro não para a fila; se o processo morrer (falta de memória), o documento sai como erro;
+- se o processo não puder ser criado, a fila lê na linha de execução, como antes (e registra no log). A variável de
+  ambiente `SIAPP_OCR_THREAD=1` força esse modo antigo.
+
 ## Visão geral
 
 | Tipo | O que é | Ver | Extrair | Usado em |

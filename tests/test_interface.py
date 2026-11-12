@@ -16,6 +16,8 @@ def ir(p, aba, sub=None):
     (ir(p, "interp", "bloco") clica em "6 Modelo 3D"); Viabilidade e Comunidade ficam no menu "Mais"."""
     if aba == "interp":
         p.click("#aba-modelo" if sub == "bloco" else "#aba-interp")
+        if sub == "bloco":       # 0.59: os passos vêm recolhidos (receita); os testes mexem em tudo
+            p.evaluate("document.querySelectorAll('#vista-bloco details.passo').forEach(d => d.open = true)")
         return
     if aba in ("viab", "comunidade"):
         p.click("#aba-mais")
@@ -25,6 +27,11 @@ def ir(p, aba, sub=None):
         if not item.is_visible():
             p.click(".sub-mais > .sub-btn")        # Cadastro, Produção, Camadas, Consolidados: em "Mais"
         item.click()
+
+
+def aba_bloco(p, nome):
+    """Aba sobre o visor do Modelo 3D: ver, validar, mapa2d ou exportar (0.59)."""
+    p.click(f"#bl-aba-{nome}")
 
 
 def menu_janela(p):
@@ -522,10 +529,12 @@ def test_aba_bloco_3d(janela, tmp_path):
     assert p.evaluate("window.BlocoVisor.estado().exagero") == 30
     p.click("#bl-unidades input[data-chave='ACU']")
     p.click("[data-vista3d='cima']")
+    aba_bloco(p, "exportar")
     p.click("#bl-png")
     janela.esperar("document.getElementById('bl-exportado').textContent.includes('.png')", 30)
     pngs = list((tmp_path / "ambiente_teste" / "exportacoes" / "blocos").glob("bloco_*.png"))
     assert len(pngs) == 1 and pngs[0].read_bytes()[:4] == b"\x89PNG" and pngs[0].stat().st_size > 20000
+    aba_bloco(p, "exportar")
     p.click("#bl-csv")
     janela.esperar("document.getElementById('bl-exportado').textContent.includes('_superficies.csv')")
     # reabrir do histórico
@@ -573,10 +582,12 @@ def test_bloco_3d_trilhas_propriedade_e_figura(janela, tmp_path):
     janela.esperar("window.BlocoVisor.estado().escala.includes('N/G')")
     p.select_option("#bl-trilha", "indicios")
     janela.esperar("window.BlocoVisor.estado().trilhas === 0")
+    aba_bloco(p, "exportar")
     p.click("[data-figura='pdf']")
     janela.esperar("document.getElementById('bl-exportado').textContent.includes('_figura.pdf')", 30)
     pdfs = list((tmp_path / "ambiente_teste" / "exportacoes" / "blocos").glob("*_figura.pdf"))
     assert len(pdfs) == 1 and pdfs[0].read_bytes()[:4] == b"%PDF"
+    aba_bloco(p, "exportar")
     p.click("[data-figura='svg']")
     janela.esperar("document.getElementById('bl-exportado').textContent.includes('_figura.svg')", 30)
     svg = next((tmp_path / "ambiente_teste" / "exportacoes" / "blocos").glob("*_figura.svg")).read_text("utf-8")
@@ -631,10 +642,12 @@ def test_bloco_fechado_corte_camadas_e_secao(janela, tmp_path):
     assert "Seção A–A′ por 3 poço(s)" in janela.status()
     p.click("#bl-unidades input[data-chave='ALAGAM']")
     assert "ALAGAM" not in p.evaluate("window.BlocoVisor.vistaAtual().camadas")
+    aba_bloco(p, "exportar")
     p.click("[data-figura='svg']")
     janela.esperar("document.getElementById('bl-exportado').textContent.includes('_figura.svg')", 30)
     svg = next((tmp_path / "ambiente_teste" / "exportacoes" / "blocos").glob("*_figura.svg")).read_text("utf-8")
     assert "Bloco fechado (AGP)" in svg and "Seção A–A′" in svg
+    aba_bloco(p, "exportar")
     p.click("#bl-png")
     janela.esperar("document.getElementById('bl-exportado').textContent.includes('.png')", 30)
     # de volta às superfícies
@@ -662,12 +675,14 @@ def test_bloco_validacao_e_prognostico(janela, tmp_path):
     janela.esperar("window.BlocoVisor && window.BlocoVisor.estado().superficies === 2", 30)
     assert p.locator("#bl-val").is_hidden() and p.locator("#bl-prog").is_hidden()
     # validação cruzada
+    aba_bloco(p, "validar")
     p.click("#bl-validar")
     janela.esperar("!document.getElementById('bl-val').hidden", 60)
     assert "previstos sem o próprio poço" in p.text_content("#bl-val-resumo")
     assert "Açu" in p.text_content("#bl-val-tabela") or "ACU" in p.text_content("#bl-val-tabela")
     assert p.locator("#bl-val-faixas tbody tr").count() >= 1
     # prognóstico pelo clique no bloco
+    aba_bloco(p, "validar")
     p.click("#bl-prog-clique")
     assert p.evaluate("window.BlocoVisor.estado().escolhendo")
     p.click("[data-vista3d='cima']")
@@ -679,6 +694,7 @@ def test_bloco_validacao_e_prognostico(janela, tmp_path):
     assert "Prognóstico em" in p.text_content("#bl-prog-titulo")
     assert "±" in p.text_content("#bl-prog-tabela") and "interpolado" in p.text_content("#bl-prog-tabela")
     # por coordenadas
+    aba_bloco(p, "validar")
     p.fill("#bl-prog-latlon", "-5,02; -36,98")
     p.press("#bl-prog-latlon", "Enter")
     janela.esperar("document.getElementById('bl-prog-titulo').textContent.includes('-5,02')", 30)
@@ -719,7 +735,7 @@ def test_bloco_saidas(janela, tmp_path):
     janela.esperar("document.getElementById('bl-n').textContent === '5'")
     p.click("#bl-montar")
     janela.esperar("window.BlocoVisor && window.BlocoVisor.estado().superficies === 2", 30)
-    p.click("#bl-saidas summary")
+    aba_bloco(p, "exportar")          # abre "Saídas do bloco" sozinho
     janela.esperar("document.querySelectorAll('#bl-vol-tabela tbody tr').length >= 2", 30)
     janela.esperar("document.getElementById('bl-ecl-previa').textContent.includes('células')", 30)
     assert p.locator("#bl-ecl-camadas input").count() >= 2
@@ -805,6 +821,7 @@ def test_bloco_escala_interpolacao_e_comparacao(janela, tmp_path):
     p.select_option("#bl-drape-unidade", "ACU")
     assert "sigma_m" in p.evaluate("[...document.getElementById('bl-drape-prop').options].map(o => o.value)")
     # comparar os métodos
+    aba_bloco(p, "validar")
     p.click("#bl-comparar")
     janela.esperar("!document.getElementById('bl-cmp').hidden", 120)
     assert "Errou menos" in p.text_content("#bl-cmp-resumo")
@@ -1338,9 +1355,10 @@ def test_bloco_aparencia_dos_pocos_vale_na_hora(janela, tmp_path):
                      "ntg": 0.6, "phi_media_pay": 0.2, "sw_media_pay": 0.35}])
     ir(p, "interp", "bloco")
     janela.esperar("document.getElementById('bl-disponiveis').textContent.includes('5 poço')")
-    # ordem do painel: poços → interpolação → grade → montar
-    passos = p.evaluate("[...document.querySelectorAll('#vista-bloco .lateral h2')].map(h => h.textContent.trim())")
-    assert [x[:1] for x in passos[:4]] == ["1", "2", "3", "4"] and "Montar" in passos[3]
+    # ordem da receita (0.59): poços → método → unidades e grade, e Montar no pé
+    passos = p.evaluate("[...document.querySelectorAll('#vista-bloco details.passo > summary')].map(h => h.textContent.trim())")
+    assert [x[:1] for x in passos[:3]] == ["1", "2", "3"] and passos[0].startswith("1Poços")
+    assert p.evaluate("document.querySelector('#vista-bloco .lateral').lastElementChild.querySelector('#bl-montar') !== null")
     p.click("#bl-selecionar")
     janela.esperar("document.getElementById('bl-n').textContent === '5'")
     p.click("#bl-montar")
@@ -1379,9 +1397,11 @@ def test_bloco_aparencia_dos_pocos_vale_na_hora(janela, tmp_path):
     p.click("#bl-montar")
     janela.esperar(f"bl.ultimo && bl.ultimo !== '{antes}'", 30)
     assert p.input_value("#bl-trilha") == "nenhuma"
+    aba_bloco(p, "validar")
     p.click("#bl-explica summary")
     assert "erro = previsto − AGP" in p.text_content("#bl-explica")
     # a figura usa a mesma aparência
+    aba_bloco(p, "exportar")
     p.click("[data-figura='svg']")
     janela.esperar("document.getElementById('bl-exportado').textContent.includes('_figura.svg')", 30)
     svg = next((tmp_path / "ambiente_teste" / "exportacoes" / "blocos").glob("*_figura.svg")).read_text("utf-8")
@@ -2162,7 +2182,7 @@ def test_bloco_mapa_2d_com_curvas_de_nivel(janela, tmp_path):
     janela.esperar("document.getElementById('bl-n').textContent === '5'")
     p.click("#bl-montar")
     janela.esperar("window.BlocoVisor && window.BlocoVisor.estado().superficies === 2", 30)
-    p.click("#bl-m2d summary")
+    aba_bloco(p, "mapa2d")            # abre o mapa 2D sozinho
     janela.esperar("document.querySelector('#bl-m2d-fig svg') !== null", 30)
     assert p.locator("#bl-m2d-mapa option").count() >= 2 and p.locator("#bl-m2d-fig circle").count() == 5
     assert "curvas a cada" in p.inner_text("#bl-m2d-info")
@@ -2378,4 +2398,90 @@ def test_novidades_e_configuracao_de_atualizar(janela):
     p.uncheck("#cfg-atualizar")
     janela.esperar("prefs.atualizar_ao_abrir === false")
     assert janela.api._preferencias().ler()["atualizar_ao_abrir"] is False
+    assert not janela.erros_js, janela.erros_js
+
+
+# ---------------------------------------------------------------- 0.59: Modelo 3D em receita, lateral ajustável
+def test_modelo_3d_em_receita(janela):
+    p = janela.page
+    abrir_projeto(janela)
+    p.click("#aba-modelo")
+    # só o passo 1 aberto; os outros com uma linha do que está escolhido; Montar sempre à vista
+    assert p.evaluate("[...document.querySelectorAll('#vista-bloco details.passo')].map(d => d.open)") == \
+        [True, False, False, False]
+    assert p.text_content("#bl-resumo-1") == "nenhum ainda"
+    assert "escala" in p.text_content("#bl-resumo-2") and "160 células" in p.text_content("#bl-resumo-3")
+    assert p.is_visible("#bl-montar") and p.is_hidden("#bl-m-estrutura")
+    p.click("#bl-passo-3 > summary")
+    p.fill("#bl-celulas", "90")
+    p.dispatch_event("#bl-celulas", "input")
+    assert "90 células" in p.text_content("#bl-resumo-3")
+    p.select_option("#bl-nivel", "zonas")
+    assert p.text_content("#bl-resumo-3").startswith("zonas produtoras")
+    assert not janela.erros_js, janela.erros_js
+
+
+def test_largura_da_barra_lateral(janela):
+    p = janela.page
+    abrir_projeto(janela)
+    p.click("#aba-docs")
+    lat = p.locator("#vista-docs > .lateral")
+    caixa = lat.bounding_box()
+    x, y = caixa["x"] + caixa["width"] - 2, caixa["y"] + 200
+    p.mouse.move(x, y)
+    p.mouse.down()
+    p.mouse.move(x + 120, y, steps=4)
+    p.mouse.up()
+    janela.esperar("prefs.larguras && prefs.larguras.docs > 400")
+    assert abs(lat.bounding_box()["width"] - (caixa["width"] + 120)) < 4
+    assert janela.api._preferencias().ler()["larguras"]["docs"] == prefs_larg(p)
+    p.mouse.dblclick(lat.bounding_box()["x"] + lat.bounding_box()["width"] - 2, y)
+    janela.esperar("!prefs.larguras.docs")
+    assert abs(lat.bounding_box()["width"] - caixa["width"]) < 4
+    assert not janela.erros_js, janela.erros_js
+
+
+def prefs_larg(p):
+    return p.evaluate("prefs.larguras.docs")
+
+
+# ---------------------------------------------------------------- 0.59: pedidos pequenos
+def test_filtro_de_poco_na_lista_de_perfis(janela, tmp_path):
+    from test_perfis import las_exemplo
+    p = janela.page
+    abrir_projeto(janela)
+    for poco, nome in (("7-GMR-13-RN", "7gmr13.las"), ("1-AURI-12-RN", "auri.las")):
+        pasta = tmp_path / "ambiente_teste" / "bruto" / "Potiguar" / poco / "Perfis"
+        pasta.mkdir(parents=True)
+        las_exemplo(pasta / nome)
+    janela.api._abrir_projeto(str(tmp_path / "ambiente_teste"))
+    p.click("#aba-perfis")
+    janela.esperar("document.querySelectorAll('#lista-perfis button').length === 2")
+    p.fill("#pf-poco-busca", "7-GMR-0013")
+    assert p.locator("#lista-perfis > li:not([hidden])").count() == 1
+    assert "1 de 2" in p.text_content("#pf-poco-n")
+    p.fill("#pf-poco-busca", "zzz")
+    assert p.locator("#lista-perfis > li:not([hidden])").count() == 0
+    p.fill("#pf-poco-busca", "")
+    assert p.locator("#lista-perfis > li:not([hidden])").count() == 2 and p.is_hidden("#pf-poco-n")
+    assert not janela.erros_js, janela.erros_js
+
+
+def test_so_os_destacados_e_arranjo_padrao(janela):
+    from test_pocos import csv_exemplo
+    p = janela.page
+    abrir_projeto(janela)
+    janela.api._importar_cadastro(csv_exemplo(), "anp:teste")
+    p.click("#aba-mapa")
+    janela.esperar("document.getElementById('mapa-resumo').textContent.includes('poço')")
+    p.fill("#dq-poco", "7-GMR-13-RN")
+    p.click("#dq-form button[type=submit]")
+    janela.esperar("!document.getElementById('dq-acoes').hidden")
+    p.click("#dq-so")
+    janela.esperar("!mapa.hasLayer(camadaPocos)")
+    assert p.text_content("#dq-so") == "Mostrar todos"
+    p.click("#dq-so")
+    janela.esperar("mapa.hasLayer(camadaPocos)")
+    assert janela.api._preferencias().ler()["lembrar_arranjo"] is False          # 0.59: reabre no padrão
+    assert p.is_hidden("#cm-importar-ti")
     assert not janela.erros_js, janela.erros_js

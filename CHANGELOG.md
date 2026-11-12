@@ -6,6 +6,35 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 
 ## [Não lançado]
 
+## [0.59.0] — 2026-11-12
+Modelo 3D em "receita", OCR sem travar a janela e os pedidos pequenos das anotações.
+### Alterado
+- **Modelo 3D**: os passos da lateral vêm recolhidos, cada um com uma linha do que está escolhido (poços, método e escala,
+  unidades e grade) e **Alterar**; **Montar o bloco** fica sempre à vista no pé da lateral, com **Ler as trajetórias**;
+  "Blocos anteriores" recolhido. Sobre o visor, abas **Visualizar**, **Validar**, **Mapa 2D** e **Exportar**, cada uma com
+  o seu grupo de botões e quadros (antes, tudo empilhado acima e abaixo do bloco).
+- **OCR num processo à parte**: o reconhecimento de texto roda em outro processo do mesmo Python do app (no Windows, sem
+  console). A janela continua respondendo enquanto os documentos são lidos ("Não respondendo" acabou) e **Cancelar** para
+  na hora, no meio da página. Se o processo não puder ser criado, lê como antes.
+- **Leituras sem fila**: o mapa, a ficha, a busca de poço, o resumo do levantamento e o Início leem o banco sem esperar o
+  levantamento, os downloads ou o OCR terminarem de gravar.
+- **Abertura mais rápida**: o tipo de cada arquivo baixado é conferido pelo conteúdo uma vez; depois, só nos arquivos que
+  mudaram (antes, toda abertura relia o começo de todos).
+- O SIAPP passa a **reabrir no arranjo padrão** (lembrar o arranjo das janelas vem desligado; liga em Configurações).
+- O botão "Importar terras indígenas" saiu da tela (o código fica).
+- Testes de interface com os eventos do motor na mesma ordem do pywebview (antes da resposta).
+### Adicionado
+- **Largura da barra lateral**: arraste a borda direita (240 a 720 px); fica guardada por aba. Dois cliques na borda voltam
+  ao padrão.
+- **Documentos**: **sumário do PDF** (os marcadores do arquivo, quando ele tem) para pular para a seção; **Reler os do
+  filtro** lê de novo os documentos filtrados, também os já lidos (ex.: aplicar a segunda leitura a uma pasta); a página
+  editada à mão aparece na legenda e com uma barra ao lado do texto.
+- **Perfis**: filtro da lista de arquivos por poço ou nome, em qualquer grafia (`7-GMR-0013` acha o 7-GMR-13-RN).
+- **Mapa**: **Só os destacados** esconde os outros poços.
+- **Buscar por tipo**: **Todos os tipos** (com o campo preenchido, é "tudo do campo") e **Nenhum**.
+- **Produção da ANP**: o que é cada número — soma do período, último mês, in place, produzido até — numa frase e ao passar
+  o mouse.
+
 ## [0.58.0] — 2026-11-12
 Projetos em pastas separadas, Início com o estado de cada módulo e o atalho que se atualiza sozinho.
 ### Adicionado

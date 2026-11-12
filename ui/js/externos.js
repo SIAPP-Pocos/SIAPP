@@ -45,10 +45,12 @@ const mes = (p) => (p ? `${p.slice(5, 7)}/${p.slice(0, 4)}` : "—");
 
 function tabelaPares(pares) {
   const t = document.createElement("table");
-  for (const [rot, val] of pares) {
+  for (const [rot, val, dica] of pares) {
     if (val == null || val === "—") continue;
     const tr = document.createElement("tr");
-    tr.append(el("th", "", rot), el("td", "", String(val)));
+    const th = el("th", dica ? "com-dica" : "", rot);
+    if (dica) th.title = dica;                       // 0.59: o que é cada número, ao passar o mouse
+    tr.append(th, el("td", "", String(val)));
     t.appendChild(tr);
   }
   return t;
@@ -70,8 +72,10 @@ function desenharResumoProducao(r) {
   }
   if (p) {
     box.appendChild(el("h4", "", `Produção por poço, ${mes(p.de)} a ${mes(p.ate)} (soma do período)`));
+    box.appendChild(el("p", "ajuda", "Soma, mês a mês, do que cada poço do campo declarou à ANP no período escolhido " +
+      "(dados abertos). Não é o acumulado desde o início do campo: esse está no Plano de Desenvolvimento, abaixo."));
     box.appendChild(tabelaPares([
-      ["poços com registro", n0(p.pocos)],
+      ["poços com registro", n0(p.pocos), "Poços do campo com ao menos um mês declarado no período"],
       ["óleo (m³)", n0(p.oleo_m3)], ["condensado (m³)", p.condensado_m3 ? n0(p.condensado_m3) : null],
       ["gás associado (mil m³)", n0(p.gas_assoc_mil_m3)],
       ["gás não associado (mil m³)", p.gas_nassoc_mil_m3 ? n0(p.gas_nassoc_mil_m3) : null],
@@ -85,6 +89,7 @@ function desenharResumoProducao(r) {
     const u = r.ultimo_mes;
     if (u) {
       box.appendChild(el("h4", "", `Último mês publicado: ${mes(u.periodo)}`));
+      box.appendChild(el("p", "ajuda", "O mês mais recente que a ANP publicou para o campo: um retrato de agora."));
       box.appendChild(tabelaPares([["poços produzindo", n0(u.produtores)], ["poços injetando", n0(u.injetores)],
         ["óleo (m³)", n0(u.oleo_m3)], ["gás (mil m³)", n1((u.gas_assoc_mil_m3 || 0) + (u.gas_nassoc_mil_m3 || 0))],
         ["água (m³)", n0(u.agua_m3)]]));
@@ -99,11 +104,16 @@ function desenharResumoProducao(r) {
     const vip = pd.in_place || {}, acu = pd.acumulada || {};
     const gas = (d) => d.gas_total_milhoes_m3 ?? ((d.gas_associado_milhoes_m3 || 0) + (d.gas_nao_associado_milhoes_m3 || 0) || null);
     box.appendChild(el("h4", "", `Plano de Desenvolvimento ${pd.ano || ""}${pd.fonte ? " (" + pd.fonte + ")" : ""}`));
+    box.appendChild(el("p", "ajuda", "Números do sumário do Plano de Desenvolvimento que a operadora entregou à ANP. " +
+      "In place: o volume que havia no reservatório na data (estimativa da operadora), não o que dá para tirar. " +
+      "Produzido até: o acumulado desde o início da produção."));
+    const DICA_VIP = "Volume original de hidrocarboneto no reservatório (VOIP/VGIP), estimado pela operadora na data indicada";
+    const DICA_ACU = "Produção acumulada desde o início do campo até a data indicada, segundo o Plano de Desenvolvimento";
     box.appendChild(tabelaPares([
-      [`óleo in place, ${vip.data || ""} (milhões de m³)`, vip.oleo_milhoes_m3 != null ? n1(vip.oleo_milhoes_m3) : null],
-      [`gás in place, ${vip.data || ""} (milhões de m³)`, gas(vip) != null ? n1(gas(vip)) : null],
-      [`óleo produzido até ${acu.data || ""} (milhões de m³)`, acu.oleo_milhoes_m3 != null ? n1(acu.oleo_milhoes_m3) : null],
-      [`gás produzido até ${acu.data || ""} (milhões de m³)`, gas(acu) != null ? n1(gas(acu)) : null],
+      [`óleo in place, ${vip.data || ""} (milhões de m³)`, vip.oleo_milhoes_m3 != null ? n1(vip.oleo_milhoes_m3) : null, DICA_VIP],
+      [`gás in place, ${vip.data || ""} (milhões de m³)`, gas(vip) != null ? n1(gas(vip)) : null, DICA_VIP],
+      [`óleo produzido até ${acu.data || ""} (milhões de m³)`, acu.oleo_milhoes_m3 != null ? n1(acu.oleo_milhoes_m3) : null, DICA_ACU],
+      [`gás produzido até ${acu.data || ""} (milhões de m³)`, gas(acu) != null ? n1(gas(acu)) : null, DICA_ACU],
       ["área (km²)", pd.area_km2 != null ? n1(pd.area_km2) : null],
       [`poços perfurados (${(pd.pocos || {}).data || ""})`, (pd.pocos || {}).perfurados != null ? n0(pd.pocos.perfurados) : null],
       ["produtores / injetores", pd.pocos ? `${n0(pd.pocos.produtores)} / ${n0(pd.pocos.injetores)}` : null],

@@ -308,7 +308,7 @@
         <div class="cm-lista" id="cm-lista"></div>
         <div class="linha">
           <button class="btn secundario" id="cm-baixar">Baixar as marcadas</button>
-          <button class="btn secundario pequeno" id="cm-importar-ti" title="Escolha o shapefile (.zip) ou GeoJSON das terras indígenas baixado do site da FUNAI">Importar terras indígenas…</button>
+          <button class="btn secundario pequeno" id="cm-importar-ti" hidden title="Escolha o shapefile (.zip) ou GeoJSON das terras indígenas baixado do site da FUNAI">Importar terras indígenas…</button>
           <button class="btn secundario pequeno" id="cm-pasta">Abrir a pasta</button>
         </div>
         <ul class="sec-avisos" id="cm-erros"></ul>
@@ -382,6 +382,7 @@
         <div class="chips" id="dq-chips"></div>
         <div class="linha" id="dq-acoes" hidden>
           <button type="button" class="btn secundario pequeno" id="dq-enquadrar">Enquadrar</button>
+          <button type="button" class="btn secundario pequeno" id="dq-so" aria-pressed="false" title="Esconde os outros poços do mapa">Só os destacados</button>
           <button type="button" class="btn secundario pequeno" id="dq-limpar">Limpar</button>
           <button type="button" class="btn secundario pequeno" id="dq-dados" title="Em quais destes poços há petrofísica, PVT, geoquímica…; e baixar só isso">Dados destes poços</button>
         </div>
@@ -633,6 +634,8 @@
           <button id="btn-processar" class="btn" disabled>Processar pendentes</button>
           <button id="btn-atualizar-docs" class="btn secundario" title="Atualizar a lista">↻</button>
         </div>
+        <button id="btn-reler-filtro" class="btn secundario pequeno" hidden
+                title="Lê de novo os documentos do filtro (também os já lidos), com a segunda leitura se marcada abaixo">Reler os do filtro</button>
         <label class="opcao" title="Nas páginas escaneadas que saíram ruins, lê de novo em resolução maior e fica com a melhor leitura (pelo dicionário). Cerca de 2× mais lento nessas páginas.">
           <input type="checkbox" id="doc-segunda" checked> <span>Segunda leitura das páginas ruins (mais lento)</span></label>
         <p class="ajuda aviso-idioma" id="aviso-idioma" hidden>
@@ -719,6 +722,7 @@
         <form class="pg-ir" id="pg-ir-form" title="Ir direto para uma página (Enter)">
           <label>ir à <input id="pg-ir" type="number" min="1" inputmode="numeric" aria-label="Ir para a página"></label>
         </form>
+        <select id="pg-sumario" hidden title="Sumário do PDF (marcadores): ir para a seção" aria-label="Sumário do documento"></select>
         <button class="btn secundario" id="pg-ampliar" title="Ver a página em tela cheia, com zoom (também: duplo clique na imagem)">Ampliar</button>
         <button class="btn secundario" id="pg-abrir" title="Abrir no programa do computador (leitor de PDF, visualizador de imagens)">No computador</button>
       </div>
@@ -794,7 +798,8 @@
         <p class="ajuda legenda" id="pg-legenda">Clique numa palavra para corrigir.
           <span class="corr auto">verde</span> = corrigida pelo dicionário ·
           <span class="corr usuario">azul</span> = corrigida por você ·
-          <span class="corr comunidade">roxo</span> = corrigida pela comunidade.
+          <span class="corr comunidade">roxo</span> = corrigida pela comunidade ·
+          <span class="selo revisado">texto revisado</span> = você editou a página inteira à mão.
           Na imagem, as mesmas cores contornam as palavras corrigidas.</p>
         <div class="editor" id="editor" hidden>
           <div class="ed-linha">
@@ -831,6 +836,8 @@
       <section class="etapa">
         <h2>Arquivos de perfil</h2>
         <p class="ajuda" id="pf-resumo">DLIS, LIS e LAS baixados no Acervo.</p>
+        <input id="pf-poco-busca" type="search" autocomplete="off" placeholder="Filtrar por poço ou arquivo (ex.: GMR-13)">
+        <p class="ajuda" id="pf-poco-n" hidden></p>
         <ul class="lista-docs" id="lista-perfis"></ul>
       </section>
       <section class="etapa" id="pf-curvas-box" hidden>
@@ -1118,9 +1125,11 @@
   </main>
 
   <main class="grade bloco" id="vista-bloco" hidden>
-    <aside class="lateral" data-titulo="Bloco 3D">
+    <aside class="lateral" data-titulo="Modelo 3D">
+      <details class="passo" id="bl-passo-1" open>
+      <summary><span class="bl-passo">1</span><span class="passo-nome">Poços</span><span class="passo-resumo" id="bl-resumo-1"></span></summary>
       <section class="etapa">
-        <h2><span class="bl-passo">1</span> Poços do bloco <span class="contagem" id="bl-n">0</span></h2>
+        <h2>Poços do bloco <span class="contagem" id="bl-n">0</span></h2>
         <p class="ajuda" id="bl-disponiveis">Poços com topos de formação no AGP (leia os AGPs no Levantamento do acervo, em Acervo).</p>
         <div class="filtros">
           <label>Escolher
@@ -1151,8 +1160,10 @@
         <datalist id="bl-lista-pocos"></datalist>
         <p class="ajuda bl-lista" id="bl-lista"></p>
       </section>
+      </details>
+      <details class="passo" id="bl-passo-2">
+      <summary><span class="bl-passo">2</span><span class="passo-nome">Método</span><span class="passo-resumo" id="bl-resumo-2"></span></summary>
       <section class="etapa">
-        <h2><span class="bl-passo">2</span> Interpolação</h2>
         <div class="filtros">
           <label>Escala
             <select id="bl-escala">
@@ -1212,8 +1223,10 @@
           </details>
         </fieldset>
       </section>
+      </details>
+      <details class="passo" id="bl-passo-3">
+      <summary><span class="bl-passo">3</span><span class="passo-nome">Unidades e grade</span><span class="passo-resumo" id="bl-resumo-3"></span></summary>
       <section class="etapa">
-        <h2><span class="bl-passo">3</span> Grade e unidades</h2>
         <div class="filtros">
           <label>Unidades
             <select id="bl-nivel">
@@ -1261,22 +1274,24 @@
         <div class="linha"><button class="btn secundario" id="bz-previa">Ler os intervalos dos poços</button></div>
         <div id="bz-resultado"></div>
       </section>
-      <section class="etapa bl-etapa-montar">
-        <h2><span class="bl-passo">4</span> Montar</h2>
+      </details>
+      <details class="passo" id="bl-passo-anteriores">
+      <summary><span class="passo-nome">Blocos anteriores</span></summary>
+      <section class="etapa">
+        <ul class="dic-lista" id="bl-historico"></ul>
+      </section>
+      </details>
+      <section class="etapa bl-etapa-montar etapa-montar">
         <div class="linha">
           <button class="btn" id="bl-montar">Montar o bloco</button>
           <button class="btn secundario" id="bl-montar-campo" title="Traz os poços do campo escolhido e monta com a escala de reservatório">Trazer o campo e montar</button>
         </div>
         <div class="linha">
           <button class="btn secundario pequeno" id="bl-direcionais" title="Baixa os dados direcionais que faltam (~5 KB por poço)">Ler as trajetórias</button>
-          <span class="ajuda">poços desviados; monte de novo depois</span>
+          <span class="ajuda">poços desviados sem trajetória; monte de novo depois</span>
         </div>
         <p class="ajuda">Depois de montar, <strong>Comparar métodos</strong> (acima do bloco) mostra qual erra menos
           nos seus poços — e a lista "Qual método usar?" passa a levar isso em conta.</p>
-      </section>
-      <section class="etapa">
-        <h2>Blocos anteriores</h2>
-        <ul class="dic-lista" id="bl-historico"></ul>
       </section>
     </aside>
     <section class="principal">
@@ -1292,6 +1307,12 @@
       </div>
       <div id="bl-painel" hidden>
         <div class="sec-barra">
+          <div class="bl-abas" role="tablist" aria-label="O que fazer com o bloco">
+            <button class="bl-aba ativa" id="bl-aba-ver" data-bl-aba="ver" role="tab" aria-selected="true">Visualizar</button>
+            <button class="bl-aba" id="bl-aba-validar" data-bl-aba="validar" role="tab" aria-selected="false">Validar</button>
+            <button class="bl-aba" id="bl-aba-mapa2d" data-bl-aba="mapa2d" role="tab" aria-selected="false">Mapa 2D</button>
+            <button class="bl-aba" id="bl-aba-exportar" data-bl-aba="exportar" role="tab" aria-selected="false">Exportar</button>
+          </div>
           <div class="linha">
             <span class="bl-modos" role="group" aria-label="Modo do bloco">
               <button class="btn secundario pequeno ativo" data-modo3d="superficies" aria-pressed="true"
@@ -1304,7 +1325,7 @@
             <button class="btn secundario pequeno" data-vista3d="sul" title="Olhando para o norte">Do sul</button>
             <button class="btn secundario pequeno" data-vista3d="oeste" title="Olhando para o leste">Do oeste</button>
           </div>
-          <div class="linha">
+          <div class="linha" data-no-bl-aba="exportar">
             <span class="ajuda">Figura (estilo artigo, vista atual):</span>
             <button class="btn secundario pequeno" data-figura="svg" title="Vetorial, editável no Inkscape">SVG</button>
             <button class="btn secundario pequeno" data-figura="pdf" title="Vetorial, para o artigo">PDF</button>
@@ -1314,7 +1335,7 @@
             <button class="btn secundario pequeno" id="bl-csv" title="Topos e grade das superfícies, para o Excel">CSV</button>
             <button class="btn secundario pequeno" id="bl-pasta">Abrir a pasta</button>
           </div>
-          <div class="linha">
+          <div class="linha" data-no-bl-aba="validar">
             <span class="ajuda">Quanto o bloco erra:</span>
             <button class="btn secundario pequeno" id="bl-validar"
                     title="Tira cada poço, refaz o bloco sem ele e compara os topos previstos com os do AGP">Deixar um poço de fora</button>
@@ -1327,7 +1348,7 @@
                    inputmode="decimal">
             <button class="btn secundario pequeno" id="bl-prog-ir">Prever</button>
           </div>
-          <details class="bl-explica" id="bl-explica">
+          <details class="bl-explica" id="bl-explica" data-no-bl-aba="validar">
             <summary>O que é "deixar um poço de fora" e "comparar métodos"?</summary>
             <p><strong>Deixar um poço de fora</strong> (validação cruzada) mede quanto o bloco erra <em>entre</em> os
               poços, onde não há dado. Para cada poço:</p>
@@ -1348,7 +1369,7 @@
               Diferenças de poucos metros ficam dentro do ruído dos topos do AGP.</p>
           </details>
         </div>
-        <p class="ajuda resultado" id="bl-exportado"></p>
+        <p class="ajuda resultado" id="bl-exportado" data-no-bl-aba="exportar"></p>
         <div class="bl-visor-box">
           <div class="bl-visor" id="bl-visor"></div>
           <div class="bl-controles">
@@ -1402,7 +1423,7 @@
             </details>
           </div>
         </div>
-        <section class="bl-quadro" id="bl-prog" hidden>
+        <section class="bl-quadro" id="bl-prog" data-no-bl-aba="validar" hidden>
           <div class="bl-quadro-cab">
             <h3 id="bl-prog-titulo">Prognóstico</h3>
             <span>
@@ -1413,7 +1434,7 @@
           <table class="bl-tabela" id="bl-prog-tabela"></table>
           <p class="ajuda" id="bl-prog-notas"></p>
         </section>
-        <section class="bl-quadro" id="bl-cmp" hidden>
+        <section class="bl-quadro" id="bl-cmp" data-no-bl-aba="validar" hidden>
           <div class="bl-quadro-cab">
             <h3>Comparação dos métodos de interpolação</h3>
             <span>
@@ -1430,7 +1451,7 @@
           <p class="ajuda">Mediana do erro / 68% dos erros até (m), deixando cada poço de fora. Em negrito, o menor
             erro de cada unidade. Diferenças de poucos metros entre métodos estão dentro do ruído dos topos do AGP.</p>
         </section>
-        <section class="bl-quadro" id="bl-val" hidden>
+        <section class="bl-quadro" id="bl-val" data-no-bl-aba="validar" hidden>
           <div class="bl-quadro-cab">
             <h3>Validação cruzada (deixar um poço de fora)</h3>
             <span>
@@ -1446,7 +1467,7 @@
           <table class="bl-tabela estreita" id="bl-val-faixas"></table>
           <ul class="sec-avisos" id="bl-val-avisos"></ul>
         </section>
-        <details class="bl-quadro" id="bl-m2d">
+        <details class="bl-quadro" id="bl-m2d" data-no-bl-aba="mapa2d">
           <summary><h3>Mapa 2D com curvas de nível</h3></summary>
           <p class="ajuda">Vista de cima do terreno, do topo ou da espessura de cada camada ou zona produtora, com curvas de
             nível rotuladas, poços e eixos em metros (a partir do centro do bloco). Para o mapa cobrir mais área além dos
@@ -1476,7 +1497,7 @@
           <p class="ajuda" id="bl-m2d-info"></p>
           <div id="bl-m2d-fig" class="bl-m2d-fig"></div>
         </details>
-        <details class="bl-quadro bl-saidas" id="bl-saidas">
+        <details class="bl-quadro bl-saidas" id="bl-saidas" data-no-bl-aba="exportar">
           <summary><h3>Saídas do bloco: mapas para SIG, simulador (.DATA), volumetria, modelo 3D</h3></summary>
           <div class="bl-saida">
             <h4>Mapas para SIG</h4>

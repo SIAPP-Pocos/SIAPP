@@ -3,9 +3,10 @@ Janela de teste: abre ui/index.html num Chromium sem tela (Playwright) ligado
 à API Python de verdade — o mesmo caminho da janela pywebview, sem o pywebview.
 
   - window.pywebview.api.<f>(...) no JavaScript chama API.<f>(...) no Python;
-  - API._janela.evaluate_js(...) (eventos de download/OCR, status) é enfileirado
-    e executado na página por `JanelaTeste.descarregar()`, porque o Playwright só
-    aceita comandos da thread principal.
+  - API._janela.evaluate_js(...) (eventos de download/OCR, status) é enfileirado. O que chega durante uma
+    chamada volta junto com a resposta e roda na página ANTES de a promessa resolver, na ordem do pywebview;
+    o que chega depois (linhas de execução em segundo plano) roda em `JanelaTeste.descarregar()`, porque o
+    Playwright só aceita comandos da thread principal.
 
 Usado pelos testes marcados com @pytest.mark.interface (pulados se o
 Playwright ou o Chromium não estiverem instalados).
@@ -26,7 +27,15 @@ UI = os.path.join(RAIZ, "ui")
 PONTE_JS = """
 (nomes) => {
   const api = {};
-  for (const n of nomes) api[n] = (...args) => window.__siapp_chamar(n, JSON.stringify(args)).then(JSON.parse);
+  // Como no pywebview: o que o motor mandou para a página DURANTE a chamada (evaluate_js) roda antes de a
+  // promessa resolver (0.59; antes ia para uma fila e rodava depois, o que escondeu o erro E1 da revisão)
+  for (const n of nomes) api[n] = (...args) => window.__siapp_chamar(n, JSON.stringify(args)).then((t) => {
+    const o = JSON.parse(t);
+    for (const c of o.eventos) {
+      try { (0, eval)(c); } catch (e) { console.error(`evento do motor falhou: ${e}`); }
+    }
+    return o.r;
+  });
   window.pywebview = { api };
   window.dispatchEvent(new Event("pywebviewready"));
 }
@@ -109,7 +118,14 @@ def abrir(api, browser, srv=None, consulta="", falsa=None):
 
     def chamar(nome, args_json):
         r = getattr(api, nome)(*json.loads(args_json))
-        return json.dumps(r)
+        fila = (jt.falsa or api._janela).js
+        eventos = []
+        while True:
+            try:
+                eventos.append(fila.get_nowait())
+            except queue.Empty:
+                break
+        return json.dumps({"r": r, "eventos": eventos})
 
     page.expose_function("__siapp_chamar", chamar)
     # mapas de fundo e qualquer outro endereço externo: resposta vazia (sem internet nos testes)

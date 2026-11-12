@@ -72,6 +72,22 @@ function desenharTipos(r) {
     return;
   }
   box.appendChild(el("p", "ajuda", `${numero(r.pocos_levantados, 0)} poço(s) levantado(s). Marque o que procura:`));
+  // 0.59: "tudo de um campo" = todos os tipos + "pelo menos um" + o campo acima
+  const atalhos = el("div", "linha");
+  const bTudo = el("button", "btn secundario pequeno", "Todos os tipos");
+  bTudo.id = "tp-todos-tipos";
+  bTudo.type = "button";
+  bTudo.title = "Marca todos os tipos e procura poços com pelo menos um deles (com o campo acima: tudo do campo)";
+  bTudo.onclick = () => {
+    for (const t of r.tipos) if (t.n_pocos) tdado.escolhidos.add(t.chave);
+    $("tp-modo").value = "algum";
+    desenharTipos(r);
+  };
+  const bNada = el("button", "btn secundario pequeno", "Nenhum");
+  bNada.type = "button";
+  bNada.onclick = () => { tdado.escolhidos.clear(); desenharTipos(r); };
+  atalhos.append(bTudo, bNada);
+  box.appendChild(atalhos);
   const lista = el("div", "tp-lista");
   for (const t of r.tipos) {
     const rot = el("label", "opcao tp-tipo" + (t.n_pocos ? "" : " tp-vazio"));

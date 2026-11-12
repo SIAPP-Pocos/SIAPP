@@ -34,6 +34,8 @@ import numpy as np
 import pymupdf
 import requests
 
+from . import registro
+
 EXTENSOES = (".pdf", ".tif", ".tiff", ".png", ".jpg", ".jpeg")
 # Imagens grandes (perfil em papel escaneado em TIF chega a 2.500 × 80.000 px):
 # nenhuma imagem enviada à janela passa destes limites de pixels.
@@ -254,6 +256,18 @@ def precisa_ocr(caminho: str) -> bool:
 
 
 # ======================================================= imagem de página
+def sumario(caminho: str, limite: int = 300) -> list[dict]:
+    """Marcadores do PDF (o sumário que o leitor de PDF mostra ao lado), quando o arquivo tem: [{nivel, titulo,
+    pagina}]. Muitos relatórios digitalizados não têm nenhum; aí volta vazio. (0.59)"""
+    try:
+        with pymupdf.open(caminho) as doc:
+            toc = doc.get_toc(simple=True)
+    except Exception:  # noqa: BLE001 — sem sumário não é erro
+        return []
+    return [{"nivel": int(n), "titulo": " ".join(str(t).split())[:120], "pagina": int(p)}
+            for n, t, p in toc[:limite] if int(p) >= 1]
+
+
 def n_paginas(caminho: str) -> int:
     try:
         with pymupdf.open(caminho) as doc:
@@ -581,9 +595,16 @@ class FilaDocumentos:
     Cada tarefa: {"doc", "caminho", "nome", "bacia", "poco", "salvar": callable(resultado)}
     """
 
-    def __init__(self, tessdata: str, emitir):
+    def __init__(self, tessdata: str, emitir, em_processo: bool | None = None):
         self._tessdata = tessdata
         self._emitir = emitir
+        # 0.59: a leitura roda num processo à parte (a janela não trava); SIAPP_OCR_THREAD=1 volta ao modo antigo
+        if em_processo is None:
+            em_processo = os.environ.get("SIAPP_OCR_THREAD") != "1"
+        self._processo = None
+        if em_processo:
+            from .ocr_processo import ProcessoOCR
+            self._processo = ProcessoOCR()
         self._fila: queue.Queue = queue.Queue()
         self._cancelar = threading.Event()
         self._trava = threading.Lock()
@@ -627,6 +648,8 @@ class FilaDocumentos:
                     self._lote = {"total": 0, "indice": 0, "processados": 0, "erros": 0, "cancelados": 0}
                     self._cancelar.clear()
                     self._thread = None
+                if self._processo is not None:
+                    self._processo.encerrar()               # fila vazia: devolve a memória do processo
                 self._emitir({"tipo": "ocioso", **{k: lote[k] for k in ("processados", "erros", "cancelados")}})
                 return
             try:
@@ -649,11 +672,20 @@ class FilaDocumentos:
             if not idioma_disponivel(self._tessdata) and precisa_ocr(t["caminho"]):
                 baixar_idioma(self._tessdata, progresso=lambda f, tot: self._emitir(
                     {"tipo": "idioma", "feito": f, "total": tot}))
-            r = processar_arquivo(
-                t["caminho"], self._tessdata, cancelar=self._cancelar,
-                segunda_passada=t.get("segunda_passada", True),
-                progresso=lambda p, n: self._emitir({"tipo": "pagina", "doc": t["doc"],
-                                                     "pagina": p, "paginas": n}))
+            progresso = lambda p, n: self._emitir({"tipo": "pagina", "doc": t["doc"],  # noqa: E731
+                                                   "pagina": p, "paginas": n})
+            r = None
+            if self._processo is not None:
+                try:
+                    r = self._processo.processar(t["caminho"], self._tessdata, t.get("segunda_passada", True),
+                                                 progresso, self._cancelar)
+                except (OSError, ImportError, EOFError, PermissionError) as e:
+                    # sem como criar o processo neste computador: lê aqui mesmo, como antes da 0.59
+                    registro.log.warning("OCR: processo separado indisponível (%s); lendo na linha de execução", e)
+                    self._processo = None
+            if r is None:
+                r = processar_arquivo(t["caminho"], self._tessdata, cancelar=self._cancelar,
+                                      segunda_passada=t.get("segunda_passada", True), progresso=progresso)
             t["salvar"](r)
         except ProcessamentoCancelado:
             self._contar("cancelados")

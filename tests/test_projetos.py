@@ -71,3 +71,25 @@ def test_abre_o_ultimo_projeto_escolhido(api, tmp_path):
     r = api.abrir_projeto_padrao()
     assert r["ok"] and r["pasta"] == pasta
     assert api.estado()["existe_projeto"] is True
+
+
+def test_abertura_reconfere_o_tipo_so_quando_precisa(api, tmp_path):
+    """0.59 (A16 da revisão): a conferência do tipo pelo conteúdo roda inteira uma vez; depois, só arquivo que mudou."""
+    from ponte import base
+    assert api.escolher_pasta()["ok"]
+    bruto = os.path.join(base.PASTA_PROJETO, "bruto", "Potiguar", "1-AA-1-RN")
+    os.makedirs(bruto, exist_ok=True)
+    arq = os.path.join(bruto, "perfil.tif")
+    with open(arq, "wb") as f:
+        f.write(b"texto qualquer, nao e imagem nem DLIS" * 10)
+    api._migrar_downloads()
+    tipo = api._banco.arquivos()[0]["tipo"]
+    assert api._banco.meta("tipo_conferido") == "1"
+    with api._banco.conexao() as c:
+        c.execute("UPDATE arquivos SET tipo = 'documento'")
+    api._migrar_downloads()                                   # mesma regra, mesmo tamanho: não reabre o arquivo
+    assert api._banco.arquivos()[0]["tipo"] == "documento"
+    with open(arq, "ab") as f:
+        f.write(b"mais")                                      # mudou: confere de novo
+    api._migrar_downloads()
+    assert api._banco.arquivos()[0]["tipo"] == tipo
