@@ -398,6 +398,7 @@ function preencherConfig() {
   $("cfg-fonte").value = prefs.fonte;
   $("cfg-abrir").checked = prefs.abrir_ao_iniciar;
   $("cfg-arranjo").checked = prefs.lembrar_arranjo;
+  $("cfg-atualizar").checked = prefs.atualizar_ao_abrir !== false;
 }
 
 async function mudarAparencia(m) {
@@ -425,6 +426,27 @@ async function carregarDiagnostico() {
     `janelas: ${r.janelas.map((j) => NOMES_ABAS[j] || j).join(", ")}`;
   box.appendChild(el("p", "ajuda", info));
   linhas.push(info, "");
+  // 0.58: o que o atalho fez ao abrir e os botões fixados na barra de tarefas
+  if (r.atualizacao) { box.appendChild(el("p", "ajuda", `Atalho: ${r.atualizacao}`)); linhas.push(`Atalho: ${r.atualizacao}`); }
+  if (r.barra_de_tarefas && r.barra_de_tarefas.length) {
+    box.appendChild(el("h3", "", "Botão fixado na barra de tarefas"));
+    linhas.push("Botão fixado na barra de tarefas:");
+    for (const f of r.barra_de_tarefas) {
+      const p = el("div", "dg-erro" + (f.situacao === "ok" ? " ok" : ""));
+      p.append(el("code", "", f.nome), el("span", "", ` ${f.texto}`));
+      box.appendChild(p);
+      linhas.push(`  ${f.nome}: ${f.situacao}`);
+    }
+    if (r.barra_de_tarefas.some((f) => f.situacao === "sem_id")) {
+      const b = el("button", "btn secundario pequeno", "Corrigir o botão fixado");
+      b.id = "dg-fixado";
+      b.onclick = async () => {
+        const x = await chamar(b, "corrigir_atalho_fixado");
+        if (x.ok) { status(`Corrigido: ${x.corrigidos.join(", ")}. Se não mudar na hora, desafixe e fixe de novo.`, "ok"); carregarDiagnostico(); }
+      };
+      box.appendChild(b);
+    }
+  }
   box.appendChild(el("h3", "", "Erros desta sessão"));
   linhas.push("Erros desta sessão:");
   if (!r.erros_sessao.length) box.appendChild(el("p", "ajuda", "Nenhum."));
@@ -532,6 +554,7 @@ function ligarJanelas() {
   ligar("cfg-fonte", "onchange", () => mudarAparencia({ fonte: $("cfg-fonte").value }));
   ligar("cfg-abrir", "onchange", () => guardarPreferencias({ abrir_ao_iniciar: $("cfg-abrir").checked }));
   ligar("cfg-arranjo", "onchange", () => guardarPreferencias({ lembrar_arranjo: $("cfg-arranjo").checked }));
+  ligar("cfg-atualizar", "onchange", () => guardarPreferencias({ atualizar_ao_abrir: $("cfg-atualizar").checked }));
   ligar("dg-copiar", "onclick", copiarDiagnostico);
   ligar("dg-log", "onclick", () => chamar($("dg-log"), "abrir_log"));
   ligar("dg-atualizar", "onclick", carregarDiagnostico);

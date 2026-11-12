@@ -26,7 +26,7 @@ from datetime import datetime
 
 SEM_JANELA = getattr(subprocess, "CREATE_NO_WINDOW", 0)
 
-PASSOS = ("Conferindo os arquivos", "Preparando os componentes", "Abrindo o projeto")
+PASSOS = ("Conferindo os arquivos", "Procurando versão nova", "Preparando os componentes", "Abrindo o projeto")
 DICA_PRIMEIRA_VEZ = "Preparando os componentes — na primeira vez leva alguns minutos"
 VARIAVEL_SINAL = "SIAPP_SINAL"
 ARQUIVOS_OBRIGATORIOS = ("siapp.py", "requirements.txt", os.path.join("motor", "__init__.py"),
@@ -104,6 +104,106 @@ def rodar(cmd, cwd=None, timeout=None):
     """Roda um comando sem abrir janela de console e devolve o resultado com a saída em texto."""
     return subprocess.run(cmd, cwd=cwd, timeout=timeout, capture_output=True, text=True, encoding="utf-8",
                           errors="replace", env=ambiente_limpo(), creationflags=SEM_JANELA)
+
+
+# ------------------------------------------------------------------------------------------- atualizar (0.58)
+# A pasta do SIAPP é um clone do GitHub. Antes de abrir, o lançador traz a versão nova sozinho — só quando é
+# seguro: nada mudado à mão nos arquivos do SIAPP e nenhum commit local que o GitHub não tenha (só avanço,
+# "fast-forward"). Sem internet, sem git ou com algo fora do comum, abre a versão que já está na pasta.
+
+def achar_git() -> str:
+    achado = shutil.which("git")
+    if achado:
+        return achado
+    for base in (os.environ.get("ProgramFiles", ""), os.environ.get("ProgramW6432", ""),
+                 os.path.join(os.environ.get("LOCALAPPDATA", ""), "Programs")):
+        c = os.path.join(base, "Git", "cmd", "git.exe") if base else ""
+        if c and os.path.isfile(c):
+            return c
+    return ""
+
+
+def caminho_preferencias(pasta: str) -> str:
+    return os.path.join(pasta, "ambiente_teste", "preferencias.json")
+
+
+def caminho_aviso_atualizacao(pasta: str) -> str:
+    return os.path.join(pasta, "ambiente_teste", "atualizacao.json")
+
+
+def atualizar_ativado(pasta: str) -> bool:
+    """Configurações › "Atualizar o SIAPP ao abrir" (padrão: ligado)."""
+    import json
+    try:
+        with open(caminho_preferencias(pasta), encoding="utf-8") as f:
+            return json.load(f).get("atualizar_ao_abrir", True) is not False
+    except (OSError, ValueError, AttributeError):
+        return True
+
+
+def _rodar_git(cmd, cwd=None, timeout=None):
+    env = ambiente_limpo()
+    env["GIT_TERMINAL_PROMPT"] = "0"           # nunca para esperando senha num console que não existe
+    return subprocess.run(cmd, cwd=cwd, timeout=timeout, capture_output=True, text=True, encoding="utf-8",
+                          errors="replace", env=env, creationflags=SEM_JANELA)
+
+
+def atualizar_codigo(pasta: str, progresso=lambda texto: None, executar=None, git=None) -> dict:
+    """Traz a versão nova do GitHub, se for seguro. Nunca levanta: devolve {"situacao", "texto", "de", "para"}."""
+    executar = executar or _rodar_git
+    de = ler_versao(pasta)
+    r = {"situacao": "", "texto": "", "de": de, "para": de}
+
+    def fim(situacao, texto):
+        r.update(situacao=situacao, texto=texto)
+        return r
+    if not os.path.isdir(os.path.join(pasta, ".git")):
+        return fim("sem_git", "Esta pasta não é um clone do GitHub: abre a versão que está nela.")
+    if not atualizar_ativado(pasta):
+        return fim("desligado", "Atualização ao abrir desligada (Configurações).")
+    git = git or achar_git()
+    if not git:
+        return fim("sem_git", "Git não encontrado neste computador: abre a versão que está na pasta.")
+
+    def g(*args, timeout=30):
+        try:
+            return executar([git, "-C", pasta, *args], timeout=timeout)
+        except (OSError, subprocess.SubprocessError) as e:
+            return _resultado(1, "", repr(e))
+    busca = g("fetch", "--quiet", "origin", "main", timeout=40)
+    if busca.returncode != 0:
+        return fim("sem_conexao", "Não consegui falar com o GitHub (sem internet?): abre a versão que está na pasta. "
+                   + _cauda(busca.stderr, 3))
+    atual, nova = g("rev-parse", "HEAD").stdout.strip(), g("rev-parse", "FETCH_HEAD").stdout.strip()
+    if not nova or atual == nova:
+        return fim("em_dia", f"Já na versão mais nova ({de}).")
+    if g("merge-base", "--is-ancestor", "HEAD", "FETCH_HEAD").returncode != 0:
+        return fim("divergente", "Esta pasta tem commits que o GitHub não tem: atualize à mão (git status, git pull).")
+    if g("status", "--porcelain", "--untracked-files=no").stdout.strip():
+        return fim("mudado", "Há arquivos do SIAPP mudados nesta pasta: atualize à mão (git status, git pull).")
+    progresso("Trazendo a versão nova do GitHub")
+    junta = g("merge", "--ff-only", "--quiet", "FETCH_HEAD", timeout=120)
+    if junta.returncode != 0:
+        return fim("falhou", "Não consegui atualizar: abre a versão que está na pasta. " + _cauda(junta.stderr, 5))
+    r["para"] = ler_versao(pasta)
+    return fim("atualizado", f"SIAPP atualizado: {de} → {r['para']}.")
+
+
+def _resultado(codigo, saida, erro):
+    return subprocess.CompletedProcess([], codigo, saida, erro)
+
+
+def guardar_aviso_atualizacao(pasta: str, resultado: dict) -> None:
+    """O app mostra "SIAPP atualizado: 0.57.0 → 0.58.0" uma vez, ao abrir."""
+    import json
+    if resultado.get("situacao") != "atualizado":
+        return
+    try:
+        os.makedirs(os.path.dirname(caminho_aviso_atualizacao(pasta)), exist_ok=True)
+        with open(caminho_aviso_atualizacao(pasta), "w", encoding="utf-8") as f:
+            json.dump({**resultado, "quando": datetime.now().isoformat(timespec="seconds")}, f, ensure_ascii=False)
+    except OSError:
+        pass
 
 
 # ------------------------------------------------------------------------------------------------- achar Python
@@ -327,13 +427,17 @@ def avisar_abertura() -> bool:
 # -------------------------------------------------------------------------------------------------- orquestra
 
 def executar(pasta: str, progresso, argumentos=(), executar_cmd=None, candidatos=None) -> bool:
-    """Roda os três passos. `progresso(indice, texto, indeterminado)`; levanta ErroLancador se algo falhar."""
+    """Roda os passos. `progresso(indice, texto, indeterminado)`; levanta ErroLancador se algo falhar."""
     total = len(PASSOS)
     progresso(0, PASSOS[0], False)
     conferir_arquivos(pasta)
     progresso(1, PASSOS[1], True)
-    preparar_ambiente(pasta, lambda texto, ind: progresso(1, texto, ind), executar_cmd, candidatos)
+    res = atualizar_codigo(pasta, lambda texto: progresso(1, texto, True))
+    registrar(pasta, f"atualização: {res['situacao']} — {res['texto']}")
+    guardar_aviso_atualizacao(pasta, res)
     progresso(2, PASSOS[2], True)
+    preparar_ambiente(pasta, lambda texto, ind: progresso(2, texto, ind), executar_cmd, candidatos)
+    progresso(3, PASSOS[3], True)
     proc, sinal = abrir_app(pasta, argumentos)
     abriu = esperar_abertura(proc, sinal, pasta)
     progresso(total, "Pronto", False)

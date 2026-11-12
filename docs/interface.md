@@ -1,6 +1,6 @@
-# Interface: abas, menus, busca, atalhos e avisos
+# Interface: Início, projetos, abas, menus, busca, atalhos e avisos
 
-Desde a 0.57. Código em `ui/js/interface.js` (menus, diálogo, ajuda, busca, atalhos, avisos), `ui/js/janelas.js` (abas e
+Desde a 0.57 (Início e projetos: 0.58). Código em `ui/js/interface.js` (menus, diálogo, ajuda, busca, atalhos, avisos), `ui/js/janelas.js` (abas e
 layout) e `ui/estilo.css` (seção "interface (0.57)").
 
 ## Abas pelo fluxo do trabalho
@@ -76,3 +76,25 @@ chave em `preferencias.json`. Os mesmos limites ficam sempre em Ajuda › Limite
 - Estados vazios: uma frase e, quando há, o botão da ação. O resto em **Saiba mais**.
 - Correlação: "Achar poços ao longo de uma linha", "Desenho" e "Seções anteriores" vêm recolhidos; **Montar a seção** fica
   sempre à vista no pé da lateral.
+
+## Início e projetos (0.58)
+
+O Início mostra o **projeto aberto** (nome, bacias, pasta), os **projetos** em cartões e os **módulos** com o estado de cada um.
+
+- **Projeto** é uma pasta com o seu banco (`projeto.sqlite`), arquivos baixados, textos e execuções. O principal continua
+  sendo `ambiente_teste\`; os novos ficam em `projetos\<nome>\`, ao lado do SIAPP, fora do git. Uma pasta de projeto
+  copiada para `projetos\` aparece sozinha.
+- **Cartão**: nome (renomear muda só o nome, não a pasta), bacias, poços levantados, arquivos, documentos e perfis, e um
+  minimapa com até 300 poços do projeto. Os números vêm do banco de cada projeto, lido em modo somente leitura
+  (`motor/projetos.py`, `resumo`).
+- **Novo projeto**: nome e bacias. Depois de criar, o SIAPP oferece abrir.
+- **Abrir outro projeto**: com um projeto aberto, o SIAPP fecha e abre de novo já no outro (pelo lançador, quando existe):
+  tudo começa limpo, sem dado de um projeto vazando para o outro. Com downloads ou OCR em andamento, recusa e explica.
+  O escolhido fica em `projeto_atual` (preferências) e é o que abre da próxima vez.
+- **Módulos**: uma ou duas linhas com números do projeto (API `inicio_resumo`) e o botão do próximo passo. O ponto antes da
+  linha marca o que está esperando você (documentos sem texto, cadastro da ANP não baixado).
+
+As preferências (cores, atalhos, arranjo, lista de projetos) são do computador, não do projeto: ficam em
+`ambiente_teste\preferencias.json` para todos os projetos.
+
+Ajuda › **Novidades desta versão** mostra as três últimas versões do `CHANGELOG.md`.

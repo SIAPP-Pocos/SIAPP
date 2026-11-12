@@ -312,3 +312,81 @@ def test_nenhuma_mencao_ao_nome_antigo_da_pasta():
                 if "siapp.vf" in texto and a not in ("CHANGELOG.md", "CLAUDE.md", "guia-de-teste.md"):
                     achados.append(caminho)
     assert not achados
+
+
+# ---------------------------------------------------------------- atualização ao abrir (0.58)
+def _git(*args, cwd):
+    subprocess.run(["git", *args], cwd=cwd, check=True, capture_output=True)
+
+
+@pytest.fixture
+def clones(tmp_path):
+    """Um "GitHub" (repositório nu) e a pasta do SIAPP clonada dele, na versão 0.1.0."""
+    import shutil as _sh
+    if not _sh.which("git"):
+        pytest.skip("git ausente")
+    origem, trabalho, pc = tmp_path / "origem.git", tmp_path / "trabalho", tmp_path / "SIAPP"
+    _git("init", "-q", "--bare", "-b", "main", str(origem), cwd=tmp_path)
+    _git("clone", "-q", str(origem), str(trabalho), cwd=tmp_path)
+    for d in (trabalho,):
+        _git("config", "user.email", "t@t", cwd=d)
+        _git("config", "user.name", "t", cwd=d)
+        _git("checkout", "-q", "-b", "main", cwd=d)
+    (trabalho / "motor").mkdir()
+    (trabalho / "motor" / "__init__.py").write_text('__version__ = "0.1.0"\n')
+    (trabalho / ".gitignore").write_text("ambiente_teste/\n")
+    _git("add", ".", cwd=trabalho)
+    _git("commit", "-qm", "0.1.0", cwd=trabalho)
+    _git("push", "-q", "origin", "main", cwd=trabalho)
+    _git("clone", "-q", "-b", "main", str(origem), str(pc), cwd=tmp_path)
+    _git("config", "user.email", "t@t", cwd=pc)
+    _git("config", "user.name", "t", cwd=pc)
+
+    def nova_versao(v):
+        (trabalho / "motor" / "__init__.py").write_text(f'__version__ = "{v}"\n')
+        _git("commit", "-qam", v, cwd=trabalho)
+        _git("push", "-q", "origin", "main", cwd=trabalho)
+    return pc, nova_versao
+
+
+def test_atalho_traz_a_versao_nova_quando_e_seguro(clones):
+    pc, nova_versao = clones
+    assert passos.atualizar_codigo(str(pc))["situacao"] == "em_dia"
+    nova_versao("0.2.0")
+    textos = []
+    r = passos.atualizar_codigo(str(pc), textos.append)
+    assert r["situacao"] == "atualizado" and (r["de"], r["para"]) == ("0.1.0", "0.2.0")
+    assert passos.ler_versao(str(pc)) == "0.2.0" and textos
+    passos.guardar_aviso_atualizacao(str(pc), r)
+    assert os.path.isfile(passos.caminho_aviso_atualizacao(str(pc)))
+    # os dados do usuário (ambiente_teste, fora do git) não atrapalham
+    (pc / "ambiente_teste").mkdir(exist_ok=True)
+    (pc / "ambiente_teste" / "projeto.sqlite").write_text("x")
+    nova_versao("0.3.0")
+    assert passos.atualizar_codigo(str(pc))["situacao"] == "atualizado"
+
+
+def test_atalho_nao_mexe_quando_ha_mudanca_local_ou_esta_desligado(clones):
+    pc, nova_versao = clones
+    nova_versao("0.2.0")
+    (pc / "motor" / "__init__.py").write_text('__version__ = "0.1.0-meu"\n')        # mexeram no código à mão
+    r = passos.atualizar_codigo(str(pc))
+    assert r["situacao"] == "mudado" and passos.ler_versao(str(pc)) == "0.1.0-meu"
+    _git("checkout", "-q", "--", ".", cwd=pc)
+    (pc / "local.txt").write_text("x")
+    _git("add", "local.txt", cwd=pc)
+    _git("commit", "-qm", "local", cwd=pc)                                           # commit que o GitHub não tem
+    assert passos.atualizar_codigo(str(pc))["situacao"] == "divergente"
+    (pc / "ambiente_teste").mkdir(exist_ok=True)
+    (pc / "ambiente_teste" / "preferencias.json").write_text('{"atualizar_ao_abrir": false}')
+    assert passos.atualizar_codigo(str(pc))["situacao"] == "desligado"
+
+
+def test_sem_git_ou_sem_internet_abre_a_versao_da_pasta(clones, tmp_path):
+    pc, _ = clones
+    assert passos.atualizar_codigo(str(tmp_path))["situacao"] == "sem_git"           # pasta sem .git
+    assert passos.atualizar_codigo(str(pc), git=str(tmp_path / "nao-existe"))["situacao"] == "sem_conexao"
+
+    def sem_rede(cmd, cwd=None, timeout=None):
+        return subprocess.CompletedProcess(cmd, 128, "", "fatal: unable to access")
+    assert passos.atualizar_codigo(str(pc), executar=sem_rede)["situacao"] == "sem_conexao"

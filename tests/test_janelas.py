@@ -207,3 +207,31 @@ def test_pastas_de_exportacao(api, monkeypatch):
     assert not por["sig"]["existe"]
     assert api.abrir_pasta_exportacao("sig")["ok"] and abertas[-1].endswith("sig")
     assert not api.abrir_pasta_exportacao("../fora")["ok"]
+
+
+def test_botao_fixado_sem_identidade_e_reconhecido(tmp_path):
+    """0.58: um botão fixado sem o ID do SIAPP junta outras janelas (wscript/python) no ícone do SIAPP."""
+    from ponte import icone
+
+    def lnk(nome, *textos):
+        c = tmp_path / nome
+        c.write_bytes(b"L\x00\x00\x00" + b"".join(t.encode("utf-16-le") + b"\x00\x00" for t in textos))
+        return str(c)
+    vbs = r"C:\SIAPP\SIAPP.vbs"
+    assert icone.avaliar_fixado(lnk("SIAPP.lnk", r"C:\Windows\System32\wscript.exe", vbs, icone.APP_ID))["situacao"] == "ok"
+    assert icone.avaliar_fixado(lnk("SIAPP (2).lnk", r"C:\Windows\System32\wscript.exe", vbs))["situacao"] == "sem_id"
+    r = icone.avaliar_fixado(lnk("Python.lnk", r"C:\SIAPP\.venv\Scripts\pythonw.exe", r"C:\SIAPP\siapp.py"))
+    assert r["situacao"] == "python" and r["python"]
+    assert icone.avaliar_fixado(lnk("Outro.lnk", r"C:\Program Files\Outro\outro.exe")) is None
+
+
+def test_novidades_do_changelog(tmp_path):
+    from ponte.janelas import ler_changelog
+    c = tmp_path / "CHANGELOG.md"
+    c.write_text("# Histórico\n\n## [Não lançado]\n\n## [0.2.0] — 2026-11-12\nResumo da 0.2.\n### Adicionado\n"
+                 "- **Coisa nova** com `código`\n  e continuação.\n### Corrigido\n- Erro X.\n\n## [0.1.0] — 2026-11-01\n"
+                 "### Adicionado\n- Primeira.\n", encoding="utf-8")
+    v = ler_changelog(str(c), 1)
+    assert len(v) == 1 and v[0]["versao"] == "0.2.0" and v[0]["resumo"] == "Resumo da 0.2."
+    assert v[0]["secoes"][0]["itens"] == ["Coisa nova com código e continuação."]
+    assert [s["titulo"] for s in v[0]["secoes"]] == ["Adicionado", "Corrigido"]

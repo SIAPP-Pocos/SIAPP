@@ -42,8 +42,9 @@ def test_abre_no_inicio_e_abre_projeto(janela):
     assert p.text_content("#versao").startswith("v0.")
     assert p.is_visible("#vista-projeto") and not p.is_visible("#vista-dados")
     abrir_projeto(janela)
-    janela.esperar("!document.getElementById('panorama').hidden")
-    assert "arquivo(s) baixado(s)" in p.text_content("#panorama")
+    janela.esperar("document.querySelectorAll('#ini-modulos .mod').length === 6")     # 0.58: módulos com estado
+    assert "Nenhum documento baixado" in p.text_content("#ini-modulos [data-modulo=docs]")
+    assert p.text_content("#ini-nome") == "Projeto principal"
     p.click("#aba-dados")
     assert not p.is_visible("#etapa-bacia.bloqueada")
     assert not janela.erros_js, janela.erros_js
@@ -54,7 +55,6 @@ def test_abas_trocam_de_vista(janela):
     p.click("#aba-docs")
     assert p.is_visible("#vista-docs") and not p.is_visible("#vista-projeto")
     assert "Abra primeiro o projeto" in p.text_content("#docs-resumo")
-    p.click(".fluxo button[data-ir='comunidade']") if p.is_visible(".fluxo") else ir(p, "comunidade")
     ir(p, "comunidade")
     assert p.is_visible("#vista-comunidade")
     assert not janela.erros_js, janela.erros_js
@@ -2187,7 +2187,7 @@ def test_abas_pelo_fluxo_menus_e_ajuda(janela):
     assert rotulos == ["Início", "1Acervo", "2Documentos", "3Perfis", "4Poços", "5Correlação", "6Modelo 3D"]
     assert p.is_hidden("#aba-viab") and p.is_hidden("#btn-dividir") and p.is_hidden("#versao")
     abrir_projeto(janela)
-    assert p.text_content("#projeto-nome") == "ambiente_teste"
+    janela.esperar("document.getElementById('projeto-nome').textContent === 'Projeto principal'")
     # Correlação e Modelo 3D: abas próprias, cada uma marcada sozinha
     ir(p, "interp", "bloco")
     assert p.is_visible("#vista-bloco") and "ativa" in p.get_attribute("#aba-modelo", "class")
@@ -2334,5 +2334,48 @@ def test_projeto_aberto_recarrega_a_aba_visivel(janela, tmp_path):
     assert "Abra primeiro o projeto" in p.text_content("#docs-resumo")
     janela.api._abrir_projeto(str(tmp_path / "ambiente_teste"))      # só o aviso chega à página
     janela.esperar("!document.getElementById('docs-resumo').textContent.includes('Abra primeiro')")
-    assert p.text_content("#projeto-nome") == "ambiente_teste"
+    janela.esperar("document.getElementById('projeto-nome').textContent === 'Projeto principal'")
+    assert not janela.erros_js, janela.erros_js
+
+
+# ---------------------------------------------------------------- 0.58: projetos e módulos
+def test_projetos_novo_e_trocar(janela, tmp_path, monkeypatch):
+    p = janela.page
+    abrir_projeto(janela)
+    janela.esperar("document.querySelectorAll('#ini-projetos .proj').length === 2")     # principal + "Novo projeto"
+    assert "aberto" in p.get_attribute("#ini-projetos .proj >> nth=0", "class")
+    # novo projeto, com bacia
+    p.click("#ini-novo")
+    p.fill("#np-nome", "Guamaré — modelo")
+    p.check(".np-bacias input[value='Potiguar']")
+    p.click("#dlg-pe .btn:not(.secundario)")
+    janela.esperar("document.getElementById('dlg-titulo').textContent.startsWith('Abrir Guamaré')")
+    pasta = tmp_path / "projetos" / "guamare-modelo"
+    assert (pasta / "siapp.json").is_file()
+    # trocar de projeto com um aberto: o SIAPP reabre (aqui, só anotado)
+    reaberto = []
+    monkeypatch.setattr(type(janela.api), "_reiniciar", lambda self: reaberto.append(1))
+    p.click("#dlg-pe .btn:not(.secundario)")
+    janela.esperar("document.getElementById('dialogo').hidden")
+    assert reaberto == [1]
+    assert janela.api._preferencias().ler()["projeto_atual"] == str(pasta)
+    # na próxima abertura, é ele que abre
+    assert janela.api._projeto_inicial() == str(pasta)
+    cartao = p.locator("#ini-projetos .proj", has_text="Guamaré — modelo")
+    assert "Potiguar" in cartao.text_content()
+    assert not janela.erros_js, janela.erros_js
+
+
+def test_novidades_e_configuracao_de_atualizar(janela):
+    p = janela.page
+    p.click("#btn-ajuda")
+    p.click("[data-ajuda='novidades']")
+    janela.esperar("document.querySelector('#dlg-corpo h2') !== null")
+    assert p.text_content("#dlg-corpo h2").startswith("0.")
+    p.keyboard.press("Escape")
+    p.click("#btn-config")
+    assert p.is_checked("#cfg-atualizar")
+    p.uncheck("#cfg-atualizar")
+    janela.esperar("prefs.atualizar_ao_abrir === false")
+    assert janela.api._preferencias().ler()["atualizar_ao_abrir"] is False
     assert not janela.erros_js, janela.erros_js

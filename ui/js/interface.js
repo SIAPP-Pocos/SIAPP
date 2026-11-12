@@ -85,6 +85,7 @@ const AJUDA = {
     abrirDialogo("Limites e confiabilidade", c);
   },
   atalhos: () => abrirAtalhos(),
+  novidades: () => abrirNovidades(),
   diag: () => abrirConfig("diag"),
   sobre: () => {
     const c = el("div", "dlg-sobre");
@@ -97,9 +98,27 @@ const AJUDA = {
   },
 };
 
+// O que mudou nas últimas versões (do CHANGELOG), para quem acabou de receber uma versão nova.
+async function abrirNovidades() {
+  const r = await chamar(null, "novidades");
+  if (!r.ok) return;
+  const c = el("div", "dlg-ajuda novidades");
+  for (const v of r.versoes) {
+    c.appendChild(el("h2", "", `${v.versao}${v.data ? " — " + dataCurta(v.data) : ""}`));
+    if (v.resumo) c.appendChild(el("p", "", v.resumo));
+    for (const s of v.secoes) {
+      c.appendChild(el("h3", "", s.titulo));
+      const ul = el("ul");
+      for (const i of s.itens) ul.appendChild(el("li", "", i));
+      c.appendChild(ul);
+    }
+  }
+  abrirDialogo("Novidades", c, [], "largo");
+}
+
 // ---------------------------------------------------------------- nome do projeto no topo
-function mostrarProjetoNoTopo(pasta) {
-  const nome = String(pasta || "").split(/[\\/]/).filter(Boolean).pop() || "";
+function mostrarProjetoNoTopo(pasta, nomeProjeto) {
+  const nome = nomeProjeto || String(pasta || "").split(/[\\/]/).filter(Boolean).pop() || "";
   $("projeto-nome").textContent = nome || "Nenhum projeto aberto";
   $("projeto-topo").title = nome ? `Projeto: ${pasta}\nInício: o projeto e os módulos` : "Início: abrir o projeto";
   $("projeto-topo").classList.toggle("aberto", Boolean(nome));
@@ -393,6 +412,10 @@ function mostrarAviso(texto, tipo) {
   const longo = inicioTrabalho && Date.now() - inicioTrabalho > 3000;
   inicioTrabalho = 0;
   if (!texto || !(tipo === "erro" || (tipo === "ok" && longo))) return;
+  avisoNoCanto(texto, tipo);
+}
+
+function avisoNoCanto(texto, tipo = "ok") {
   const caixa = $("avisos");
   if (!caixa) return;
   for (const a of caixa.children) if (a.textContent === texto) return;     // a mesma mensagem já está lá
@@ -403,6 +426,15 @@ function mostrarAviso(texto, tipo) {
   a.onclick = () => a.remove();
   caixa.appendChild(a);
   setTimeout(() => { a.classList.add("saindo"); setTimeout(() => a.remove(), 300); }, tipo === "erro" ? 7000 : 4000);
+}
+
+// O atalho trouxe uma versão nova ao abrir (lançador, 0.58): avisa uma vez.
+async function avisarAtualizacao() {
+  const r = await chamar(null, "aviso_atualizacao");
+  if (!r.ok || !r.aviso) return;
+  const texto = `SIAPP atualizado: ${r.aviso.de} → ${r.aviso.para}. O que mudou: Ajuda › Novidades.`;
+  status(texto, "ok");
+  avisoNoCanto(texto, "ok");
 }
 
 // ---------------------------------------------------------------- explicações longas atrás de um "?"

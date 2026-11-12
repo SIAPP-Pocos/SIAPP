@@ -28,6 +28,7 @@ import os
 
 from . import pocos as mpo
 from . import checkshot, geoquimica, pag, petrofisica, pressoes, pvt, rfp
+from . import registro
 from .banco import Banco, agora
 
 LEITORES = {"cdpe": rfp, "pressoes": pressoes, "pvt": pvt, "pag": pag, "checkshot": checkshot,
@@ -140,7 +141,11 @@ def ler_pendentes(banco: Banco, pasta_projeto: str, progresso=None) -> list[dict
             continue
         if progresso:
             progresso(k, len(lista), a["rel"])
-        r = ler_arquivo(banco, pasta_projeto, a["rel"], poco_id=a["poco_id"], sha256=a["sha256"])
+        try:        # um arquivo com problema não impede a leitura dos outros
+            r = ler_arquivo(banco, pasta_projeto, a["rel"], poco_id=a["poco_id"], sha256=a["sha256"])
+        except Exception:  # noqa: BLE001
+            registro.log.exception("dados do poço: falhou a leitura de %s", a["rel"])
+            continue
         if r:
             saida.append(r)
     return saida

@@ -5,7 +5,7 @@
 
 // Ao mostrar cada aba, recarrega o que pode ter mudado.
 const AO_ABRIR_ABA = {
-  projeto: () => carregarPanorama(),
+  projeto: () => carregarInicio(),
   dados: () => carregarDados(),
   mapa: () => { carregarMapa(); carregarCamadas(); },
   docs: () => carregarDocumentos(),
@@ -30,34 +30,15 @@ async function carregarDados() {
   if (ui.subDados === "consolidado") carregarConsolidado();
 }
 
-// ---------------------------------------------------------------- início
-async function carregarPanorama() {
-  if (!projetoAberto) return;
-  const r = await chamar(null, "panorama");
-  if (!r.ok) return;
-  const box = limpar($("panorama"));
-  box.hidden = false;
-  const itens = [
-    [r.arquivos.total, "arquivo(s) baixado(s)", tamanho(r.arquivos.bytes)],
-    [r.documentos.processados, "documento(s) com texto", `${r.documentos.paginas} página(s)`],
-    [r.vocabulario, "correção(ões) e palavra(s)", "suas e da comunidade"],
-    [r.fatos, "dado(s) transcrito(s)", "com fonte"],
-  ];
-  for (const [n, rotulo, sub] of itens) {
-    const c = el("div", "numero");
-    c.append(el("strong", "", numero(n, 0)), el("span", "", rotulo), el("small", "", sub));
-    box.appendChild(c);
-  }
-}
-
 // O projeto fica aberto para todas as abas; aqui, só ajustes da tela inicial.
 function aoAbrirProjeto(r) {
   $("ini-pasta").textContent = "Projeto aberto";
   $("ini-pasta").disabled = true;
+  $("ini-pasta").hidden = true;
   $("ini-pasta-ajuda").textContent = r.pasta || "";
   $("cfg-pasta").textContent = r.pasta || "";
   mostrarProjetoNoTopo(r.pasta);
-  carregarPanorama();
+  carregarInicio();
 }
 
 function ligar(id, evento, fn) { $(id)[evento] = fn; }
@@ -86,6 +67,7 @@ async function iniciar() {
   for (const b of document.querySelectorAll("[data-ir]")) b.onclick = () => trocarAba(b.dataset.ir);
   ligarJanelas();
   ligarInterface();
+  ligarInicio();
 
   // projeto
   ligar("ini-pasta", "onclick", escolherPasta);
@@ -166,9 +148,11 @@ async function iniciar() {
   }
   if (!projetoAberto && est.ok && est.existe_projeto && prefs && prefs.abrir_ao_iniciar) {
     if (await abrirProjetoSozinho()) chamar(null, "restaurar_janelas");
+    avisarAtualizacao();
     return;
   }
   if (projetoAberto) chamar(null, "restaurar_janelas");
+  avisarAtualizacao();
   status("Pronto. Comece abrindo o projeto (Início).");
 }
 

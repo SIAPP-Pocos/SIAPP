@@ -42,6 +42,9 @@ PADRAO = {
     "bloco": {},               # bloco 3D: {ambiente, aparencia} (guia de interpolação, aparência dos poços)
     "atalhos": {},             # {ação: tecla} só o que a pessoa mudou (o padrão fica na interface)
     "avisos_vistos": {},       # {aviso: True} avisos de primeira vez marcados "não mostrar de novo"
+    "projeto_atual": "",       # pasta do projeto que abre ao iniciar ("" = ambiente_teste)
+    "projetos": [],            # pastas de projeto conhecidas, além da principal e das de projetos/
+    "atualizar_ao_abrir": True,  # o atalho traz a versão nova do GitHub antes de abrir (lançador)
 }
 
 FORMAS_MARCADOR = ("esfera", "cubo", "losango", "cone", "cilindro", "nenhum")
@@ -137,7 +140,7 @@ def normalizar(d) -> dict:
     for chave, opcoes in (("paleta", PALETAS), ("tema", TEMAS), ("fonte", FONTES)):
         if d.get(chave) in opcoes:
             p[chave] = d[chave]
-    for chave in ("abrir_ao_iniciar", "lembrar_arranjo"):
+    for chave in ("abrir_ao_iniciar", "lembrar_arranjo", "atualizar_ao_abrir"):
         if isinstance(d.get(chave), bool):
             p[chave] = d[chave]
     if isinstance(d.get("recolhidas"), dict):
@@ -170,6 +173,10 @@ def normalizar(d) -> dict:
         if ap:
             p["bloco"]["aparencia"] = ap
     p["atalhos"] = _atalhos(d.get("atalhos"))
+    if isinstance(d.get("projeto_atual"), str) and len(d["projeto_atual"]) < 500:
+        p["projeto_atual"] = d["projeto_atual"]
+    if isinstance(d.get("projetos"), list):
+        p["projetos"] = [x for x in dict.fromkeys(d["projetos"]) if isinstance(x, str) and 0 < len(x) < 500][:50]
     if isinstance(d.get("avisos_vistos"), dict):
         p["avisos_vistos"] = {k: True for k, v in list(d["avisos_vistos"].items())[:80]
                               if isinstance(k, str) and ACAO_VALIDA.match(k) and v is True}

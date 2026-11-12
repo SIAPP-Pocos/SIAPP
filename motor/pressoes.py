@@ -280,6 +280,14 @@ def _num(s) -> float | None:
         return None
 
 
+def _num_cabecalho(v) -> float | None:
+    """Número de um parâmetro do cabeçalho DLIS, que pode vir com a unidade no texto ('136.0000 DEGF')."""
+    if isinstance(v, (int, float)) and not isinstance(v, bool):
+        return float(v)
+    m = re.search(r"-?\d+(?:[.,]\d+)?", str(v or ""))
+    return float(m.group(0).replace(",", ".")) if m else None
+
+
 def _num_br(s) -> float | None:
     """Número do relatório (pt-BR): '1.680' = 1680; '2.948,6' = 2948,6; '0,0004'."""
     t = str(s or "").strip().replace(" ", "")
@@ -619,10 +627,11 @@ def itens(dados: dict) -> list[dict]:
             saida.append({"tipo": "pressao_formacao", "nome": f"estação {e['estacao']}", "prof_topo": e["prof"],
                           "valor": e.get("pressao_kgf_cm2"), "unidade": "kgf/cm²", "texto": e["qualidade"],
                           "extra": {**extra, "ferramenta": cab.get("ferramenta") or cab.get("nome")}})
-        if cab.get("temp_max_f"):
+        temp_max = _num_cabecalho(cab.get("temp_max_f"))
+        if temp_max is not None:
             saida.append({"tipo": "temperatura", "nome": f"{cab.get('ferramenta') or 'teste a cabo'} (máxima registrada)",
                           "prof_topo": max((e["prof"] or 0) for e in dados.get("estacoes", [])) or None,
-                          "valor": float(cab["temp_max_f"]), "unidade": "°F", "texto": "lida", "extra": {}})
+                          "valor": temp_max, "unidade": "°F", "texto": "lida", "extra": {}})
         return saida
     rel = dados.get("relatorio") or {}
     if rel:

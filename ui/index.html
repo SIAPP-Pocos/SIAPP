@@ -54,6 +54,7 @@
           <button class="menu-item" type="button" role="menuitem" data-ajuda="limites">Limites e confiabilidade</button>
           <button class="menu-item" type="button" role="menuitem" data-ajuda="atalhos">Atalhos de teclado</button>
           <button class="menu-item" type="button" role="menuitem" data-ajuda="diag">Diagnóstico</button>
+          <button class="menu-item" type="button" role="menuitem" data-ajuda="novidades">Novidades desta versão</button>
           <button class="menu-item" type="button" role="menuitem" data-ajuda="sobre">Sobre o SIAPP</button>
         </div>
       </div>
@@ -63,43 +64,37 @@
 
   <div class="area" id="area">
   <main class="grade projeto" id="vista-projeto">
-    <aside class="lateral" data-titulo="Etapas do trabalho">
-      <section class="etapa">
-        <h2>Etapas do trabalho</h2>
-        <ol class="fluxo etapas-lista">
-          <li><button data-ir="dados"><strong>Acervo</strong><span>Catálogo e levantamento do REATE, busca por tipo de dado, cadastro e produção da ANP.</span></button></li>
-          <li><button data-ir="docs"><strong>Documentos</strong><span>Ler, buscar, corrigir o OCR e transcrever dados com fonte.</span></button></li>
-          <li><button data-ir="perfis"><strong>Perfis</strong><span>Curvas dos DLIS, LIS e LAS; intervalo-alvo e avaliação de formação.</span></button></li>
-          <li><button data-ir="mapa"><strong>Poços</strong><span>Poços, campos e infraestrutura no mapa; a ficha de cada poço.</span></button></li>
-          <li><button data-ir="secao"><strong>Correlação</strong><span>Seção estratigráfica pelos topos de formação.</span></button></li>
-          <li><button data-ir="bloco"><strong>Modelo 3D</strong><span>Superfícies e zonas entre os poços, com validação.</span></button></li>
-          <li class="fluxo-extra"><button data-ir="viab"><strong>Viabilidade</strong><span>Distância até a infraestrutura, capacidade de injeção e custo do duto.</span></button></li>
-          <li class="fluxo-extra"><button data-ir="comunidade"><strong>Comunidade</strong><span>Exportar suas correções e importar as de colegas.</span></button></li>
-        </ol>
-      </section>
-    </aside>
     <section class="principal inicio">
-      <div class="inicio-col">
-      <section class="abertura">
-        <h1>Dados públicos de poços, organizados</h1>
-        <p>O SIAPP lista o acervo do portal <strong>REATE</strong> (ANP/CPRM), baixa os arquivos que
-          você escolher e transforma em dado pesquisável: texto dos documentos escaneados, curvas
-          dos perfis, poços no mapa. O que você corrige pode ir para a <strong>base comunitária</strong>,
-          e todo mundo recebe já tratado.</p>
-        <div class="linha">
-          <button class="btn" id="ini-pasta">Abrir o projeto</button>
-          <span class="ajuda" id="ini-pasta-ajuda">Tudo fica na pasta <strong>ambiente_teste</strong>, ao lado do aplicativo.</span>
-        </div>
-        <div class="panorama" id="panorama" hidden></div>
-      </section>
+      <div class="ini">
+        <header class="ini-cab">
+          <div class="ini-titulo">
+            <p class="rotulo" id="ini-rotulo">Projeto</p>
+            <h1 id="ini-nome">Nenhum projeto aberto</h1>
+            <p class="ajuda" id="ini-pasta-ajuda">Tudo fica na pasta <strong>ambiente_teste</strong>, ao lado do aplicativo.</p>
+          </div>
+          <div class="linha">
+            <button class="btn" id="ini-pasta">Abrir o projeto</button>
+          </div>
+        </header>
 
-      <section class="cartao-projeto">
-        <h2>Últimas mensagens</h2>
-        <ul class="lista-msgs" id="ini-msgs"></ul>
-        <button class="btn secundario pequeno" id="ini-historico">Ver todas</button>
-      </section>
+        <section class="ini-sec">
+          <h2 class="ini-sec-titulo">Projetos</h2>
+          <div class="proj-grade" id="ini-projetos"></div>
+        </section>
 
+        <section class="ini-sec" id="ini-sec-modulos" hidden>
+          <h2 class="ini-sec-titulo">Módulos</h2>
+          <div class="mod-grade" id="ini-modulos"></div>
+          <div class="mod-extras" id="ini-extras"></div>
+        </section>
 
+        <section class="ini-sec ini-msgs">
+          <div class="ini-sec-cab">
+            <h2 class="ini-sec-titulo">Últimas mensagens</h2>
+            <button class="link" id="ini-historico" type="button">Ver todas</button>
+          </div>
+          <ul class="lista-msgs" id="ini-msgs"></ul>
+        </section>
       </div>
     </section>
   </main>
@@ -1753,6 +1748,7 @@
         </div>
         <h3>Ao iniciar</h3>
         <label class="opcao"><input type="checkbox" id="cfg-abrir"> <span>Abrir o projeto sozinho (sem o botão “Abrir o projeto”)</span></label>
+        <label class="opcao"><input type="checkbox" id="cfg-atualizar"> <span>Ao abrir pelo atalho, trazer a versão nova do GitHub (como um <code>git pull</code>, só quando é seguro)</span></label>
         <label class="opcao"><input type="checkbox" id="cfg-arranjo"> <span>Lembrar o arranjo das janelas: posição, tamanho, monitor, divisão e abas destacadas</span></label>
         <p class="ajuda">Pasta do projeto: <code id="cfg-pasta">—</code> (por enquanto, sempre esta). As preferências ficam em <code>preferencias.json</code>, dentro dela.</p>
       </div>
@@ -1860,6 +1856,7 @@
   <script type="module" src="js/bloco3d.js"></script>
   <script src="js/comum.js"></script>
   <script src="js/interface.js"></script>
+  <script src="js/inicio.js"></script>
   <script src="js/secao.js"></script>
   <script src="js/bloco.js"></script>
   <script src="js/bloco_zonas.js"></script>

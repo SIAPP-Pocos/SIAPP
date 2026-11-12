@@ -155,3 +155,14 @@ def test_ponte_serie_e_gradiente(api):
     assert g["ok"] and g["A"]["n"] == 2 and "contato" in g
     assert not api.gradiente_pressoes({"A": pts[:1]})["ok"]
     assert not api.gradiente_pressoes({})["ok"]
+
+
+def test_temperatura_do_cabecalho_com_unidade_no_texto():
+    """0.58: o DLIS de um teste a cabo do Ruan traz MRT = '136.0000 DEGF'; a leitura na abertura do projeto
+    parava ali e nenhum outro documento era lido."""
+    d = {"documento": "wft", "cabecalho": {"temp_max_f": "136.0000 DEGF", "ferramenta": "MDT"},
+         "estacoes": [{"estacao": 1, "prof": 1500.0, "qualidade": "boa", "pressao_kgf_cm2": 150.0}]}
+    temp = [i for i in pr.itens(d) if i["tipo"] == "temperatura"]
+    assert temp and temp[0]["valor"] == 136.0 and temp[0]["unidade"] == "°F"
+    d["cabecalho"]["temp_max_f"] = "sem valor"
+    assert not [i for i in pr.itens(d) if i["tipo"] == "temperatura"]

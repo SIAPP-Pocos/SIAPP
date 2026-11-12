@@ -132,6 +132,26 @@ Precisa de internet. Comece por uma categoria pequena para ver o tempo.
 - [ ] Sem intervalo marcado, **Calcular** explica que precisa de um intervalo-alvo.
 - [ ] Repetir no `5PX__0011__RN_5PX__0011__RN.tif` (DLIS de 2020).
 
+## 0.58 — projetos, módulos no Início e o atalho que se atualiza
+
+Esta é a última vez que você precisa do `git pull`: a partir dela, o atalho traz cada versão nova.
+
+- [ ] Abra pelo **atalho**. A janelinha mostra "Procurando versão nova"; o SIAPP abre normalmente.
+- [ ] **Início**: o cartão "Projeto principal" aparece marcado "aberto", com as bacias, os números e o minimapa dos poços.
+- [ ] **Módulos**: cada um diz o que tem (ex.: Documentos com "N sem texto"); o botão leva à aba certa.
+- [ ] **Novo projeto**: nome "Teste" e uma bacia. Crie e escolha **Abrir este projeto**: o SIAPP fecha e abre de novo já em
+      "Teste" (vazio). Feche e abra pelo atalho: abre em "Teste".
+- [ ] No Início, clique no cartão "Projeto principal": volta para os seus dados de sempre.
+- [ ] **renomear** (passe o mouse no cartão) muda o nome, não a pasta.
+- [ ] Com um download em andamento, tente trocar de projeto: aparece o aviso para esperar.
+- [ ] **Ajuda › Novidades desta versão** mostra a 0.58 e a 0.57.
+- [ ] **Configurações › Diagnóstico**: aparecem "Atalho: atualização: …" e, se o SIAPP estiver fixado na barra de tarefas,
+      "Botão fixado na barra de tarefas". Se disser que falta a identidade, clique **Corrigir o botão fixado**. Depois rode a
+      sua automação em Python de novo: o prompt dela não deve mais aparecer no ícone do SIAPP. Se ainda aparecer, desafixe o
+      SIAPP e fixe de novo o `SIAPP.lnk` da pasta.
+- [ ] O log não mostra mais "leitura dos dados do poço na abertura falhou … 136.0000 DEGF".
+- [ ] Quando eu publicar a próxima versão: abra pelo atalho e veja "SIAPP atualizado: 0.58.0 → 0.59.0".
+
 ## 0.57 — interface pelo fluxo, busca de poço, atalhos e avisos
 
 - [ ] A barra do alto, na janela padrão, fica **numa linha só**: pasta do projeto, Início, 1 Acervo … 6 Modelo 3D, Mais, lupa, ⋯,

@@ -23,7 +23,7 @@ from datetime import datetime
 from motor import preferencias as mpf
 from motor import projeto as mp
 
-from . import base
+from . import base, icone
 from .base import ErroUsuario, resposta_segura
 
 NOMES_ABAS = {"projeto": "Projeto", "dados": "Dados", "mapa": "Mapa", "docs": "Documentos",
@@ -237,7 +237,7 @@ class JanelasAPI:
         """O que uma janela recém-aberta precisa saber para se montar."""
         return {"projeto_aberto": self._projeto is not None,
                 "pasta": self._projeto.pasta if self._projeto else "",
-                "existe_projeto": os.path.isfile(os.path.join(base.PASTA_PROJETO, mp.ARQUIVO_CONFIG)),
+                "existe_projeto": os.path.isfile(os.path.join(self._projeto_inicial(), mp.ARQUIVO_CONFIG)),
                 "abertas": sorted(self._janelas)}
 
     @resposta_segura
@@ -245,8 +245,9 @@ class JanelasAPI:
         """Abre a pasta do projeto sem o diálogo (preferência "abrir ao iniciar")."""
         if self._projeto is not None:
             return {"pasta": self._projeto.pasta, "ja_aberto": True}
-        os.makedirs(base.PASTA_PROJETO, exist_ok=True)
-        return self._abrir_projeto(base.PASTA_PROJETO)
+        pasta = self._projeto_inicial()        # o último projeto escolhido (0.58), ou o ambiente_teste
+        os.makedirs(pasta, exist_ok=True)
+        return self._abrir_projeto(pasta)
 
     def _progresso_abertura(self, passo: int, total: int, texto: str):
         self._js("progressoAbertura", {"passo": passo, "total": total, "texto": texto})
@@ -301,7 +302,33 @@ class JanelasAPI:
                 "banco_bytes": os.path.getsize(banco) if os.path.isfile(banco) else 0,
                 "ocr_instalado": os.path.isdir(base.PASTA_TESSDATA) and bool(os.listdir(base.PASTA_TESSDATA)),
                 "janelas": ["principal", *sorted(self._janelas)],
-                "lentas": lentas, "erros_sessao": erros, "erros_log": _erros_do_log(self._caminho_log())}
+                "lentas": lentas, "erros_sessao": erros, "erros_log": _erros_do_log(self._caminho_log()),
+                "barra_de_tarefas": icone.atalhos_fixados(), "atualizacao": _ultima_atualizacao()}
+
+    @resposta_segura
+    def corrigir_atalho_fixado(self):
+        """Grava a identidade do SIAPP no botão fixado na barra de tarefas (0.58). Ver ponte/icone.py."""
+        feitos = icone.corrigir_fixados()
+        if not feitos:
+            raise ErroUsuario("Nenhum botão fixado do SIAPP precisava (ou pôde) ser corrigido.")
+        return {"corrigidos": feitos}
+
+    @resposta_segura
+    def novidades(self, n: int = 3):
+        """As últimas versões do CHANGELOG.md, em itens curtos (Ajuda › Novidades)."""
+        return {"versoes": ler_changelog(os.path.join(base.PASTA_APP, "CHANGELOG.md"), int(n or 3))}
+
+    @resposta_segura
+    def aviso_atualizacao(self):
+        """O lançador atualizou o SIAPP ao abrir? Mostra uma vez ("SIAPP atualizado: 0.57.0 → 0.58.0")."""
+        caminho = os.path.join(base.PASTA_PROJETO, "atualizacao.json")      # gravado pelo lançador
+        try:
+            with open(caminho, encoding="utf-8") as f:
+                aviso = json.load(f)
+            os.remove(caminho)
+        except (OSError, ValueError):
+            return {"aviso": None}
+        return {"aviso": aviso}
 
     @resposta_segura
     def abrir_log(self):
@@ -322,6 +349,47 @@ def _versao(pacote: str) -> str:
 
 
 _LINHA_LOG = re.compile(r"^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}),\d+\s+(ERROR|WARNING|CRITICAL)\s+(\S+):\s*(.*)$")
+
+
+def ler_changelog(caminho: str, n: int = 3) -> list[dict]:
+    """As `n` primeiras versões do CHANGELOG (formato Keep a Changelog), sem a marcação do Markdown."""
+    try:
+        with open(caminho, encoding="utf-8") as f:
+            linhas = f.read().splitlines()
+    except OSError:
+        return []
+    limpar = lambda t: re.sub(r"\*\*|`", "", t).strip()       # noqa: E731
+    versoes, atual, secao = [], None, None
+    for linha in linhas:
+        m = re.match(r"## \[(\d[^\]]*)\](?:\s+[—-]\s+(\S+))?", linha)
+        if m:
+            if len(versoes) == n:
+                break
+            atual = {"versao": m.group(1), "data": m.group(2) or "", "resumo": "", "secoes": []}
+            versoes.append(atual)
+            secao = None
+        elif atual is None:
+            continue
+        elif linha.startswith("### "):
+            secao = {"titulo": linha[4:].strip(), "itens": []}
+            atual["secoes"].append(secao)
+        elif linha.startswith("- ") and secao is not None:
+            secao["itens"].append(limpar(linha[2:]))
+        elif linha.startswith("  ") and secao is not None and secao["itens"]:
+            secao["itens"][-1] += " " + limpar(linha)
+        elif linha.strip() and secao is None and not atual["resumo"]:
+            atual["resumo"] = limpar(linha)
+    return versoes
+
+
+def _ultima_atualizacao() -> str:
+    """A última linha "atualização: …" do log do lançador (o que o atalho fez ao abrir)."""
+    try:
+        with open(os.path.join(base.PASTA_PROJETO, "lancador.log"), encoding="utf-8", errors="replace") as f:
+            linhas = [l.strip() for l in f if "atualização:" in l]
+    except OSError:
+        return ""
+    return linhas[-1] if linhas else ""
 
 
 def _erros_do_log(caminho: str, n: int = 12) -> list[dict]:

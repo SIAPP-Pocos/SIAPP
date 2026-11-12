@@ -153,3 +153,65 @@ def aplicar(janela) -> bool:
         return True
     except AttributeError:
         return False
+
+
+# ------------------------------------------------------------------------------- atalhos fixados na barra (0.58)
+# Um botão fixado na barra de tarefas é uma CÓPIA do atalho, feita pelo Windows na hora de fixar. Se ele não tem a
+# identidade do SIAPP (fixado antes da 0.53.1, ou fixado a partir da janela "Python"), o Windows o reconhece pelo
+# programa que ele chama — o wscript.exe ou o pythonw.exe — e passa a juntar nele QUALQUER outra janela desse
+# programa: uma automação em Python, outro script. Por isso uma janela de outra coisa aparece com o ícone do SIAPP.
+
+def pasta_fixados() -> str:
+    return os.path.join(os.environ.get("APPDATA", ""), "Microsoft", "Internet Explorer", "Quick Launch",
+                        "User Pinned", "TaskBar")
+
+
+def _texto_lnk(dados: bytes) -> str:
+    """Caminhos e propriedades de um .lnk ficam em UTF-16 (e alguns em ANSI): junta os dois para procurar."""
+    return (dados.decode("utf-16-le", "ignore") + "\n" + dados.decode("latin-1", "ignore")).lower()
+
+
+def avaliar_fixado(caminho: str) -> dict | None:
+    """O que um atalho fixado tem de SIAPP, ou None se não é do SIAPP."""
+    try:
+        with open(caminho, "rb") as f:
+            t = _texto_lnk(f.read())
+    except OSError:
+        return None
+    nome = os.path.basename(caminho)
+    if "siapp" not in nome.lower() and "siapp" not in t:
+        return None
+    tem_id = APP_ID.lower() in t
+    lancador = NOME_LANCADOR.lower() in t
+    python = "pythonw" in t or "python.exe" in t or "pyw.exe" in t
+    if tem_id and lancador:
+        situacao, texto = "ok", "Certo: só as janelas do SIAPP entram neste botão."
+    elif lancador:
+        situacao, texto = "sem_id", ("Sem a identidade do SIAPP: o Windows junta neste botão qualquer outro script "
+                                     "aberto pelo wscript. Dá para corrigir aqui.")
+    else:
+        situacao, texto = "python", ("Aponta para o Python, não para o lançador: o Windows junta neste botão qualquer "
+                                     "programa em Python. Desafixe e fixe de novo o SIAPP.lnk da pasta do SIAPP.")
+    return {"arquivo": caminho, "nome": nome, "situacao": situacao, "texto": texto, "python": python}
+
+
+def atalhos_fixados() -> list[dict]:
+    pasta = pasta_fixados()
+    if not _no_windows() or not os.path.isdir(pasta):
+        return []
+    out = []
+    for nome in sorted(os.listdir(pasta)):
+        if nome.lower().endswith(".lnk"):
+            r = avaliar_fixado(os.path.join(pasta, nome))
+            if r:
+                out.append(r)
+    return out
+
+
+def corrigir_fixados() -> list[dict]:
+    """Grava a identidade do SIAPP nos atalhos fixados que chamam o lançador e não a têm."""
+    feitos = []
+    for r in atalhos_fixados():
+        if r["situacao"] == "sem_id" and identidade.aplicar_no_atalho(r["arquivo"]):
+            feitos.append(r["nome"])
+    return feitos

@@ -6,6 +6,26 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 
 ## [Não lançado]
 
+## [0.58.0] — 2026-11-12
+Projetos em pastas separadas, Início com o estado de cada módulo e o atalho que se atualiza sozinho.
+### Adicionado
+- **Projetos**: cada projeto é uma pasta com o seu banco, arquivos e modelos. O principal continua no `ambiente_teste`; os
+  novos ficam em `projetos\<nome>`. No Início, cada projeto é um cartão com nome, bacias, números e um minimapa dos poços;
+  **Novo projeto** pede nome e bacias. Abrir outro projeto reabre o SIAPP já nele, e ele passa a abrir da próxima vez.
+- **Módulos no Início** com o estado real do projeto: bacias levantadas, documentos sem texto, perfis não lidos, cadastro da
+  ANP, última seção e último modelo 3D, e o botão do próximo passo.
+- **O atalho atualiza o SIAPP**: antes de abrir, traz a versão nova do GitHub (como um `git pull`, só quando é seguro: nada
+  mudado à mão na pasta) e, se precisar, instala as bibliotecas novas. Desliga em Configurações.
+- Ajuda › **Novidades desta versão** (do CHANGELOG) e o aviso "SIAPP atualizado: 0.57.0 → 0.58.0" na primeira abertura.
+- Diagnóstico › **Botão fixado na barra de tarefas**: diz se o botão fixado do SIAPP está certo e corrige o que não tem a
+  identidade do SIAPP (era ele que juntava o prompt de outra automação no ícone do SIAPP).
+### Alterado
+- O Início deixou de ter a lista "Etapas do trabalho" e o texto de boas-vindas; o nome do projeto no topo vem do projeto.
+### Corrigido
+- A leitura dos formulários ao abrir o projeto parava num teste a cabo com a temperatura máxima escrita com a unidade
+  (`136.0000 DEGF`) e nenhum documento depois dele era lido. Agora o número é lido, e um arquivo com problema não impede os
+  outros.
+
 ## [0.57.0] — 2026-11-12
 Interface reorganizada pelo fluxo do trabalho: abas numeradas, busca de poço, atalhos, menu Ajuda e avisos onde importam.
 ### Adicionado

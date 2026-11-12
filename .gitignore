@@ -9,6 +9,9 @@ __pycache__/
 ambiente_teste/*
 !ambiente_teste/LEIA-ME.txt
 
+# Outros projetos (0.58): cada um é uma pasta com dados do usuário, como o ambiente_teste
+projetos/
+
 # Modelo de idioma do OCR: baixado na primeira execução (~8 MB)
 recursos/tessdata/
 
