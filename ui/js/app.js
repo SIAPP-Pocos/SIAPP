@@ -138,6 +138,7 @@ async function iniciar() {
   await carregarPreferencias();
   atualizarTeclasVisiveis();
   aplicarLarguras();
+  aplicarFichaCheia();
   if (typeof preencherAparencia === "function") preencherAparencia();
   const est = await chamar(null, "estado");
   if (est.ok && est.projeto_aberto) {

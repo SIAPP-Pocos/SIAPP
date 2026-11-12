@@ -33,8 +33,9 @@ from __future__ import annotations
 
 import io
 import re
-import unicodedata
 import zipfile
+
+from .texto import sem_acento as _sem_acento
 
 import numpy as np
 
@@ -56,10 +57,6 @@ CANAIS_PRESSAO = ("FPRE", "BQP1", "BQP", "QPRE", "QP", "PQ", "PRES", "PRESS", "F
 
 class ErroPressao(ValueError):
     pass
-
-
-def _sem_acento(s: str) -> str:
-    return "".join(c for c in unicodedata.normalize("NFD", s) if unicodedata.category(c) != "Mn")
 
 
 def _norm(s: str) -> str:

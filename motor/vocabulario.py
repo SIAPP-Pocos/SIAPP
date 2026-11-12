@@ -29,7 +29,6 @@ Regras de segurança da correção:
 from __future__ import annotations
 
 import json
-import os
 import re
 import unicodedata
 
@@ -102,15 +101,6 @@ def ler_base(caminho: str) -> dict:
 
 def projeto_vazio() -> dict:
     return {"palavras": [], "correcoes": {}, "ignorar": []}
-
-
-def ler_projeto(caminho: str) -> dict:
-    try:
-        with open(caminho, encoding="utf-8") as f:
-            d = json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError):
-        return projeto_vazio()
-    return {**projeto_vazio(), **d}
 
 
 # ================================================================ corretor

@@ -126,6 +126,9 @@ ou o OCR terminarem de gravar.
 versão da regra (`TIPO_CONFERIDO` em `ponte/api.py`, guardada em `meta`); nas aberturas seguintes, só nos arquivos cujo
 tamanho mudou.
 
+**Histórico (0.60).** Cada evento do projeto (`Projeto.registrar`) é uma linha em `historico.jsonl`; o `siapp.json` guarda só
+a configuração. O histórico antigo, que ficava dentro do `siapp.json`, passa para o arquivo de linhas na primeira abertura.
+
 **Testes de interface (0.59).** Como no pywebview, o que o motor manda para a página durante uma chamada roda antes de a
 resposta chegar (`tests/interface_util.py`). Foi essa diferença de ordem que escondeu o erro da aba que não recarregava ao
 abrir o projeto.

@@ -65,9 +65,6 @@ def chave_base(chave: str) -> str:
 
 
 # ------------------------------------------------------------------------------------------------------------- candidatos
-def _valido(topo, base) -> bool:
-    return topo is not None and base is not None and base > topo
-
 
 def _valido_em(topo, base, ref: str) -> bool:
     """Em profundidade medida a base é maior que o topo; em cota (positiva para cima) é menor."""

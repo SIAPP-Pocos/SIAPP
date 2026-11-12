@@ -243,3 +243,9 @@ def test_larguras_da_lateral():
     p = mpf.normalizar({"larguras": {"docs": 420, "bloco": 9999, "x y": 300, "secao": True, "mapa": 260.6}})
     assert p["larguras"] == {"docs": 420, "mapa": 260}
     assert mpf.mesclar(p, {"larguras": {"docs": None}})["larguras"] == {"mapa": 260}
+
+
+def test_ficha_cheia():
+    assert mpf.normalizar({})["ficha_cheia"] is False
+    assert mpf.normalizar({"ficha_cheia": True})["ficha_cheia"] is True
+    assert mpf.normalizar({"ficha_cheia": "sim"})["ficha_cheia"] is False

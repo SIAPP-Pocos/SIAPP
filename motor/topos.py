@@ -17,10 +17,10 @@ from __future__ import annotations
 
 import json
 import re
-import unicodedata
 
 from . import agp as magp
 from .banco import Banco, agora
+from .texto import sem_acento as _sem_acento
 
 FONTES = {"agp": "AGP", "transcrito": "Transcrito", "rfp": "RFP", "calha": "Calha (PAG)"}
 PRECEDENCIA_PADRAO = ["agp", "transcrito", "rfp", "calha"]
@@ -30,10 +30,6 @@ TEMA = "topo"
 
 _PREFIXOS = (("FORMACAO", "F"), ("FM", "F"), ("MEMBRO", "M"), ("MB", "M"), ("GRUPO", "G"), ("GR", "G"),
              ("CAMADA", "C"), ("SUPERGRUPO", "S"))
-
-
-def _sem_acento(s: str) -> str:
-    return "".join(c for c in unicodedata.normalize("NFD", str(s or "")) if unicodedata.category(c) != "Mn")
 
 
 def nome_e_nivel(nome: str) -> tuple[str, str]:

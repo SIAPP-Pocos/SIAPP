@@ -32,7 +32,8 @@ transformado em zero; tudo o que não está na posição esperada é ignorado �
 from __future__ import annotations
 
 import re
-import unicodedata
+
+from .texto import sem_acento as _sem_acento
 
 VERSAO = 2          # 2 (0.38): NPR, Relatório de Descoberta, Reentrada e CDPE de título desconhecido
 NOME = "Formulários CDPE da ANP (RFP, RFCP, Perfuração, Descoberta, Perfilagens, Reentrada)"
@@ -78,8 +79,6 @@ def reconhece(rel: str) -> bool:
 
 
 # ---------------------------------------------------------------- texto
-def _sem_acento(s: str) -> str:
-    return "".join(c for c in unicodedata.normalize("NFD", s) if unicodedata.category(c) != "Mn")
 
 
 def _norm(s: str) -> str:

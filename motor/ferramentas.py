@@ -28,13 +28,13 @@ from __future__ import annotations
 import json
 import os
 import re
-import unicodedata
 
 import numpy as np
 import pymupdf
 
 from .banco import Banco, agora
 from .pocos import chave
+from .texto import sem_acento as _sem_acento
 
 VERSAO_LEITOR = 1
 IDIOMA_OCR = "eng"          # os esquemas estão em inglês; o modelo inglês lê melhor os códigos
@@ -89,10 +89,6 @@ def ler_dicionario(caminho: str) -> dict:
 
 def _classe(s: str) -> str:
     return s.upper().translate(_CLASSE)
-
-
-def _sem_acento(s: str) -> str:
-    return "".join(c for c in unicodedata.normalize("NFD", s) if unicodedata.category(c) != "Mn")
 
 
 def eh_esquema(nome: str, pasta: str = "") -> bool:

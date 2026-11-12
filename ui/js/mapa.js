@@ -588,6 +588,15 @@ function secaoProducaoFicha(corpo, pr, campo) {
   corpo.appendChild(pp);
 }
 
+// Ficha em página inteira (0.60): a ficha toma o lugar do mapa, com as seções em colunas. Fica lembrado.
+function aplicarFichaCheia() {
+  const cheia = Boolean(prefs && prefs.ficha_cheia);
+  $("vista-mapa").classList.toggle("ficha-cheia", cheia);
+  $("fi-cheia").setAttribute("aria-pressed", String(cheia));
+  $("fi-cheia").textContent = cheia ? "Ao lado do mapa" : "Página inteira";
+  setTimeout(() => mapa && mapa.invalidateSize(), 60);
+}
+
 function fecharFicha() {
   $("ficha").hidden = true;
   fichaAberta = null;
@@ -632,6 +641,10 @@ function ligarMapa() {
   $("btn-cadastro-arq").onclick = () => baixarCadastro($("btn-cadastro-arq"), "importar_cadastro_arquivo");
   $("btn-catalogar").onclick = catalogarBacia;
   $("fi-fechar").onclick = fecharFicha;
+  $("fi-cheia").onclick = async () => {
+    await guardarPreferencias({ ficha_cheia: !(prefs && prefs.ficha_cheia) });
+    aplicarFichaCheia();
+  };
   for (const id of ["f-bacia", "f-terra", "f-tipo", "f-reate", "f-baixados", "f-acervo", "f-familia"]) {
     $(id).onchange = () => consultarMapa(id === "f-bacia");
   }

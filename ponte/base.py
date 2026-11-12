@@ -136,4 +136,4 @@ class BaseAPI:
 
     def _exigir_projeto(self):
         if self._projeto is None:
-            raise ErroUsuario("Abra primeiro o projeto (aba Projeto, “Abrir o projeto”).")
+            raise ErroUsuario("Abra primeiro o projeto (Início).")

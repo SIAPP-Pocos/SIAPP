@@ -103,3 +103,8 @@ Ajuda › **Novidades desta versão** mostra as três últimas versões do `CHAN
 
 Arraste a borda direita de qualquer barra lateral (o cursor vira ↔) para alargar ou estreitar, de 240 a 720 px. Fica
 guardado por aba (preferência `larguras`); dois cliques na borda voltam ao padrão.
+
+## Ficha do poço em página inteira (0.60)
+
+Na ficha (aba Poços), **Página inteira** põe a ficha no lugar do mapa, com as seções em colunas de ~460 px; **Ao lado do
+mapa** volta à gaveta. A escolha fica nas preferências (`ficha_cheia`). Com a ficha fechada, o mapa aparece sempre.

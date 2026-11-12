@@ -454,9 +454,6 @@ class Banco:
         with self.conexao() as c:
             c.execute("UPDATE arquivos SET tipo = ? WHERE rel = ?", (tipo, rel))
 
-    def definir_sha(self, rel: str, sha: str) -> None:
-        with self.conexao() as c:
-            c.execute("UPDATE arquivos SET sha256 = ? WHERE rel = ?", (sha, rel))
 
     # ================================================================ perfis
     def salvar_inventario(self, rel: str, poco_id: str, inv: dict) -> None:

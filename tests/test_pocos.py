@@ -219,7 +219,7 @@ def test_reparo_roda_uma_vez_ao_abrir_o_projeto(api, tmp_path):
     assert _reate(api._banco) == [("Potiguar", "7-GMR-13-RN")]
     assert api._banco.meta("reparou_reate_bacias") == "1"
     assert any(e["evento"] == "reparou_catalogo" and e["apagados"] == 1
-               for e in api._projeto.config["historico"])
+               for e in api._projeto.historico())
 
 
 def test_trocar_de_bacia_no_meio_da_listagem_nao_mistura(api):

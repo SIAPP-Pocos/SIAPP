@@ -6,6 +6,19 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 
 ## [Não lançado]
 
+## [0.60.0] — 2026-11-12
+Ficha do poço em página inteira e limpeza do código.
+### Adicionado
+- **Ficha do poço em página inteira**: na aba Poços, o botão **Página inteira** põe a ficha no lugar do mapa, com as seções
+  em colunas; **Ao lado do mapa** volta. Fica lembrado; fechar a ficha mostra o mapa de novo.
+### Alterado
+- **Histórico do projeto** num arquivo próprio (`historico.jsonl`), uma linha por evento: o `siapp.json` deixa de ser
+  regravado inteiro a cada ação (o histórico antigo passa para lá na primeira abertura, sem perder nada).
+- Modelo 3D: os botões do pé da lateral (Montar, Trazer o campo e montar, Ler as trajetórias) não se espremem mais.
+- Limpeza (revisão de 11/11): "tirar acento" num lugar só (`motor/texto.py`) para os leitores casarem nomes do mesmo jeito;
+  8 funções sem uso apagadas; atributos da API declarados desde o começo; teste que acusa nome repetido entre as partes da
+  API; `docs/roteiro.md` atualizado.
+
 ## [0.59.0] — 2026-11-12
 Modelo 3D em "receita", OCR sem travar a janela e os pedidos pequenos das anotações.
 ### Alterado

@@ -28,12 +28,13 @@ import re
 import socket
 import threading
 import time
-import unicodedata
 from collections import Counter
 import xml.etree.ElementTree as ET
 from urllib.parse import quote, unquote
 
 import requests
+
+from .texto import sem_acento as _sem_acento
 import urllib3.util.connection as _u3_conexao
 
 VERSAO_CLIENTE = "0.2"
@@ -92,11 +93,6 @@ _RE_PARTE = re.compile(r"(?:^|[\s_\-])parte[\s_\-]*\d+$", re.IGNORECASE)
 
 def eh_pasta_parte(nome: str) -> bool:
     return bool(_RE_PARTE.search(nome.strip()))
-
-
-def _sem_acento(texto: str) -> str:
-    return "".join(c for c in unicodedata.normalize("NFD", texto)
-                   if unicodedata.category(c) != "Mn")
 
 
 def eh_pasta_de_perfis(nome: str) -> bool:

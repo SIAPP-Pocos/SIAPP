@@ -27,7 +27,6 @@ import re
 import struct
 import zipfile
 import zlib
-from urllib.parse import urljoin
 
 from .banco import agora
 from .producao import AGENTE, links
@@ -539,15 +538,3 @@ def importar(pasta_projeto: str, ident: str, caminho: str) -> dict:
     return _guardar(pasta_projeto, item, g, f"arquivo importado: {nome}", arqs)
 
 
-def url_fonte(item: dict) -> str:
-    if item["fonte"] == "EPE":
-        if item.get("servico"):
-            return f"{EPE_REST}{item['servico'].replace('*', '')}"
-        return urljoin(EPE_SERVICO, str(item["camada"]))
-    if item["fonte"] == "ANP":
-        return ANP_GEO + item["arquivo"]
-    if item["fonte"] == "ICMBio":
-        return f"{ICMBIO_WFS}?typeName={item['wfs']}"
-    if item["fonte"] == "Importada":
-        return "arquivo importado por você"
-    return IBGE_BC250

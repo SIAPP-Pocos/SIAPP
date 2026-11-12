@@ -2485,3 +2485,27 @@ def test_so_os_destacados_e_arranjo_padrao(janela):
     assert janela.api._preferencias().ler()["lembrar_arranjo"] is False          # 0.59: reabre no padrão
     assert p.is_hidden("#cm-importar-ti")
     assert not janela.erros_js, janela.erros_js
+
+
+# ---------------------------------------------------------------- 0.60: ficha do poço em página inteira
+def test_ficha_em_pagina_inteira(janela):
+    from test_pocos import csv_exemplo
+    p = janela.page
+    abrir_projeto(janela)
+    janela.api._importar_cadastro(csv_exemplo(), "anp:teste")
+    p.keyboard.press("Control+k")
+    p.fill("#busca-poco", "gmr13")
+    janela.esperar("document.querySelector('#busca-lista strong') !== null")
+    p.keyboard.press("Enter")
+    janela.esperar("document.getElementById('fi-titulo').textContent === '7-GMR-13-RN' && "
+                   "!document.getElementById('fi-sub').textContent.includes('carregando')")
+    assert p.is_visible("#mapa")
+    largura_lado = p.locator("#ficha").bounding_box()["width"]
+    p.click("#fi-cheia")
+    janela.esperar("prefs.ficha_cheia === true")
+    assert p.is_hidden("#mapa") and p.text_content("#fi-cheia") == "Ao lado do mapa"
+    assert p.locator("#ficha").bounding_box()["width"] > largura_lado + 300
+    p.click("#fi-fechar")
+    assert p.is_visible("#mapa")                     # fechou a ficha: o mapa volta
+    assert janela.api._preferencias().ler()["ficha_cheia"] is True
+    assert not janela.erros_js, janela.erros_js

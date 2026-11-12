@@ -132,6 +132,14 @@ Precisa de internet. Comece por uma categoria pequena para ver o tempo.
 - [ ] Sem intervalo marcado, **Calcular** explica que precisa de um intervalo-alvo.
 - [ ] Repetir no `5PX__0011__RN_5PX__0011__RN.tif` (DLIS de 2020).
 
+## 0.60 — ficha do poço em página inteira
+
+- [ ] **4 Poços**: abra a ficha de um poço (clique no mapa ou Ctrl+K) e clique **Página inteira**: a ficha ocupa o lugar do
+      mapa, em colunas. **Ao lado do mapa** volta. Feche a ficha: o mapa aparece. Feche e abra o SIAPP: a escolha continua.
+- [ ] **6 Modelo 3D**: no pé da lateral, "Montar o bloco" ocupa a largura toda e "Ler as trajetórias" fica pequeno ao lado
+      da explicação.
+- [ ] Na pasta do projeto aparece `historico.jsonl`; o `siapp.json` fica pequeno (sem o histórico).
+
 ## 0.59 — Modelo 3D em receita, OCR sem travar e pedidos pequenos
 
 **Modelo 3D**

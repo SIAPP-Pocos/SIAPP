@@ -93,3 +93,18 @@ def test_abertura_reconfere_o_tipo_so_quando_precisa(api, tmp_path):
         f.write(b"mais")                                      # mudou: confere de novo
     api._migrar_downloads()
     assert api._banco.arquivos()[0]["tipo"] == tipo
+
+
+def test_nenhum_nome_publico_repetido_entre_as_partes_da_api():
+    """A API é uma classe feita de 17 partes (mixins): um nome público repetido faria uma parte esconder a outra."""
+    from ponte.api import API
+    vistos = {}
+    for parte in API.__mro__[1:]:
+        if parte is object:
+            continue
+        for nome, valor in vars(parte).items():
+            if nome.startswith("_") or not callable(valor):
+                continue
+            assert nome not in vistos, f"{nome} está em {vistos[nome]} e em {parte.__name__}"
+            vistos[nome] = parte.__name__
+    assert len(vistos) > 150

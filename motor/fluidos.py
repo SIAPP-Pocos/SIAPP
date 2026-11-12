@@ -29,6 +29,7 @@ from statistics import median
 from . import producao as mpr
 from .banco import Banco
 from .pocos import canonico
+from .texto import sem_acento as _sem_acento_puro
 
 TIPO_FATO = "propriedade_fluido"
 GRANDEZAS = {
@@ -57,7 +58,7 @@ _PAGINA_CITA = re.compile(r"\bapi\b|grau api|densidade (?:relativa )?do gas|dens
 
 
 def sem_acento(t: str) -> str:
-    return "".join(c for c in unicodedata.normalize("NFD", t or "") if unicodedata.category(c) != "Mn").lower()
+    return _sem_acento_puro(t).lower()
 
 
 def numero(t: str) -> float | None:

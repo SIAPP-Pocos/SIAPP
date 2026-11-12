@@ -66,8 +66,6 @@ class JanelasAPI:
         return {"preferencias": p}
 
     # ------------------------------------------------------------ janelas
-    def _todas_janelas(self) -> list:
-        return [j for j in [self._janela, *self._janelas.values()] if j is not None]
 
     def _telas(self) -> list:
         try:

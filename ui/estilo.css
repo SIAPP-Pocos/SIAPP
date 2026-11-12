@@ -1442,7 +1442,11 @@ details.avancado > summary:hover { color: var(--destaque); }
 details.avancado > .etapa { border-bottom: 0; padding-top: 0; }
 .etapa-montar { position: sticky; bottom: 0; z-index: 2; background: var(--painel); padding-bottom: 14px;
   box-shadow: 0 -8px 14px -10px rgba(0, 0, 0, .35); }
-.etapa-montar .btn { width: 100%; }
+.etapa-montar #sec-montar { width: 100%; }
+.bl-etapa-montar .linha { flex-wrap: wrap; gap: 6px; }
+.bl-etapa-montar #bl-montar, .bl-etapa-montar #bl-montar-campo { flex: 1 1 100%; }
+.bl-etapa-montar #bl-direcionais { flex: none; }
+.bl-etapa-montar .linha .ajuda { flex: 1 1 140px; min-width: 0; }
 
 /* Início: Viabilidade e Comunidade separadas do fluxo principal */
 .fluxo li.fluxo-extra { counter-increment: none; }
@@ -1585,3 +1589,13 @@ body.arrastando-lateral, body.arrastando-lateral * { cursor: col-resize !importa
 /* 0.59: rótulo com explicação ao passar o mouse */
 th.com-dica { text-decoration: underline dotted; text-underline-offset: 3px; cursor: help; }
 .pg-texto-corpo.revisado { border-left: 3px solid var(--destaque); padding-left: 10px; }
+
+/* ================================================================ ficha do poço em página inteira (0.60) */
+.g-acoes { display: flex; align-items: center; gap: 6px; flex: none; }
+#vista-mapa.ficha-cheia:has(> #ficha:not([hidden])) > .principal { display: none; }
+#vista-mapa.ficha-cheia > #ficha { width: auto; border-left: 0; box-shadow: none; padding: 24px 32px; }
+#vista-mapa.ficha-cheia #fi-corpo { column-width: 460px; column-gap: 36px; }
+#vista-mapa.ficha-cheia #fi-corpo > h3 { break-after: avoid; }
+#vista-mapa.ficha-cheia #fi-corpo > table, #vista-mapa.ficha-cheia #fi-corpo > div,
+#vista-mapa.ficha-cheia #fi-corpo > ul, #vista-mapa.ficha-cheia #fi-corpo > p { break-inside: avoid; }
+#vista-mapa.ficha-cheia #fi-corpo > h3:first-child { margin-top: 0; }

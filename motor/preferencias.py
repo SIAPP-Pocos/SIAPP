@@ -46,6 +46,7 @@ PADRAO = {
     "projetos": [],            # pastas de projeto conhecidas, além da principal e das de projetos/
     "atualizar_ao_abrir": True,  # o atalho traz a versão nova do GitHub antes de abrir (lançador)
     "larguras": {},            # {vista: px} largura da barra lateral escolhida arrastando a borda
+    "ficha_cheia": False,      # a ficha do poço na largura toda, no lugar do mapa (0.60)
 }
 
 FORMAS_MARCADOR = ("esfera", "cubo", "losango", "cone", "cilindro", "nenhum")
@@ -141,7 +142,7 @@ def normalizar(d) -> dict:
     for chave, opcoes in (("paleta", PALETAS), ("tema", TEMAS), ("fonte", FONTES)):
         if d.get(chave) in opcoes:
             p[chave] = d[chave]
-    for chave in ("abrir_ao_iniciar", "lembrar_arranjo", "atualizar_ao_abrir"):
+    for chave in ("abrir_ao_iniciar", "lembrar_arranjo", "atualizar_ao_abrir", "ficha_cheia"):
         if isinstance(d.get(chave), bool):
             p[chave] = d[chave]
     if isinstance(d.get("recolhidas"), dict):

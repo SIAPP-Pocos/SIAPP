@@ -81,6 +81,7 @@ function preferenciasMudaram(p) {
   prefs = p;
   aplicarAparencia();
   aplicarLarguras();
+  if (typeof aplicarFichaCheia === "function") aplicarFichaCheia();
   if (!$("config").hidden) preencherConfig();
   if (typeof atualizarTeclasVisiveis === "function") atualizarTeclasVisiveis();
 }

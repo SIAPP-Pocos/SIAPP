@@ -21,11 +21,11 @@ import io
 import json
 import os
 import re
-import unicodedata
 
 import requests
 
 from .banco import Banco, agora
+from .texto import sem_acento as _sem_acento
 
 URLS_CADASTRO = (
     "https://www.gov.br/anp/pt-br/centrais-de-conteudo/dados-abertos/arquivos/"
@@ -45,10 +45,6 @@ _RE_NOME = re.compile(r"^(\d{1,2})([A-Z]{1,7})0*(\d{1,5})([A-Z]{2,6})$")
 
 class ErroCadastro(ValueError):
     """Falha ao obter ou ler o cadastro da ANP, com mensagem para o usuário."""
-
-
-def _sem_acento(texto: str) -> str:
-    return "".join(c for c in unicodedata.normalize("NFD", texto) if unicodedata.category(c) != "Mn")
 
 
 def canonico(nome: str) -> str | None:

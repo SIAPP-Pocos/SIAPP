@@ -21,9 +21,6 @@ def _numero(v, campo):
 
 
 class FatosAPI:
-    @resposta_segura
-    def tipos_fato(self):
-        return {"tipos": mc.TIPOS_FATO}
 
     def _salvar_fato(self, dados: dict, *, fonte_rel: str | None = None) -> dict:
         """Valida e grava um fato local. `fonte_rel`: arquivo de onde o dado saiu."""

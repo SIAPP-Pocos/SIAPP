@@ -115,11 +115,6 @@ def _num(s):
         return None
 
 
-def _prof_cota(texto: str, nome: str):
-    m = re.search(_PROF_COTA.format(n=nome), texto)
-    return m
-
-
 # ================================================================ seções
 def secoes(texto: str) -> dict[str, list[str]]:
     """Fatia o texto pelas seções conhecidas. A mesma seção pode aparecer mais

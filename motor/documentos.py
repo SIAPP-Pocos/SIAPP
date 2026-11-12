@@ -35,6 +35,7 @@ import pymupdf
 import requests
 
 from . import registro
+from .texto import sem_acento as _sem_acento_puro
 
 EXTENSOES = (".pdf", ".tif", ".tiff", ".png", ".jpg", ".jpeg")
 # Imagens grandes (perfil em papel escaneado em TIF chega a 2.500 × 80.000 px):
@@ -68,8 +69,7 @@ class ProcessamentoCancelado(Exception):
 
 
 def sem_acento(texto: str) -> str:
-    return "".join(c for c in unicodedata.normalize("NFD", texto)
-                   if unicodedata.category(c) != "Mn").lower()
+    return _sem_acento_puro(texto).lower()
 
 
 # =========================================================== idioma do OCR

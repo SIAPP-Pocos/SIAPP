@@ -7,7 +7,8 @@ um script, um HTML aberto no navegador) pode ler sem depender das outras.
 
 Estrutura:
     <projeto>/
-    ├── siapp.json                      configuração e histórico do projeto
+    ├── siapp.json                      configuração do projeto
+    ├── historico.jsonl                 histórico do projeto, um evento por linha (0.60)
     ├── projeto.sqlite                  banco do projeto (ver motor/banco.py)
     ├── siapp.log                       registro de erros (para relatar problemas)
     ├── catalogo/<bacia>/               o que existe no portal (só listagem)
@@ -42,6 +43,7 @@ _TRAVA_ESCRITA = threading.RLock()
 from . import __version__ as VERSAO_SIAPP  # noqa: E402  (uma fonte só para a versão)
 from . import formatos  # noqa: E402
 ARQUIVO_CONFIG = "siapp.json"
+ARQUIVO_HISTORICO = "historico.jsonl"
 NOME_PASTA_PADRAO = "ambiente_teste"
 SUBPASTAS = ("catalogo", "bruto", "texto", "pocos", "execucoes")
 
@@ -113,8 +115,8 @@ class Projeto:
                 "criado": agora(),
                 "atualizado": agora(),
                 "bacia": None,
-                "historico": [],
             })
+        p._migrar_historico()
         return p
 
     # ------------------------------------------------------------ configuração
@@ -122,17 +124,53 @@ class Projeto:
     def config(self) -> dict:
         return ler_json(self.caminho_config, {})
 
+    @property
+    def caminho_historico(self) -> str:
+        return os.path.join(self.pasta, ARQUIVO_HISTORICO)
+
+    def _migrar_historico(self):
+        """Até a 0.59, o histórico ficava dentro do siapp.json e o arquivo inteiro era regravado a cada evento
+        (o do Ruan passava de 200 KB). Desde a 0.60, cada evento é uma linha acrescentada a historico.jsonl."""
+        with _TRAVA_ESCRITA:
+            cfg = ler_json(self.caminho_config, {}) or {}
+            antigo = cfg.pop("historico", None)
+            if antigo is None:
+                return
+            if antigo:
+                with open(self.caminho_historico, "a", encoding="utf-8") as f:
+                    for e in antigo:
+                        f.write(json.dumps(e, ensure_ascii=False) + "\n")
+            salvar_json(self.caminho_config, cfg)
+
     def registrar(self, evento: str, **dados) -> dict:
-        """Atualiza a configuração e anota o evento no histórico do projeto.
+        """Atualiza a configuração e anota o evento no histórico do projeto (uma linha em historico.jsonl).
         O histórico é a base da rastreabilidade: todo número futuro terá uma
         execução identificável por trás."""
         with _TRAVA_ESCRITA:
+            with open(self.caminho_historico, "a", encoding="utf-8") as f:
+                f.write(json.dumps({"quando": agora(), "evento": evento, **dados}, ensure_ascii=False, default=str) + "\n")
             cfg = self.config
             cfg.update({k: v for k, v in dados.items() if k in ("bacia",)})
             cfg["atualizado"] = agora()
-            cfg.setdefault("historico", []).append({"quando": agora(), "evento": evento, **dados})
             salvar_json(self.caminho_config, cfg)
             return cfg
+
+    def historico(self, ultimos: int | None = None) -> list[dict]:
+        """Os eventos do projeto, do mais antigo ao mais novo (linhas estragadas são puladas)."""
+        try:
+            with open(self.caminho_historico, encoding="utf-8") as f:
+                linhas = f.readlines()
+        except OSError:
+            return []
+        if ultimos:
+            linhas = linhas[-ultimos:]
+        out = []
+        for linha in linhas:
+            try:
+                out.append(json.loads(linha))
+            except ValueError:
+                continue
+        return out
 
     def definir_config(self, **valores) -> dict:
         """Grava chaves de configuração (ex.: autor) sem passar pelo histórico."""
@@ -272,9 +310,6 @@ class Projeto:
         """Palavras, correções e exceções que o usuário cria pela janela."""
         return os.path.join(self.pasta, "texto", "vocabulario_projeto.json")
 
-    def salvar_vocabulario(self, dados: dict) -> None:
-        with _TRAVA_ESCRITA:
-            salvar_json(self.caminho_vocabulario, dados)
 
     def listar_documentos(self, extensoes: tuple) -> list[dict]:
         """Todos os arquivos baixados que são documentos (PDF, TIF), com a

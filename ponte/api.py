@@ -50,7 +50,12 @@ class API(BaseAPI, JanelasAPI, PocosAPI, CatalogoAPI, DocumentosAPI, Vocabulario
         self._janelas = {}            # abas destacadas em janela própria: {aba: janela}
         self._salvar_depois = {}
         self._prefs = None
+        # do projeto aberto: existem desde o começo (None até abrir), em vez de nascer no meio do caminho
         self._projeto = None
+        self._banco = None
+        self._indice = None
+        self._corretor = None
+        self._saindo = False
         self._fila = FilaDownloads(self._emitir_download)
         self._fila_docs = md.FilaDocumentos(base.PASTA_TESSDATA, self._emitir_documento)
 

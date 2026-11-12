@@ -49,9 +49,10 @@ existe e a validação científica ficam **para o final**, antes do lançamento 
 - [x] **Abrir como um software** (0.47): dois cliques no atalho abrem uma janelinha de carregamento, sem console.
       Ver `docs/lancador.md`.
 
-## Em aberto — o que falta (atualizado na 0.47)
+## Em aberto — o que falta (atualizado na 0.60)
 
-- [ ] **Validar no Windows as versões 0.37–0.46** pelo `docs/guia-de-teste.md` (o Ruan testa; o Claude corrige).
+- [ ] **Validar no Windows as versões 0.37–0.60** pelo `docs/guia-de-teste.md` (o Ruan testa; o Claude corrige). Depois da
+      apresentação (11/11), o foco é melhorar o próprio aplicativo; a validação científica fica para depois.
 - [x] **Bloco 9 — petrofísica básica** (0.48): plugs (porosidade, permeabilidade, densidade) e gama do testemunho
       (planilhas `_COREGAMA.xls` / `Petrofisica Basica.xls`; 162 poços). Visto só no 1-ALG-1-RN; ver `docs/petrofisica.md`.
       Falta comparar plug × perfil (próximo passo, a combinar).
@@ -62,10 +63,24 @@ existe e a validação científica ficam **para o final**, antes do lançamento 
       ao Ruan antes de programar.**
 - [x] **Bloco 4 — leitura do OCR** (0.53): segunda passada (450 dpi, limiar de Otsu) nas páginas ruins, escolhida pela
       legibilidade. Ver `docs/ocr.md`. Falta medir em mais documentos e tratar tabelas/manuscrito (limites antigos).
-- [ ] **Viabilidade**: diâmetro do duto pela vazão; custo corrigido pela inflação (IPCA/INCC); restrições
-      ambientais (unidades de conservação, terras indígenas); transcrever API e densidade de Guamaré.
+- [ ] **Viabilidade**: transcrever API e densidade de Guamaré (o resto entrou na 0.52).
 - [ ] **Pendências que dependem do Ruan**: Rw de referência por formação; conferir os números antigos do
       relatório (LIS convertidos); disponibilidade de RHOB/NPHI/DT pelo levantamento do acervo.
+
+## Melhorias do aplicativo (revisão de 11/11, relatório do Fable)
+
+- [x] **Interface pelo fluxo** (0.57): abas numeradas, busca de poço, atalhos editáveis, menu Ajuda, avisos de primeira vez,
+      erros no canto da tela; corrige a aba que não recarregava ao abrir o projeto (E1), as telas na metade da largura
+      (E2) e o teste do lançador fora do Windows (E4). Ver `docs/interface.md`.
+- [x] **Projetos em pastas e Início com módulos** (0.58); o atalho traz a versão nova do GitHub (`docs/lancador.md`).
+- [x] **Modelo 3D em receita, OCR num processo à parte (E3), leituras sem fila, abertura rápida, pedidos pequenos**
+      (0.59). Ver `docs/bloco.md`, `docs/ocr.md`.
+- [x] **Ficha do poço em página inteira; limpeza do código** (funções sem uso, "tirar acento" num lugar só, atributos da
+      API declarados) (0.60).
+- [x] Histórico do projeto num arquivo de linhas (`historico.jsonl`) em vez de dentro do `siapp.json` (0.60, parte da A15).
+- [ ] Resumo dos textos e registro de downloads sem regravar o JSON inteiro a cada arquivo (resto da A15).
+- [ ] Recarregar só o que mudou ao trocar de aba (A17); medir o mapa com o cadastro inteiro (A25).
+- [ ] Uma tela de fontes e prioridade (topos e zonas) e contagens com o critério ao lado (A12, A13).
 
 ## No final — melhorias do que já existe
 
