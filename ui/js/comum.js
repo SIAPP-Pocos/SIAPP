@@ -6,7 +6,7 @@ const $ = (id) => document.getElementById(id);
 let api = null;
 let projetoAberto = false;
 let baciaAnterior = "";     // última bacia usada neste projeto (siapp.json)
-let baciaConectada = "";    // bacia conectada agora (aba Dados › Catálogo)
+let baciaConectada = "";    // bacia conectada agora (Acervo › Catálogo)
 
 // ------------------------------------------------------------------ status
 function status(texto, tipo = "") {
@@ -14,6 +14,7 @@ function status(texto, tipo = "") {
   $("status").title = `${texto}\n(clique para ver as mensagens desta sessão)`;
   document.querySelector(".rodape").className = "rodape " + tipo;
   if (typeof anotarStatus === "function") anotarStatus(texto, tipo);
+  if (typeof mostrarAviso === "function") mostrarAviso(texto, tipo);
 }
 
 function liberar(idEtapa) { $(idEtapa).classList.remove("bloqueada"); }

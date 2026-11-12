@@ -1,0 +1,78 @@
+# Interface: abas, menus, busca, atalhos e avisos
+
+Desde a 0.57. Código em `ui/js/interface.js` (menus, diálogo, ajuda, busca, atalhos, avisos), `ui/js/janelas.js` (abas e
+layout) e `ui/estilo.css` (seção "interface (0.57)").
+
+## Abas pelo fluxo do trabalho
+
+| Aba | O que tem | Antes da 0.57 |
+|---|---|---|
+| Início | abrir o projeto, números, últimas mensagens | Projeto |
+| 1 Acervo | catálogo e levantamento do REATE, busca por tipo, meus arquivos; em **Mais**: cadastro e produção da ANP, camadas, dados consolidados | Dados |
+| 2 Documentos | ler, buscar, corrigir o OCR, transcrever | Documentos |
+| 3 Perfis | curvas, intervalo-alvo, avaliação | Perfis |
+| 4 Poços | mapa, filtros, ficha do poço | Mapa |
+| 5 Correlação | seção estratigráfica | Interpretação › Seção |
+| 6 Modelo 3D | bloco 3D | Interpretação › Bloco 3D |
+| Mais ▾ | Viabilidade, Comunidade | abas soltas |
+
+Por dentro, Correlação e Modelo 3D continuam sendo a mesma aba (`interp`, com `ui.subInterp`): a divisão da janela, as janelas
+destacadas e as preferências não mudaram. Cada botão do topo tem `data-sub-interp` e só fica marcado com a sua sub-aba.
+
+As subabas do Acervo e da Comunidade ficam no topo da área principal. Quando a subaba do Acervo não tem nada na lateral, a lateral
+some (classe `sem-lateral`).
+
+## Barra do alto
+
+- **Nome do projeto** (a pasta): leva ao Início.
+- **Buscar poço** (Ctrl+K): nome em qualquer grafia — `7-GMR-0013`, `gmr13`, nome do operador, apelido. Procura no cadastro da
+  ANP, nos apelidos e nas pastas do REATE fora do cadastro (`motor/pocos.py`, `buscar`; API `buscar_pocos`). Enter abre a ficha.
+- **⋯**: Dividir a janela, Abrir em janela.
+- **Exportações**, **Ajuda** e **Configurações**.
+- Cabe numa linha até 1.180 px de largura: primeiro somem os rótulos dos botões, depois a tecla da busca e o nome "SIAPP".
+
+Menu **Ajuda**: Guia do REATE (saiu do Início), Limites e confiabilidade (idem), Atalhos de teclado, Diagnóstico e Sobre (com a
+versão, que saiu da barra).
+
+## Atalhos de teclado
+
+| Ação | Padrão |
+|---|---|
+| Buscar poço | Ctrl+K |
+| Início | Ctrl+0 |
+| Abas 1 a 6 | Ctrl+1 … Ctrl+6 |
+| Ação principal da tela (Conectar, Processar, Calcular, Montar…) | Ctrl+Enter |
+| Exportações | Ctrl+E |
+| Configurações | Ctrl+, |
+| Menu Ajuda | F1 |
+| Recolher ou abrir a barra lateral | Ctrl+B |
+| Buscar no documento (Documentos) | Ctrl+F |
+| Página anterior e próxima (Documentos, página aberta) | ← → |
+| Próximo e anterior achado da busca (fixo) | F3, Shift+F3 |
+| Fechar janela, menu ou painel (fixo) | Esc |
+
+Ajuda › Atalhos de teclado › **Alterar**: aperte a nova combinação. Se ela já for de outra ação, as duas trocam. Só o que
+mudou fica nas preferências (`"atalhos": {"m3": "Ctrl+Alt+P"}`); **Restaurar os padrões** apaga tudo. Dentro de um campo de
+texto, teclas sem Ctrl ou Alt (as setas) ficam com o campo.
+
+## Avisos de primeira vez
+
+Antes de três ações em que o limite muda o que você faz, aparece um aviso curto:
+
+| Ação | Botão | O aviso |
+|---|---|---|
+| Processar documentos (OCR) | `btn-processar` | OCR acha a página, não fornece números (6 de 18 profundidades erradas num teste real); número só entra transcrito e conferido |
+| Calcular a avaliação | `av-calcular` | Rw sem estimativa automática (0,05 é ponto de partida); comparar com o referencial teórico e com a operadora; caliper e DRHO ruins ficam marcados |
+| Montar o modelo 3D | `bl-montar` | Entre os poços é interpolação; conferir o erro em Validar; com menos de 8 poços a krigagem vira linear |
+
+Aparece uma vez por sessão até você marcar **Não mostrar de novo** (preferência `avisos_vistos`). Para ver de novo, apague a
+chave em `preferencias.json`. Os mesmos limites ficam sempre em Ajuda › Limites e confiabilidade.
+
+## Avisos no canto e explicações
+
+- **Erro** aparece também no canto superior direito por 7 s. **Concluído** só aparece lá quando encerra um trabalho de mais de 3 s
+  (download, levantamento, OCR…). Clique para fechar. O rodapé e o Histórico continuam com todas as mensagens.
+- Textos de ajuda longos da lateral (90 caracteres ou mais, sem botão dentro) ficam atrás de um **?** ao lado do título.
+- Estados vazios: uma frase e, quando há, o botão da ação. O resto em **Saiba mais**.
+- Correlação: "Achar poços ao longo de uma linha", "Desenho" e "Seções anteriores" vêm recolhidos; **Montar a seção** fica
+  sempre à vista no pé da lateral.

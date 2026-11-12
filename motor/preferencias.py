@@ -14,6 +14,7 @@ from __future__ import annotations
 import copy
 import json
 import os
+import re
 import threading
 
 NOME_ARQUIVO = "preferencias.json"
@@ -22,7 +23,7 @@ PALETAS = ("marinho", "petroleo", "oceano", "arenito", "grafite", "floresta", "c
 TEMAS = ("claro", "escuro")
 FONTES = ("P", "M", "G")
 ABAS = ("projeto", "dados", "mapa", "docs", "perfis", "interp", "viab", "comunidade")
-SUB_DADOS = ("catalogo", "cadastro", "levantamento", "producao", "camadas", "consolidado")
+SUB_DADOS = ("catalogo", "cadastro", "levantamento", "tipos", "baixados", "producao", "camadas", "consolidado")
 SUB_INTERP = ("secao", "bloco")
 SUB_COM = ("contribuir", "painel", "biblioteca")
 
@@ -39,6 +40,8 @@ PADRAO = {
     "janelas": {},             # {aba: geometria} das janelas destacadas
     "abertas": [],             # abas que estavam em janela própria ao fechar o SIAPP
     "bloco": {},               # bloco 3D: {ambiente, aparencia} (guia de interpolação, aparência dos poços)
+    "atalhos": {},             # {ação: tecla} só o que a pessoa mudou (o padrão fica na interface)
+    "avisos_vistos": {},       # {aviso: True} avisos de primeira vez marcados "não mostrar de novo"
 }
 
 FORMAS_MARCADOR = ("esfera", "cubo", "losango", "cone", "cilindro", "nenhum")
@@ -107,6 +110,25 @@ def _geometria(g) -> dict:
     return out
 
 
+ACAO_VALIDA = re.compile(r"^[a-z][a-z0-9_.-]{0,39}$")
+TECLA_VALIDA = re.compile(r"^((Ctrl|Alt|Shift)\+){0,3}([A-Za-z0-9]|F([1-9]|1[0-2])|Enter|Escape|Tab|Space|"
+                          r"ArrowLeft|ArrowRight|ArrowUp|ArrowDown|PageUp|PageDown|Home|End|[,.;/\\\[\]=-])$")
+
+
+def _atalhos(a) -> dict:
+    """Atalhos mudados pela pessoa: {ação: "Ctrl+K"}. Teclas repetidas ficam só na primeira ação."""
+    if not isinstance(a, dict):
+        return {}
+    out, usadas = {}, set()
+    for acao, tecla in list(a.items())[:80]:
+        if isinstance(acao, str) and ACAO_VALIDA.match(acao) and isinstance(tecla, str) and \
+                (tecla == "" or TECLA_VALIDA.match(tecla)) and (tecla == "" or tecla not in usadas):
+            out[acao] = tecla
+            if tecla:
+                usadas.add(tecla)
+    return out
+
+
 def normalizar(d) -> dict:
     """Preferências válidas a partir de qualquer coisa (dicionário parcial, lixo…)."""
     p = copy.deepcopy(PADRAO)
@@ -147,17 +169,24 @@ def normalizar(d) -> dict:
         ap = _aparencia(b.get("aparencia"))
         if ap:
             p["bloco"]["aparencia"] = ap
+    p["atalhos"] = _atalhos(d.get("atalhos"))
+    if isinstance(d.get("avisos_vistos"), dict):
+        p["avisos_vistos"] = {k: True for k, v in list(d["avisos_vistos"].items())[:80]
+                              if isinstance(k, str) and ACAO_VALIDA.match(k) and v is True}
     return p
 
 
 def mesclar(atual: dict, mudancas) -> dict:
-    """`atual` com as mudanças aplicadas (layout e janelas mesclam por chave)."""
+    """`atual` com as mudanças aplicadas (layout, janelas, atalhos… mesclam por chave; em atalhos e
+    avisos_vistos, None tira a chave)."""
     novo = copy.deepcopy(atual)
     if not isinstance(mudancas, dict):
         return normalizar(novo)
     for k, v in mudancas.items():
-        if k in ("layout", "janelas", "recolhidas", "bloco") and isinstance(v, dict) and isinstance(novo.get(k), dict):
+        if k in ("layout", "janelas", "recolhidas", "bloco", "atalhos", "avisos_vistos") and isinstance(v, dict) and isinstance(novo.get(k), dict):
             novo[k] = {**novo[k], **v}
+            if k in ("atalhos", "avisos_vistos"):          # None tira a chave (volta ao padrão)
+                novo[k] = {a: x for a, x in novo[k].items() if x is not None}
         else:
             novo[k] = v
     return normalizar(novo)

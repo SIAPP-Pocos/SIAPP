@@ -1,5 +1,6 @@
 """Configuração comum dos testes. Nenhum teste acessa a internet."""
 import enum
+import json
 import os
 import sys
 import types
@@ -104,9 +105,13 @@ def janela(tmp_path, monkeypatch, navegador, request):
 
     pasta = tmp_path / "ambiente_teste"
     monkeypatch.setattr(base, "PASTA_PROJETO", str(pasta))
+    # os avisos de primeira vez (OCR, avaliação, modelo 3D) já vistos: os testes clicam direto nos botões;
+    # test_avisos_de_primeira_vez apaga a marca para conferir o aviso
+    pasta.mkdir(parents=True, exist_ok=True)
+    pref = {"avisos_vistos": {"ocr": True, "avaliacao": True, "bloco": True}}
     if os.environ.get("SIAPP_ESCURO"):
-        pasta.mkdir(parents=True, exist_ok=True)
-        (pasta / "preferencias.json").write_text('{"tema": "escuro", "abrir_ao_iniciar": false}', encoding="utf-8")
+        pref.update({"tema": "escuro", "abrir_ao_iniciar": False})
+    (pasta / "preferencias.json").write_text(json.dumps(pref), encoding="utf-8")
     a = siapp.API()
     a._janela = JanelaFalsa(str(pasta))
     jt, srv = abrir(a, navegador)

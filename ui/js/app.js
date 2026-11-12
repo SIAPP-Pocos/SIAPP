@@ -18,7 +18,7 @@ const AO_ABRIR_ABA = {
 // Aba Dados: cadastro, levantamento, produção e camadas (o catálogo carrega ao conectar).
 async function carregarDados() {
   if (!projetoAberto) {
-    $("cad-info").textContent = "Abra o projeto primeiro (aba Projeto).";
+    $("cad-info").textContent = "Abra o projeto primeiro (Início).";
     return;
   }
   const r = await chamar(null, "cadastro_info");
@@ -56,6 +56,7 @@ function aoAbrirProjeto(r) {
   $("ini-pasta").disabled = true;
   $("ini-pasta-ajuda").textContent = r.pasta || "";
   $("cfg-pasta").textContent = r.pasta || "";
+  mostrarProjetoNoTopo(r.pasta);
   carregarPanorama();
 }
 
@@ -79,9 +80,12 @@ async function iniciar() {
   }
   sel.value = "Sergipe";
 
-  for (const b of document.querySelectorAll(".aba[data-vista]")) b.onclick = () => trocarAba(b.dataset.vista);
+  for (const b of document.querySelectorAll(".aba[data-vista]")) {
+    b.onclick = () => { fecharMenus(); trocarAba(b.dataset.subInterp || b.dataset.vista); };
+  }
   for (const b of document.querySelectorAll("[data-ir]")) b.onclick = () => trocarAba(b.dataset.ir);
   ligarJanelas();
+  ligarInterface();
 
   // projeto
   ligar("ini-pasta", "onclick", escolherPasta);
@@ -149,6 +153,7 @@ async function iniciar() {
 
   // preferências (cores, arranjo) antes de mostrar a primeira aba
   await carregarPreferencias();
+  atualizarTeclasVisiveis();
   if (typeof preencherAparencia === "function") preencherAparencia();
   const est = await chamar(null, "estado");
   if (est.ok && est.projeto_aberto) {
@@ -164,7 +169,7 @@ async function iniciar() {
     return;
   }
   if (projetoAberto) chamar(null, "restaurar_janelas");
-  status("Pronto. Comece abrindo o projeto (aba Projeto).");
+  status("Pronto. Comece abrindo o projeto (Início).");
 }
 
 window.addEventListener("pywebviewready", iniciar);

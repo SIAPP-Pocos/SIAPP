@@ -1,4 +1,4 @@
-// SIAPP — Dados › Procurar por tipo de dado: em quais poços há cada tipo de dado, pelo levantamento do acervo.
+// SIAPP — Acervo › Buscar por tipo: em quais poços há cada tipo de dado, pelo levantamento do acervo.
 // Nada é baixado para procurar; baixar é uma ação à parte, só dos poços que você marcar.
 
 const tdado = { tipos: [], marcados: new Set(), resultado: null, escolhidos: new Set(), restrito: null };
@@ -25,7 +25,7 @@ function desenharRestricaoTipos() {
   box.appendChild(c);
 }
 
-// Chamado pela Seção e pelo Mapa: abre Dados › Procurar por tipo de dado já restrito a esses poços.
+// Chamado pela Seção e pelo Mapa: abre Acervo › Buscar por tipo já restrito a esses poços.
 function procurarDadosDosPocos(ids, rotulo) {
   const lista = [...new Set((ids || []).map((x) => String(x).trim()).filter(Boolean))];
   if (!lista.length) { status("Não há poços para procurar: adicione poços primeiro.", "erro"); return; }
@@ -67,7 +67,7 @@ function preencherBaciasTipos(bacias, atual) {
 function desenharTipos(r) {
   const box = limpar($("tp-tipos"));
   if (!r.pocos_levantados) {
-    box.appendChild(el("p", "ajuda", "Ainda não há levantamento do acervo neste projeto. Faça um em Dados › Levantamento do " +
+    box.appendChild(el("p", "ajuda", "Ainda não há levantamento do acervo neste projeto. Faça um em Acervo › Levantamento do " +
       "acervo (a listagem não baixa os arquivos) e volte aqui."));
     return;
   }
@@ -232,7 +232,7 @@ async function baixarTipos(pocos) {
       n += arquivos.length;
     }
   }
-  status(`${n} arquivo(s) de ${pocos.length} poço(s) na fila de downloads (Dados › Catálogo do REATE mostra o andamento).`, "ok");
+  status(`${n} arquivo(s) de ${pocos.length} poço(s) na fila de downloads (Acervo › Catálogo do REATE mostra o andamento).`, "ok");
 }
 
 function iniciarTipos() {

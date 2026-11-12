@@ -1,4 +1,4 @@
-// SIAPP — aba Dados › Catálogo do REATE: bacias, categorias, poços, árvore de arquivos e downloads.
+// SIAPP — Acervo › Catálogo do REATE: bacias, categorias, poços, árvore de arquivos e downloads.
 "use strict";
 
 let pocosAtuais = [];

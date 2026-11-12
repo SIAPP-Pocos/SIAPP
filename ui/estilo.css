@@ -440,8 +440,8 @@ input[type=text], input[type=number] {
 .form-autor label .ajuda { font-weight: 400; margin: 0; display: inline; }
 .form-autor .btn { justify-self: start; }
 .passos { padding-left: 18px; display: grid; gap: 6px; }
-.cartoes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: stretch; }
-@media (max-width: 1100px) { .cartoes { grid-template-columns: minmax(0, 1fr); } }
+/* cartões ocupam a largura que houver: dois lado a lado só quando cabem (antes, metade da tela vazia) */
+.cartoes { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(420px, 100%), 1fr)); gap: 16px; align-items: stretch; }
 .cartao > .btn { justify-self: start; }
 .cartao { background: var(--painel); border: 1px solid var(--linha); border-radius: 10px; padding: 16px 18px; display: grid; gap: 10px; }
 .cartao.largo { grid-column: 1 / -1; }
@@ -898,7 +898,7 @@ main.lado-dir { box-shadow: inset 1px 0 0 var(--linha); }
 #btn-config svg { width: 19px; height: 19px; }
 .icone[hidden], .acao[hidden], .div-dir[hidden] { display: none; }
 .div-dir { font-size: 12px; color: var(--suave); display: inline-flex; align-items: center; gap: 6px; }
-.div-dir select { flex: none; padding: 5px 8px; }
+.div-dir select { flex: none; padding: 5px 8px; max-width: 150px; }
 body.destacada .abas { display: none; }
 
 /* barra lateral recolhível */
@@ -1349,3 +1349,138 @@ td.tp-diverge { color: var(--erro); font-weight: 600; }
 .bl-bacias { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 4px 0 8px; }
 .bl-m2d-fig { overflow: auto; margin-top: 8px; }
 .bl-m2d-fig svg { max-width: 100%; height: auto; background: #fff; }
+
+/* ================================================================ interface (0.57) */
+/* topo numa linha: projeto, abas pelo fluxo, busca, menus */
+.topo { flex-wrap: nowrap; gap: 12px; }
+.topo .marca { flex: none; align-items: center; }
+.abas { flex-wrap: nowrap; min-width: 0; gap: 2px; align-items: center; }
+.aba { white-space: nowrap; padding-left: 10px; padding-right: 10px; }
+.aba-num { display: inline-grid; place-items: center; width: 18px; height: 18px; margin-right: 6px; border-radius: 50%;
+  font: 700 11px var(--sans); background: var(--fundo); color: var(--suave); border: 1px solid var(--linha); }
+.aba.ativa .aba-num { background: var(--destaque); color: var(--painel); border-color: var(--destaque); }
+.topo-acoes { flex-wrap: nowrap; flex: none; }
+.projeto-topo { display: inline-flex; align-items: center; gap: 6px; max-width: 220px; margin-left: 4px; padding: 4px 10px;
+  border: 1px solid var(--linha); border-radius: 6px; background: var(--painel);
+  color: var(--suave); cursor: pointer; font: 600 13px var(--sans); }
+.projeto-topo svg { width: 14px; height: 14px; flex: none; }
+.projeto-topo.aberto svg { color: var(--destaque); }
+.projeto-topo span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.projeto-topo.aberto { color: var(--tinta); }
+.projeto-topo:hover { border-color: var(--destaque); }
+.projeto-topo[hidden] { display: none; }
+#btn-busca { color: var(--suave); }
+.tecla { font: 600 10.5px var(--mono); padding: 1px 5px; border: 1px solid var(--linha); border-bottom-width: 2px;
+  border-radius: 4px; color: var(--suave); background: var(--fundo); white-space: nowrap; }
+.tecla.on { color: var(--destaque); border-color: var(--destaque); }
+.tecla[hidden] { display: none; }
+/* a barra do alto cabe numa linha até 1.180 px (a janela padrão tem 1.280): primeiro somem os rótulos
+   dos botões, depois a tecla da busca e o nome "SIAPP"; abaixo de 1.180 px, ela quebra em duas linhas */
+@media (max-width: 1560px) { .rotulo-largo, #btn-busca > span { display: none; } }
+@media (max-width: 1340px) {
+  #btn-busca-tecla, .marca .sigla { display: none; }
+  .topo { gap: 8px; padding-left: 14px; }
+  .aba { padding-left: 7px; padding-right: 7px; }
+  .projeto-topo { max-width: 150px; }
+}
+@media (max-width: 1180px) { .topo, .abas { flex-wrap: wrap; } }
+
+/* menus: botão + lista que abre embaixo */
+.menu { position: relative; }
+.menu-pop { position: absolute; right: 0; top: calc(100% + 6px); z-index: 1200; display: grid; gap: 4px; padding: 6px;
+  min-width: 210px; background: var(--painel); border: 1px solid var(--linha); border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .16); }
+.menu-pop[hidden] { display: none; }
+.menu-pop .acao { justify-content: flex-start; width: 100%; }
+.abas-mais .menu-pop { left: 0; right: auto; min-width: 170px; }
+.menu-pop .div-dir { display: flex; justify-content: space-between; padding: 4px 4px 4px 10px; }
+.menu-pop .div-dir select { max-width: none; }
+#btn-janelas.on { color: var(--destaque); border-color: var(--destaque); background: var(--destaque-claro); }
+.menu-item { display: block; width: 100%; text-align: left; border: 0; background: none; padding: 8px 10px; border-radius: 5px;
+  color: var(--tinta); font: 13px var(--sans); cursor: pointer; }
+.menu-item:hover, .menu-item.ativa { background: var(--destaque-claro); color: var(--destaque); }
+.aba.menu-item { border: 0; }
+
+/* subabas no topo da área principal (Acervo, Comunidade) */
+.sub-nav.sub-topo { display: flex; flex-wrap: wrap; align-items: stretch; gap: 2px; margin: -6px 0 18px;
+  border-bottom: 1px solid var(--linha); }
+.sub-topo .sub-btn { border-left: 0; border-bottom: 2px solid transparent; border-radius: 6px 6px 0 0; padding: 9px 14px;
+  text-align: center; }
+.sub-topo .sub-btn.ativa { border-bottom-color: var(--destaque); background: none; }
+.sub-topo .sub-mais { margin-left: auto; }
+.sub-topo .sub-mais .menu-pop { top: 100%; }
+.sub-topo .sub-mais .sub-btn.menu-item { text-align: left; border-bottom: 0; border-radius: 5px; padding: 8px 10px; }
+.sub-topo .sub-mais:has(.menu-item.ativa) > .sub-btn { color: var(--destaque); font-weight: 600; }
+.grade.sem-lateral { grid-template-columns: minmax(0, 1fr) auto !important; }
+.grade.sem-lateral > .lateral { display: none; }
+.sub-painel.cartoes > .etapa { max-width: none; }
+
+/* estados vazios: uma frase e a ação; o resto em "Saiba mais" */
+.vazio-curto { margin: 4px 0 14px; color: var(--tinta); }
+.vazio-acoes { display: flex; gap: 10px; justify-content: center; margin-bottom: 10px; }
+.vazio details.saiba-mais > summary { cursor: pointer; color: var(--suave); font-size: 13px; text-decoration: underline;
+  list-style: none; }
+.vazio details.saiba-mais > summary::-webkit-details-marker { display: none; }
+.vazio details.saiba-mais[open] > summary { margin-bottom: 6px; }
+.vazio details.saiba-mais p { font-size: 13px; }
+.mapa-vazio { pointer-events: auto; }
+
+/* explicações longas atrás de um "?" */
+.explicar { display: inline-grid; place-items: center; width: 18px; height: 18px; margin-left: 6px; padding: 0; flex: none;
+  border: 1px solid var(--linha); border-radius: 50%; background: var(--painel); color: var(--suave);
+  font: 700 11px var(--sans); cursor: pointer; vertical-align: 2px; }
+.explicar:hover, .explicar.on { color: var(--destaque); border-color: var(--destaque); }
+.explicar-linha { display: flex; align-items: center; gap: 6px; margin: 0 0 8px; color: var(--suave); font-size: 12px; }
+.explicar-linha .explicar { margin-left: 0; }
+p.explicacao { background: var(--fundo); border-radius: 6px; padding: 8px 10px; }
+p.explicacao[hidden] { display: none; }
+
+/* avançado recolhido (Correlação); o botão principal sempre à vista */
+details.avancado { border-bottom: 1px solid var(--linha); }
+details.avancado > summary { cursor: pointer; padding: 12px 0; color: var(--suave); font: 600 13px var(--sans); }
+details.avancado > summary:hover { color: var(--destaque); }
+details.avancado > .etapa { border-bottom: 0; padding-top: 0; }
+.etapa-montar { position: sticky; bottom: 0; z-index: 2; background: var(--painel); padding-bottom: 14px;
+  box-shadow: 0 -8px 14px -10px rgba(0, 0, 0, .35); }
+.etapa-montar .btn { width: 100%; }
+
+/* Início: Viabilidade e Comunidade separadas do fluxo principal */
+.fluxo li.fluxo-extra { counter-increment: none; }
+.fluxo li.fluxo-extra strong::before { content: none; }
+.fluxo li:not(.fluxo-extra) + li.fluxo-extra { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--linha); }
+.fluxo li.fluxo-extra strong { color: var(--suave); }
+
+/* janela de diálogo (ajuda, atalhos, busca, avisos de primeira vez) */
+.modal.dialogo { width: min(560px, 94vw); display: flex; flex-direction: column; overflow: hidden; }
+.modal.dialogo.largo { width: min(860px, 94vw); }
+.modal.dialogo.estreito { width: min(520px, 94vw); }
+#dialogo:has(.no-alto) { align-items: flex-start; padding-top: 12vh; }
+.dlg-cab { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 16px 6px 20px; }
+.dlg-cab h2 { font: 700 17px var(--serif); margin: 0; }
+.dlg-corpo { padding: 6px 20px 18px; overflow: auto; font-size: 13.5px; line-height: 1.5; }
+.dlg-pe { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 20px 16px; border-top: 1px solid var(--linha); }
+.dlg-pe[hidden] { display: none; }
+.dlg-ajuda section { margin-bottom: 18px; }
+.dlg-ajuda h2 { font: 700 14px var(--sans); margin: 10px 0 6px; }
+.dlg-ajuda ul, .aviso-pv ul { padding-left: 18px; display: grid; gap: 8px; margin: 4px 0 14px; }
+.dlg-sobre-nome { font: 700 20px var(--serif); margin: 0 0 6px; }
+.busca-poco input { width: 100%; box-sizing: border-box; font-size: 15px; padding: 10px 12px; }
+.busca-lista { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 2px; }
+.busca-lista li { display: flex; justify-content: space-between; gap: 12px; padding: 8px 10px; border-radius: 6px; cursor: pointer; }
+.busca-lista li span { color: var(--suave); font-size: 12px; text-align: right; }
+.busca-lista li.on, .busca-lista li:hover { background: var(--destaque-claro); }
+.busca-lista li.busca-nada { color: var(--suave); cursor: default; background: none; }
+.tabela-atalhos { width: 100%; border-collapse: collapse; font-size: 13px; }
+.tabela-atalhos td { padding: 7px 4px; border-bottom: 1px solid var(--linha); }
+.tabela-atalhos td:nth-child(2) { white-space: nowrap; }
+.tabela-atalhos td:nth-child(3) { text-align: right; }
+.tabela-atalhos tr.fixo td:first-child { color: var(--suave); }
+
+/* avisos no canto superior direito */
+.avisos { position: fixed; top: 62px; right: 16px; z-index: 1400; display: grid; gap: 8px; width: min(380px, calc(100vw - 32px)); }
+.aviso { padding: 10px 14px; border-radius: 8px; background: var(--painel); border: 1px solid var(--linha);
+  border-left: 4px solid var(--ok); box-shadow: 0 8px 22px rgba(0, 0, 0, .16); font-size: 13px; color: var(--tinta);
+  cursor: pointer; transition: opacity .3s, transform .3s; }
+.aviso.erro { border-left-color: var(--erro); }
+.aviso.saindo { opacity: 0; transform: translateY(-6px); }
+@media (prefers-reduced-motion: reduce) { .aviso { transition: none; } }

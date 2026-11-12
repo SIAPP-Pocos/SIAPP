@@ -1,4 +1,4 @@
-// SIAPP — dados de fora do REATE: produção da ANP por campo (aba Dados), camadas geográficas
+// SIAPP — dados de fora do REATE: produção da ANP por campo (Acervo), camadas geográficas
 // do IBGE, EPE e ANP (abas Dados e Mapa), o campo diante da infraestrutura e a viabilidade econômica.
 "use strict";
 
@@ -24,7 +24,7 @@ async function carregarProducao() {
   if ($("pr-campo").value) mostrarResumoProducao();
 }
 
-// Da ficha do poço (Mapa): abre Dados › Produção da ANP já no campo do poço.
+// Da ficha do poço (Mapa): abre Acervo › Produção da ANP já no campo do poço.
 function abrirProducaoCampo(campo) {
   if (!campo) return;
   $("pr-campo").value = campo;
@@ -356,7 +356,7 @@ async function restricoesViabilidade() {
   const faltam = r.camadas.filter((c) => !r.linhas.length || !(r.linhas[0].camadas.find((x) => x.id === c.id) || {}).baixada);
   if (faltam.length) {
     box.appendChild(el("p", "aviso", `Camada(s) não baixada(s): ${faltam.map((c) => c.rotulo).join(", ")}. ` +
-      "Baixe as UCs em Dados › Camadas geográficas; as terras indígenas, importe o arquivo da FUNAI. Sem a camada, ela não entra na conta."));
+      "Baixe as UCs em Acervo › Camadas geográficas; as terras indígenas, importe o arquivo da FUNAI. Sem a camada, ela não entra na conta."));
   }
   if (!r.linhas.length) { box.appendChild(el("p", "ajuda", "Nenhuma infraestrutura medida com traçado para testar (meça as distâncias antes).")); return; }
   const t = el("table", "tabela");
@@ -424,7 +424,7 @@ function desenharViabilidade(rel) {
     }
     box.appendChild(t2);
   } else {
-    box.appendChild(el("p", "ajuda", "Depleção: baixe a produção do campo (aba Dados › Produção da ANP) para ter o sumário do PD."));
+    box.appendChild(el("p", "ajuda", "Depleção: baixe a produção do campo (Acervo › Produção da ANP) para ter o sumário do PD."));
   }
   desenharViabilidadeNoMapa(rel);
 }

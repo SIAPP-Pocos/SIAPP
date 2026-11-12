@@ -1,4 +1,4 @@
-// SIAPP — Dados › Arquivos baixados: tudo o que está em bruto/, em árvore (bacia › poço › pasta) e lista,
+// SIAPP — Acervo › Meus arquivos: tudo o que está em bruto/, em árvore (bacia › poço › pasta) e lista,
 // com o que o SIAPP fez com cada arquivo. Abrir, mostrar no Explorer, ver na ficha e mandar para a Lixeira.
 
 const ab = { dados: null, no: null, abertos: new Set(), limite: 200, confirmando: null };
@@ -119,7 +119,7 @@ function desenharBaixados() {
 function desenharListaBaixados(lista) {
   const caixa = limpar($("ab-lista"));
   if (!lista.length) {
-    caixa.appendChild(el("p", "ajuda", ab.dados.n ? "Nenhum arquivo com estes filtros." : "Ainda não há arquivos baixados neste projeto. Baixe em Dados › Catálogo do REATE ou Procurar por tipo de dado."));
+    caixa.appendChild(el("p", "ajuda", ab.dados.n ? "Nenhum arquivo com estes filtros." : "Ainda não há arquivos baixados neste projeto. Baixe em Acervo › Catálogo do REATE ou Procurar por tipo de dado."));
     return;
   }
   const t = el("table", "tabela");

@@ -91,6 +91,21 @@ def test_resolver_pelo_apelido_do_operador(banco):
     assert mpo.resolver(banco, "poço estranho") == "POCOESTRANHO"
 
 
+def test_buscar_poco_em_qualquer_grafia(banco):
+    assert [d["id"] for d in mpo.buscar(banco, "7-GMR-0013")] == ["7-GMR-13-RN"]      # zeros à esquerda
+    assert [d["id"] for d in mpo.buscar(banco, "gmr13")] == ["7-GMR-13-RN"]
+    assert mpo.buscar(banco, "auri")[0] == {"id": "1-AURI-12-RN", "bacia": "Potiguar", "campo": "AURIZÔNIA",
+                                            "como": ""}
+    mpo.registrar_reate(banco, "Sergipe", "Categoria-1", [{"caminho": "/POCO/Categoria-1/1-ZZZ-1-SE",
+                                                         "nome": "1-ZZZ-1-SE"}])
+    assert mpo.buscar(banco, "zzz1")[0]["id"] == "1-ZZZ-1-SE"                          # só no catálogo
+    with banco.conexao() as c:
+        c.execute("INSERT INTO apelidos VALUES ('GUAMARE13', '7-GMR-13-RN', 'local', '')")
+    d = mpo.buscar(banco, "guamare")[0]
+    assert d["id"] == "7-GMR-13-RN" and d["como"] == "GUAMARE13"
+    assert mpo.buscar(banco, "1") == [] and mpo.buscar(banco, "7-") == []              # texto curto demais
+
+
 def test_reimportar_substitui(banco):
     r = mpo.importar_cadastro(banco, mpo.ler_cadastro(csv_exemplo())[:1], "anp:teste2")
     assert r["pocos"] == 1 and banco.contar("pocos") == 1

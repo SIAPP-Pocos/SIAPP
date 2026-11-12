@@ -42,7 +42,7 @@ async function carregarBloco() {
     pedirGuia();
     $("bl-disponiveis").textContent = r.total
       ? `${numero(r.total, 0)} poço(s) com topos de formação no AGP e coordenadas no cadastro.`
-      : "Nenhum poço com topos ainda: leia os AGPs no Levantamento do acervo (aba Dados).";
+      : "Nenhum poço com topos ainda: leia os AGPs no Levantamento do acervo (Acervo).";
   }
   desenharListaBloco();
   carregarHistoricoBloco();

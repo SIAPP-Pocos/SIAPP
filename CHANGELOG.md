@@ -6,6 +6,36 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 
 ## [Não lançado]
 
+## [0.57.0] — 2026-11-12
+Interface reorganizada pelo fluxo do trabalho: abas numeradas, busca de poço, atalhos, menu Ajuda e avisos onde importam.
+### Adicionado
+- **Busca de poço** no alto (**Ctrl+K**): acha o poço em qualquer grafia (`7-GMR-0013`, `gmr13`, nome do operador, apelido),
+  no cadastro da ANP, nos apelidos e nas pastas do REATE; Enter abre a ficha. API nova `buscar_pocos`.
+- **Atalhos de teclado editáveis** (Ajuda › Atalhos de teclado): Ctrl+0 a Ctrl+6 para as abas, Ctrl+Enter para a ação principal da
+  tela, Ctrl+E, Ctrl+B, F1 e outros. Se a tecla nova já for de outra ação, as duas trocam. Ficam nas preferências.
+- **Avisos de primeira vez** antes de processar documentos (OCR), calcular a avaliação e montar o modelo 3D: três frases sobre o
+  que não dá para usar às cegas, com "Não mostrar de novo".
+- **Menu Ajuda**: Guia do REATE e Limites e confiabilidade (saíram do Início), Atalhos, Diagnóstico e Sobre.
+- **Nome do projeto** na barra do alto; clicar leva ao Início.
+- Erros (e o fim de trabalhos longos) aparecem também no **canto da tela**.
+- Documento novo: `docs/interface.md`.
+### Alterado
+- **Abas na ordem do trabalho**: Início, 1 Acervo, 2 Documentos, 3 Perfis, 4 Poços, 5 Correlação, 6 Modelo 3D; Viabilidade e
+  Comunidade no menu **Mais**. Correlação e Modelo 3D viraram abas próprias (antes, Interpretação com duas subabas).
+- **Acervo** (antigo Dados): subabas no topo da área; Cadastro, Produção, Camadas e Dados consolidados em "Mais". Sem lateral vazia.
+- Barra do alto numa linha só até 1.180 px: Dividir e Abrir em janela foram para o menu **⋯**; os rótulos somem antes de quebrar.
+- Telas do Acervo usam a largura toda (antes, um cartão na metade esquerda e a outra metade vazia).
+- Textos de ajuda longos da lateral ficam atrás de um **?**; estados vazios com uma frase e "Saiba mais".
+- Correlação: linha, desenho e seções anteriores recolhidos; **Montar a seção** sempre à vista.
+- Um botão principal por tela: "Calcular a viabilidade" passou a principal; "LAS" (Perfis) e "Ler os intervalos" (Modelo 3D),
+  secundários.
+- Modelo 3D: "zonas produtoras (net pay)" virou "zonas produtoras (intervalos dos documentos)": não são o net pay da avaliação.
+### Corrigido
+- Ao abrir o projeto, a aba que estava na tela não carregava (só ao trocar de aba). O aviso "projeto aberto" chegava antes da
+  resposta e marcava o projeto como aberto cedo demais.
+- A subaba "Procurar por tipo" ou "Arquivos baixados" não era lembrada ao reabrir.
+- Teste do lançador falhava fora do Windows (caminho montado com a barra do sistema; agora sempre a do Windows).
+
 ## [0.56.0] — 2026-11-04
 Várias bacias no bloco 3D, tabela do usuário com nomes à mão e mapa 2D com curvas de nível.
 ### Adicionado

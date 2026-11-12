@@ -32,6 +32,21 @@ def test_preferencias_gravam_e_mesclam(tmp_path):
     assert mpf.Preferencias(str(tmp_path)).ler()["paleta"] == "marinho"
 
 
+def test_atalhos_e_avisos_vistos():
+    p = mpf.normalizar({"atalhos": {"busca": "Ctrl+K", "inicio": "Ctrl+K", "sobre": "Ctrl+Alt+S", "ruim": "zz",
+                                    "Com Espaco": "Ctrl+1", "ajuda": "F1", "lateral": ""},
+                        "avisos_vistos": {"ocr": True, "bloco": False, "x y": True},
+                        "layout": {"sub_dados": "baixados"}})
+    assert p["atalhos"] == {"busca": "Ctrl+K", "sobre": "Ctrl+Alt+S", "ajuda": "F1", "lateral": ""}
+    assert p["avisos_vistos"] == {"ocr": True}
+    assert p["layout"]["sub_dados"] == "baixados"            # 0.56 gravava e a 0.56 mesma descartava
+    m = mpf.mesclar(p, {"atalhos": {"inicio": "Ctrl+0"}, "avisos_vistos": {"bloco": True}})
+    assert m["atalhos"]["inicio"] == "Ctrl+0" and m["atalhos"]["busca"] == "Ctrl+K"
+    assert m["avisos_vistos"] == {"ocr": True, "bloco": True}
+    m = mpf.mesclar(m, {"atalhos": {"busca": None, "inicio": None}, "avisos_vistos": {"ocr": None}})
+    assert "busca" not in m["atalhos"] and m["avisos_vistos"] == {"bloco": True}     # volta ao padrão
+
+
 def test_janela_fora_das_telas_nao_volta_la():
     telas = [(0, 0, 1920, 1080), (1920, 0, 1280, 1024)]
     assert mpf.visivel({"x": 2000, "y": 100, "largura": 900}, telas)          # no monitor 2

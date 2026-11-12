@@ -686,7 +686,7 @@ function desenharToposFicha(caixa, tp, id) {
   const presentes = fontes.filter((f) => tp.unidades.some((u) => u.fontes[f]));
   caixa.appendChild(el("h3", "", "Topos de formação — compare as fontes e escolha"));
   caixa.appendChild(el("p", "ajuda", "O topo usado na seção estratigráfica e no bloco 3D. Sem escolha, vale a primeira " +
-    `fonte da ordem do projeto: ${tp.precedencia.map((f) => tp.fontes[f]).join(" → ")} (mude em Dados › Dados consolidados).` +
+    `fonte da ordem do projeto: ${tp.precedencia.map((f) => tp.fontes[f]).join(" → ")} (mude em Acervo › Dados consolidados).` +
     (tp.divergentes ? ` ${tp.divergentes} unidade(s) com fontes que diferem mais de ${numero(tp.tolerancia_m, 0)} m.` : "")));
   const t = el("table", "tabela tp-tabela");
   const cab = el("tr");

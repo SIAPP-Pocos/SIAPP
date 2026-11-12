@@ -20,9 +20,9 @@ function descreverItens(it) {
 // A aba abre na parte escolhida (ui.subCom, lembrada nas preferências).
 async function carregarComunidade() {
   if (!projetoAberto) {
-    $("com-local").textContent = "Abra o projeto primeiro (aba Projeto).";
-    $("pn-sub").textContent = "Abra o projeto primeiro (aba Projeto).";
-    $("bib-resumo").textContent = "Abra o projeto primeiro (aba Projeto).";
+    $("com-local").textContent = "Abra o projeto primeiro (Início).";
+    $("pn-sub").textContent = "Abra o projeto primeiro (Início).";
+    $("bib-resumo").textContent = "Abra o projeto primeiro (Início).";
     return;
   }
   if (ui.subCom === "painel") return carregarPainelCom();
@@ -550,7 +550,7 @@ async function abrirInterpretacaoBib(id) {
   const refazer = el("button", "btn pequeno", "Refazer nos Perfis");
   refazer.disabled = !r.arquivo_local;
   refazer.title = r.arquivo_local ? "Abre o arquivo na aba Perfis com os intervalos, curvas e parâmetros desta interpretação"
-                                  : "Baixe o arquivo antes (Dados › Catálogo do REATE)";
+                                  : "Baixe o arquivo antes (Acervo › Catálogo do REATE)";
   refazer.onclick = () => irPara("perfis", "abrirInterpretacaoNosPerfis", id);
   const doPoco = el("button", "btn secundario pequeno", "Outras deste poço");
   doPoco.onclick = () => mostrarBibliotecaDoPoco(r.poco);

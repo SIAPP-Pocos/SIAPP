@@ -11,13 +11,13 @@ const pf = {
 
 // ------------------------------------------------------------------ lista
 async function carregarPerfis() {
-  if (!projetoAberto) { $("pf-resumo").textContent = "Abra o projeto primeiro (aba Projeto)."; return; }
+  if (!projetoAberto) { $("pf-resumo").textContent = "Abra o projeto primeiro (Início)."; return; }
   const r = await chamar(null, "perfis");
   if (!r.ok) return;
   const ul = limpar($("lista-perfis"));
   $("pf-resumo").textContent = r.perfis.length
     ? `${r.perfis.length} arquivo(s) de perfil baixado(s).`
-    : "Nenhum DLIS, LIS ou LAS baixado ainda. Baixe na aba Dados › Catálogo do REATE (pasta de perfis do poço).";
+    : "Nenhum DLIS, LIS ou LAS baixado ainda. Baixe na Acervo › Catálogo do REATE (pasta de perfis do poço).";
   for (const p of r.perfis) {
     const b = el("button");
     b.dataset.rel = p.rel;

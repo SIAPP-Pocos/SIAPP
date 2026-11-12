@@ -132,6 +132,29 @@ Precisa de internet. Comece por uma categoria pequena para ver o tempo.
 - [ ] Sem intervalo marcado, **Calcular** explica que precisa de um intervalo-alvo.
 - [ ] Repetir no `5PX__0011__RN_5PX__0011__RN.tif` (DLIS de 2020).
 
+## 0.57 — interface pelo fluxo, busca de poço, atalhos e avisos
+
+- [ ] A barra do alto, na janela padrão, fica **numa linha só**: pasta do projeto, Início, 1 Acervo … 6 Modelo 3D, Mais, lupa, ⋯,
+      pasta, ?, engrenagem.
+- [ ] **Abra o SIAPP com a última aba sendo Documentos** (ou Perfis): ao terminar de abrir o projeto, a lista aparece sozinha,
+      sem trocar de aba (era o erro "só atualiza se eu trocar de uma para outra").
+- [ ] **5 Correlação** e **6 Modelo 3D** abrem cada um a sua tela; só a aba clicada fica marcada.
+- [ ] **Mais ▾** › Viabilidade: a aba "Mais" passa a dizer "Viabilidade".
+- [ ] **1 Acervo**: subabas no topo. "Mais ▾" › Cadastro da ANP: a lateral some e o cartão ocupa a largura toda.
+- [ ] **Ctrl+K**, digite `7-GMR-0013` (ou `gmr13`): aparece 7-GMR-13-RN; Enter abre a ficha no mapa.
+- [ ] **Ctrl+3** vai a Perfis, **Ctrl+0** ao Início, **Ctrl+Enter** em Acervo › Catálogo conecta à bacia.
+- [ ] **Ajuda › Atalhos de teclado**: mude "3 · Perfis" para outra tecla e use; dê a uma ação a tecla de outra (as duas trocam);
+      **Restaurar os padrões**.
+- [ ] **Documentos › Processar pendentes**: aparece "Antes de ler documentos escaneados". **Cancelar** não processa. De novo,
+      marque **Não mostrar de novo** e **Entendi**: processa, e não aparece mais (nem depois de fechar e abrir o SIAPP).
+- [ ] O mesmo em **Perfis › Calcular** e **Modelo 3D › Montar o bloco**.
+- [ ] **Ajuda › Guia do REATE** e **Limites e confiabilidade** abrem numa janela; **Esc** fecha. **Sobre** mostra a versão 0.57.0.
+- [ ] Um **?** ao lado de "Pastas do REATE" (Acervo › Catálogo) mostra e esconde a explicação.
+- [ ] Um erro qualquer (ex.: Conectar sem internet) aparece também no **canto superior direito** e some sozinho.
+- [ ] **Correlação**: "Achar poços ao longo de uma linha", "Desenho" e "Seções anteriores" vêm fechados; **Montar a seção** fica
+      no pé da lateral mesmo rolando.
+- [ ] **⋯ › Dividir a janela** e **⋯ › Abrir em janela** funcionam como antes.
+
 ## 0.56 — várias bacias no bloco 3D e tabela com nomes à mão
 
 - [ ] **Bloco 3D › Poços › "todos os poços da bacia"**: aparecem **caixas de marcação**, uma por bacia, com o número de poços.

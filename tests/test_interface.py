@@ -12,12 +12,29 @@ def abrir_projeto(janela):
 
 
 def ir(p, aba, sub=None):
-    """Vai até uma aba (e uma sub-aba de Dados ou de Interpretação)."""
+    """Vai até uma aba (e uma sub-aba do Acervo). Correlação e Modelo 3D são abas próprias no topo
+    (ir(p, "interp", "bloco") clica em "6 Modelo 3D"); Viabilidade e Comunidade ficam no menu "Mais"."""
+    if aba == "interp":
+        p.click("#aba-modelo" if sub == "bloco" else "#aba-interp")
+        return
+    if aba in ("viab", "comunidade"):
+        p.click("#aba-mais")
     p.click(f"#aba-{aba}")
     if sub and aba == "dados":
-        p.click(f".sub-nav [data-sub='{sub}']")
-    elif sub and aba == "interp":
-        p.locator(f"[data-interp='{sub}'] >> visible=true").first.click()
+        item = p.locator(f".sub-nav [data-sub='{sub}']")
+        if not item.is_visible():
+            p.click(".sub-mais > .sub-btn")        # Cadastro, Produção, Camadas, Consolidados: em "Mais"
+        item.click()
+
+
+def menu_janela(p):
+    """Abre o menu "⋯" do topo (Dividir a janela, Abrir em janela)."""
+    p.click("#btn-janelas")
+
+
+def abrir_avancado(p, ident):
+    """Abre uma seção recolhida (<details class="avancado">) da barra lateral."""
+    p.eval_on_selector(f"#{ident}", "d => d.open = true")
 
 
 def test_abre_no_inicio_e_abre_projeto(janela):
@@ -37,8 +54,8 @@ def test_abas_trocam_de_vista(janela):
     p.click("#aba-docs")
     assert p.is_visible("#vista-docs") and not p.is_visible("#vista-projeto")
     assert "Abra primeiro o projeto" in p.text_content("#docs-resumo")
-    p.click(".fluxo button[data-ir='comunidade']") if p.is_visible(".fluxo") else p.click("#aba-comunidade")
-    p.click("#aba-comunidade")
+    p.click(".fluxo button[data-ir='comunidade']") if p.is_visible(".fluxo") else ir(p, "comunidade")
+    ir(p, "comunidade")
     assert p.is_visible("#vista-comunidade")
     assert not janela.erros_js, janela.erros_js
 
@@ -48,7 +65,7 @@ def test_comunidade_autor_exportar_importar(janela):
     abrir_projeto(janela)
     api = janela.api
     api.corrigir_palavra("BARIGIRAS", "BARREIRAS")
-    p.click("#aba-comunidade")
+    ir(p, "comunidade")
     janela.esperar("document.getElementById('com-local').textContent.includes('1 correção')")
     p.click("#btn-exportar")
     janela.esperar("document.querySelector('.rodape').classList.contains('erro')")
@@ -355,13 +372,15 @@ def test_aba_secao(janela):
     poco(b, "1-LES-1-RN", -5.30, -36.70, 30.0, [("F", "JANDAI", 5, 330), ("F", "ACU", 330, 900)], prof_final=950)
     ir(p, "interp", "secao")
     janela.esperar("document.getElementById('sec-disponiveis').textContent.includes('3 poço')")
-    # pelas pontas da linha
+    # pelas pontas da linha (seção recolhida na lateral)
+    abrir_avancado(p, "sec-av-linha")
     p.fill("#sec-a", "1-OES-1-RN")
     p.fill("#sec-b", "1-LES-1-RN")
     p.click("#sec-corredor")
     janela.esperar("document.querySelectorAll('#sec-lista li').length === 3")
     assert "3 poço(s)" in p.text_content("#sec-corredor-res")
     # nivelado no topo do Açu
+    abrir_avancado(p, "sec-av-desenho")
     p.select_option("#sec-eixo", "nivelado")
     janela.esperar("document.querySelectorAll('#sec-datum option').length >= 2")
     p.select_option("#sec-datum", "ACU")
@@ -379,6 +398,7 @@ def test_aba_secao(janela):
     # tirar um poço e reabrir a anterior pelo histórico
     p.click("#sec-lista li:nth-child(2) .sec-mini >> nth=2")
     assert p.locator("#sec-lista li").count() == 2
+    abrir_avancado(p, "sec-av-historico")
     p.click("#sec-historico button >> nth=1")       # a mais antiga: estilo clássico
     janela.esperar("document.querySelectorAll('#sec-lista li').length === 3")
     assert p.input_value("#sec-estilo") == "classico"
@@ -887,7 +907,7 @@ def test_camadas_no_mapa_e_distancias_do_campo(janela, tmp_path, monkeypatch):
     p.uncheck("#cm-mapa input[data-camada='ibge_dutos']")
     janela.esperar("!sig.camadas.ibge_dutos", 30)
     # campo × infraestrutura (aba Viabilidade)
-    p.click("#aba-viab")
+    ir(p, "viab")
     p.fill("#vb-campo", "CAMPO TESTE")
     p.click("#vb-medir")
     janela.esperar("document.getElementById('vb-resultado').textContent.includes('Gasoduto de transporte')", 30)
@@ -1024,10 +1044,12 @@ def test_dividir_recolher_e_guardar_o_arranjo(janela):
     p = janela.page
     abrir_projeto(janela)
     p.click("#aba-mapa")
+    menu_janela(p)
     p.click("#btn-dividir")
     assert p.is_visible("#vista-mapa") and p.is_visible("#vista-docs") and p.is_visible("#divisor")
     assert "direita" in p.get_attribute("#aba-docs", "class")
     # a área da direita troca de aba; os lados trocam
+    menu_janela(p)
     p.select_option("#div-dir", "perfis")
     assert p.is_visible("#vista-perfis") and not p.is_visible("#vista-docs")
     p.click("#div-trocar")
@@ -1051,6 +1073,7 @@ def test_dividir_recolher_e_guardar_o_arranjo(janela):
     pref = janela.api._preferencias().ler()
     assert pref["recolhidas"] == {"mapa": True}
     assert pref["layout"]["dividida"] and pref["layout"]["ativa"] == "mapa" and pref["layout"]["direita"] == "perfis"
+    menu_janela(p)
     p.click("#btn-dividir")
     assert not p.is_visible("#divisor") and not p.is_visible("#vista-perfis")
     assert not janela.erros_js, janela.erros_js
@@ -1149,6 +1172,7 @@ def test_aba_em_janela_propria_e_conversa_entre_janelas(janela, tmp_path):
     assert p.is_hidden("#vista-docs")
     assert docs.falsa.focada >= 1
     # "Voltar para a principal" fecha a janela própria
+    menu_janela(docs.page)
     docs.page.click("#btn-janela")
     assert docs.falsa.destruida
     assert not docs.erros_js and not janela.erros_js, (docs.erros_js, janela.erros_js)
@@ -1506,7 +1530,7 @@ def test_comunidade_painel_biblioteca_compartilhar_comparar_e_refazer(janela, tm
     p.click("#av-calcular")
     janela.esperar("document.getElementById('av-compartilhada').hidden")
     # Comunidade › Biblioteca
-    p.click("#aba-comunidade")
+    ir(p, "comunidade")
     p.click(".sub-nav [data-com='biblioteca']")
     janela.esperar("document.querySelectorAll('#bib-lista .bib-item').length === 1")
     assert "Açu com Archie" in p.text_content("#bib-lista") and "7-TST-1-RN" in p.text_content("#bib-lista")
@@ -1536,7 +1560,7 @@ def test_comunidade_painel_biblioteca_compartilhar_comparar_e_refazer(janela, tm
     p.locator("#pf-av").scroll_into_view_if_needed()
     foto(janela, "com_4_refazer")
     # Painel
-    p.click("#aba-comunidade")
+    ir(p, "comunidade")
     p.click(".sub-nav [data-com='painel']")
     janela.esperar("document.querySelectorAll('#pn-kpis .pn-kpi').length === 8")
     assert "Ruan da Silva Nobre" in p.text_content("#pn-contrib")
@@ -1983,7 +2007,7 @@ def test_dados_destes_pocos_vindo_da_secao_restringe_a_busca(janela):
     p.click("#tp-restricao .x")
     janela.esperar("document.getElementById('tp-tipos').textContent.includes('4 poço(s) levantado(s)')")
     p.evaluate("sec.pocos = []")
-    p.click("#aba-interp")
+    ir(p, "interp", "secao")
     p.click("#sec-dados")
     assert "Não há poços para procurar" in janela.status()
 
@@ -2153,4 +2177,162 @@ def test_bloco_mapa_2d_com_curvas_de_nivel(janela, tmp_path):
         janela.esperar(f"document.getElementById('bl-exportado').textContent.includes('_mapa_') && "
                        f"document.getElementById('bl-exportado').textContent.includes('.{f}')", 60)
         assert any(pasta.glob(f"*_mapa_*.{f}"))
+    assert not janela.erros_js, janela.erros_js
+
+
+# ---------------------------------------------------------------- 0.57: interface
+def test_abas_pelo_fluxo_menus_e_ajuda(janela):
+    p = janela.page
+    rotulos = [t.strip() for t in p.locator("#abas > .aba").all_text_contents()]
+    assert rotulos == ["Início", "1Acervo", "2Documentos", "3Perfis", "4Poços", "5Correlação", "6Modelo 3D"]
+    assert p.is_hidden("#aba-viab") and p.is_hidden("#btn-dividir") and p.is_hidden("#versao")
+    abrir_projeto(janela)
+    assert p.text_content("#projeto-nome") == "ambiente_teste"
+    # Correlação e Modelo 3D: abas próprias, cada uma marcada sozinha
+    ir(p, "interp", "bloco")
+    assert p.is_visible("#vista-bloco") and "ativa" in p.get_attribute("#aba-modelo", "class")
+    assert "ativa" not in p.get_attribute("#aba-interp", "class")
+    ir(p, "interp", "secao")
+    assert p.is_visible("#vista-secao") and "ativa" not in p.get_attribute("#aba-modelo", "class")
+    # "Mais" leva a Viabilidade e mostra o nome dela
+    ir(p, "viab")
+    assert p.is_visible("#vista-viab") and p.text_content("#aba-mais-nome") == "Viabilidade"
+    assert p.is_hidden("#aba-viab")                       # o menu fechou
+    # Acervo: subabas no topo; as menos usadas em "Mais"; sem lateral vazia
+    ir(p, "dados", "cadastro")
+    assert p.text_content("#sub-mais-nome") == "Cadastro da ANP"
+    assert "sem-lateral" in p.get_attribute("#vista-dados", "class") and p.is_hidden("#vista-dados > .lateral")
+    ir(p, "dados", "catalogo")
+    assert p.is_visible("#vista-dados > .lateral") and p.text_content("#sub-mais-nome") == "Mais"
+    # Ajuda: guia, limites, sobre; Esc fecha
+    p.click("#btn-ajuda")
+    p.click("[data-ajuda='guia']")
+    assert "O que tem em cada pasta do REATE" in p.text_content("#dlg-corpo")
+    p.keyboard.press("Escape")
+    assert p.is_hidden("#dialogo")
+    p.click("#btn-ajuda")
+    p.click("[data-ajuda='limites']")
+    assert "6 de 18 profundidades" in p.text_content("#dlg-corpo")
+    p.click("#dlg-fechar")
+    p.click("#btn-ajuda")
+    p.click("[data-ajuda='sobre']")
+    assert p.text_content("#dlg-corpo").startswith("SIAPP v0.")
+    p.keyboard.press("Escape")
+    p.click("#btn-ajuda")
+    p.click("[data-ajuda='diag']")
+    assert p.is_visible("#cfg-diag")
+    p.keyboard.press("Escape")
+    # explicação longa atrás de um "?"
+    ir(p, "dados", "catalogo")
+    q = p.locator("#vista-dados .lateral .explicar").first
+    expl = p.locator("#vista-dados .lateral p.explicacao").first
+    assert expl.is_hidden()
+    q.click()
+    assert expl.is_visible()
+    assert not janela.erros_js, janela.erros_js
+
+
+def test_busca_de_poco_abre_a_ficha(janela):
+    from test_pocos import csv_exemplo
+    p = janela.page
+    abrir_projeto(janela)
+    janela.api._importar_cadastro(csv_exemplo(), "anp:teste")
+    p.keyboard.press("Control+k")
+    assert p.is_visible("#busca-poco")
+    p.fill("#busca-poco", "7-GMR-0013")              # zeros à esquerda: a mesma coisa
+    janela.esperar("document.querySelector('#busca-lista strong') && "
+                   "document.querySelector('#busca-lista strong').textContent === '7-GMR-13-RN'")
+    p.keyboard.press("Enter")
+    assert p.is_hidden("#dialogo")
+    janela.esperar("!document.getElementById('vista-mapa').hidden && "
+                   "document.getElementById('fi-titulo').textContent === '7-GMR-13-RN'")
+    p.click("#btn-busca")
+    p.fill("#busca-poco", "zzz9")
+    janela.esperar("document.querySelector('#busca-lista .busca-nada') && "
+                   "document.querySelector('#busca-lista .busca-nada').textContent.includes('Nenhum poço')")
+    assert not janela.erros_js, janela.erros_js
+
+
+def test_atalhos_de_teclado_editaveis(janela):
+    p = janela.page
+    abrir_projeto(janela)
+    p.keyboard.press("Control+3")
+    assert p.is_visible("#vista-perfis")
+    p.keyboard.press("Control+6")
+    assert p.is_visible("#vista-bloco")
+    p.keyboard.press("Control+0")
+    assert p.is_visible("#vista-projeto")
+    # muda "3 · Perfis" para Ctrl+Alt+P
+    p.click("#btn-ajuda")
+    p.click("[data-ajuda='atalhos']")
+    linha = p.locator(".tabela-atalhos tr", has_text="3 · Perfis")
+    linha.locator("button").click()
+    p.keyboard.press("Control+Alt+p")
+    janela.esperar("prefs.atalhos.m3 === 'Ctrl+Alt+P'")
+    # dar a "1 · Acervo" a tecla que já é da busca: as duas trocam
+    p.locator(".tabela-atalhos tr", has_text="1 · Acervo").locator("button").click()
+    p.keyboard.press("Control+k")
+    janela.esperar("prefs.atalhos.m1 === 'Ctrl+K' && prefs.atalhos.busca === 'Ctrl+1'")
+    assert "trocaram de tecla" in p.text_content("#status")
+    assert janela.api._preferencias().ler()["atalhos"] == {"m3": "Ctrl+Alt+P", "m1": "Ctrl+K", "busca": "Ctrl+1"}
+    p.keyboard.press("Escape")
+    p.keyboard.press("Control+Alt+p")
+    assert p.is_visible("#vista-perfis")
+    p.keyboard.press("Control+k")
+    assert p.is_visible("#vista-dados") and p.is_hidden("#dialogo")
+    assert p.text_content("#btn-busca-tecla") == "Ctrl+1"
+    # restaurar os padrões
+    p.click("#btn-ajuda")
+    p.click("[data-ajuda='atalhos']")
+    p.click("#dlg-pe button")
+    janela.esperar("Object.keys(prefs.atalhos).length === 0")
+    assert janela.api._preferencias().ler()["atalhos"] == {}
+    assert not janela.erros_js, janela.erros_js
+
+
+def test_avisos_de_primeira_vez(janela):
+    p = janela.page
+    abrir_projeto(janela)
+    p.evaluate("prefs.avisos_vistos = {}")          # o arranjo de teste marca todos como vistos
+    ir(p, "interp", "bloco")
+    p.click("#bl-montar")
+    assert p.text_content("#dlg-titulo") == "Antes de montar o modelo 3D"
+    assert "krigagem vira interpolação linear" in p.text_content("#dlg-corpo")
+    p.click("#dlg-pe .btn.secundario")                # Cancelar: nada acontece
+    assert p.is_hidden("#dialogo")
+    p.click("#bl-montar")
+    assert p.is_visible("#dialogo")                   # cancelou: aparece de novo
+    p.check("#aviso-nao-mostrar")
+    antes = p.text_content("#status")
+    p.click("#dlg-pe .btn:not(.secundario)")         # Entendi, continuar: a ação segue
+    janela.esperar(f"document.getElementById('status').textContent !== {antes!r}")
+    janela.esperar("prefs.avisos_vistos.bloco === true")
+    assert janela.api._preferencias().ler()["avisos_vistos"]["bloco"] is True
+    p.click("#bl-montar")
+    assert p.is_hidden("#dialogo")                    # não mostra de novo
+    assert not janela.erros_js, janela.erros_js
+
+
+def test_erro_vira_aviso_no_canto(janela):
+    p = janela.page
+    p.evaluate("status('Algo deu errado de propósito', 'erro')")
+    assert p.locator("#avisos .aviso.erro").text_content() == "Algo deu errado de propósito"
+    p.evaluate("status('Algo deu errado de propósito', 'erro')")
+    assert p.locator("#avisos .aviso").count() == 1          # a mesma mensagem não repete
+    p.evaluate("status('Clique simples', 'ok')")
+    assert p.locator("#avisos .aviso.ok").count() == 0       # ok rápido fica só no rodapé
+    p.evaluate("status('Trabalhando', 'trab'); inicioTrabalho = Date.now() - 5000; status('Terminou', 'ok')")
+    assert p.locator("#avisos .aviso.ok").text_content() == "Terminou"   # trabalho longo: avisa
+    assert not janela.erros_js, janela.erros_js
+
+
+def test_projeto_aberto_recarrega_a_aba_visivel(janela, tmp_path):
+    """E1 da revisão: o aviso "projeto aberto" chega antes da resposta (como no pywebview) e a aba
+    que está na tela tem de recarregar."""
+    p = janela.page
+    p.click("#aba-docs")
+    assert "Abra primeiro o projeto" in p.text_content("#docs-resumo")
+    janela.api._abrir_projeto(str(tmp_path / "ambiente_teste"))      # só o aviso chega à página
+    janela.esperar("!document.getElementById('docs-resumo').textContent.includes('Abra primeiro')")
+    assert p.text_content("#projeto-nome") == "ambiente_teste"
     assert not janela.erros_js, janela.erros_js

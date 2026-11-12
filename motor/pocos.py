@@ -218,6 +218,47 @@ def resolver(banco: Banco, nome: str) -> str:
     return r[0] if r else k
 
 
+def _sem_zeros(t: str) -> str:
+    """Texto só com letras e números, sem zeros à esquerda dos números (7-GMR-0013 = 7GMR13)."""
+    t = re.sub(r"[^A-Z0-9]", "", _sem_acento(str(t or "")).upper())
+    return re.sub(r"(?<![0-9])0+(?=[0-9])", "", t)
+
+
+def buscar(banco: Banco, texto: str, limite: int = 10) -> list[dict]:
+    """Poços do projeto cujo nome contém `texto`, em qualquer grafia: cadastro da ANP,
+    apelidos (nome do operador, nome antigo) e pastas do REATE fora do cadastro.
+    Primeiro o nome exato, depois os que começam pelo texto, depois os que o contêm."""
+    alvo = _sem_zeros(texto)
+    if len(alvo) < 2:
+        return []
+    exato = resolver(banco, texto)
+    achados: dict[str, dict] = {}
+
+    def anotar(pid, nome, bacia, campo, como=""):
+        n = _sem_zeros(nome)
+        if alvo not in n:
+            return
+        nivel = 0 if (n == alvo or pid == exato) else 1 if n.startswith(alvo) else 2
+        atual = achados.get(pid)
+        if atual is None or nivel < atual["_nivel"]:
+            achados[pid] = {"id": pid, "bacia": bacia or "", "campo": campo or "", "como": como,
+                            "_nivel": nivel}
+
+    with banco.conexao() as c:
+        for r in c.execute("SELECT id, bacia, campo FROM pocos"):
+            anotar(r[0], r[0], r[1], r[2])
+        for r in c.execute("""SELECT a.chave, a.poco_id, p.bacia, p.campo FROM apelidos a
+                              LEFT JOIN pocos p ON p.id = a.poco_id"""):
+            anotar(r[1], r[0], r[2], r[3], como=r[0])
+        for r in c.execute("""SELECT DISTINCT poco_id, bacia FROM reate
+                              WHERE poco_id IS NOT NULL AND poco_id NOT IN (SELECT id FROM pocos)"""):
+            anotar(r[0], r[0], r[1], "")
+    lista = sorted(achados.values(), key=lambda d: (d["_nivel"], len(d["id"]), d["id"]))[:limite]
+    for d in lista:
+        del d["_nivel"]
+    return lista
+
+
 def registrar_reate(banco: Banco, bacia: str, categoria: str, pocos: list[dict],
                     substituir: bool = False) -> int:
     """Pastas de poço vistas no portal (resultado de ClienteREATE.listar_pocos).

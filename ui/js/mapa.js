@@ -1,4 +1,4 @@
-// SIAPP — aba Mapa (e o cadastro da ANP, em Dados): poços no mapa, filtros e ficha do poço.
+// SIAPP — aba Poços (mapa) (e o cadastro da ANP, em Dados): poços no mapa, filtros e ficha do poço.
 "use strict";
 
 let mapa = null;            // L.Map
@@ -33,7 +33,7 @@ function criarMapa() {
 
 async function carregarMapa() {
   if (!projetoAberto) {
-    $("cad-info").textContent = "Abra o projeto primeiro (aba Projeto).";
+    $("cad-info").textContent = "Abra o projeto primeiro (Início).";
     return;
   }
   criarMapa();
@@ -338,7 +338,7 @@ async function buscarPocosLinha() {
   $("ml-resumo").textContent = r.encontrados
     ? `${r.encontrados} poço(s) com topos no AGP a até ${numero(km, 1)} km da linha de ${numero(r.comprimento_km, 1)} km` +
       (r.encontrados > r.pocos.length ? `; ${r.pocos.length} escolhidos, espaçados por igual (a seção aceita até 20).` : ".")
-    : `Nenhum poço com topos no AGP a até ${numero(km, 1)} km da linha. Aumente a distância ou leia os AGPs (Dados › Levantamento).`;
+    : `Nenhum poço com topos no AGP a até ${numero(km, 1)} km da linha. Aumente a distância ou leia os AGPs (Acervo › Levantamento).`;
   const ol = limpar($("ml-lista"));
   for (const p of r.pocos) {
     ol.appendChild(el("li", "", `${p.id} · ${numero(p.t_km, 1)} km da ponta A · a ${numero(p.dist_linha_km, 1)} km da linha`));
@@ -420,7 +420,7 @@ async function abrirFicha(id) {
   const bd = el("button", "btn secundario pequeno", "Destacar no mapa");
   bd.onclick = () => destacarPocos([id], $("dq-cor").value);
   const bc = el("button", "btn secundario pequeno", "Dados consolidados");
-  bc.title = "Todos os dados deste poço, por tipo, com a fonte de cada um (Dados › Dados consolidados)";
+  bc.title = "Todos os dados deste poço, por tipo, com a fonte de cada um (Acervo › Dados consolidados)";
   bc.onclick = () => verConsolidadoDoPoco(id);
   corpo.append(bd, " ", bc);
   secaoProducaoFicha(corpo, r.producao, p.campo);
@@ -528,7 +528,7 @@ function secaoProducaoFicha(corpo, pr, campo) {
         : `A produção do campo ${pr.campo} ainda não foi baixada.`;
     const p = el("p", "ajuda", txt + " ");
     if (pr && pr.campo) {
-      const b = el("button", "link", pr.situacao === "campo_nao_baixado" ? "Baixar em Dados › Produção da ANP" : "Ver o campo em Dados › Produção");
+      const b = el("button", "link", pr.situacao === "campo_nao_baixado" ? "Baixar em Acervo › Produção da ANP" : "Ver o campo em Acervo › Produção");
       b.type = "button";
       b.onclick = () => irPara("producao", "abrirProducaoCampo", pr.campo);
       p.appendChild(b);
@@ -570,7 +570,7 @@ function secaoProducaoFicha(corpo, pr, campo) {
     graf.appendChild(el("p", "ajuda", `Mensal, de ${mesAno(pr.de)} a ${mesAno(pr.ate)}. Fonte: dados abertos da ANP (produção por poço).`));
     corpo.appendChild(graf);
   }
-  const b = el("button", "link", `Ver o campo ${pr.campo} em Dados › Produção`);
+  const b = el("button", "link", `Ver o campo ${pr.campo} em Acervo › Produção`);
   b.type = "button";
   b.onclick = () => irPara("producao", "abrirProducaoCampo", pr.campo);
   const pp = el("p", "ajuda");
@@ -584,7 +584,7 @@ function fecharFicha() {
   setTimeout(() => mapa && mapa.invalidateSize(), 50);
 }
 
-// Leva o usuário à árvore de arquivos do poço (aba Dados › Catálogo do REATE).
+// Leva o usuário à árvore de arquivos do poço (Acervo › Catálogo do REATE).
 function abrirPocoNoCatalogo(x) { irPara("catalogo", "mostrarPocoNoCatalogo", x); }
 
 async function mostrarPocoNoCatalogo(x) {

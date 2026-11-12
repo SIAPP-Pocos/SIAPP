@@ -9,8 +9,8 @@
 
 const MODO_JANELA = new URLSearchParams(location.search).get("janela") || "";
 const ABAS_SIAPP = ["projeto", "dados", "mapa", "docs", "perfis", "interp", "viab", "comunidade"];
-const NOMES_ABAS = { projeto: "Projeto", dados: "Dados", mapa: "Mapa", docs: "Documentos", perfis: "Perfis",
-  interp: "Interpretação", viab: "Viabilidade", comunidade: "Comunidade" };
+const NOMES_ABAS = { projeto: "Início", dados: "Acervo", mapa: "Poços", docs: "Documentos", perfis: "Perfis",
+  interp: "Correlação e Modelo 3D", viab: "Viabilidade", comunidade: "Comunidade" };
 const PALETAS_SIAPP = [
   ["marinho", "Marinho e lima", "#1b2f5c", "#b6dd5a", "#141b2c", "Padrão do SIAPP. No claro o marinho é o destaque; no escuro, o lima."],
   ["petroleo", "Petróleo", "#0e6b70", "#e0f0f0", "#172026", "Verde-azulado sóbrio e técnico."],
@@ -81,6 +81,7 @@ function preferenciasMudaram(p) {
   prefs = p;
   aplicarAparencia();
   if (!$("config").hidden) preencherConfig();
+  if (typeof atualizarTeclasVisiveis === "function") atualizarTeclasVisiveis();
 }
 
 // ---------------------------------------------------------------- abas e layout
@@ -151,17 +152,29 @@ function aplicarLayout(recarregar = new Set()) {
   $("divisor").hidden = !(ui.dividida && !MODO_JANELA);
   for (const b of document.querySelectorAll(".aba[data-vista]")) {
     const a = b.dataset.vista;
-    b.classList.toggle("ativa", a === visiveis[0]);
-    b.classList.toggle("direita", visiveis[1] === a);
+    // Correlação e Modelo 3D são a mesma aba (interp), cada botão com a sua sub-aba
+    const esta = !b.dataset.subInterp || b.dataset.subInterp === ui.subInterp;
+    b.classList.toggle("ativa", a === visiveis[0] && esta);
+    b.classList.toggle("direita", visiveis[1] === a && esta);
     b.classList.toggle("fora", ui.fora.has(a));
-    b.setAttribute("aria-selected", a === visiveis[0]);
+    b.setAttribute("aria-selected", a === visiveis[0] && esta);
     b.title = ui.fora.has(a) ? "Está numa janela própria: clique para trazê-la para a frente"
-      : visiveis[1] === a ? "Aberta na área da direita" : "";
+      : visiveis[1] === a && esta ? "Aberta na área da direita" : "";
   }
-  for (const b of document.querySelectorAll("[data-interp]")) b.classList.toggle("ativa", b.dataset.interp === ui.subInterp);
+  // "Mais" mostra o nome da aba de dentro dele que estiver aberta
+  const extra = ["viab", "comunidade"].find((a) => visiveis.includes(a));
+  if ($("aba-mais")) {
+    $("aba-mais").classList.toggle("ativa", extra === visiveis[0]);
+    $("aba-mais").classList.toggle("direita", Boolean(extra) && extra === visiveis[1]);
+    $("aba-mais-nome").textContent = extra ? NOMES_ABAS[extra] : "Mais";
+  }
   for (const b of document.querySelectorAll(".sub-nav [data-sub]")) b.classList.toggle("ativa", b.dataset.sub === ui.subDados);
   for (const p of document.querySelectorAll("[data-sub-painel]")) p.hidden = p.dataset.subPainel !== ui.subDados;
   for (const p of document.querySelectorAll("[data-sub-lat]")) p.hidden = p.dataset.subLat !== ui.subDados;
+  // sub-aba do Acervo sem nada na lateral: a lateral some (a navegação fica no topo da área)
+  $("vista-dados").classList.toggle("sem-lateral", !document.querySelector(`[data-sub-lat="${ui.subDados}"]`));
+  const noMais = document.querySelector(`.sub-mais [data-sub="${ui.subDados}"]`);
+  if ($("sub-mais-nome")) $("sub-mais-nome").textContent = noMais ? noMais.textContent : "Mais";
   for (const b of document.querySelectorAll(".sub-nav [data-com]")) b.classList.toggle("ativa", b.dataset.com === ui.subCom);
   for (const p of document.querySelectorAll("[data-com-painel]")) p.hidden = p.dataset.comPainel !== ui.subCom;
   for (const p of document.querySelectorAll("[data-com-lat]")) p.hidden = p.dataset.comLat !== ui.subCom;
@@ -175,6 +188,8 @@ function aplicarLayout(recarregar = new Set()) {
 function desenharAcoesTopo() {
   $("btn-dividir").hidden = Boolean(MODO_JANELA);
   $("btn-dividir").classList.toggle("on", ui.dividida);
+  $("btn-janelas").classList.toggle("on", ui.dividida);
+  $("btn-janelas").title = ui.dividida ? "Janela dividida: a aba da direita, trocar os lados, desfazer" : "Dividir a janela ou abrir em janela própria";
   $("btn-dividir").querySelector("span").textContent = ui.dividida ? "Desfazer divisão" : "Dividir";
   $("div-dir-box").hidden = !ui.dividida || Boolean(MODO_JANELA);
   $("div-trocar").hidden = !ui.dividida || Boolean(MODO_JANELA);
@@ -490,7 +505,8 @@ function fimAbertura() {
 // Outra janela abriu o projeto: esta passa a funcionar também.
 function projetoAbertoEmOutraJanela(info) {
   if (projetoAberto) return;
-  projetoAberto = true;
+  // liberarProjeto marca o projeto como aberto; marcar antes fazia ela achar que não era
+  // a primeira vez e a aba visível não recarregava (relatório da revisão, E1)
   if (typeof liberarProjeto === "function") liberarProjeto(info);
 }
 
@@ -519,8 +535,8 @@ function ligarJanelas() {
   ligar("dg-copiar", "onclick", copiarDiagnostico);
   ligar("dg-log", "onclick", () => chamar($("dg-log"), "abrir_log"));
   ligar("dg-atualizar", "onclick", carregarDiagnostico);
-  for (const b of document.querySelectorAll("[data-interp]")) b.onclick = () => trocarAba(b.dataset.interp);
   for (const b of document.querySelectorAll(".sub-nav [data-sub]")) b.onclick = () => {
+    fecharMenus();
     ui.subDados = b.dataset.sub;
     if (ui.subDados !== "catalogo" && !$("gaveta").hidden) fecharGaveta();
     if (ui.subDados === "consolidado" && typeof carregarConsolidado === "function") carregarConsolidado();

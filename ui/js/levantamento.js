@@ -1,4 +1,4 @@
-// SIAPP — levantamento do acervo (aba Dados): o que cada poço tem no portal,
+// SIAPP — levantamento do acervo (Acervo): o que cada poço tem no portal,
 // pelo conteúdo dos arquivos. O trabalho roda no motor, em segundo plano.
 "use strict";
 

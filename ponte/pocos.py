@@ -95,6 +95,12 @@ class PocosAPI:
                               acervo=f.get("acervo", ""), familia=f.get("familia", ""))
 
     @resposta_segura
+    def buscar_pocos(self, texto: str):
+        """Busca de poço da barra do topo (Ctrl+K): nome em qualquer grafia."""
+        self._exigir_projeto()
+        return {"pocos": mpo.buscar(self._banco, str(texto or "")[:60])}
+
+    @resposta_segura
     def ficha_poco(self, poco: str):
         self._exigir_projeto()
         pid = mpo.resolver(self._banco, poco)

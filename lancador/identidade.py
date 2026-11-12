@@ -18,6 +18,7 @@ Fora do Windows, ou se algo falhar, não faz nada e devolve False: identidade é
 from __future__ import annotations
 
 import ctypes
+import ntpath
 import os
 import sys
 from ctypes import wintypes
@@ -127,13 +128,14 @@ def _ler(loja, campo: str) -> str | None:
 # ------------------------------------------------------------------------------------------------------ a janela
 def comando_de_reabertura(pasta_app: str) -> str:
     """Linha de comando que reabre o SIAPP pelo lançador silencioso (a mesma do atalho)."""
-    wscript = os.path.join(os.environ.get("WINDIR") or os.environ.get("SystemRoot") or r"C:\Windows", "System32", "wscript.exe")
-    return f'"{wscript}" //nologo "{os.path.join(pasta_app, NOME_LANCADOR)}"'
+    # o comando é sempre do Windows: ntpath usa a barra invertida também quando os testes rodam no Linux
+    wscript = ntpath.join(os.environ.get("WINDIR") or os.environ.get("SystemRoot") or r"C:\Windows", "System32", "wscript.exe")
+    return f'"{wscript}" //nologo "{ntpath.join(pasta_app, NOME_LANCADOR)}"'
 
 
 def valores_da_janela(pasta_app: str) -> dict:
     return {"id": APP_ID, "comando": comando_de_reabertura(pasta_app),
-            "icone": os.path.join(pasta_app, "recursos", "icone", "siapp.ico") + ",0", "nome": NOME}
+            "icone": ntpath.join(pasta_app, "recursos", "icone", "siapp.ico") + ",0", "nome": NOME}
 
 
 def _loja_da_janela(hwnd: int):

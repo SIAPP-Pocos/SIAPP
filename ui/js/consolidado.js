@@ -1,4 +1,4 @@
-// SIAPP — Dados › Dados consolidados: cada tipo de dado, de onde vem, onde fica e onde é usado.
+// SIAPP — Acervo › Dados consolidados: cada tipo de dado, de onde vem, onde fica e onde é usado.
 
 const ORIGEM_LEITOR = { cdpe: "Formulários CDPE da ANP", pressoes: "Pressões (teste a cabo, TFR)", pvt: "PVT",
   pag: "PAG", checkshot: "Sísmica de poço", geoquimica: "Geoquímica", petrofisica: "Petrofísica de testemunho" };
