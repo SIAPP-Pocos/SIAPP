@@ -108,3 +108,9 @@ guardado por aba (preferência `larguras`); dois cliques na borda voltam ao padr
 
 Na ficha (aba Poços), **Página inteira** põe a ficha no lugar do mapa, com as seções em colunas de ~460 px; **Ao lado do
 mapa** volta à gaveta. A escolha fica nas preferências (`ficha_cheia`). Com a ficha fechada, o mapa aparece sempre.
+
+## Trocar de aba (0.61)
+
+Mostrar uma aba relê os dados só se algo mudou na pasta do projeto desde a última vez (ou depois de 5 minutos). Clicar na
+aba que já está à frente, ou **F5** ("Reler a aba", trocável em Ajuda › Atalhos de teclado), relê na hora. Início e Comunidade
+relêem sempre.

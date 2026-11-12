@@ -6,6 +6,19 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 
 ## [Não lançado]
 
+## [0.61.0] — 2026-11-12
+Trocar de aba sem recarregar à toa; registros que crescem sem regravar o arquivo inteiro.
+### Alterado
+- **Trocar de aba só relê o que mudou**: o motor devolve uma "marca" barata da pasta do projeto (data e tamanho dos
+  arquivos dos dois primeiros níveis); a aba só recarrega se a marca mudou desde a última vez (ou se já faz 5 minutos).
+  Clicar na aba que já está à frente, ou apertar **F5** (novo atalho, "Reler a aba"), relê na hora. Início e Comunidade
+  continuam relendo sempre.
+- **Registro de downloads e resumo dos textos** (`bruto/registro_downloads.json`, `texto/resumo.json`): cada download
+  ou documento processado vira uma linha num arquivo ao lado (`….mudancas.jsonl`), em vez de regravar o JSON inteiro;
+  a cada 500 linhas tudo volta para o JSON. Os arquivos antigos continuam valendo, sem conversão.
+### Corrigido
+- Uma linha cortada no fim do histórico (o app fechou no meio da gravação) não engole mais o evento seguinte.
+
 ## [0.60.0] — 2026-11-12
 Ficha do poço em página inteira e limpeza do código.
 ### Adicionado

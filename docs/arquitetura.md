@@ -129,6 +129,14 @@ tamanho mudou.
 **Histórico (0.60).** Cada evento do projeto (`Projeto.registrar`) é uma linha em `historico.jsonl`; o `siapp.json` guarda só
 a configuração. O histórico antigo, que ficava dentro do `siapp.json`, passa para o arquivo de linhas na primeira abertura.
 
+**Registros que só crescem (0.61).** `registro_downloads.json` e `texto/resumo.json` são `MapaEmDisco`
+(`motor/projeto.py`): o JSON base de sempre mais um `….mudancas.jsonl` com uma linha por mudança; a cada 500 linhas tudo
+volta para o JSON. Linhas cortadas são ignoradas e nunca engolem a seguinte (`acrescentar_linhas`).
+
+**Recarregar só o que mudou (0.61).** `Projeto.marca()` resume data e tamanho dos arquivos e pastas dos dois primeiros
+níveis do projeto (sem preferências, logs e temporários); `marca_dados` a devolve à janela, e `abrirAba` (janelas.js) só
+chama o `AO_ABRIR_ABA` da aba se a marca mudou desde a última carga dela ou se passaram 5 minutos. F5 força.
+
 **Testes de interface (0.59).** Como no pywebview, o que o motor manda para a página durante uma chamada roda antes de a
 resposta chegar (`tests/interface_util.py`). Foi essa diferença de ordem que escondeu o erro da aba que não recarregava ao
 abrir o projeto.

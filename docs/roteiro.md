@@ -78,8 +78,9 @@ existe e a validação científica ficam **para o final**, antes do lançamento 
 - [x] **Ficha do poço em página inteira; limpeza do código** (funções sem uso, "tirar acento" num lugar só, atributos da
       API declarados) (0.60).
 - [x] Histórico do projeto num arquivo de linhas (`historico.jsonl`) em vez de dentro do `siapp.json` (0.60, parte da A15).
-- [ ] Resumo dos textos e registro de downloads sem regravar o JSON inteiro a cada arquivo (resto da A15).
-- [ ] Recarregar só o que mudou ao trocar de aba (A17); medir o mapa com o cadastro inteiro (A25).
+- [x] Resumo dos textos e registro de downloads sem regravar o JSON inteiro a cada arquivo (resto da A15) (0.61).
+- [x] Recarregar só o que mudou ao trocar de aba (A17) (0.61).
+- [ ] Medir o mapa com o cadastro inteiro (A25).
 - [ ] Uma tela de fontes e prioridade (topos e zonas) e contagens com o critério ao lado (A12, A13).
 
 ## No final — melhorias do que já existe

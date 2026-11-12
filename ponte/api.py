@@ -11,6 +11,7 @@ import os
 
 import webview
 
+from motor import arquivos_baixados as ma
 from motor import banco as mb
 from motor import dados_poco as mdp
 from motor import documentos as md
@@ -215,7 +216,7 @@ class API(BaseAPI, JanelasAPI, PocosAPI, CatalogoAPI, DocumentosAPI, Vocabulario
                   for v in self._projeto.registro_downloads().values()}
         for raiz, _, nomes in os.walk(self._projeto.pasta_bruto):
             for nome in nomes:
-                if nome.endswith((".part", ".tmp")) or nome == "registro_downloads.json":
+                if nome.endswith((".part", ".tmp")) or nome in ma.NOMES_REGISTRO:
                     continue
                 caminho = os.path.join(raiz, nome)
                 rel = self._projeto.rel(caminho)

@@ -2509,3 +2509,25 @@ def test_ficha_em_pagina_inteira(janela):
     assert p.is_visible("#mapa")                     # fechou a ficha: o mapa volta
     assert janela.api._preferencias().ler()["ficha_cheia"] is True
     assert not janela.erros_js, janela.erros_js
+
+
+# ---------------------------------------------------------------- 0.61: trocar de aba sem recarregar à toa
+def test_aba_so_recarrega_quando_o_projeto_muda(janela):
+    from test_pocos import csv_exemplo
+    p = janela.page
+    abrir_projeto(janela)
+    for _ in range(2):                                         # o projeto acaba de abrir: deixa assentar
+        ir(p, "perfis")
+        ir(p, "docs")
+        p.wait_for_timeout(300)
+    p.evaluate("window.__n = 0; const f = AO_ABRIR_ABA.perfis; AO_ABRIR_ABA.perfis = () => { window.__n++; f(); }; 0")
+    ir(p, "perfis")
+    ir(p, "docs")
+    p.wait_for_timeout(400)
+    assert p.evaluate("window.__n") == 0                       # nada mudou: não releu
+    janela.api._importar_cadastro(csv_exemplo(), "anp:teste")  # o projeto mudou
+    ir(p, "perfis")
+    janela.esperar("window.__n === 1")
+    p.keyboard.press("F5")                                    # F5 força
+    janela.esperar("window.__n === 2")
+    assert not janela.erros_js, janela.erros_js

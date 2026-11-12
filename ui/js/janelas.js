@@ -111,12 +111,14 @@ function trocarAba(qual) {
     else api.janela_chamar("principal", "trocarAba", [qual]);
     return;
   }
+  // clicar na aba que já está à frente relê (como F5); trocar de aba só relê se o projeto mudou (0.61)
+  const jaAberta = ui.visiveis.has(aba) && (MODO_JANELA || ui.ativa === aba);
   if (!MODO_JANELA) {
     if (ui.dividida && aba === ui.direita) ui.direita = ui.ativa;
     ui.ativa = aba;
     if (ui.direita === ui.ativa) ui.dividida = false;
   }
-  aplicarLayout(new Set([aba]));
+  aplicarLayout(new Set(jaAberta ? [aba] : []));
   guardarLayout();
 }
 
@@ -183,8 +185,32 @@ function aplicarLayout(recarregar = new Set()) {
   desenharAcoesTopo();
   const novas = visiveis.filter((a) => !ui.visiveis.has(a) || recarregar.has(a));
   ui.visiveis = new Set(visiveis);
-  for (const a of novas) (AO_ABRIR_ABA[a] || (() => {}))();
+  for (const a of novas) abrirAba(a, recarregar.has(a));
   window.dispatchEvent(new Event("resize"));
+}
+
+// 0.61: ao mostrar uma aba, só recarrega se algo mudou na pasta do projeto desde a última vez (o motor devolve uma
+// "marca" barata) ou se já faz 5 minutos. Início e Comunidade recarregam sempre; F5 força.
+const SEMPRE_RECARREGA = new Set(["projeto", "comunidade"]);
+const carregadaCom = {};
+function chaveAba(a) {
+  return a === "interp" ? "interp:" + ui.subInterp : a === "dados" ? "dados:" + ui.subDados : a;
+}
+async function abrirAba(a, forcar = false) {
+  const f = AO_ABRIR_ABA[a];
+  if (!f) return;
+  let marca = "";
+  if (!forcar && !SEMPRE_RECARREGA.has(a) && api && api.marca_dados) {
+    try { const r = await api.marca_dados(); marca = r && r.ok ? r.marca : ""; } catch (e) { marca = ""; }
+    const antes = carregadaCom[chaveAba(a)];
+    if (marca && antes && antes.marca === marca && Date.now() - antes.quando < 300000) return;
+  }
+  carregadaCom[chaveAba(a)] = { marca, quando: Date.now() };
+  f();
+}
+function atualizarAbas() {
+  for (const a of ui.visiveis) abrirAba(a, true);
+  status("Abas relidas do projeto.", "ok");
 }
 
 function desenharAcoesTopo() {

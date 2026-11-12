@@ -210,6 +210,7 @@ const ATALHOS = [
   ["m4", "4 · Poços", "Ctrl+4", () => trocarAba("mapa")],
   ["m5", "5 · Correlação", "Ctrl+5", () => trocarAba("secao")],
   ["m6", "6 · Modelo 3D", "Ctrl+6", () => trocarAba("bloco")],
+  ["atualizar", "Reler a aba do projeto (normalmente ela só relê quando algo mudou)", "F5", () => atualizarAbas()],
   ["principal", "Ação principal da tela (Conectar, Processar, Calcular, Montar…)", "Ctrl+Enter", acaoPrincipal],
   ["exportacoes", "Exportações", "Ctrl+E", () => clicar("btn-exportacoes")],
   ["config", "Configurações", "Ctrl+,", () => abrirConfig("config")],

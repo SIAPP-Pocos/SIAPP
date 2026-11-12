@@ -17,10 +17,10 @@ Estrutura:
     │   └── arvores/<poço>.json         pastas e arquivos de cada poço explorado
     ├── bruto/                          arquivos baixados, intocados (.dlis/.lis)
     │   ├── <bacia>/<poço>/<pastas do portal>/<arquivo>
-    │   └── registro_downloads.json     procedência de cada arquivo baixado
+    │   └── registro_downloads.json     procedência de cada arquivo baixado (+ .mudancas.jsonl, 0.61)
     ├── texto/                          texto dos documentos (embutido ou OCR)
     │   ├── <mesmo caminho de bruto>.json   texto + posição das palavras, por página
-    │   ├── resumo.json                 situação de cada documento processado
+    │   ├── resumo.json                 situação de cada documento processado (+ .mudancas.jsonl, 0.61)
     │   ├── vocabulario_projeto.json    palavras e correções do usuário
     │   └── indice.sqlite               índice de busca
     ├── pocos/                          curvas padronizadas, uma tabela por poço
@@ -89,12 +89,128 @@ def tipo_arquivo(caminho: str) -> str:
     return formatos.tipo(caminho)
 
 
+def acrescentar_linhas(caminho: str, objetos: list) -> None:
+    """Acrescenta um JSON por linha. Se a última linha ficou cortada (o app fechou no meio), começa numa linha nova,
+    para ela não engolir a primeira das novas."""
+    os.makedirs(os.path.dirname(caminho) or ".", exist_ok=True)
+    texto = "".join(json.dumps(o, ensure_ascii=False, default=str) + "\n" for o in objetos)
+    with open(caminho, "a+b") as f:
+        if f.tell() > 0:
+            f.seek(-1, os.SEEK_END)
+            if f.read(1) != b"\n":
+                texto = "\n" + texto
+        f.write(texto.encode("utf-8"))
+
+
 def ler_json(caminho: str, padrao=None):
     try:
         with open(caminho, encoding="utf-8") as f:
             return json.load(f)
     except (FileNotFoundError, json.JSONDecodeError):
         return padrao
+
+
+class MapaEmDisco:
+    """Um dicionário guardado em JSON que cresce sem ser regravado inteiro (0.61).
+
+    O JSON base (`<nome>.json`, o mesmo formato de antes) fica como está; cada mudança vira uma linha no arquivo
+    `<nome>.mudancas.jsonl` ({"k": chave, "v": valor} ou {"k": chave, "apagar": true}). Ler = base + mudanças na ordem.
+    Quando as mudanças passam de `LIMITE` linhas, tudo volta para o JSON base e o arquivo de mudanças some. Uma linha
+    quebrada (o app fechou no meio) é ignorada; as outras valem.
+    """
+
+    LIMITE = 500
+
+    def __init__(self, caminho: str):
+        self.caminho = caminho
+        self.caminho_mudancas = caminho[:-5] + ".mudancas.jsonl" if caminho.endswith(".json") else caminho + ".mudancas"
+        self._cache = None          # (assinatura dos arquivos, dicionário, nº de linhas de mudança)
+
+    def _assinatura(self):
+        r = []
+        for c in (self.caminho, self.caminho_mudancas):
+            try:
+                st = os.stat(c)
+                r.append((st.st_mtime_ns, st.st_size))
+            except OSError:
+                r.append(None)
+        return tuple(r)
+
+    def _carregar(self):
+        ass = self._assinatura()
+        if self._cache is not None and self._cache[0] == ass:
+            return self._cache[1], self._cache[2]
+        dados = ler_json(self.caminho, {})
+        if not isinstance(dados, dict):
+            dados = {}
+        n = 0
+        try:
+            with open(self.caminho_mudancas, encoding="utf-8") as f:
+                for linha in f:
+                    try:
+                        m = json.loads(linha)
+                    except json.JSONDecodeError:
+                        continue
+                    n += 1
+                    if m.get("apagar"):
+                        dados.pop(m.get("k"), None)
+                    else:
+                        dados[m.get("k")] = m.get("v")
+        except FileNotFoundError:
+            pass
+        self._cache = (ass, dados, n)
+        return dados, n
+
+    def ler(self) -> dict:
+        with _TRAVA_ESCRITA:
+            return dict(self._carregar()[0])
+
+    def _anotar(self, linhas: list[dict]):
+        if not linhas:
+            return
+        _, n = self._carregar()
+        if n + len(linhas) > self.LIMITE:
+            dados = dict(self._carregar()[0])
+            for m in linhas:
+                if m.get("apagar"):
+                    dados.pop(m["k"], None)
+                else:
+                    dados[m["k"]] = m["v"]
+            self.substituir(dados)
+            return
+        acrescentar_linhas(self.caminho_mudancas, linhas)
+
+    def definir(self, chave: str, valor) -> None:
+        with _TRAVA_ESCRITA:
+            self._anotar([{"k": chave, "v": valor}])
+
+    def apagar(self, chaves) -> int:
+        with _TRAVA_ESCRITA:
+            dados, _ = self._carregar()
+            existem = [k for k in chaves if k in dados]
+            self._anotar([{"k": k, "apagar": True} for k in existem])
+            return len(existem)
+
+    def substituir(self, dados: dict) -> None:
+        """Grava tudo no JSON base e apaga as mudanças (compactação)."""
+        with _TRAVA_ESCRITA:
+            salvar_json(self.caminho, dados)
+            try:
+                os.remove(self.caminho_mudancas)
+            except FileNotFoundError:
+                pass
+            self._cache = None
+
+
+_MAPAS: dict[str, MapaEmDisco] = {}
+
+
+def _mapa(caminho: str) -> MapaEmDisco:
+    with _TRAVA_ESCRITA:
+        m = _MAPAS.get(caminho)
+        if m is None:
+            m = _MAPAS[caminho] = MapaEmDisco(caminho)
+        return m
 
 
 class Projeto:
@@ -119,6 +235,36 @@ class Projeto:
         p._migrar_historico()
         return p
 
+    # ------------------------------------------------------------ marca de mudança
+    IGNORAR_NA_MARCA = ("preferencias.json", "siapp.log", "atualizacao.json")
+
+    def marca(self) -> str:
+        """Uma "impressão" barata do estado da pasta do projeto (0.61): data e tamanho de cada arquivo e pasta dos dois
+        primeiros níveis (o banco, o histórico, os registros, `bruto/<bacia>`…). A janela compara a marca ao trocar de
+        aba e só recarrega a aba se ela mudou. Criar, apagar ou regravar um JSON (temporário + troca) no terceiro nível
+        muda a data da pasta onde ele está, então aparece também. Os downloads e os textos, mais fundos, entram pelos
+        registros (`registro_downloads`, `resumo`). Preferências e registros de erro não contam."""
+        partes = []
+
+        def anotar(caminho, nivel):
+            try:
+                with os.scandir(caminho) as it:
+                    for e in it:
+                        if e.name in self.IGNORAR_NA_MARCA or e.name.endswith((".log", ".tmp", ".part")):
+                            continue
+                        try:
+                            st = e.stat()
+                        except OSError:
+                            continue
+                        partes.append(f"{e.name}:{st.st_mtime_ns}:{st.st_size if e.is_file() else ''}")
+                        if nivel < 2 and e.is_dir():
+                            anotar(e.path, nivel + 1)
+            except OSError:
+                pass
+
+        anotar(self.pasta, 1)
+        return hashlib.blake2b("|".join(partes).encode("utf-8", "replace"), digest_size=8).hexdigest()
+
     # ------------------------------------------------------------ configuração
     @property
     def config(self) -> dict:
@@ -137,9 +283,7 @@ class Projeto:
             if antigo is None:
                 return
             if antigo:
-                with open(self.caminho_historico, "a", encoding="utf-8") as f:
-                    for e in antigo:
-                        f.write(json.dumps(e, ensure_ascii=False) + "\n")
+                acrescentar_linhas(self.caminho_historico, antigo)
             salvar_json(self.caminho_config, cfg)
 
     def registrar(self, evento: str, **dados) -> dict:
@@ -147,8 +291,7 @@ class Projeto:
         O histórico é a base da rastreabilidade: todo número futuro terá uma
         execução identificável por trás."""
         with _TRAVA_ESCRITA:
-            with open(self.caminho_historico, "a", encoding="utf-8") as f:
-                f.write(json.dumps({"quando": agora(), "evento": evento, **dados}, ensure_ascii=False, default=str) + "\n")
+            acrescentar_linhas(self.caminho_historico, [{"quando": agora(), "evento": evento, **dados}])
             cfg = self.config
             cfg.update({k: v for k, v in dados.items() if k in ("bacia",)})
             cfg["atualizado"] = agora()
@@ -232,7 +375,11 @@ class Projeto:
         return (partes[0], partes[1]) if len(partes) > 2 else ("", "")
 
     def registro_downloads(self) -> dict:
-        return ler_json(self.caminho_registro, {})
+        return self.mapa_registro.ler()
+
+    @property
+    def mapa_registro(self) -> "MapaEmDisco":
+        return _mapa(self.caminho_registro)
 
     @property
     def caminho_registro(self) -> str:
@@ -241,14 +388,11 @@ class Projeto:
     def registrar_download(self, bacia: str, poco: str, caminho_remoto: str,
                            destino: str, bytes_: int) -> None:
         """Procedência: para cada arquivo em bruto/, de onde veio e quando."""
-        with _TRAVA_ESCRITA:
-            reg = ler_json(self.caminho_registro, {})
-            reg[f"{bacia}:{caminho_remoto}"] = {
-                "bacia": bacia, "poco": poco, "caminho_remoto": caminho_remoto,
-                "arquivo_local": self.rel(destino),
-                "bytes": bytes_, "baixado_em": agora(),
-            }
-            salvar_json(self.caminho_registro, reg)
+        self.mapa_registro.definir(f"{bacia}:{caminho_remoto}", {
+            "bacia": bacia, "poco": poco, "caminho_remoto": caminho_remoto,
+            "arquivo_local": self.rel(destino),
+            "bytes": bytes_, "baixado_em": agora(),
+        })
 
     # -------------------------------------------------------------- documentos
     @property
@@ -275,21 +419,22 @@ class Projeto:
         """Caminho absoluto → relativo à pasta de projeto, com "/"."""
         return rel_padrao(os.path.relpath(caminho, self.pasta))
 
+    @property
+    def mapa_resumo_texto(self) -> "MapaEmDisco":
+        return _mapa(self.caminho_resumo_texto)
+
     def resumo_texto(self) -> dict:
         """Situação de cada documento processado (chaves sempre com "/")."""
-        return {rel_padrao(k): v for k, v in ler_json(self.caminho_resumo_texto, {}).items()}
+        return {rel_padrao(k): v for k, v in self.mapa_resumo_texto.ler().items()}
 
     def salvar_texto(self, rel: str, resultado: dict) -> None:
         rel = rel_padrao(rel)
         salvar_json(self.caminho_texto(rel), {"arquivo": rel, **resultado})
         metodos = [p["metodo"] for p in resultado["paginas"]]
-        with _TRAVA_ESCRITA:
-            resumo = self.resumo_texto()
-            resumo[rel] = {"n_paginas": resultado["n_paginas"],
-                           "embutido": metodos.count("embutido"), "ocr": metodos.count("ocr"),
-                           "processado_em": resultado["processado_em"],
-                           "bytes_origem": resultado["bytes_origem"]}
-            salvar_json(self.caminho_resumo_texto, resumo)
+        self.mapa_resumo_texto.definir(rel, {"n_paginas": resultado["n_paginas"],
+                                             "embutido": metodos.count("embutido"), "ocr": metodos.count("ocr"),
+                                             "processado_em": resultado["processado_em"],
+                                             "bytes_origem": resultado["bytes_origem"]})
 
     def ler_texto(self, rel: str) -> dict | None:
         return ler_json(self.caminho_texto(rel))

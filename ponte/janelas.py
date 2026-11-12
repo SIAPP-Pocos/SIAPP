@@ -52,6 +52,12 @@ class JanelasAPI:
         return self._prefs
 
     @resposta_segura
+    def marca_dados(self):
+        """Marca de mudança da pasta do projeto: a janela só recarrega uma aba quando ela muda (0.61)."""
+        p = getattr(self, "_projeto", None)
+        return {"marca": p.marca() if p is not None else ""}
+
+    @resposta_segura
     def preferencias(self):
         return {"preferencias": self._preferencias().ler(), "paletas": list(mpf.PALETAS),
                 "abertas": sorted(self._janelas)}

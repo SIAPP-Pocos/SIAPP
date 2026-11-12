@@ -132,6 +132,14 @@ Precisa de internet. Comece por uma categoria pequena para ver o tempo.
 - [ ] Sem intervalo marcado, **Calcular** explica que precisa de um intervalo-alvo.
 - [ ] Repetir no `5PX__0011__RN_5PX__0011__RN.tif` (DLIS de 2020).
 
+## 0.61 — trocar de aba sem recarregar à toa
+
+- [ ] Abra **3 Perfis**, vá para **2 Documentos** e volte: a tela de Perfis aparece na hora, sem piscar "carregando".
+- [ ] Baixe um arquivo (ou processe um documento) e volte para a outra aba: ela relê e mostra a novidade.
+- [ ] Clique de novo na aba que já está aberta, ou aperte **F5**: ela relê (o rodapé diz "Abas relidas do projeto").
+- [ ] Depois de baixar arquivos, em `ambiente_teste\bruto` aparece `registro_downloads.mudancas.jsonl`; a lista de
+      **Arquivos baixados** continua mostrando de onde veio cada um.
+
 ## 0.60 — ficha do poço em página inteira
 
 - [ ] **4 Poços**: abra a ficha de um poço (clique no mapa ou Ctrl+K) e clique **Página inteira**: a ficha ocupa o lugar do

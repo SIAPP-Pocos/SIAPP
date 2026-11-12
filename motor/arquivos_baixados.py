@@ -12,7 +12,6 @@ de página em `paginas_revisadas`) nunca é apagado: continua no banco, citando 
 from __future__ import annotations
 
 import ctypes
-import json
 import os
 import sys
 from datetime import datetime
@@ -23,6 +22,7 @@ from . import pocos as mpo
 from .banco import Banco
 
 NOME_REGISTRO = "registro_downloads.json"
+NOMES_REGISTRO = (NOME_REGISTRO, "registro_downloads.mudancas.jsonl")
 
 # Programas e scripts: o SIAPP nunca os abre (só "Mostrar na pasta"). Um arquivo baixado de fora pode ter qualquer nome.
 EXECUTAVEIS = {".exe", ".bat", ".cmd", ".com", ".msi", ".scr", ".ps1", ".psm1", ".psd1", ".vbs", ".vbe", ".js", ".jse",
@@ -154,7 +154,7 @@ def listar(projeto, banco: Banco) -> dict:
         for nome in sorted(nomes):
             caminho = os.path.join(raiz, nome)
             sob = os.path.relpath(caminho, base).split(os.sep)
-            if len(sob) == 1 and nome == NOME_REGISTRO:
+            if len(sob) == 1 and nome in NOMES_REGISTRO:
                 continue
             rel = projeto.rel(caminho)
             try:
@@ -226,19 +226,15 @@ def impacto(projeto, banco: Banco, rel: str) -> dict:
 
 def _limpar_registro(projeto, rel: str) -> int:
     reg = projeto.registro_downloads()
-    antes = len(reg)
-    reg = {k: v for k, v in reg.items() if not (isinstance(v, dict) and v.get("arquivo_local") == rel)}
-    if len(reg) != antes:
-        from .projeto import salvar_json
-        salvar_json(projeto.caminho_registro, reg)
-    return antes - len(reg)
+    return projeto.mapa_registro.apagar([k for k, v in reg.items()
+                                         if isinstance(v, dict) and v.get("arquivo_local") == rel])
 
 
 def apagar(projeto, banco: Banco, rel: str, indice=None, enviar=None) -> dict:
     """Manda o arquivo para a Lixeira e limpa o que o SIAPP derivou dele. O trabalho do usuário fica."""
     caminho = projeto.caminho_seguro(rel)                                       # recusa o que está fora de bruto/
     rel = projeto.rel(caminho)
-    if os.path.basename(caminho) == NOME_REGISTRO and os.path.dirname(caminho) == projeto.pasta_bruto:
+    if os.path.basename(caminho) in NOMES_REGISTRO and os.path.dirname(caminho) == projeto.pasta_bruto:
         raise ValueError("Este arquivo é o registro de procedência dos downloads: o SIAPP precisa dele.")
     if os.path.isdir(caminho):
         raise ValueError("Isto é uma pasta: apague arquivo por arquivo.")
@@ -254,10 +250,6 @@ def apagar(projeto, banco: Banco, rel: str, indice=None, enviar=None) -> dict:
     texto = projeto.caminho_texto(rel)
     if os.path.isfile(texto):
         os.remove(texto)
-    resumo = projeto.resumo_texto()
-    if rel in resumo:
-        from .projeto import salvar_json
-        resumo.pop(rel)
-        salvar_json(projeto.caminho_resumo_texto, resumo)
+    projeto.mapa_resumo_texto.apagar([rel])
     _limpar_registro(projeto, rel)
     return {"rel": rel, "destino": destino, **efeito}
