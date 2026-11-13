@@ -1953,13 +1953,15 @@ def test_topos_comparar_e_escolher_na_ficha(janela, tmp_path):
     assert linha.locator("td.tp-usada").text_content() == "801,5"
     p.locator("#fi-topos").scroll_into_view_if_needed()
     foto(janela, "tp_1_ficha")
-    # a ordem do projeto
+    # a ordem do projeto: desde a 0.63, em Configurações › Fontes e prioridade (Dados consolidados mostra o resumo)
     ir(p, "dados", "consolidado")
-    janela.esperar("document.querySelectorAll('#co-precedencia li').length === 4")
-    p.locator("#co-precedencia li").nth(2).locator("button", has_text="↑").click()       # RFP sobe
-    p.click("#co-prec-salvar")
-    janela.esperar("historicoStatus.some((m) => m.texto.includes('Ordem das fontes de topo salva'))")
+    janela.esperar("document.getElementById('co-precedencia').textContent.includes('1. AGP')")
+    p.locator("#co-precedencia button", has_text="Fontes e prioridade").click()
+    janela.esperar("document.querySelectorAll('#fp-topos li').length === 4")
+    p.locator("#fp-topos li").nth(2).locator("button", has_text="↑").click()       # RFP sobe (grava na hora)
+    janela.esperar("historicoStatus.some((m) => m.texto.includes('Fontes de topo: AGP → RFP'))")
     assert api.topos_precedencia()["ordem"] == ["agp", "rfp", "transcrito", "calha"]
+    janela.esperar("document.getElementById('co-precedencia').textContent.includes('2. RFP')")
     assert not janela.erros_js, janela.erros_js
 
 
@@ -2556,4 +2558,30 @@ def test_mapa_reaproveita_marcadores_e_abre_ficha_pelo_grupo(janela):
     janela.esperar("document.getElementById('fi-titulo').textContent === '7-GMR-13-RN'")
     p.evaluate("marcadores.get('7-GMR-13-RN').fire('mouseover', {}, true)")
     assert p.evaluate("marcadores.get('7-GMR-13-RN').getTooltip().getContent()") == "7-GMR-13-RN · GUAMARÉ"
+    assert not janela.erros_js, janela.erros_js
+
+
+# ---------------------------------------------------------------- 0.63: fontes e prioridade num lugar só
+def test_fontes_e_prioridade_na_configuracao(janela):
+    p = janela.page
+    abrir_projeto(janela)
+    p.click("#btn-config")
+    p.click("[data-cfg='fontes']")
+    janela.esperar("document.querySelectorAll('#fp-zonas li').length === 7 && "
+                   "document.querySelectorAll('#fp-contagens tr').length === 3")
+    assert p.is_disabled("#fp-zonas li[data-fonte='tabela'] input")          # sem tabela importada
+    p.locator("#fp-zonas li[data-fonte='fluido'] input").uncheck()             # grava na hora
+    janela.esperar("historicoStatus.some((m) => m.texto.startsWith('Fontes das zonas'))")
+    assert "fluido" not in janela.api.fontes_prioridade()["zonas"]["ligadas"]
+    p.locator("#fp-zonas li[data-fonte='agp_zonas'] button", has_text="↑").click()
+    janela.esperar("document.querySelectorAll('#fp-zonas li')[5].dataset.fonte === 'agp_zonas'")
+    assert janela.api.fontes_prioridade()["zonas"]["ordem"][5] == "agp_zonas"
+    p.keyboard.press("Escape")
+    # o Modelo 3D mostra o resumo do projeto e manda as fontes ligadas
+    ir(p, "interp", "bloco")
+    p.select_option("#bl-nivel", "zonas")
+    janela.esperar("document.querySelector('#bz-fontes li.fp-desligada') !== null")
+    assert "Análise de fluido" in p.text_content("#bz-fontes li.fp-desligada:last-child") or \
+        "não usada" in p.text_content("#bz-fontes")
+    assert "fluido" not in p.evaluate("lerZonasBloco().fontes")
     assert not janela.erros_js, janela.erros_js

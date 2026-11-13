@@ -103,6 +103,19 @@ function desenharResumoLevantamento(r) {
     t.appendChild(tr);
   }
   box.appendChild(t);
+  // 0.63 (A13): a tabela acima conta pastas do portal; o número de poços vem com o critério ao lado
+  if (r.perfil_digital) {
+    const pd = el("p", "criterio", "");
+    pd.append(el("strong", "", `${numero(r.perfil_digital.n, 0)} poço(s) com perfil digital`),
+              ` — critério: ${r.perfil_digital.rotulo}. `);
+    pd.title = r.perfil_digital.explicacao;
+    if (r.pocos_distintos && r.pocos_distintos !== total) {
+      pd.appendChild(el("span", "ajuda", `A tabela conta pastas do portal (${numero(total, 0)} pastas para ` +
+        `${numero(r.pocos_distintos, 0)} poços: alguns poços têm mais de uma). `));
+    }
+    pd.appendChild(botaoMudarCriterios());
+    box.appendChild(pd);
+  }
   if (Object.keys(r.extensao_enganosa || {}).length) {
     box.appendChild(el("h3", "", "O nome engana"));
     const tt = el("table");

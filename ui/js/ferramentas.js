@@ -7,7 +7,7 @@ const NOMES_FAMILIA_FERR = {
   micro: "microrresistividade", inducao: "indução", laterolog: "laterolog", sonico: "sônico",
   imagem: "imagem", mergulho: "mergulho", rmn: "RMN", testador: "testador", amostrador: "amostrador lateral",
   cimentacao: "cimentação", ccl: "CCL", inclinometria: "inclinometria", caliper: "cáliper",
-  espectroscopia: "espectroscopia", lwd: "LWD",
+  espectroscopia: "espectroscopia", lwd: "LWD", sismica: "sísmica de poço",
 };
 
 function seloCorrida(info) {
@@ -104,4 +104,5 @@ const NOMES_TIPO_CORRIDA = {
   mergulho: "Perfil de mergulho", amostrador: "Amostragem lateral", cimentacao: "Perfil de cimentação",
   lwd: "Perfilagem durante a perfuração", convencional: "Perfilagem convencional",
   resistividade: "Perfil de resistividade", sonico: "Perfil sônico", correlacao: "Correlação (GR/CCL)",
+  sismica: "Sísmica de poço (checkshot, VSP)",
 };

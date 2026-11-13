@@ -2,13 +2,13 @@
 
 [![testes](https://github.com/SIAPP-Pocos/siapp/actions/workflows/testes.yml/badge.svg)](https://github.com/SIAPP-Pocos/siapp/actions/workflows/testes.yml)
 [![licença: AGPL-3.0](https://img.shields.io/badge/licen%C3%A7a-AGPL--3.0-blue)](LICENSE)
-![versão](https://img.shields.io/badge/vers%C3%A3o-0.62.0-informational)
+![versão](https://img.shields.io/badge/vers%C3%A3o-0.63.0-informational)
 
 Ferramenta aberta para transformar o acervo **público** de dados de poços da ANP
 (portal [REATE](https://reate.cprm.gov.br/anp/TERRESTRE), ANP/CPRM) em dados
 organizados, pesquisáveis e prontos para análise — sem software comercial.
 
-> **Estado:** em desenvolvimento ativo (v0.62). A interface e os formatos ainda
+> **Estado:** em desenvolvimento ativo (v0.63). A interface e os formatos ainda
 > podem mudar entre versões; a 1.0 sai no lançamento público.
 
 ---
@@ -106,7 +106,7 @@ SIAPP baixa e produz fica nela, em formatos abertos (JSON, SQLite, LAS, CSV), co
 histórico de cada ação em `siapp.json`. Detalhes em [`docs/arquitetura.md`](docs/arquitetura.md),
 [`docs/comunidade.md`](docs/comunidade.md), [`docs/perfis.md`](docs/perfis.md),
 [`docs/levantamento.md`](docs/levantamento.md), [`docs/avaliacao.md`](docs/avaliacao.md),
-[`docs/agp.md`](docs/agp.md), [`docs/formularios-anp.md`](docs/formularios-anp.md), [`docs/pressoes.md`](docs/pressoes.md), [`docs/pvt.md`](docs/pvt.md), [`docs/pag.md`](docs/pag.md), [`docs/perfis-processados.md`](docs/perfis-processados.md), [`docs/checkshot.md`](docs/checkshot.md), [`docs/geoquimica.md`](docs/geoquimica.md), [`docs/dados-consolidados.md`](docs/dados-consolidados.md), [`docs/topos.md`](docs/topos.md), [`docs/secao.md`](docs/secao.md), [`docs/ferramentas.md`](docs/ferramentas.md), [`docs/bloco.md`](docs/bloco.md), [`docs/lancador.md`](docs/lancador.md), [`docs/petrofisica.md`](docs/petrofisica.md) e [`docs/tipos-de-dado.md`](docs/tipos-de-dado.md) e [`docs/viabilidade.md`](docs/viabilidade.md) e [`docs/arquivos-baixados.md`](docs/arquivos-baixados.md) e [`docs/zonas-produtoras.md`](docs/zonas-produtoras.md) e [`docs/interface.md`](docs/interface.md) (abas, busca, atalhos e avisos).
+[`docs/agp.md`](docs/agp.md), [`docs/formularios-anp.md`](docs/formularios-anp.md), [`docs/pressoes.md`](docs/pressoes.md), [`docs/pvt.md`](docs/pvt.md), [`docs/pag.md`](docs/pag.md), [`docs/perfis-processados.md`](docs/perfis-processados.md), [`docs/checkshot.md`](docs/checkshot.md), [`docs/geoquimica.md`](docs/geoquimica.md), [`docs/dados-consolidados.md`](docs/dados-consolidados.md), [`docs/topos.md`](docs/topos.md), [`docs/secao.md`](docs/secao.md), [`docs/ferramentas.md`](docs/ferramentas.md), [`docs/bloco.md`](docs/bloco.md), [`docs/lancador.md`](docs/lancador.md), [`docs/petrofisica.md`](docs/petrofisica.md) e [`docs/tipos-de-dado.md`](docs/tipos-de-dado.md) e [`docs/viabilidade.md`](docs/viabilidade.md) e [`docs/arquivos-baixados.md`](docs/arquivos-baixados.md) e [`docs/zonas-produtoras.md`](docs/zonas-produtoras.md) e [`docs/interface.md`](docs/interface.md) (abas, busca, atalhos e avisos) e [`docs/fontes.md`](docs/fontes.md) (fontes e prioridade, critérios de contagem).
 
 ## Dados e procedência
 

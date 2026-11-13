@@ -132,6 +132,21 @@ Precisa de internet. Comece por uma categoria pequena para ver o tempo.
 - [ ] Sem intervalo marcado, **Calcular** explica que precisa de um intervalo-alvo.
 - [ ] Repetir no `5PX__0011__RN_5PX__0011__RN.tif` (DLIS de 2020).
 
+## 0.63 — fontes e prioridade, critérios de contagem, ferramentas da Halliburton
+
+- [ ] **Configurações** (engrenagem) › **Fontes e prioridade**: aparecem as fontes de topo e as de zonas, numeradas. Suba
+      uma fonte com ↑: o rodapé diz a ordem nova. Feche e abra o SIAPP: a ordem continua.
+- [ ] Nas zonas, desmarque "Análise de fluido". Vá ao **6 Modelo 3D** › nível "Zonas produtoras": o resumo das fontes
+      mostra essa fonte como "não usada".
+- [ ] **1 Acervo › Dados consolidados**: o quadro dos topos mostra a ordem e o botão "Mudar em Fontes e prioridade…".
+- [ ] Ainda em Fontes e prioridade, "Como o SIAPP conta perfil digital": três números (conferido no portal, pasta no
+      portal, baixado). Troque a bacia para Potiguar: os números mudam.
+- [ ] **1 Acervo › Levantamento** (Potiguar): abaixo da tabela, "N poço(s) com perfil digital — critério: …" e a nota
+      de que a tabela conta pastas.
+- [ ] Ficha do **3-BRSA-407-RN** (aba Poços) › esquemas de ferramentas: leia os esquemas. "sft" sai como **teste de
+      formação a cabo** e a corrida "mfsdg" mostra HRI, FWS, DSN, SDL. No **1-BRSA-1304-BA**, o "asr-3" sai como
+      **sísmica de poço**.
+
 ## 0.62 — mapa leve com o cadastro inteiro
 
 - [ ] **4 Poços**, com o cadastro da ANP importado: escolha **todas** as bacias. O mapa aparece em cerca de um segundo

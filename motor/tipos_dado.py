@@ -124,15 +124,18 @@ def contar(banco: Banco, bacia: str | None = None, pocos=None) -> dict:
     tamanho = {t[0]: 0 for t in TIPOS}
     todos = set()
     for r in _linhas(banco, bacia, pocos):
-        todos.add((r["bacia"], r["poco_caminho"]))
+        # 0.63 (A13): poço distinto, não pasta do portal — um poço com duas pastas (duas categorias) conta uma vez
+        poco = r["poco_id"] or r["nome_pasta"] or (r["bacia"], r["poco_caminho"])
+        todos.add(poco)
         for t in tipos_da_pasta(r["pasta"]):
-            pocos_por_tipo[t].add((r["bacia"], r["poco_caminho"]))
+            pocos_por_tipo[t].add(poco)
             arquivos[t] += 1
             tamanho[t] += r["tamanho"] or 0
     tipos = [{"chave": chave, "rotulo": rot, "descricao": desc, "le_com": le, "n_pocos": len(pocos_por_tipo[chave]),
               "n_arquivos": arquivos[chave], "bytes": tamanho[chave]} for chave, rot, desc, le, _p in TIPOS]
     return {"tipos": tipos, "pocos_levantados": len(todos), "bacia": bacia or "", "restrito": pocos is not None,
-            "bacias": bacias_levantadas(banco)}
+            "bacias": bacias_levantadas(banco),
+            "criterio": "Poços distintos com a pasta desse tipo no portal (pelo nome da pasta; não abre os arquivos)."}
 
 
 def pocos_do_campo(banco: Banco, campo: str) -> list[str]:

@@ -71,7 +71,10 @@ function desenharTipos(r) {
       "acervo (a listagem não baixa os arquivos) e volte aqui."));
     return;
   }
-  box.appendChild(el("p", "ajuda", `${numero(r.pocos_levantados, 0)} poço(s) levantado(s). Marque o que procura:`));
+  const intro = el("p", "ajuda", `${numero(r.pocos_levantados, 0)} poço(s) levantado(s). Marque o que procura:`);
+  if (r.criterio) intro.title = "Como conta: " + r.criterio;
+  box.appendChild(intro);
+  if (r.criterio) box.appendChild(el("p", "ajuda criterio", "Como conta: " + r.criterio));
   // 0.59: "tudo de um campo" = todos os tipos + "pelo menos um" + o campo acima
   const atalhos = el("div", "linha");
   const bTudo = el("button", "btn secundario pequeno", "Todos os tipos");

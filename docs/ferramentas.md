@@ -93,6 +93,28 @@ máximo** da coluna (polegadas; o da Tucker vem em mm e é convertido) e comprim
 tipo certo; Platform Express + AIT + sônico reconhecidos nas corridas `raw`, FMI + GPIT
 nas de imagem, RFT/XPT/FTT nas de testador.
 
+## Halliburton e sísmica de poço (0.63, conferência de 13/11/2026)
+
+O dicionário (versão 2) ganhou 21 verbetes da Halliburton, tirados de 15 esquemas reais do acervo do projeto (Potiguar,
+Alagoas, Recôncavo; cópias fora do repositório). Cada verbete novo tem o campo `fonte`, com o arquivo e a linha do
+esquema em que o código aparece com o nome — nada saiu de catálogo ou de memória.
+
+- Medição: NGRT (raios gama), SDL e SDLP (densidade), DSN (nêutron), FWS e WTIS (sônico), HRID (indução), MICP
+  (microlog), SFT4 (testador), ASR (geofones, sísmica de poço).
+- Apoio: DITS, D2TS, D4TS (telemetria), TMAX (temperatura), DKJT e KNUC (juntas), CENT, OBCEN, DCNT (centralizadores),
+  FLEX, CBHD.
+- Tipo novo de corrida: **sísmica de poço** (checkshot, VSP), pelo código ASR, pelo nome do arquivo (`asr`, `vsp`,
+  `checkshot`) ou pelos rótulos `seismic`/`geophone`.
+- `DITS-ASR` era lido como DLT (laterolog da Schlumberger) pela regra das trocas do OCR; com DITS no dicionário, a grafia
+  exata vence.
+
+Resultado nos 15 esquemas: os 12 da Halliburton saem com o tipo certo (antes, 4 saíam sem tipo ou com tipo errado: SFT
+como "correlação", ASR como "resistividade"); os 3 da Schlumberger não mudaram.
+
+Ainda faltam **Baker** e **Weatherford**: não há esquema deles baixado no projeto. Pelos nomes no levantamento,
+candidatos: 7-PQO-1-RN, 7-PML-38-RN, 3-GALP-35-SE e 4-GALP-36-SE (Weatherford: MCG, MAI, MSS, MDN, CMI no nome);
+1-IMET-17-AL e 8-CP-1502-SE (Baker: RCI, MREX).
+
 ## Limites (a interface deixa claro)
 
 - O OCR **erra**. A ficha diz "confira no PDF antes de citar" e guarda o PDF para abrir.

@@ -1,6 +1,6 @@
 {
-  "versao": 1,
-  "descricao": "Dicionário do SIAPP para ler os esquemas de ferramentas (tool strings) do acervo REATE. 'ferramentas': códigos (prefixo antes do hífen, ex.: HGNSD-B -> HGNS) e o que medem; 'apoio' = cabeça, telemetria e acessórios, que aparecem no esquema mas não definem o tipo da corrida; 'superficie' = equipamento de superfície, ignorado (está aqui só para não ser confundido com ferramenta de poço). 'nomes_arquivo': palavras do nome do arquivo e o tipo de corrida que indicam. 'palavras': rótulos escritos no desenho (Gamma Ray, Neutron...). Correções e acréscimos são bem-vindos.",
+  "versao": 2,
+  "descricao": "Dicionário do SIAPP para ler os esquemas de ferramentas (tool strings) do acervo REATE. 'ferramentas': códigos (prefixo antes do hífen, ex.: HGNSD-B -> HGNS) e o que medem; 'apoio' = cabeça, telemetria e acessórios, que aparecem no esquema mas não definem o tipo da corrida; 'superficie' = equipamento de superfície, ignorado (está aqui só para não ser confundido com ferramenta de poço). 'nomes_arquivo': palavras do nome do arquivo e o tipo de corrida que indicam. 'palavras': rótulos escritos no desenho (Gamma Ray, Neutron...). 'fonte' (desde a versão 2): de onde veio o verbete — o esquema real em que o código aparece com o nome. Correções e acréscimos são bem-vindos.",
   "familias": {
     "gr": "Raios gama",
     "gr_espectral": "Raios gama espectral",
@@ -20,7 +20,8 @@
     "inclinometria": "Inclinometria",
     "caliper": "Cáliper",
     "espectroscopia": "Espectroscopia (geoquímica)",
-    "lwd": "Perfilagem durante a perfuração"
+    "lwd": "Perfilagem durante a perfuração",
+    "sismica": "Sísmica de poço (checkshot, VSP)"
   },
   "tipos": {
     "testador": "Teste de formação a cabo",
@@ -33,7 +34,8 @@
     "convencional": "Perfilagem convencional",
     "resistividade": "Perfil de resistividade",
     "sonico": "Perfil sônico",
-    "correlacao": "Correlação (GR/CCL)"
+    "correlacao": "Correlação (GR/CCL)",
+    "sismica": "Sísmica de poço (checkshot, VSP)"
   },
   "ferramentas": [
     {"codigo": "GSR", "nome": "Equipamento de superfície", "fabricante": "Schlumberger", "familias": [], "apoio": true, "superficie": true},
@@ -103,6 +105,27 @@
     {"codigo": "SFT", "nome": "Testador seletivo de formação (SFT)", "fabricante": "Halliburton", "familias": ["testador"]},
     {"codigo": "RSCT", "nome": "Testemunhador lateral rotativo (RSCT)", "fabricante": "Halliburton", "familias": ["amostrador"]},
     {"codigo": "CSNG", "nome": "Raios gama espectral (CSNG)", "fabricante": "Halliburton", "familias": ["gr_espectral"]},
+    {"codigo": "NGRT", "nome": "Raios gama (NGRT)", "fabricante": "Halliburton", "familias": ["gr"], "fonte": "Esquema real do REATE (acervo do projeto, lido em 13/11/2026): 1-brsa-1304-ba_raw-1_diagram.pdf: 'NGRT  Natural Gamma Ray Tool'; 3-brsa-407-rn_sft_tools.pdf: 'GAMMA RAY TOOL (NGRT-A)'"},
+    {"codigo": "D2TS", "nome": "Telemetria (DITS 2)", "fabricante": "Halliburton", "familias": [], "apoio": true, "fonte": "Esquema real do REATE (acervo do projeto, lido em 13/11/2026): 3-brsa-407-rn_sft_tools.pdf: 'DITS 2 TELEMETRY SUB (D2TS)'"},
+    {"codigo": "D4TS", "nome": "Telemetria (DITS 4)", "fabricante": "Halliburton", "familias": [], "apoio": true, "fonte": "Esquema real do REATE (acervo do projeto, lido em 13/11/2026): 1-brsa-1304-ba_raw-1_diagram.pdf: 'D4TS  DITS 4 Telemetry Sub'"},
+    {"codigo": "DITS", "nome": "Telemetria e cabeça (DITS)", "fabricante": "Halliburton", "familias": [], "apoio": true, "fonte": "Esquema real do REATE (acervo do projeto, lido em 13/11/2026): 1-brsa-1304-ba_asr-3_diagram.pdf: 'DITS Cable Head', 'DITS-ASR CROSSOVER'; 1-brsa-1304-ba_raw-1_diagram.pdf: 'D4TS  DITS 4 Telemetry Sub' (sem esta linha, DITS-ASR era lido como DLT)"},
+    {"codigo": "SDL", "nome": "Densidade espectral (SDL)", "fabricante": "Halliburton", "familias": ["densidade", "caliper"], "fonte": "Esquema real do REATE (acervo do projeto, lido em 13/11/2026): 1-brsa-1304-ba_raw-1_diagram.pdf: 'SDL  SDL (B) With (C) Mandrel', 'SDL Caliper'"},
+    {"codigo": "SDLP", "nome": "Patim de densidade (SDL)", "fabricante": "Halliburton", "familias": ["densidade"], "fonte": "Esquema real do REATE (acervo do projeto, lido em 13/11/2026): 1-brsa-1304-ba_raw-1_diagram.pdf: 'SDLP  Density B Pad'; 4-brsa-1319-rn_raw1_tools.pdf: 'SDLP  Density Insite Pad'"},
+    {"codigo": "DSN", "nome": "Nêutron de duplo espaçamento (DSN)", "fabricante": "Halliburton", "familias": ["neutron"], "fonte": "Esquema real do REATE (acervo do projeto, lido em 13/11/2026): 3-brsa-407-rn_raw_mfsdg_tools.pdf: título 'HRI-MSFL-FWS-SDL-DSN-GR'; 4-brsa-1319-rn_raw1_tools.pdf: 'DCNT  DSN Decentralizer', 'GTET-DSN-SDL-FLEX-WSTT-MSFL'"},
+    {"codigo": "FWS", "nome": "Sônico de onda completa (FWS)", "fabricante": "Halliburton", "familias": ["sonico"], "fonte": "Esquema real do REATE (acervo do projeto, lido em 13/11/2026): 1-brsa-1304-ba_raw-1_diagram.pdf: 'FWS  Full Wave Sonic'; 3-brsa-407-rn_raw_mfsdg_tools.pdf: 'IN LINE CENTRALIZER FOR FWST'"},
+    {"codigo": "WTIS", "nome": "Transmissor do sônico (WaveSonic)", "fabricante": "Halliburton", "familias": ["sonico"], "fonte": "Esquema real do REATE (acervo do projeto, lido em 13/11/2026): 4-brsa-1319-rn_raw1_tools.pdf: 'WTIS  WAVE Standard Transmitter - Standard Isolator'"},
+    {"codigo": "HRID", "nome": "Indução de alta resolução (HRID)", "fabricante": "Halliburton", "familias": ["inducao"], "fonte": "Esquema real do REATE (acervo do projeto, lido em 13/11/2026): 1-brsa-1304-ba_raw-1_diagram.pdf: 'HRID  High Resolution Induction Tool Dits'"},
+    {"codigo": "MICP", "nome": "Patim do microlog", "fabricante": "Halliburton", "familias": ["micro"], "fonte": "Esquema real do REATE (acervo do projeto, lido em 13/11/2026): 4-brsa-1319-rn_raw1_tools.pdf: 'MICP  Microlog Pad'"},
+    {"codigo": "SFT4", "nome": "Testador de formação (SFT-4)", "fabricante": "Halliburton", "familias": ["testador"], "fonte": "Esquema real do REATE (acervo do projeto, lido em 13/11/2026): 3-brsa-407-rn_sft_tools.pdf: 'SFT4 PETRO QUARTZ (SFT4)'; 1-brsa-1304-ba_sft_diagram.pdf: 'SFT_4  Sequential Formation Tester 4'"},
+    {"codigo": "ASR", "nome": "Sísmica de poço (ASR, geofones)", "fabricante": "Halliburton", "familias": ["sismica"], "fonte": "Esquema real do REATE (acervo do projeto, lido em 13/11/2026): 1-brsa-1304-ba_asr-3_diagram.pdf: 'ASR-1 SIESMIC TOOL', 'ASR-1 GEOPHONE'"},
+    {"codigo": "TMAX", "nome": "Sub de temperatura", "fabricante": "Halliburton", "familias": [], "apoio": true, "fonte": "Esquema real do REATE (acervo do projeto, lido em 13/11/2026): 1-brsa-1304-ba_raw-1_diagram.pdf: 'TMAX  Temperature Sub - 3_625 OD'"},
+    {"codigo": "DKJT", "nome": "Junta articulada dupla", "fabricante": "Halliburton", "familias": [], "apoio": true, "fonte": "Esquema real do REATE (acervo do projeto, lido em 13/11/2026): 1-brsa-1304-ba_raw-1_diagram.pdf: 'DKJT  Double Knuckle Joint'"},
+    {"codigo": "KNUC", "nome": "Junta articulada", "fabricante": "Halliburton", "familias": [], "apoio": true, "fonte": "Esquema real do REATE (acervo do projeto, lido em 13/11/2026): 3-brsa-407-rn_raw_mfsdg_tools.pdf: 'DOUBLE KNUCKLE JOINT (KNUC 2)', 'SINGLE KNUCKLE JOINT (KNUC_1)'"},
+    {"codigo": "CENT", "nome": "Centralizador", "fabricante": "Halliburton", "familias": [], "apoio": true, "fonte": "Esquema real do REATE (acervo do projeto, lido em 13/11/2026): 3-brsa-407-rn_raw_mfsdg_tools.pdf: 'IN LINE CENTRALIZER FOR FWST (CENT-A)'"},
+    {"codigo": "OBCEN", "nome": "Centralizador", "fabricante": "Halliburton", "familias": [], "apoio": true, "fonte": "Esquema real do REATE (acervo do projeto, lido em 13/11/2026): 4-brsa-1319-rn_raw1_tools.pdf: 'OBCEN  Centralizer - 25 in. Overbody'"},
+    {"codigo": "DCNT", "nome": "Descentralizador", "fabricante": "Halliburton", "familias": [], "apoio": true, "fonte": "Esquema real do REATE (acervo do projeto, lido em 13/11/2026): 4-brsa-1319-rn_raw1_tools.pdf: 'DCNT  DSN Decentralizer'"},
+    {"codigo": "FLEX", "nome": "Junta flexível", "fabricante": "Halliburton", "familias": [], "apoio": true, "fonte": "Esquema real do REATE (acervo do projeto, lido em 13/11/2026): 4-brsa-1319-rn_raw1_tools.pdf: 'FLEX  Flex Joint - Pressure Compensated'"},
+    {"codigo": "CBHD", "nome": "Cabeça (cabbage head)", "fabricante": "Halliburton", "familias": [], "apoio": true, "fonte": "Esquema real do REATE (acervo do projeto, lido em 13/11/2026): 1-brsa-1304-ba_raw-1_diagram.pdf: 'CBHD  Cabbage Head'"},
     {"codigo": "HDIL", "nome": "Indução (HDIL)", "fabricante": "Baker Atlas", "familias": ["inducao"]},
     {"codigo": "ZDL", "nome": "Densidade (ZDL)", "fabricante": "Baker Atlas", "familias": ["densidade"]},
     {"codigo": "XMAC", "nome": "Sônico (XMAC)", "fabricante": "Baker Atlas", "familias": ["sonico"]},
@@ -130,7 +153,8 @@
     "lwd": "lwd", "mwd": "lwd",
     "ait": "resistividade", "hri": "resistividade", "hdil": "resistividade", "dil": "resistividade",
     "acrt": "resistividade", "hals": "resistividade", "dll": "resistividade",
-    "dsi": "sonico", "sonic": "sonico", "xmac": "sonico", "bhc": "sonico", "sdt": "sonico", "dslt": "sonico"
+    "dsi": "sonico", "sonic": "sonico", "xmac": "sonico", "bhc": "sonico", "sdt": "sonico", "dslt": "sonico",
+    "asr": "sismica", "vsp": "sismica", "checkshot": "sismica"
   },
   "pastas": {
     "teste de formacao a cabo": "testador",
@@ -151,7 +175,9 @@
     {"padrao": "sidewall|core\\s+gun", "familia": "amostrador"},
     {"padrao": "cement\\s+bond", "familia": "cimentacao"},
     {"padrao": "collar\\s+locator", "familia": "ccl"},
-    {"padrao": "caliper", "familia": "caliper"}
+    {"padrao": "caliper", "familia": "caliper"},
+    {"padrao": "seismic|siesmic|geophone", "familia": "sismica"},
+    {"padrao": "microlog", "familia": "micro"}
   ],
   "fabricantes": [
     {"padrao": "schlumberger|downhole\\s+equipment|measurements\\s+relative\\s+to\\s+tool\\s+zero", "nome": "Schlumberger"},

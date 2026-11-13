@@ -2,20 +2,9 @@
 // Aqui se escolhem as fontes dos intervalos, se confere o que o SIAPP achou (com o aviso de OCR), se move, ignora ou corrige cada
 // intervalo, se escolhe qual reservatório mostrar e se compara com a tabela feita à mão.
 
-const bz = { fontes: [], ativas: null, ajustes: {}, nomes: {}, previa: null, tabela: null, info: null };
-const FONTES_ZONA = [
-  ["tabela", "Tabela sua (CSV ou Excel importado)"],
-  ["marcado", "Intervalos que você marcou (intervalo-alvo)"],
-  ["canhoneado", "Canhoneados (RFCP)"],
-  ["teste", "Testes de formação (RFP, TFR)"],
-  ["analise_perfil", "Análise de perfis do operador (RFP)"],
-  ["fluido", "Análise de fluido (amostra do PVT)"],
-  ["agp_zonas", "Zonas-reservatório do AGP"],
-];
-
+const bz = { ativas: null, ajustes: {}, nomes: {}, previa: null, tabela: null, info: null };
 function iniciarZonas() {
   if (!$("bl-zonas")) return;
-  bz.fontes = FONTES_ZONA.map(([id, rotulo]) => ({ id, rotulo, marcada: id !== "tabela" }));
   desenharFontesZona();
   $("bl-nivel").addEventListener("change", aoMudarNivelZonas);
   $("bz-previa").onclick = previaZonas;
@@ -28,34 +17,28 @@ function iniciarZonas() {
 function aoMudarNivelZonas() {
   const ativo = $("bl-nivel").value === "zonas";
   $("bl-zonas").hidden = !ativo;
-  if (ativo) carregarTabelaZonas();
+  if (ativo) { carregarTabelaZonas(); lerFontesProjeto().then(desenharFontesZona); }
 }
 
+// 0.63: as fontes e a ordem são do projeto (Configurações › Fontes e prioridade); aqui, o resumo e o botão para mudar.
 function desenharFontesZona() {
   const caixa = limpar($("bz-fontes"));
-  bz.fontes.forEach((f, i) => {
-    const linha = el("div", "bz-fonte");
-    const cx = el("input");
-    cx.type = "checkbox";
-    cx.checked = f.marcada;
-    cx.disabled = f.id === "tabela" && !bz.tabela;
-    cx.onchange = () => { f.marcada = cx.checked; if (bz.previa) previaZonas(); };
-    const subir = el("button", "btn secundario pequeno", "↑");
-    subir.title = "Dar mais prioridade";
-    subir.disabled = i === 0;
-    subir.onclick = () => { [bz.fontes[i - 1], bz.fontes[i]] = [bz.fontes[i], bz.fontes[i - 1]]; desenharFontesZona(); if (bz.previa) previaZonas(); };
-    const rot = el("label", "opcao");
-    rot.append(cx, el("span", "", ` ${i + 1}. ${f.rotulo}`));
-    linha.append(rot, subir);
-    caixa.appendChild(linha);
-  });
+  const z = fontesProjeto && fontesProjeto.zonas;
+  if (!z) { caixa.appendChild(el("p", "ajuda", "Abra o projeto para ver as fontes.")); return; }
+  const ol = el("ol", "bz-fontes-resumo");
+  for (const f of z.ordem) {
+    const li = el("li", z.ligadas.includes(f) ? "" : "fp-desligada", z.rotulos[f]);
+    if (!z.ligadas.includes(f)) li.appendChild(el("span", "ajuda", " — não usada"));
+    ol.appendChild(li);
+  }
+  caixa.append(ol, botaoMudarFontes());
 }
 
 // O que a ponte precisa para montar (e para a prévia).
 function lerZonasBloco() {
   if ($("bl-nivel").value !== "zonas") return undefined;
   return {
-    fontes: bz.fontes.filter((f) => f.marcada).map((f) => f.id), regra: $("bz-regra").value, tolerancia_m: $("bz-tol").value,
+    fontes: fontesProjeto ? fontesProjeto.zonas.ligadas : undefined, regra: $("bz-regra").value, tolerancia_m: $("bz-tol").value,
     ativas: bz.ativas ? [...bz.ativas] : null, ajustes: bz.ajustes, nomes: bz.nomes,
     usar_coordenadas_da_tabela: $("bz-coord").checked,
   };
@@ -74,11 +57,9 @@ function mostrarTabelaZonas(t) {
   $("bz-coord").disabled = !(t && t.com_coordenadas);
   if (!t) {
     info.textContent = "Nenhuma tabela sua importada. O arquivo precisa ter, no cabeçalho, as colunas de poço, topo e base (e, se tiver, reservatório, lat/lon ou X/Y em UTM).";
-    for (const f of bz.fontes) if (f.id === "tabela") f.marcada = false;
   } else {
     info.textContent = `${t.origem}: ${t.n_linhas} linha(s), ${t.n_pocos} poço(s); profundidade em ${t.ref === "cota" ? "cota" : "profundidade medida"}; ` +
       `${t.com_coordenadas ? "com coordenadas" : "sem coordenadas"}. ` + (t.avisos || []).join(" ");
-    for (const f of bz.fontes) if (f.id === "tabela") f.marcada = true;
   }
   desenharFontesZona();
 }
@@ -87,6 +68,8 @@ async function importarTabelaZonas() {
   const r = await chamar($("bz-importar"), "bloco_zonas_importar_tabela", $("bz-ref").value, $("bz-utm").value.trim(), true);
   if (!r.ok || r.cancelado) return;
   mostrarTabelaZonas(r.tabela);
+  await lerFontesProjeto();
+  desenharFontesZona();
   status(`Tabela ${r.tabela.origem} importada (${r.tabela.n_linhas} linhas).`, "ok");
   if (bz.previa) previaZonas();
 }
@@ -96,6 +79,8 @@ async function apagarTabelaZonas() {
   if (!r.ok) return;
   $("bz-coord").checked = false;
   mostrarTabelaZonas(null);
+  await lerFontesProjeto();
+  desenharFontesZona();
   if (bz.previa) previaZonas();
 }
 

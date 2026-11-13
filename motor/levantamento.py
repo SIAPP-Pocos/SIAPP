@@ -491,8 +491,13 @@ def resumo(banco: Banco, bacia: str) -> dict:
             por_nome = formatos.pela_extensao("x" + r["ext"])
             if por_nome and por_nome != r["formato"]:
                 enganos[f"{r['ext']} → {formatos.NOMES.get(r['formato'], r['formato'])}"] += r["n"]
+    from .fontes import criterio
+    digitais = {p["poco_id"] or p["nome_pasta"] or p["caminho"] for p in pocos if p["situacao"] == "digital"}
     return {
         "bacia": bacia, "pocos": len(pocos),
+        "pocos_distintos": len({p["poco_id"] or p["nome_pasta"] or p["caminho"] for p in pocos}),
+        # 0.63 (A13): as situações contam PASTAS do portal; este número conta POÇOS, com o critério ao lado
+        "perfil_digital": {"n": len(digitais), **criterio("conteudo")},
         "situacoes": {s: por_sit.get(s, 0) for s in SITUACOES},
         "por_categoria": {k: {s: v.get(s, 0) for s in SITUACOES} for k, v in sorted(por_cat.items())},
         "familias": {f: fam.get(f, 0) for f in FAMILIAS_RESUMO}, "pocos_com_curvas": com_curvas,

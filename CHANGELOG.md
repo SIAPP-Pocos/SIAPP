@@ -6,6 +6,26 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 
 ## [Não lançado]
 
+## [0.63.0] — 2026-11-13
+Fontes e prioridade num lugar só, contagens com o critério ao lado e dicionário de ferramentas da Halliburton.
+### Adicionado
+- **Configurações › Fontes e prioridade**: a ordem das fontes de topo (AGP, transcrito, RFP, calha) e das zonas
+  produtoras (tabela sua, marcados, canhoneados, testes, análise de perfis, fluido, zonas do AGP) numa tela só, gravada no
+  projeto. As fontes das zonas deixam de se perder ao fechar o SIAPP. Dados consolidados e o Modelo 3D mostram o resumo e
+  um botão para lá. Ver `docs/fontes.md`.
+- **Como o SIAPP conta "perfil digital"**: na mesma tela, os três critérios lado a lado (conferido no portal, pasta no
+  portal, baixado), com a explicação de cada um e por bacia.
+- **Dicionário de ferramentas, versão 2**: 21 ferramentas da Halliburton (NGRT, SDL, DSN, FWS, HRID, SFT4, ASR, telemetria
+  e acessórios…), cada uma com a fonte (o esquema real e a linha em que aparece). Tipo novo de corrida: **sísmica de poço**
+  (checkshot, VSP). Nos 15 esquemas do projeto, os 12 da Halliburton saem com o tipo certo (antes, 4 não).
+### Alterado
+- Levantamento: ao lado da tabela de situações (que conta pastas do portal), o número de **poços** com perfil digital e o
+  critério; "Procurar por tipo de dado" conta poços distintos, não pastas (um poço em duas categorias contava duas vezes).
+- Painel da Comunidade: "Perfil digital" passa a usar o critério "baixado ou conferido no portal"; antes contava também
+  pasta de perfil só com imagem.
+### Corrigido
+- Esquema da Halliburton com `DITS-ASR` não aparece mais com um laterolog da Schlumberger (DLT).
+
 ## [0.62.0] — 2026-11-13
 Mapa de poços leve com o cadastro inteiro da ANP.
 ### Alterado

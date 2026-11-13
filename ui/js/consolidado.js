@@ -61,38 +61,16 @@ function desenharConsolidadoProjeto(r) {
   desenharPrecedencia(prec);
 }
 
-// Ordem das fontes de topo: vale onde você não escolheu na ficha do poço (seção e bloco 3D).
-async function desenharPrecedencia(caixa, dados) {
-  const r = dados || await chamar(null, "topos_precedencia");
-  if (!r.ok && !dados) return;
+// Ordem das fontes de topo: vale onde você não escolheu na ficha do poço (seção e bloco 3D). Desde a 0.63 ela muda em
+// Configurações › Fontes e prioridade (junto com a das zonas); aqui fica o resumo.
+async function desenharPrecedencia(caixa) {
+  if (!fontesProjeto) await lerFontesProjeto();
+  if (!fontesProjeto) return;
   limpar(caixa);
   caixa.appendChild(el("h3", "", "Topos: qual fonte vale quando você não escolhe"));
-  caixa.appendChild(el("p", "ajuda", "Na seção e no bloco 3D, cada unidade usa o topo da primeira fonte desta lista que " +
-    "o tiver. Na ficha do poço dá para escolher outra, unidade por unidade, vendo as diferenças."));
-  const ordem = [...r.ordem];
-  const ul = el("ul", "co-prec");
-  const redesenhar = () => {
-    limpar(ul);
-    ordem.forEach((f, k) => {
-      const li = el("li");
-      const sobe = el("button", "btn secundario pequeno", "↑");
-      sobe.disabled = k === 0;
-      sobe.onclick = () => { [ordem[k - 1], ordem[k]] = [ordem[k], ordem[k - 1]]; redesenhar(); };
-      const desce = el("button", "btn secundario pequeno", "↓");
-      desce.disabled = k === ordem.length - 1;
-      desce.onclick = () => { [ordem[k + 1], ordem[k]] = [ordem[k], ordem[k + 1]]; redesenhar(); };
-      li.append(el("span", "", `${k + 1}. ${r.fontes[f]}`), sobe, desce);
-      ul.appendChild(li);
-    });
-  };
-  redesenhar();
-  const salvar = el("button", "btn pequeno", "Salvar a ordem");
-  salvar.id = "co-prec-salvar";
-  salvar.onclick = async () => {
-    const x = await chamar(salvar, "topos_precedencia", ordem);
-    if (x.ok) { status("Ordem das fontes de topo salva: " + x.ordem.map((f) => x.fontes[f]).join(" → ") + ".", "ok"); desenharPrecedencia(caixa, x); }
-  };
-  caixa.append(ul, salvar);
+  const p = el("p", "", resumoFontes("topos") + " ");
+  p.appendChild(botaoMudarFontes());
+  caixa.append(p, el("p", "ajuda", fontesProjeto.topos.explicacao));
 }
 
 function desenharConsolidadoPoco(r) {

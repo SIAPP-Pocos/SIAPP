@@ -25,7 +25,8 @@ from .banco import Banco
 # (chave, nome, explicação) — a ordem é a da tela
 INDICADORES = (
     ("documentos", "Documentos baixados", "Algum documento do poço (pasta de poço, relatórios) baixado neste projeto."),
-    ("perfil", "Perfil digital", "DLIS, LIS ou LAS baixado, ou perfil digital encontrado no portal pelo levantamento."),
+    ("perfil", "Perfil digital", "Critério: perfil digital baixado OU conferido no portal pelo levantamento (DLIS, LIS ou LAS "
+               "pelo conteúdo). Os outros critérios estão em Configurações › Fontes e prioridade."),
     ("topos", "Topos de formação", "Topos interpretados pela operadora (AGP da ANP) ou transcritos por alguém."),
     ("topos_transcritos", "Topos transcritos", "Topos de formação transcritos à mão (por você ou pela comunidade)."),
     ("transcricoes", "Dados transcritos", "Qualquer dado transcrito com fonte: topo, revestimento, teste, fluido, trecho…"),
@@ -57,7 +58,8 @@ def _conjuntos(c) -> tuple[dict, dict, dict]:
     s = {
         "documentos": q("SELECT DISTINCT poco_id FROM arquivos WHERE tipo = 'documento'"),
         "perfil": q("SELECT DISTINCT poco_id FROM arquivos WHERE tipo = 'perfil'")
-                  | q("SELECT DISTINCT poco_id FROM acervo_pocos WHERE n_perfil > 0"),
+                  | q("SELECT DISTINCT poco_id FROM acervo_pocos WHERE situacao = 'digital'"),   # 0.63: era n_perfil > 0,
+                                                                                    # que contava pasta só com imagem
         "topos_agp": q("SELECT DISTINCT poco_id FROM agp_unidades WHERE topo IS NOT NULL"),
         "topos_transcritos": q("SELECT DISTINCT poco_id FROM fatos WHERE tipo = 'topo_formacao'"),
         "transcricoes": q("SELECT DISTINCT poco_id FROM fatos"),

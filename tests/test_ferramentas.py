@@ -169,6 +169,40 @@ def test_analisar_texto_tucker():
     assert mf.tipo_pelas_familias(a["familias"]) == "testador"
 
 
+# 0.63: dicionário ampliado com esquemas reais da Halliburton (textos abaixo: sintéticos, no mesmo formato)
+def test_analisar_texto_halliburton_tabela_de_mnemonicos():
+    t = ("HALLIBURTON\nTOOL STRING DIAGRAM REPORT\nMnemonic\nTool Name\n"
+         "D4TS\nDITS 4 Telemetry Sub\nNGRT\nNatural Gamma Ray Tool\nSDL\nSDL (B) With (C) Mandrel\n"
+         "SDLP\nDensity B Pad\nDKJT\nDouble Knuckle Joint\nFWS\nFull Wave Sonic\n"
+         "HRID\nHigh Resolution Induction Tool Dits\nTMAX\nTemperature Sub\nCBHD\nCabbage Head")
+    a = mf.analisar_texto(t, DIC)
+    codigos = [f["codigo"] for f in a["ferramentas"]]
+    assert codigos == ["D4TS", "DITS", "NGRT", "SDL", "SDLP", "DKJT", "FWS", "HRID", "TMAX", "CBHD"]
+    assert a["fabricante"] == "Halliburton"
+    assert set(a["familias"]) >= {"gr", "densidade", "sonico", "inducao"}
+    assert mf.tipo_pelas_familias(a["familias"]) == "convencional"
+    assert all(f["apoio"] for f in a["ferramentas"] if f["codigo"] in ("D4TS", "DITS", "DKJT", "TMAX", "CBHD"))
+
+
+def test_analisar_texto_halliburton_testador_e_sismica():
+    sft = "SELECTIVE\nFORMATION\nExcell 2000 Tool String Diagram\nDITS 2 TELEMETRY SUB\n(D2TS)\n(NGRT-A)\nSFT4 PETRO QUARTZ"
+    a = mf.analisar_texto(sft, DIC)
+    assert [f["codigo"] for f in a["ferramentas"]] == ["DITS", "D2TS", "NGRT", "SFT4"]
+    assert mf.tipo_pelas_familias(a["familias"]) == "testador"
+    vsp = "HALLIBURTON\nASR-1 SIESMIC TOOL\nDITS Cable Head\nDITS-ASR CROSSOVER\nASR-1 GEOPHONE"
+    a = mf.analisar_texto(vsp, DIC)
+    assert [f["codigo"] for f in a["ferramentas"]] == ["ASR", "DITS"]      # DITS-ASR não vira DLT (laterolog)
+    assert mf.tipo_pelas_familias(a["familias"]) == "sismica"
+    assert mf.ler_nome("1-xx-1-ba_asr-3_diagram.pdf", DIC)["tipo"] == "sismica"
+
+
+def test_verbetes_novos_dizem_de_onde_vieram():
+    """Regra 8: nada sem procedência. Os verbetes da versão 2 do dicionário citam o esquema em que aparecem."""
+    novos = [f for f in DIC["ferramentas"] if f["codigo"] in
+             ("NGRT", "D2TS", "D4TS", "DITS", "SDL", "SDLP", "DSN", "FWS", "WTIS", "HRID", "MICP", "SFT4", "ASR")]
+    assert len(novos) == 13 and all("Esquema real do REATE" in f.get("fonte", "") for f in novos)
+
+
 @pytest.mark.parametrize("familias, tipo", [
     (["gr", "testador"], "testador"), (["gr", "imagem", "inclinometria"], "imagem"),
     (["gr", "neutron", "densidade"], "convencional"), (["inducao"], "resistividade"), (["sonico", "gr"], "sonico"),

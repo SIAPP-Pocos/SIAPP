@@ -9,10 +9,10 @@ from motor import painel
 def banco(tmp_path):
     b = mb.Banco(str(tmp_path / "p.sqlite"))
     with b.conexao() as c:
-        for poco, bacia, n_perfil in (("A", "Potiguar", 2), ("B", "Potiguar", 0), ("C", "Potiguar", 1),
-                                      ("D", "Alagoas", 1)):
-            c.execute("INSERT INTO acervo_pocos (bacia, caminho, poco_id, n_perfil) VALUES (?, ?, ?, ?)",
-                      (bacia, f"/POCO/{poco}", poco, n_perfil))
+        for poco, bacia, n_perfil, sit in (("A", "Potiguar", 2, "digital"), ("B", "Potiguar", 0, "sem_perfil"),
+                                           ("C", "Potiguar", 1, "digital"), ("D", "Alagoas", 1, "digital")):
+            c.execute("INSERT INTO acervo_pocos (bacia, caminho, poco_id, n_perfil, situacao) VALUES (?, ?, ?, ?, ?)",
+                      (bacia, f"/POCO/{poco}", poco, n_perfil, sit))
         c.execute("INSERT INTO agp_unidades (bacia, caminho, poco_id, topo) VALUES ('Potiguar', 'x', 'A', 500)")
         c.execute("INSERT INTO producao_poco (campo, poco_anp, poco_id, periodo) VALUES ('X', 'A', 'A', '2020-01')")
     for rel, poco, bacia, tipo in (("a.pdf", "A", "Potiguar", "documento"), ("a.las", "A", "Potiguar", "perfil"),
@@ -77,3 +77,12 @@ def test_ponte_painel(api):
     assert r["ok"] and r["contribuidores"][0]["autor"] == "Ruan da Silva Nobre"
     assert r["avaliacoes_nao_compartilhadas"] == 0
     assert api.painel_comunidade("Alagoas")["total"] == 0
+
+
+def test_pasta_so_com_imagem_nao_conta_como_perfil_digital(banco):
+    """0.63 (A13): o painel contava n_perfil > 0, que inclui pasta de perfil só com imagem; agora é o mesmo critério
+    de Configurações › Fontes e prioridade (baixado ou conferido pelo conteúdo)."""
+    with banco.conexao() as c:
+        c.execute("UPDATE acervo_pocos SET situacao = 'imagem' WHERE poco_id = 'D'")
+    n = {i["chave"]: i["n"] for i in painel.indicadores(banco, "Ruan")["indicadores"]}
+    assert n["perfil"] == 2

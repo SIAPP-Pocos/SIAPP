@@ -1257,7 +1257,7 @@
           intervalos que você marcou ou da <strong>sua tabela</strong>. Os intervalos de todos os poços são agrupados em reservatórios pela
           profundidade (do mais raso ao mais fundo). Cada reservatório gera uma superfície de <strong>topo</strong> e uma de <strong>base</strong>;
           a espessura sai da diferença. Você confere, move, ignora ou corrige cada intervalo e escolhe quais reservatórios mostrar.</p>
-        <h3>Fontes dos intervalos <span class="ajuda">(a ordem é a prioridade)</span></h3>
+        <h3>Fontes dos intervalos <span class="ajuda">(a ordem é a prioridade; vale para o projeto todo)</span></h3>
         <div id="bz-fontes"></div>
         <div class="filtros">
           <label>Se há mais de uma fonte no mesmo reservatório
@@ -1760,6 +1760,7 @@
       <div class="modal-cab">
         <div class="modal-abas">
           <button class="aba ativa" data-cfg="config">Configurações</button>
+          <button class="aba" data-cfg="fontes">Fontes e prioridade</button>
           <button class="aba" data-cfg="diag">Diagnóstico</button>
         </div>
         <button class="fechar" id="cfg-fechar" title="Fechar (Esc)" aria-label="Fechar">×</button>
@@ -1777,6 +1778,7 @@
         <label class="opcao"><input type="checkbox" id="cfg-arranjo"> <span>Lembrar o arranjo das janelas: posição, tamanho, monitor, divisão e abas destacadas</span></label>
         <p class="ajuda">Pasta do projeto: <code id="cfg-pasta">—</code> (por enquanto, sempre esta). As preferências ficam em <code>preferencias.json</code>, dentro dela.</p>
       </div>
+      <div class="modal-corpo" id="cfg-fontes" hidden></div>
       <div class="modal-corpo" id="cfg-diag" hidden>
         <div id="dg-conteudo"><p class="ajuda">Carregando…</p></div>
         <div class="linha">
@@ -1880,6 +1882,7 @@
   <script type="importmap">{ "imports": { "three": "./vendor/three/three.module.min.js" } }</script>
   <script type="module" src="js/bloco3d.js"></script>
   <script src="js/comum.js"></script>
+  <script src="js/fontes.js"></script>
   <script src="js/interface.js"></script>
   <script src="js/inicio.js"></script>
   <script src="js/secao.js"></script>

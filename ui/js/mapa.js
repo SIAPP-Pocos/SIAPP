@@ -106,6 +106,8 @@ async function consultarMapa(enquadrar = false) {
   const nReate = pocosMapa.filter((p) => p.reate).length;
   const nBaix = pocosMapa.filter((p) => p.baixados).length;
   const nDig = pocosMapa.filter((p) => p.acervo === "digital").length;
+  $("mapa-resumo").title = "“Com perfil digital”: conferido no portal pelo levantamento (DLIS, LIS ou LAS pelo conteúdo). " +
+    "Os outros critérios: Configurações › Fontes e prioridade.";
   $("mapa-resumo").textContent = `${numero(pocosMapa.length, 0)} poço(s) com coordenadas` +
     (nReate ? ` · ${numero(nReate, 0)} com pasta no REATE` : "") +
     (nBaix ? ` · ${numero(nBaix, 0)} com arquivos baixados` : "") +

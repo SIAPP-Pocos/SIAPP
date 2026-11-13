@@ -145,6 +145,43 @@ class PocosAPI:
             self._projeto.registrar("definiu_precedencia_topos", ordem=atual)
         return {"ordem": mtp.precedencia(self._banco), "fontes": mtp.FONTES}
 
+    # ------------------------------------------------------- fontes e prioridade (0.63)
+    def _fontes(self) -> dict:
+        from motor import fontes as mfo
+        from motor import zonas as mzo
+        return mfo.ler(self._banco, tem_tabela=mzo.tabela_guardada(self._projeto.pasta) is not None)
+
+    @resposta_segura
+    def fontes_prioridade(self):
+        """As duas listas de fontes do projeto (topos e zonas), com rótulos e explicação."""
+        self._exigir_projeto()
+        return self._fontes()
+
+    @resposta_segura
+    def fontes_prioridade_salvar(self, tema: str, ordem: list | None = None, ligadas: list | None = None):
+        """Grava a ordem (e, nas zonas, quais fontes valem) de um tema: "topos" ou "zonas"."""
+        from motor import fontes as mfo
+        from motor import topos as mtp
+        self._exigir_projeto()
+        if tema == "topos":
+            if ordem:
+                atual = mtp.definir_precedencia(self._banco, [str(x) for x in ordem])
+                self._projeto.registrar("definiu_precedencia_topos", ordem=atual)
+        elif tema == "zonas":
+            z = mfo.definir_zonas(self._banco, [str(x) for x in ordem] if ordem is not None else None,
+                                  [str(x) for x in ligadas] if ligadas is not None else None)
+            self._projeto.registrar("definiu_fontes_zonas", **z)
+        else:
+            raise ErroUsuario(f"Tema desconhecido: {tema}")
+        return self._fontes()
+
+    @resposta_segura
+    def contagens_perfil(self, bacia: str = ""):
+        """Quantos poços têm "perfil digital" por cada critério (A13), com a explicação de cada um."""
+        from motor import fontes as mfo
+        self._exigir_projeto()
+        return mfo.contar_perfil(self._banco, str(bacia or "") or None)
+
     def _dados_poco_ficha(self, pid: str) -> dict:
         """O que os formulários da ANP (RFP, RFCP, Perfuração) trouxeram, para a ficha."""
         dp = mdp.do_poco(self._banco, pid)

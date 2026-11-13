@@ -172,7 +172,10 @@ class BlocoAPI:
     def _config_zonas(self, z: dict | None) -> dict:
         """A escolha da janela (fontes, regra, tolerância, reservatórios, ajustes) mais a tabela guardada, se for usada."""
         z = dict(z or {})
-        cfg = {"fontes": [f for f in z.get("fontes", mzo.PRIORIDADE_PADRAO) if f in mzo.FONTES],
+        from motor import fontes as mfo
+        # 0.63: sem escolha da janela, valem as fontes do projeto (Configurações › Fontes e prioridade)
+        padrao = mfo.fontes_zona_em_uso(self._banco)
+        cfg = {"fontes": [f for f in (z.get("fontes") or padrao) if f in mzo.FONTES],
                "regra": z.get("regra") or "prioridade",
                "tolerancia_m": self._num(z.get("tolerancia_m"), mzo.TOLERANCIA_PADRAO_M),
                "ativas": list(z["ativas"]) if z.get("ativas") is not None else None,
@@ -227,12 +230,17 @@ class BlocoAPI:
             raise ErroUsuario(str(e)) from e
         mzo.guardar_tabela(self._projeto.pasta, t, os.path.basename(caminho))
         self._projeto.registrar("importou_tabela_zonas", arquivo=os.path.basename(caminho), linhas=len(t["linhas"]))
+        from motor import fontes as mfo
+        mfo.ligar_zona(self._banco, "tabela", True)          # tabela nova: passa a valer (como antes, na janela)
         return {"tabela": self._resumo_tabela({**t, "origem": os.path.basename(caminho)})}
 
     @resposta_segura
     def bloco_zonas_apagar_tabela(self):
         self._exigir_projeto()
-        return {"apagada": mzo.apagar_tabela(self._projeto.pasta)}
+        from motor import fontes as mfo
+        apagada = mzo.apagar_tabela(self._projeto.pasta)
+        mfo.ligar_zona(self._banco, "tabela", False)
+        return {"apagada": apagada}
 
     @resposta_segura
     def bloco_execucoes(self):

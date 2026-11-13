@@ -449,8 +449,10 @@ function abrirConfig(qual = "config") {
 function mostrarAbaConfig(qual) {
   for (const b of document.querySelectorAll("[data-cfg]")) b.classList.toggle("ativa", b.dataset.cfg === qual);
   $("cfg-config").hidden = qual !== "config";
+  $("cfg-fontes").hidden = qual !== "fontes";
   $("cfg-diag").hidden = qual !== "diag";
   if (qual === "diag") carregarDiagnostico();
+  if (qual === "fontes") carregarFontes();
 }
 
 function preencherConfig() {

@@ -58,7 +58,7 @@ PASSADA = {"p": "principal", "main": "principal", "principal": "principal", "pri
            "r": "repetida", "rep": "repetida", "repeat": "repetida", "repetida": "repetida"}
 # Prioridade do tipo da corrida: o serviço especial manda (uma corrida de testador
 # também leva raios gama, mas é corrida de testador)
-ORDEM_TIPO = ("testador", "rmn", "imagem", "amostrador", "mergulho", "cimentacao", "lwd")
+ORDEM_TIPO = ("testador", "rmn", "imagem", "amostrador", "mergulho", "sismica", "cimentacao", "lwd")   # sismica: 0.63
 FAMILIAS_CONVENCIONAL = {"inducao", "laterolog", "densidade", "neutron", "sonico", "micro"}
 
 _RE_POCO_NO_NOME = re.compile(r"(?:^|(?<=[\W_]))\d[\W_]*[a-z]{1,6}[\W_]*\d{1,5}[a-z]{0,2}[\W_]*[a-z]{2}(?=[\W_]|$)")

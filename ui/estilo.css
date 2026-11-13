@@ -670,7 +670,7 @@ input.sugestao { background: #fff6d6; border-color: #e0b84a; }
 .selo.corrida.t-rmn { background: #fbe9f1; color: #a43d6c; }
 .selo.corrida.t-convencional, .selo.corrida.t-resistividade, .selo.corrida.t-sonico { background: #e4eefb; color: #1f5fae; }
 .selo.corrida.t-cimentacao, .selo.corrida.t-correlacao { background: #fbf2dc; color: #8a6200; }
-.selo.corrida.t-amostrador, .selo.corrida.t-lwd { background: #e2f3ec; color: #157a55; }
+.selo.corrida.t-amostrador, .selo.corrida.t-lwd, .selo.corrida.t-sismica { background: #e2f3ec; color: #157a55; }
 .selo.corrida.t-nd { background: var(--fundo); color: var(--suave); }
 .esq-ficha { display: grid; gap: 6px; max-height: 340px; overflow-y: auto; }
 .esq-cartao { border: 1px solid var(--linha); border-radius: 6px; padding: 6px 8px; background: var(--painel); display: grid; gap: 3px; }
@@ -1599,3 +1599,19 @@ th.com-dica { text-decoration: underline dotted; text-underline-offset: 3px; cur
 #vista-mapa.ficha-cheia #fi-corpo > table, #vista-mapa.ficha-cheia #fi-corpo > div,
 #vista-mapa.ficha-cheia #fi-corpo > ul, #vista-mapa.ficha-cheia #fi-corpo > p { break-inside: avoid; }
 #vista-mapa.ficha-cheia #fi-corpo > h3:first-child { margin-top: 0; }
+
+/* ------------------------------------------------------------ fontes e prioridade (0.63) */
+.fp-lista { list-style: none; padding: 0; margin: 6px 0 14px; display: grid; gap: 4px; max-width: 600px; counter-reset: fp; }
+.fp-lista li { display: flex; align-items: center; gap: 6px; font-size: 12.5px; }
+.fp-lista li::before { counter-increment: fp; content: counter(fp) "."; color: var(--suave); min-width: 18px; text-align: right; }
+.fp-lista li .fp-nota { flex: 0 1 auto; font-size: 11.5px; }
+.fp-lista li > .fp-nome, .fp-lista li > label { flex: 1; }
+.fp-lista li.fp-desligada .fp-nome { color: var(--suave); text-decoration: line-through; }
+.fp-tabela { border-collapse: collapse; margin: 8px 0; }
+.fp-tabela th { text-align: left; font-weight: 600; padding: 4px 10px 4px 0; white-space: nowrap; vertical-align: top; }
+.fp-tabela td { padding: 4px 10px 4px 0; vertical-align: top; }
+.fp-tabela td.ajuda { max-width: 420px; }
+.bz-fontes-resumo { margin: 4px 0 6px; padding-left: 22px; font-size: 12.5px; }
+.bz-fontes-resumo li.fp-desligada { color: var(--suave); }
+p.criterio { font-size: 12.5px; margin: 8px 0; }
+p.criterio .ajuda { display: inline; }

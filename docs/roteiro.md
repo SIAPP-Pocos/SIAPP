@@ -81,7 +81,7 @@ existe e a validação científica ficam **para o final**, antes do lançamento 
 - [x] Resumo dos textos e registro de downloads sem regravar o JSON inteiro a cada arquivo (resto da A15) (0.61).
 - [x] Recarregar só o que mudou ao trocar de aba (A17) (0.61).
 - [x] Medir o mapa com o cadastro inteiro (A25) e deixá-lo leve (0.62): todas as bacias em ~0,75 s.
-- [ ] Uma tela de fontes e prioridade (topos e zonas) e contagens com o critério ao lado (A12, A13).
+- [x] Uma tela de fontes e prioridade (topos e zonas) e contagens com o critério ao lado (A12, A13) (0.63).
 
 ## No final — melhorias do que já existe
 
@@ -97,8 +97,8 @@ existe e a validação científica ficam **para o final**, antes do lançamento 
       nessa direção.
 - [ ] Ajustes finos do estilo clássico da seção a partir de uma figura de referência
       (ex.: Boletim de Geociências da Petrobras).
-- [ ] Esquemas: ampliar o dicionário de ferramentas (Halliburton, Baker, Weatherford) com
-      esquemas reais desses fabricantes.
+- [x] Esquemas: dicionário de ferramentas da **Halliburton** ampliado com esquemas reais (0.63; ver `docs/ferramentas.md`).
+- [ ] Esquemas: Baker e Weatherford (falta baixar esquemas deles; candidatos em `docs/ferramentas.md`).
 
 ## No final — validação científica
 
