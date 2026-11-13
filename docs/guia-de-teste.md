@@ -132,6 +132,14 @@ Precisa de internet. Comece por uma categoria pequena para ver o tempo.
 - [ ] Sem intervalo marcado, **Calcular** explica que precisa de um intervalo-alvo.
 - [ ] Repetir no `5PX__0011__RN_5PX__0011__RN.tif` (DLIS de 2020).
 
+## 0.62 — mapa leve com o cadastro inteiro
+
+- [ ] **4 Poços**, com o cadastro da ANP importado: escolha **todas** as bacias. O mapa aparece em cerca de um segundo
+      ou menos (antes demorava o dobro).
+- [ ] Troque a **cor** (pasta ↔ acervo) e clique nos itens da legenda: os pontos mudam na hora.
+- [ ] Passe o mouse num poço: aparece o nome e o campo. Clique: abre a ficha.
+- [ ] Volte para uma bacia só: os poços das outras somem.
+
 ## 0.61 — trocar de aba sem recarregar à toa
 
 - [ ] Abra **3 Perfis**, vá para **2 Documentos** e volte: a tela de Perfis aparece na hora, sem piscar "carregando".

@@ -114,3 +114,12 @@ mapa** volta à gaveta. A escolha fica nas preferências (`ficha_cheia`). Com a 
 Mostrar uma aba relê os dados só se algo mudou na pasta do projeto desde a última vez (ou depois de 5 minutos). Clicar na
 aba que já está à frente, ou **F5** ("Reler a aba", trocável em Ajuda › Atalhos de teclado), relê na hora. Início e Comunidade
 relêem sempre.
+
+## Mapa com o cadastro inteiro (0.62)
+
+`pocos_mapa` (motor/pocos.py) devolve só `id, lat, lon, campo, situacao, reate, baixados, fatos, acervo`, com lat/lon
+arredondadas em 5 casas, e `dicionarios` para campo, situação e acervo (a linha leva o número; `linhas_mapa` desfaz no
+Python). Na janela, `marcadores` (id → marcador) é reaproveitado entre consultas e trocas de cor ou legenda: só se cria
+o que é novo e só se tira o que saiu. Um só ouvinte no `L.featureGroup` abre a ficha; o rótulo é criado no primeiro
+`mouseover`. Medição (32 mil poços sintéticos, navegador dos testes): todas as bacias 0,75 s; uma bacia de 12 mil,
+0,29 s; trocar a cor, 0,10 s.

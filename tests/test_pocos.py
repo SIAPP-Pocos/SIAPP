@@ -116,9 +116,10 @@ def test_mapa_filtros_e_ficha(banco):
                         [{"nome": "7-GMR-13-RN", "caminho": "/POCO/C7/7-GMR-13-RN/", "parte": "C7_parte28"}])
     banco.registrar_arquivo("bruto/Potiguar/1-AURI-12-RN/a.dlis", poco_id="1-AURI-12-RN", bytes_=10)
     m = mpo.pocos_mapa(banco, bacia="Potiguar")
-    linhas = {l[0]: dict(zip(m["colunas"], l)) for l in m["linhas"]}
+    linhas = {d["id"]: d for d in mpo.linhas_mapa(m)}
     assert set(linhas) == {"1-AURI-12-RN", "7-GMR-13-RN"}
     assert linhas["7-GMR-13-RN"]["reate"] == 1 and linhas["1-AURI-12-RN"]["baixados"] == 1
+    assert linhas["1-AURI-12-RN"]["campo"] == "AURIZÔNIA" and linhas["1-AURI-12-RN"]["lat"] == -5.1234
     assert [l[0] for l in mpo.pocos_mapa(banco, so_reate=True)["linhas"]] == ["7-GMR-13-RN"]
     assert [l[0] for l in mpo.pocos_mapa(banco, texto="aurizô")["linhas"]] == ["1-AURI-12-RN"]
     assert [l[0] for l in mpo.pocos_mapa(banco, terra_mar="M")["linhas"]] == ["7-PRG-59H-RJS"]

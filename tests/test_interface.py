@@ -2531,3 +2531,29 @@ def test_aba_so_recarrega_quando_o_projeto_muda(janela):
     p.keyboard.press("F5")                                    # F5 força
     janela.esperar("window.__n === 2")
     assert not janela.erros_js, janela.erros_js
+
+
+# ---------------------------------------------------------------- 0.62: mapa leve com o cadastro inteiro
+def test_mapa_reaproveita_marcadores_e_abre_ficha_pelo_grupo(janela):
+    from test_pocos import csv_exemplo
+    p = janela.page
+    abrir_projeto(janela)
+    janela.api._importar_cadastro(csv_exemplo(), "anp:teste")
+    ir(p, "mapa")
+    janela.esperar("document.getElementById('mapa-resumo').textContent.includes('poço')")
+    p.select_option("#f-bacia", "")
+    janela.esperar("camadaPocos.getLayers().length === 3")
+    m1 = p.evaluate("marcadores.get('7-GMR-13-RN')._leaflet_id")
+    p.select_option("#f-bacia", "Potiguar")
+    janela.esperar("camadaPocos.getLayers().length === 2")
+    assert p.evaluate("marcadores.get('7-GMR-13-RN')._leaflet_id") == m1          # o mesmo marcador, não um novo
+    assert p.evaluate("pocosMapa.find(x => x.id === '1-AURI-12-RN').campo") == "AURIZÔNIA"   # dicionário desfeito
+    p.evaluate("mapa.setView([-5.11, -36.33], 12, {animate: false})")
+    pt = p.evaluate("(() => { const r = document.getElementById('mapa').getBoundingClientRect(); "
+                    "const c = mapa.latLngToContainerPoint([-5.11, -36.33]); return [r.left + c.x, r.top + c.y]; })()")
+    p.mouse.move(pt[0], pt[1])
+    p.mouse.click(pt[0], pt[1])                                                    # clique de verdade no canvas
+    janela.esperar("document.getElementById('fi-titulo').textContent === '7-GMR-13-RN'")
+    p.evaluate("marcadores.get('7-GMR-13-RN').fire('mouseover', {}, true)")
+    assert p.evaluate("marcadores.get('7-GMR-13-RN').getTooltip().getContent()") == "7-GMR-13-RN · GUAMARÉ"
+    assert not janela.erros_js, janela.erros_js

@@ -2,7 +2,8 @@
 "use strict";
 
 let mapa = null;            // L.Map
-let camadaPocos = null;     // L.LayerGroup com os marcadores
+let camadaPocos = null;     // L.FeatureGroup com os marcadores
+const marcadores = new Map();   // id → marcador, reaproveitado entre consultas (0.62)
 let pocosMapa = [];         // [{id, lat, lon, ...}] da última consulta
 let fichaAberta = null;
 
@@ -24,7 +25,15 @@ function criarMapa() {
   mapa.attributionControl.setPrefix('<a href="https://leafletjs.com">Leaflet</a>');
   L.control.layers({ "Mapa": ruas, "Satélite": satelite }, null, { position: "topright" }).addTo(mapa);
   L.control.scale({ imperial: false }).addTo(mapa);
-  camadaPocos = L.layerGroup().addTo(mapa);
+  // um só ouvinte para todos os poços (com ~30 mil marcadores, um por marcador pesava); o rótulo é criado na
+  // primeira vez que o mouse passa (0.62)
+  camadaPocos = L.featureGroup().addTo(mapa);
+  camadaPocos.on("click", (e) => e.layer.pocoId && abrirFicha(e.layer.pocoId));
+  camadaPocos.on("mouseover", (e) => {
+    const m = e.layer;
+    if (!m.pocoId || m.getTooltip()) return;
+    m.bindTooltip(`${m.pocoId}${m.campo ? " · " + m.campo : ""}`, { direction: "top" }).openTooltip();
+  });
   camadaDestaques = L.layerGroup().addTo(mapa);
   mapa.on("click", cliqueLinha);
   mapa.on("mousemove", moverLinha);
@@ -86,7 +95,13 @@ async function consultarMapa(enquadrar = false) {
   const meu = ++pedidoMapa;
   const r = await chamar(null, "pocos_mapa", filtrosMapa());
   if (!r.ok || meu !== pedidoMapa) return;
-  pocosMapa = r.linhas.map((l) => Object.fromEntries(r.colunas.map((c, i) => [c, l[i]])));
+  // textos repetidos (campo, situação, acervo) vêm num dicionário; a linha traz o número (0.62)
+  const cols = r.colunas, dic = cols.map((c) => (r.dicionarios || {})[c]);
+  pocosMapa = r.linhas.map((l) => {
+    const o = {};
+    for (let i = 0; i < cols.length; i++) o[cols[i]] = dic[i] ? dic[i][l[i]] : l[i];
+    return o;
+  });
   desenharMarcadores(enquadrar);
   const nReate = pocosMapa.filter((p) => p.reate).length;
   const nBaix = pocosMapa.filter((p) => p.baixados).length;
@@ -166,24 +181,47 @@ function ligarLegendaMapa() {
   }
 }
 
+function estiloPoco(p) {
+  const destaque = destaquePoco(p);
+  return { radius: destaque ? 5 : 3, weight: p.fatos ? 2.5 : 0.6, color: p.fatos ? "#5b2f8f" : "#ffffff",
+           fillColor: corPoco(p), fillOpacity: destaque ? 0.95 : 0.6 };
+}
+
+// 0.62: os marcadores são reaproveitados (por id) entre consultas e trocas de cor ou de legenda; só se cria o que é
+// novo e só se tira o que saiu. Com o cadastro inteiro, recriar tudo a cada clique custava ~0,5 s.
 function desenharMarcadores(enquadrar) {
-  camadaPocos.clearLayers();
   desenharLegendaMapa();
-  const pontos = [];
+  const ficam = new Set();
+  let n = 0, s = 90, w = 180, nn = -90, e = -180;
   for (const p of pocosMapa) {
     if (!pocoVisivel(p)) continue;
-    const destaque = destaquePoco(p);
-    const m = L.circleMarker([p.lat, p.lon], {
-      radius: destaque ? 5 : 3, weight: p.fatos ? 2.5 : 0.6, color: p.fatos ? "#5b2f8f" : "#ffffff",
-      fillColor: corPoco(p), fillOpacity: destaque ? 0.95 : 0.6,
-    });
-    m.bindTooltip(`${p.id}${p.campo ? " · " + p.campo : ""}`, { direction: "top" });
-    m.on("click", () => abrirFicha(p.id));
-    m.addTo(camadaPocos);
-    pontos.push([p.lat, p.lon]);
+    let m = marcadores.get(p.id);
+    const estilo = estiloPoco(p);
+    if (!m) {
+      m = L.circleMarker([p.lat, p.lon], estilo);
+      m.pocoId = p.id;
+      marcadores.set(p.id, m);
+    } else {
+      const ll = m.getLatLng();
+      if (ll.lat !== p.lat || ll.lng !== p.lon) m.setLatLng([p.lat, p.lon]);
+      const o = m.options;
+      if (o.radius !== estilo.radius || o.weight !== estilo.weight || o.color !== estilo.color ||
+          o.fillColor !== estilo.fillColor || o.fillOpacity !== estilo.fillOpacity) m.setStyle(estilo);
+    }
+    m.campo = p.campo;
+    ficam.add(p.id);
+    if (!camadaPocos.hasLayer(m)) camadaPocos.addLayer(m);
+    n++;
+    if (p.lat < s) s = p.lat; if (p.lat > nn) nn = p.lat;
+    if (p.lon < w) w = p.lon; if (p.lon > e) e = p.lon;
   }
-  if (enquadrar && pontos.length) mapa.fitBounds(L.latLngBounds(pontos).pad(0.05), { maxZoom: 12 });
-  const ocultos = pocosMapa.length - pontos.length;
+  for (const [id, m] of marcadores) {
+    if (ficam.has(id)) continue;
+    camadaPocos.removeLayer(m);
+    if (marcadores.size > 60000) marcadores.delete(id);     // não acumula sem fim
+  }
+  if (enquadrar && n) mapa.fitBounds(L.latLngBounds([s, w], [nn, e]).pad(0.05), { maxZoom: 12 });
+  const ocultos = pocosMapa.length - n;
   $("mapa-resumo").dataset.ocultos = ocultos;
   const dl = limpar($("dq-lista-pocos"));
   for (const p of pocosMapa.slice(0, 3000)) dl.appendChild(new Option(p.campo || "", p.id));
@@ -361,8 +399,9 @@ async function buscarPocosLinha() {
 function desenharListaMapa() {
   const ul = limpar($("lista-mapa"));
   const visiveis = pocosMapa.filter(pocoVisivel);
+  // nomes de poço são ASCII: comparar direto é ~10× mais rápido que localeCompare com 30 mil poços (0.62)
   const ordem = visiveis.sort((a, b) => (b.baixados - a.baixados) || (b.reate - a.reate) ||
-                                        a.id.localeCompare(b.id));
+                                        (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
   if (visiveis.length < pocosMapa.length) {
     ul.appendChild(el("li", "vazio-lista", `${numero(pocosMapa.length - visiveis.length, 0)} poço(s) escondido(s) pela legenda ` +
                                            "do mapa — clique nela para mostrar."));

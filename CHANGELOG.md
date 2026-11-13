@@ -6,6 +6,23 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 
 ## [Não lançado]
 
+## [0.62.0] — 2026-11-13
+Mapa de poços leve com o cadastro inteiro da ANP.
+### Alterado
+- **Mapa (4 Poços) mais rápido com muitos poços.** Medido com 32 mil poços sintéticos (o tamanho do cadastro da ANP),
+  no navegador dos testes:
+
+  | | antes | 0.62 |
+  |---|---|---|
+  | dados enviados à janela (todas as bacias) | 5,3 MB | 1,8 MB |
+  | desenhar uma bacia grande (12 mil poços) | 0,63 s | 0,29 s |
+  | desenhar todas as bacias | 1,52 s | 0,75 s |
+  | trocar a cor ou clicar na legenda | 0,33 s | 0,10 s |
+
+  Como: o motor manda só o que o mapa usa (a ficha pede o resto), com coordenadas em 5 casas (~1 m) e os textos que se
+  repetem (campo, situação, acervo) uma vez só; a janela reaproveita os marcadores entre consultas e usa um só ouvinte
+  de clique para todos; o rótulo do poço é criado quando o mouse passa por ele.
+
 ## [0.61.0] — 2026-11-12
 Trocar de aba sem recarregar à toa; registros que crescem sem regravar o arquivo inteiro.
 ### Alterado

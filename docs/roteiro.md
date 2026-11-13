@@ -80,7 +80,7 @@ existe e a validação científica ficam **para o final**, antes do lançamento 
 - [x] Histórico do projeto num arquivo de linhas (`historico.jsonl`) em vez de dentro do `siapp.json` (0.60, parte da A15).
 - [x] Resumo dos textos e registro de downloads sem regravar o JSON inteiro a cada arquivo (resto da A15) (0.61).
 - [x] Recarregar só o que mudou ao trocar de aba (A17) (0.61).
-- [ ] Medir o mapa com o cadastro inteiro (A25).
+- [x] Medir o mapa com o cadastro inteiro (A25) e deixá-lo leve (0.62): todas as bacias em ~0,75 s.
 - [ ] Uma tela de fontes e prioridade (topos e zonas) e contagens com o critério ao lado (A12, A13).
 
 ## No final — melhorias do que já existe

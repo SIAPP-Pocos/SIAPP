@@ -337,8 +337,9 @@ def importar_catalogo_json(banco: Banco, pasta_catalogo: str) -> int:
     return n
 
 
-_CAMPOS_MAPA = ("id", "lat", "lon", "bacia", "campo", "tipo", "categoria", "situacao",
-                "terra_mar", "operador", "prof_sondador")
+# Só o que o mapa e a lista ao lado usam (a ficha pede o resto ao abrir): com o cadastro inteiro (~30 mil poços), cada
+# coluna a mais pesa na ponte com a janela (0.62).
+_CAMPOS_MAPA = ("id", "lat", "lon", "campo", "situacao")
 
 
 def bacias(banco: Banco) -> list[dict]:
@@ -395,18 +396,39 @@ def pocos_mapa(banco: Banco, *, bacia: str = "", texto: str = "", terra_mar: str
                             WHEN 1 THEN 'sem_perfil' END AS situacao,
                        group_concat(familias) AS familias
                 FROM acervo_pocos GROUP BY poco_id)
-              SELECT {', '.join('p.' + c for c in _CAMPOS_MAPA)},
+              SELECT p.id, round(p.lat, 5), round(p.lon, 5), p.campo, p.situacao,
                      EXISTS (SELECT 1 FROM reate r WHERE r.poco_id = p.id) AS reate,
                      (SELECT count(*) FROM arquivos a WHERE a.poco_id = p.id) AS baixados,
                      (SELECT count(*) FROM fatos f WHERE f.poco_id = p.id) AS fatos,
-                     ac.situacao AS acervo, ac.familias AS familias
+                     ac.situacao AS acervo
               FROM pocos p LEFT JOIN ac ON ac.poco_id = p.id
               WHERE {' AND '.join(cond)} LIMIT ?"""
     with banco.leitura() as c:
         linhas = c.execute(sql, [*args, limite + 1]).fetchall()
-    colunas = (*_CAMPOS_MAPA, "reate", "baixados", "fatos", "acervo", "familias")
-    return {"colunas": colunas, "linhas": [list(r) for r in linhas[:limite]],
-            "truncado": len(linhas) > limite}
+    colunas = (*_CAMPOS_MAPA, "reate", "baixados", "fatos", "acervo")       # lat/lon com 5 casas (~1 m)
+    linhas = [list(r) for r in linhas[:limite + 1]]
+    truncado = len(linhas) > limite
+    del linhas[limite:]
+    # textos que se repetem (campo, situação, acervo) vão uma vez só, num dicionário; a linha leva o número (0.62)
+    dicionarios = {}
+    for col in ("campo", "situacao", "acervo"):
+        i = colunas.index(col)
+        valores, posicao = [], {}
+        for ln in linhas:
+            v = ln[i]
+            k = posicao.get(v)
+            if k is None:
+                k = posicao[v] = len(valores)
+                valores.append(v)
+            ln[i] = k
+        dicionarios[col] = valores
+    return {"colunas": colunas, "linhas": linhas, "dicionarios": dicionarios, "truncado": truncado}
+
+
+def linhas_mapa(r: dict) -> list[dict]:
+    """O resultado de `pocos_mapa` de volta em dicionários (para quem usa do Python, como os testes)."""
+    dic = r.get("dicionarios", {})
+    return [{c: (dic[c][v] if c in dic else v) for c, v in zip(r["colunas"], ln)} for ln in r["linhas"]]
 
 
 def ficha(banco: Banco, poco_id: str) -> dict | None:
