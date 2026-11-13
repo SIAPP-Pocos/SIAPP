@@ -132,6 +132,19 @@ Precisa de internet. Comece por uma categoria pequena para ver o tempo.
 - [ ] Sem intervalo marcado, **Calcular** explica que precisa de um intervalo-alvo.
 - [ ] Repetir no `5PX__0011__RN_5PX__0011__RN.tif` (DLIS de 2020).
 
+## 0.64 — navegar no perfil, nas caixas do Modelo 3D e no mapa 2D
+
+- [ ] **3 Perfis**, um perfil aberto: com o mouse em cima do perfil, gire a roda: a **página** rola (aparece uma dica).
+      Clique no perfil (a borda fica verde) e gire: agora o perfil anda. Ctrl + roda: zoom onde está o mouse.
+- [ ] Com o perfil ativo: ↑ ↓, PgUp PgDn, + e −. Esc ou tirar o mouse desativa.
+- [ ] Coluna **Poço** (à esquerda do eixo): a faixa escura é o que está na tela; clique ou arraste nela para ir a outra
+      profundidade. Teste ▲ ▼ e a **escala** (1:500, 1:200…).
+- [ ] Ande pelo perfil: deve ficar mais fluido que antes (não pisca a cada giro).
+- [ ] **6 Modelo 3D**: com as etapas 1 e 2 abertas, abra a 3 (ou "Montagens anteriores"): a lateral desce sozinha e a
+      caixa aparece acima do botão Montar. Nada aparece por baixo do botão.
+- [ ] Monte um bloco e abra **Mapa 2D**: Ctrl + roda (zoom), arraste (move), **Ajustar**, duplo clique. Passe o mouse:
+      aparecem leste, norte e o valor. ◀ ▶ trocam de mapa. "Mais opções do desenho" abre as opções.
+
 ## 0.63 — fontes e prioridade, critérios de contagem, ferramentas da Halliburton
 
 - [ ] **Configurações** (engrenagem) › **Fontes e prioridade**: aparecem as fontes de topo e as de zonas, numeradas. Suba

@@ -134,10 +134,10 @@ def test_perfis_inventario_grafico_intervalo_exportar(janela, tmp_path):
     p.click("#aba-perfis")
     janela.esperar("document.querySelectorAll('#lista-perfis button').length === 1")
     p.click("#lista-perfis button")
-    janela.esperar("document.querySelectorAll('#pf-trilhas canvas').length === 3", 30)
+    janela.esperar("document.querySelectorAll('#pf-trilhas canvas:not(#pf-nav)').length === 3", 30)
     assert "7-GMR-13-RN" in p.text_content("#pf-titulo")
     # arrastar na trilha marca um intervalo
-    cv = p.locator("#pf-trilhas canvas").nth(1)
+    cv = p.locator("#pf-trilhas canvas:not(#pf-nav)").nth(1)
     caixa = cv.bounding_box()
     p.mouse.move(caixa["x"] + 30, caixa["y"] + 100)
     p.mouse.down()
@@ -288,7 +288,7 @@ def test_avaliacao_de_formacao_no_intervalo(janela, tmp_path):
     p.click("#aba-perfis")
     janela.esperar("document.querySelectorAll('#lista-perfis button').length === 1")
     p.click("#lista-perfis button")
-    janela.esperar("document.querySelectorAll('#pf-trilhas canvas').length >= 3", 30)
+    janela.esperar("document.querySelectorAll('#pf-trilhas canvas:not(#pf-nav)').length >= 3", 30)
     janela.esperar("document.querySelectorAll('.av-curva').length === 8")
     assert "Nenhum intervalo-alvo" in p.text_content("#av-intervalos")
     # sem intervalo, o cálculo é recusado com explicação
@@ -1421,11 +1421,11 @@ def test_perfis_busca_sugestao_cabecalho_e_faixa(janela, tmp_path):
     p.click("#aba-perfis")
     janela.esperar("document.querySelectorAll('#lista-perfis button').length === 1")
     p.click("#lista-perfis button")
-    janela.esperar("document.querySelectorAll('#pf-trilhas canvas').length === 3", 30)
+    janela.esperar("document.querySelectorAll('#pf-trilhas canvas:not(#pf-nav)').length === 3", 30)
     # cabeçalhos da mesma altura: as trilhas começam todas na mesma linha
     alturas = p.evaluate("[...document.querySelectorAll('.pf-cab-trilha')].map(c => c.offsetHeight)")
     assert len(set(alturas)) == 1
-    topos = p.evaluate("[...document.querySelectorAll('#pf-trilhas canvas')].map(c => Math.round(c.getBoundingClientRect().top))")
+    topos = p.evaluate("[...document.querySelectorAll('#pf-trilhas canvas:not(#pf-nav)')].map(c => Math.round(c.getBoundingClientRect().top))")
     assert len(set(topos)) == 1
     # buscar curva por descrição da família
     p.fill("#pf-busca", "resistividade")
@@ -1441,8 +1441,8 @@ def test_perfis_busca_sugestao_cabecalho_e_faixa(janela, tmp_path):
     assert p.evaluate("pf.selecao.map(s => s.mnemonico)") == ["ILD", "GR"]
     assert p.input_value("#pf-busca") == ""
     # arrastar: a faixa aparece com as profundidades enquanto arrasta
-    janela.esperar("document.querySelectorAll('#pf-trilhas canvas').length === 3", 30)
-    cv = p.locator("#pf-trilhas canvas").nth(1)
+    janela.esperar("document.querySelectorAll('#pf-trilhas canvas:not(#pf-nav)').length === 3", 30)
+    cv = p.locator("#pf-trilhas canvas:not(#pf-nav)").nth(1)
     caixa = cv.bounding_box()
     p.mouse.move(caixa["x"] + 30, caixa["y"] + 100)
     p.mouse.down()
@@ -2191,6 +2191,26 @@ def test_bloco_mapa_2d_com_curvas_de_nivel(janela, tmp_path):
     p.fill("#bl-m2d-int", "20")
     p.dispatch_event("#bl-m2d-int", "change")
     janela.esperar("document.getElementById('bl-m2d-info').textContent.includes('a cada 20')", 30)
+    # 0.64: zoom, arraste e leitura do valor sob o mouse
+    p.locator("#bl-m2d-vista").scroll_into_view_if_needed()
+    s0 = p.evaluate("bl.m2d.vista.s")
+    p.click("#bl-m2d-mais")
+    assert p.evaluate("bl.m2d.vista.s") > s0 * 1.4
+    p.click("#bl-m2d-ajustar")
+    assert abs(p.evaluate("bl.m2d.vista.s") - s0) < 1e-6
+    caixa = p.locator("#bl-m2d-vista").bounding_box()
+    p.mouse.move(caixa["x"] + caixa["width"] / 2, caixa["y"] + caixa["height"] / 2)
+    janela.esperar("document.getElementById('bl-m2d-leitura').textContent.includes('Leste')")
+    assert " m · Norte " in p.text_content("#bl-m2d-leitura")
+    tx0 = p.evaluate("bl.m2d.vista.tx")
+    p.mouse.down(); p.mouse.move(caixa["x"] + caixa["width"] / 2 + 60, caixa["y"] + caixa["height"] / 2); p.mouse.up()
+    assert abs(p.evaluate("bl.m2d.vista.tx") - tx0 - 60) < 2
+    primeiro = p.input_value("#bl-m2d-mapa")
+    p.click("#bl-m2d-prox")
+    janela.esperar(f"document.getElementById('bl-m2d-mapa').value !== '{primeiro}'")
+    p.click("#bl-m2d-ant")
+    janela.esperar(f"document.getElementById('bl-m2d-mapa').value === '{primeiro}'")
+    p.locator(".bl-m2d-opcoes > summary").click()                               # opções menos usadas, recolhidas
     p.uncheck("#bl-m2d-pocos")
     janela.esperar("document.querySelectorAll('#bl-m2d-fig circle').length === 0", 30)
     pasta = tmp_path / "ambiente_teste" / "exportacoes" / "blocos"
@@ -2584,4 +2604,71 @@ def test_fontes_e_prioridade_na_configuracao(janela):
     assert "Análise de fluido" in p.text_content("#bz-fontes li.fp-desligada:last-child") or \
         "não usada" in p.text_content("#bz-fontes")
     assert "fluido" not in p.evaluate("lerZonasBloco().fontes")
+    assert not janela.erros_js, janela.erros_js
+
+
+# ---------------------------------------------------------------- 0.64: navegar no perfil
+def test_perfil_roda_so_depois_de_clicar_navegador_e_escala(janela, tmp_path):
+    from test_perfis import las_exemplo
+    p = janela.page
+    abrir_projeto(janela)
+    pasta = tmp_path / "ambiente_teste" / "bruto" / "Potiguar" / "7-GMR-13-RN" / "Perfis"
+    pasta.mkdir(parents=True)
+    las_exemplo(pasta / "7gmr13.las")
+    janela.api._abrir_projeto(str(tmp_path / "ambiente_teste"))
+    p.click("#aba-perfis")
+    janela.esperar("document.querySelectorAll('#lista-perfis button').length === 1")
+    p.click("#lista-perfis button")
+    janela.esperar("document.querySelectorAll('#pf-trilhas canvas:not(#pf-nav)').length === 3", 30)
+    p.click("#pf-mais")                                                         # janela menor que o poço
+    janela.esperar("pf.buf && pf.buf.faixa < (pf.limites[1] - pf.limites[0]) * 0.6")
+    cv = p.locator("#pf-trilhas canvas:not(#pf-nav)").nth(1)
+    cx = cv.bounding_box()
+    topo0 = p.evaluate("pf.topo")
+    p.mouse.move(cx["x"] + 30, cx["y"] + 80)
+    p.mouse.wheel(0, 300)                                                       # sem clicar: a página rola
+    p.wait_for_timeout(300)
+    assert p.evaluate("pf.topo") == topo0
+    assert p.is_visible("#pf-dica-roda")
+    cv.scroll_into_view_if_needed()
+    cx = cv.bounding_box()
+    p.mouse.click(cx["x"] + 30, cx["y"] + 80)                                  # clicou: a roda anda no perfil
+    assert p.evaluate("pf.ativo")
+    chamadas = p.evaluate("window.__n = 0; const f = api.grafico_perfil; api.grafico_perfil = (...a) => { window.__n++; return f(...a); }; 0")
+    p.mouse.wheel(0, 100)
+    janela.esperar(f"pf.topo > {topo0}")
+    p.wait_for_timeout(300)
+    assert p.evaluate("window.__n") <= 1                                        # anda sem pedir tudo de novo ao motor
+    p.keyboard.press("PageDown")
+    janela.esperar(f"pf.topo > {topo0} + (pf.base - pf.topo) * 0.5")
+    # navegador: clicar perto do topo leva a janela para lá
+    p.locator("#pf-nav").scroll_into_view_if_needed()
+    nav = p.locator("#pf-nav").bounding_box()
+    p.mouse.click(nav["x"] + 10, nav["y"] + 3)
+    janela.esperar("Math.abs(pf.topo - pf.limites[0]) < 1e-6")
+    p.select_option("#pf-escala", "200")
+    janela.esperar("document.getElementById('pf-escala').value === '200'")
+    assert not janela.erros_js, janela.erros_js
+
+
+def test_modelo_3d_caixa_aberta_aparece_acima_do_pe(janela):
+    """0.64: abrir uma caixa da lateral do Modelo 3D rola a lateral até ela aparecer, acima do pé fixo (Montar)."""
+    p = janela.page
+    p.set_viewport_size({"width": 1280, "height": 720})
+    abrir_projeto(janela)
+    ir(p, "interp", "bloco")
+    p.evaluate("document.querySelectorAll('#bl-passo-1, #bl-passo-2').forEach((d) => d.open = true)")
+    p.wait_for_timeout(300)
+    p.evaluate("document.getElementById('bl-passo-3').closest('.lateral').scrollTop = 0")
+    p.locator("#bl-passo-3 > summary").click()
+    p.wait_for_timeout(900)
+    visivel = p.evaluate("""(() => {
+      const d = document.getElementById('bl-passo-3'), col = d.closest('.lateral');
+      const pe = col.querySelector('.etapa-montar');
+      const fundo = col.getBoundingClientRect().bottom - (pe ? pe.getBoundingClientRect().height : 0);
+      const r = d.getBoundingClientRect(), s = d.querySelector('summary').getBoundingClientRect();
+      return { titulo: s.top >= col.getBoundingClientRect().top - 1, rolou: col.scrollTop > 0,
+               cabe: r.bottom <= fundo + 2 || s.top <= col.getBoundingClientRect().top + 12 };
+    })()""")
+    assert visivel == {"titulo": True, "rolou": True, "cabe": True}, visivel
     assert not janela.erros_js, janela.erros_js

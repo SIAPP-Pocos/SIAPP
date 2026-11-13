@@ -421,9 +421,9 @@ function NOMES_METODO_AV(m) {
   return [n[m.vsh] || m.vsh, n[m.phi] || m.phi, n[m.sw] || m.sw].join(" / ");
 }
 
-async function curvasAvaliacaoGrafico() {
+async function curvasAvaliacaoGrafico(topo = pf.topo, base = pf.base) {
   if (!av.id || !$("av-mostrar").checked) return [];
-  const r = await chamar(null, "grafico_avaliacao", av.id, pf.topo, pf.base);
+  const r = await chamar(null, "grafico_avaliacao", av.id, topo, base);
   return r.ok ? r.curvas : [];
 }
 

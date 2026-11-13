@@ -1440,7 +1440,8 @@ details.avancado { border-bottom: 1px solid var(--linha); }
 details.avancado > summary { cursor: pointer; padding: 12px 0; color: var(--suave); font: 600 13px var(--sans); }
 details.avancado > summary:hover { color: var(--destaque); }
 details.avancado > .etapa { border-bottom: 0; padding-top: 0; }
-.etapa-montar { position: sticky; bottom: 0; z-index: 2; background: var(--painel); padding-bottom: 14px;
+/* 0.64: bottom negativo = o padding de baixo da lateral (20px): sem isso, o conteúdo aparecia por baixo do pé */
+.etapa-montar { position: sticky; bottom: -20px; z-index: 2; background: var(--painel); padding-bottom: 34px;
   box-shadow: 0 -8px 14px -10px rgba(0, 0, 0, .35); }
 .etapa-montar #sec-montar { width: 100%; }
 .bl-etapa-montar .linha { flex-wrap: wrap; gap: 6px; }
@@ -1615,3 +1616,25 @@ th.com-dica { text-decoration: underline dotted; text-underline-offset: 3px; cur
 .bz-fontes-resumo li.fp-desligada { color: var(--suave); }
 p.criterio { font-size: 12.5px; margin: 8px 0; }
 p.criterio .ajuda { display: inline; }
+
+/* ------------------------------------------------------------ perfis: navegação (0.64) */
+.pf-trilhas:focus { outline: none; }
+.pf-trilhas.ativo { box-shadow: 0 0 0 2px var(--destaque); }
+.pf-navegador { flex: 0 0 38px; min-width: 38px; cursor: ns-resize; }
+.pf-navegador .pf-cab-trilha { padding: 4px 2px; align-items: center; }
+.pf-dica-roda { position: absolute; left: 50%; top: 90px; transform: translateX(-50%); z-index: 3; padding: 6px 12px;
+  border-radius: 6px; background: rgba(28, 34, 39, 0.85); color: #fff; font-size: 12px; pointer-events: none; }
+#pf-escala { font-size: 12px; padding: 2px 4px; }
+
+/* ------------------------------------------------------------ mapa 2D do bloco: zoom e arraste (0.64) */
+.bl-m2d-opcoes { margin: 2px 0 6px; }
+.bl-m2d-opcoes > summary { cursor: pointer; font-size: 12px; color: var(--destaque); }
+.bl-m2d-barra { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 8px; }
+.bl-m2d-barra #bl-m2d-leitura { flex: 1 1 260px; min-width: 0; font: 12px var(--mono); }
+.bl-m2d-salvar { display: flex; gap: 6px; margin-left: auto; }
+.bl-m2d-vista { position: relative; height: max(380px, calc(100vh - 290px)); overflow: hidden; margin-top: 6px;
+  border: 1px solid var(--linha); border-radius: 6px; background: #fff; cursor: grab; }
+.bl-m2d-vista:focus { outline: 2px solid var(--destaque); outline-offset: -2px; }
+.bl-m2d-vista.arrastando { cursor: grabbing; }
+.bl-m2d-vista .bl-m2d-fig { position: absolute; left: 0; top: 0; margin: 0; overflow: visible; transform-origin: 0 0; }
+.bl-m2d-vista .bl-m2d-fig svg { max-width: none; display: block; }

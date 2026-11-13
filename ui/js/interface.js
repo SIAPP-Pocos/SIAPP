@@ -468,7 +468,26 @@ function recolherExplicacoes() {
 }
 
 // ---------------------------------------------------------------- ligações
+// 0.64: ao abrir uma caixa (details) numa coluna que rola, a coluna acompanha: mostra o que abriu inteiro, acima do pé
+// fixo (Montar), sem passar do título da caixa. Antes, a caixa abria escondida embaixo e era preciso caçar a rolagem.
+function acompanharAbertura(ev) {
+  const d = ev.target;
+  if (!(d instanceof HTMLDetailsElement) || !d.open) return;
+  const col = d.closest(".lateral, .principal, .modal-corpo");
+  if (!col) return;
+  requestAnimationFrame(() => {
+    const rc = col.getBoundingClientRect(), rd = d.getBoundingClientRect();
+    const pe = [...col.querySelectorAll(".etapa-montar")].find((e) => getComputedStyle(e).position === "sticky");
+    const fundo = rc.bottom - (pe && !d.contains(pe) ? pe.getBoundingClientRect().height : 0) - 8;
+    const sobra = rd.bottom - fundo;                          // quanto do que abriu ficou para baixo do visível
+    const ate = rd.top - rc.top - 8;                          // não passa do título da caixa
+    const passo = Math.min(sobra, ate);
+    if (passo > 0) col.scrollBy({ top: passo, behavior: "smooth" });
+  });
+}
+
 function ligarInterface() {
+  document.addEventListener("toggle", acompanharAbertura, true);
   ligarMenus();
   for (const b of document.querySelectorAll("[data-ajuda]")) b.onclick = () => AJUDA[b.dataset.ajuda]();
   ligar("dlg-fechar", "onclick", fecharDialogo);

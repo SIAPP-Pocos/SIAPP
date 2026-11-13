@@ -123,3 +123,15 @@ Python). Na janela, `marcadores` (id → marcador) é reaproveitado entre consul
 o que é novo e só se tira o que saiu. Um só ouvinte no `L.featureGroup` abre a ficha; o rótulo é criado no primeiro
 `mouseover`. Medição (32 mil poços sintéticos, navegador dos testes): todas as bacias 0,75 s; uma bacia de 12 mil,
 0,29 s; trocar a cor, 0,10 s.
+
+## Navegação (0.64)
+
+- **Roda do mouse**: em perfis e mapas, a roda rola a página; o gráfico só a usa depois de clicado (perfil) ou com Ctrl
+  (zoom). Assim, rolar a página nunca fica preso num gráfico.
+- **Perfis** (`ui/js/perfis.js`): navegador do poço inteiro (`#pf-nav`, miniatura de uma curva com 600 pontos), faixa
+  buscada 3× maior que a vista (`pf.buf`; `grafico_perfil` aceita `max_pontos`), altura das trilhas pela janela,
+  escala vertical (96 ppp), teclado com o perfil ativo.
+- **Caixas que abrem** (`acompanharAbertura`, interface.js): numa coluna que rola, a coluna desce até mostrar a caixa
+  inteira, acima do pé fixo, sem passar do título dela.
+- **Mapa 2D do bloco** (`ui/js/bloco.js`): o SVG do motor é ampliado e arrastado por CSS (sem refazer o desenho); o
+  motor manda junto a posição da área do mapa e a grade reduzida (≤ 160 × 160) para a leitura sob o mouse.

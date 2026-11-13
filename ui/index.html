@@ -882,8 +882,15 @@
             <label>até <input id="pf-base" type="text" inputmode="decimal"> m</label>
             <button class="btn secundario pequeno" id="pf-aplicar">Ir</button>
             <button class="btn secundario pequeno" id="pf-tudo">Tudo</button>
-            <button class="btn secundario pequeno" id="pf-mais" title="Aproximar">+</button>
+            <button class="btn secundario pequeno" id="pf-mais" title="Aproximar (Ctrl + roda no perfil)">+</button>
             <button class="btn secundario pequeno" id="pf-menos" title="Afastar">−</button>
+            <button class="btn secundario pequeno" id="pf-sobe" title="Subir uma tela (PgUp com o perfil ativo)">▲</button>
+            <button class="btn secundario pequeno" id="pf-desce" title="Descer uma tela (PgDn com o perfil ativo)">▼</button>
+            <select id="pf-escala" title="Escala vertical na tela">
+              <option value="">escala</option><option value="100">1:100</option><option value="200">1:200</option>
+              <option value="500">1:500</option><option value="1000">1:1000</option><option value="2000">1:2000</option>
+              <option value="5000">1:5000</option>
+            </select>
           </div>
         </div>
         <p class="pg-aviso" id="pf-aviso" hidden></p>
@@ -1477,29 +1484,42 @@
             nível rotuladas, poços e eixos em metros (a partir do centro do bloco). Para o mapa cobrir mais área além dos
             poços, aumente a "margem além do contorno" e monte o bloco de novo.</p>
           <div class="linha">
+            <button class="btn secundario pequeno" id="bl-m2d-ant" title="Mapa anterior (tecla [ )">◀</button>
             <label>Mapa <select id="bl-m2d-mapa"></select></label>
-            <label>Curvas a cada (m) <input type="text" id="bl-m2d-int" class="curto" inputmode="decimal" placeholder="auto"></label>
-            <label>Rotular 1 a cada <input type="text" id="bl-m2d-rot" class="curto" inputmode="numeric" value="1"
-                   title="1 = todas as curvas; 0 = sem rótulos"></label>
+            <button class="btn secundario pequeno" id="bl-m2d-prox" title="Próximo mapa (tecla ] )">▶</button>
             <label>Cores <select id="bl-m2d-paleta"></select></label>
-          </div>
-          <div class="linha">
-            <label class="opcao"><input type="checkbox" id="bl-m2d-prof" checked> profundidade (positiva para baixo)</label>
-            <label class="opcao"><input type="checkbox" id="bl-m2d-mesa"> contada da mesa rotativa (como nas tabelas de poço)</label>
-            <label class="opcao"><input type="checkbox" id="bl-m2d-inv" checked> inverter as cores</label>
-            <label class="opcao"><input type="checkbox" id="bl-m2d-preencher" checked> cores de fundo</label>
-            <label class="opcao"><input type="checkbox" id="bl-m2d-curvas" checked> curvas</label>
-            <label class="opcao"><input type="checkbox" id="bl-m2d-pocos" checked> poços</label>
+            <label>Curvas a cada (m) <input type="text" id="bl-m2d-int" class="curto" inputmode="decimal" placeholder="auto"></label>
             <label class="opcao"><input type="checkbox" id="bl-m2d-nomes"> nomes dos poços</label>
           </div>
-          <div class="linha">
-            <label>Título <input type="text" id="bl-m2d-titulo" class="largo" placeholder="automático"></label>
-            <button class="btn secundario pequeno" id="bl-m2d-svg">Salvar SVG</button>
-            <button class="btn secundario pequeno" id="bl-m2d-png">Salvar PNG</button>
-            <button class="btn secundario pequeno" id="bl-m2d-pdf">Salvar PDF</button>
+          <details class="bl-m2d-opcoes">
+            <summary>Mais opções do desenho</summary>
+            <div class="linha">
+              <label class="opcao"><input type="checkbox" id="bl-m2d-prof" checked> profundidade (positiva para baixo)</label>
+              <label class="opcao"><input type="checkbox" id="bl-m2d-mesa"> contada da mesa rotativa (como nas tabelas de poço)</label>
+              <label class="opcao"><input type="checkbox" id="bl-m2d-inv" checked> inverter as cores</label>
+              <label class="opcao"><input type="checkbox" id="bl-m2d-preencher" checked> cores de fundo</label>
+              <label class="opcao"><input type="checkbox" id="bl-m2d-curvas" checked> curvas</label>
+              <label class="opcao"><input type="checkbox" id="bl-m2d-pocos" checked> poços</label>
+            </div>
+            <div class="linha">
+              <label>Rotular 1 a cada <input type="text" id="bl-m2d-rot" class="curto" inputmode="numeric" value="1"
+                     title="1 = todas as curvas; 0 = sem rótulos"></label>
+              <label>Título <input type="text" id="bl-m2d-titulo" class="largo" placeholder="automático"></label>
+            </div>
+          </details>
+          <div class="bl-m2d-barra">
+            <button class="btn secundario pequeno" id="bl-m2d-mais" title="Aproximar (Ctrl + roda no mapa)">+</button>
+            <button class="btn secundario pequeno" id="bl-m2d-menos" title="Afastar">−</button>
+            <button class="btn secundario pequeno" id="bl-m2d-ajustar" title="Mapa inteiro (duplo clique com Shift)">Ajustar</button>
+            <span class="ajuda" id="bl-m2d-leitura">Passe o mouse no mapa para ler o valor. Arraste para mover; Ctrl + roda dá zoom.</span>
+            <span class="bl-m2d-salvar">
+              <button class="btn secundario pequeno" id="bl-m2d-svg">Salvar SVG</button>
+              <button class="btn secundario pequeno" id="bl-m2d-png">Salvar PNG</button>
+              <button class="btn secundario pequeno" id="bl-m2d-pdf">Salvar PDF</button>
+            </span>
           </div>
           <p class="ajuda" id="bl-m2d-info"></p>
-          <div id="bl-m2d-fig" class="bl-m2d-fig"></div>
+          <div id="bl-m2d-vista" class="bl-m2d-vista" tabindex="0"><div id="bl-m2d-fig" class="bl-m2d-fig"></div></div>
         </details>
         <details class="bl-quadro bl-saidas" id="bl-saidas" data-no-bl-aba="exportar">
           <summary><h3>Saídas do bloco: mapas para SIG, simulador (.DATA), volumetria, modelo 3D</h3></summary>

@@ -481,7 +481,7 @@ class BlocoAPI:
         except (mm2.ErroMapa2D, mbm.ErroMapa) as e:
             raise ErroUsuario(str(e)) from e
         out = {"svg": r["svg"], "intervalo_m": r["intervalo_m"], "min": r["min"], "max": r["max"], "titulo": r["titulo"],
-               "n_curvas": len(r["niveis"])}
+               "n_curvas": len(r["niveis"]), "leitura": r.get("leitura")}
         if formato:
             if formato not in ("svg", "pdf", "png"):
                 raise ErroUsuario(f"Formato desconhecido: {formato}")
@@ -490,6 +490,7 @@ class BlocoAPI:
             self._projeto.registrar("exportou_bloco", execucao=ident, formato=f"mapa2d_{formato}")
             out["arquivo"] = self._rel(saida)
             out["svg"] = ""
+            out["leitura"] = None
         return out
 
     def _opcoes_eclipse(self, op: dict) -> dict:

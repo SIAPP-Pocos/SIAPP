@@ -340,5 +340,12 @@ def desenhar_grade(z: np.ndarray, xs: np.ndarray, ys: np.ndarray, p: float, poco
     s.append(t(x0, H - 14, f"Curvas de nível a cada {mbf._fmt(intervalo, 0 if intervalo >= 1 else 1)} m · coordenadas em metros "
                            f"a partir do centro do bloco · pixel de {p:g} m · SIAPP {__version__}", 9.5, mbf.TINTA2))
     s.append("</svg>")
+    # 0.64: para a janela ler o valor sob o mouse: onde fica a área do mapa no SVG e a grade (reduzida a ≤ 160 × 160)
+    passo_l = max(1, math.ceil(max(nx, ny) / 160))
+    zr = z[::passo_l, ::passo_l]
+    leitura = {"x0": x0, "y0": y0, "esc": esc, "xmin": float(xmin), "ymax": float(ymax), "larg": larg_plot, "alt": alt_plot,
+               "passo_m": float(p * passo_l), "nx": int(zr.shape[1]), "ny": int(zr.shape[0]),
+               "z": [None if not np.isfinite(v) else round(float(v), 2) for v in zr.ravel()],
+               "pocos": [{"nome": n, "x": round(e, 1), "y": round(nn, 1)} for n, e, nn in pocos_xy]}
     return {"svg": "\n".join(s), "intervalo_m": intervalo, "niveis": niveis, "min": zmin, "max": zmax,
-            "titulo": texto_titulo, "rotulos": len(rotulos)}
+            "titulo": texto_titulo, "rotulos": len(rotulos), "leitura": leitura}

@@ -590,8 +590,122 @@ async function desenharMapa2d(formato) {
     status(`Mapa salvo: ${r.arquivo}`, "ok");
     return;
   }
+  const mesmoMapa = bl.m2d && bl.m2d.nome === nome && bl.m2d.ident === bl.ultimo;
   $("bl-m2d-fig").innerHTML = r.svg;
+  bl.m2d = { nome, ident: bl.ultimo, leitura: r.leitura, min: r.min, max: r.max,
+             vista: mesmoMapa ? bl.m2d.vista : null };          // trocar cor ou opção mantém o zoom; outro mapa, ajusta
   $("bl-m2d-info").textContent = `${r.titulo}: de ${numero(r.min, 1)} a ${numero(r.max, 1)} m, ${r.n_curvas} curvas a cada ${numero(r.intervalo_m, 1)} m.`;
+  const sm = $("bl-m2d-mapa");
+  $("bl-m2d-ant").disabled = sm.selectedIndex <= 0;
+  $("bl-m2d-prox").disabled = sm.selectedIndex >= sm.options.length - 1;
+  if (bl.m2d.vista) aplicarVistaM2d(); else ajustarM2d();
+}
+
+// ---------------------------------------------------------------- mapa 2D: zoom, arraste e leitura (0.64)
+function tamanhoSvgM2d() {
+  const svg = $("bl-m2d-fig").querySelector("svg");
+  if (!svg) return null;
+  const vb = svg.viewBox.baseVal;
+  return { w: vb.width || svg.width.baseVal.value, h: vb.height || svg.height.baseVal.value, svg };
+}
+
+function aplicarVistaM2d() {
+  const t = tamanhoSvgM2d(), v = bl.m2d && bl.m2d.vista;
+  if (!t || !v) return;
+  t.svg.setAttribute("width", t.w);
+  t.svg.setAttribute("height", t.h);
+  $("bl-m2d-fig").style.transform = `translate(${v.tx}px, ${v.ty}px) scale(${v.s})`;
+}
+
+function ajustarM2d() {
+  const t = tamanhoSvgM2d(), caixa = $("bl-m2d-vista");
+  if (!t || !bl.m2d) return;
+  const W = caixa.clientWidth, H = caixa.clientHeight;
+  const s = Math.min(W / t.w, H / t.h);
+  bl.m2d.vista = { s, tx: (W - t.w * s) / 2, ty: (H - t.h * s) / 2 };
+  aplicarVistaM2d();
+}
+
+function zoomM2d(fator, px, py) {
+  const v = bl.m2d && bl.m2d.vista, caixa = $("bl-m2d-vista");
+  if (!v) return;
+  if (px === undefined) { px = caixa.clientWidth / 2; py = caixa.clientHeight / 2; }
+  const s = Math.max(0.2, Math.min(40, v.s * fator)), k = s / v.s;
+  v.tx = px - (px - v.tx) * k;
+  v.ty = py - (py - v.ty) * k;
+  v.s = s;
+  aplicarVistaM2d();
+}
+
+function lerM2d(ev) {
+  const L = bl.m2d && bl.m2d.leitura, v = bl.m2d && bl.m2d.vista, caixa = $("bl-m2d-vista");
+  if (!L || !v) return;
+  const r = caixa.getBoundingClientRect();
+  const sx = (ev.clientX - r.left - v.tx) / v.s, sy = (ev.clientY - r.top - v.ty) / v.s;   // coordenadas do SVG
+  const saida = $("bl-m2d-leitura");
+  if (sx < L.x0 || sy < L.y0 || sx > L.x0 + L.larg || sy > L.y0 + L.alt) {
+    saida.textContent = "Fora do mapa. Arraste para mover; Ctrl + roda dá zoom.";
+    return;
+  }
+  const x = L.xmin + (sx - L.x0) / L.esc, y = L.ymax - (sy - L.y0) / L.esc;
+  const j = Math.min(L.nx - 1, Math.floor((x - L.xmin) / L.passo_m)), i = Math.min(L.ny - 1, Math.floor((L.ymax - y) / L.passo_m));
+  const z = L.z[i * L.nx + j];
+  const perto = L.pocos.find((p) => Math.hypot((p.x - x) * L.esc * v.s, (p.y - y) * L.esc * v.s) < 9);
+  saida.textContent = `Leste ${numero(x, 0)} m · Norte ${numero(y, 0)} m · ` +
+    (z === null || z === undefined ? "sem valor" : `${numero(z, 1)} m`) + (perto ? ` · poço ${perto.nome}` : "");
+}
+
+function trocarMapaM2d(passo) {
+  const sm = $("bl-m2d-mapa"), k = sm.selectedIndex + passo;
+  if (k < 0 || k >= sm.options.length) return;
+  sm.selectedIndex = k;
+  desenharMapa2d();
+}
+
+function ligarMapa2dVista() {
+  const caixa = $("bl-m2d-vista");
+  let arraste = null;
+  caixa.onwheel = (ev) => {
+    if (!(ev.ctrlKey || ev.metaKey)) return;                 // sem Ctrl, a página rola
+    ev.preventDefault();
+    const r = caixa.getBoundingClientRect();
+    zoomM2d(ev.deltaY > 0 ? 0.8 : 1.25, ev.clientX - r.left, ev.clientY - r.top);
+  };
+  caixa.onmousedown = (ev) => {
+    if (!bl.m2d || !bl.m2d.vista) return;
+    ev.preventDefault();
+    caixa.focus({ preventScroll: true });
+    arraste = { x: ev.clientX, y: ev.clientY, tx: bl.m2d.vista.tx, ty: bl.m2d.vista.ty };
+    caixa.classList.add("arrastando");
+  };
+  window.addEventListener("mousemove", (ev) => {
+    if (!arraste) return;
+    bl.m2d.vista.tx = arraste.tx + ev.clientX - arraste.x;
+    bl.m2d.vista.ty = arraste.ty + ev.clientY - arraste.y;
+    aplicarVistaM2d();
+  });
+  window.addEventListener("mouseup", () => { arraste = null; caixa.classList.remove("arrastando"); });
+  caixa.onmousemove = lerM2d;
+  caixa.ondblclick = (ev) => {
+    const r = caixa.getBoundingClientRect();
+    if (ev.shiftKey) ajustarM2d(); else zoomM2d(2, ev.clientX - r.left, ev.clientY - r.top);
+  };
+  caixa.onkeydown = (ev) => {
+    const k = ev.key;
+    if (k === "+" || k === "=") zoomM2d(1.25);
+    else if (k === "-") zoomM2d(0.8);
+    else if (k === "0") ajustarM2d();
+    else if (k === "[") trocarMapaM2d(-1);
+    else if (k === "]") trocarMapaM2d(1);
+    else return;
+    ev.preventDefault();
+  };
+  ligar("bl-m2d-mais", "onclick", () => zoomM2d(1.5));
+  ligar("bl-m2d-menos", "onclick", () => zoomM2d(1 / 1.5));
+  ligar("bl-m2d-ajustar", "onclick", ajustarM2d);
+  ligar("bl-m2d-ant", "onclick", () => trocarMapaM2d(-1));
+  ligar("bl-m2d-prox", "onclick", () => trocarMapaM2d(1));
+  window.addEventListener("resize", () => { if (bl.m2d && $("bl-m2d").open) ajustarM2d(); });
 }
 
 async function exportarMapas() {
@@ -1229,6 +1343,7 @@ function ligarBloco() {
   ligar("bl-saidas", "ontoggle", () => { if ($("bl-saidas").open) carregarSaidas(); });
   ligar("bl-mapas", "onclick", exportarMapas);
   ligar("bl-m2d", "ontoggle", () => { if ($("bl-m2d").open) carregarMapa2d(); });
+  ligarMapa2dVista();
   ligar("bl-m2d-mapa", "onchange", () => desenharMapa2d());
   for (const id of ["bl-m2d-int", "bl-m2d-rot", "bl-m2d-paleta", "bl-m2d-prof", "bl-m2d-mesa", "bl-m2d-inv", "bl-m2d-preencher",
                     "bl-m2d-curvas", "bl-m2d-pocos", "bl-m2d-nomes", "bl-m2d-titulo"]) ligar(id, "onchange", () => desenharMapa2d());

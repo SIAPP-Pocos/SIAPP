@@ -210,17 +210,53 @@ function atualizarGrafico(imediato = true) {
   esperaGrafico = setTimeout(buscarGrafico, imediato ? 0 : 120);
 }
 
+// 0.64: busca uma faixa 3× maior que a janela (uma janela acima e uma abaixo) e redesenha sem ir ao motor enquanto a
+// janela anda dentro dela; antes, cada giro da roda pedia os dados de novo.
 async function buscarGrafico() {
   if (!pf.rel) return;
-  $("pf-topo").value = numero(pf.topo, 1);
-  $("pf-base").value = numero(pf.base, 1);
+  mostrarJanelaNosCampos();
   const meu = ++pedidoGrafico;
-  const r = await chamar(null, "grafico_perfil", pf.rel, pf.selecao, pf.topo, pf.base);
+  const f = pf.base - pf.topo;
+  const [lo, hi] = pf.limites || [pf.topo, pf.base];
+  const bt = Math.max(lo, pf.topo - f), bb = Math.min(hi, pf.base + f);
+  const pontos = Math.round(2500 * (bb - bt) / Math.max(f, 1e-6));
+  const r = await chamar(null, "grafico_perfil", pf.rel, pf.selecao, bt, bb, pontos);
   if (!r.ok || meu !== pedidoGrafico) return;
-  const calculadas = await curvasAvaliacaoGrafico();
+  const calculadas = await curvasAvaliacaoGrafico(bt, bb);
   if (meu !== pedidoGrafico) return;
   pf.dados = r.curvas.concat(calculadas);
+  pf.buf = { topo: bt, base: bb, faixa: f, chave: chaveSelecao() };
   desenharTrilhas();
+  buscarMiniatura();
+}
+
+function chaveSelecao() {
+  return pf.rel + "|" + pf.selecao.map((s) => s.quadro + ":" + s.mnemonico).join(",") + "|" + (($("av-mostrar") || {}).checked ? "av" : "");
+}
+
+function mostrarJanelaNosCampos() {
+  $("pf-topo").value = numero(pf.topo, 1);
+  $("pf-base").value = numero(pf.base, 1);
+  const esc = $("pf-escala");
+  if (esc) {
+    const pxm = ALTURA_TRILHAS / Math.max(pf.base - pf.topo, 1e-6);      // pixels por metro
+    const n = Math.round(PX_POR_MM * 1000 / pxm);
+    const casa = [...esc.options].find((o) => o.value && Math.abs(Number(o.value) - n) / n < 0.03);
+    esc.value = casa ? casa.value : "";
+    esc.options[0].textContent = casa ? "escala" : `1:${numero(n, 0)}`;
+  }
+}
+
+// Miniatura do poço inteiro (uma curva, poucos pontos) para o navegador ao lado do eixo.
+async function buscarMiniatura() {
+  if (!pf.rel || !pf.limites || !pf.selecao.length) { pf.mini = null; return; }
+  const curva = pf.selecao.find((s) => /^(GR|SGR|CGR|ECGR|HCGR|GRC|GRD)/i.test(s.mnemonico)) || pf.selecao[0];
+  const chave = pf.rel + "|" + curva.quadro + ":" + curva.mnemonico;
+  if (pf.mini && pf.mini.chave === chave) return;
+  const r = await chamar(null, "grafico_perfil", pf.rel, [curva], pf.limites[0], pf.limites[1], 600);
+  if (!r.ok || !r.curvas.length) return;
+  pf.mini = { chave, curva: r.curvas[0] };
+  desenharNavegador();
 }
 
 function trilhasDe(curvas) {
@@ -265,9 +301,16 @@ function passoGrade(faixa) {
   return [1, 2, 5, 10].map((m) => m * p).find((x) => x >= alvo);
 }
 
-const ALTURA_TRILHAS = 560;
+// 0.64: a altura acompanha a janela (antes, 560 px fixos); sobra sempre espaço para a página rolar.
+let ALTURA_TRILHAS = 560;
+const PX_POR_MM = 96 / 25.4;          // tela padrão do Windows (96 ppp)
+
+function calcularAlturaTrilhas() {
+  return Math.round(Math.max(360, Math.min(1400, window.innerHeight - 230)));
+}
 
 function desenharTrilhas() {
+  ALTURA_TRILHAS = calcularAlturaTrilhas();
   const box = limpar($("pf-trilhas"));
   const trilhas = trilhasDe(pf.dados);
   if (!trilhas.length) { box.appendChild(el("p", "ajuda", "Marque curvas ao lado para ver o gráfico.")); return; }
@@ -275,6 +318,15 @@ function desenharTrilhas() {
   const yDe = (prof) => ((prof - pf.topo) / faixa) * ALTURA_TRILHAS;
   const grade = passoGrade(faixa);
 
+  // navegador: o poço inteiro, com a janela visível marcada (clique ou arraste para ir; a roda anda)
+  const nav = el("div", "pf-trilha pf-navegador");
+  const cabN = el("div", "pf-cab-trilha", "Poço");
+  cabN.title = "O poço inteiro. Clique ou arraste para ir a outra profundidade; a roda do mouse aqui anda pelo poço.";
+  nav.appendChild(cabN);
+  const cvNav = document.createElement("canvas");
+  cvNav.id = "pf-nav";
+  nav.appendChild(cvNav);
+  box.appendChild(nav);
   // eixo de profundidade
   const eixo = el("div", "pf-trilha pf-eixo");
   eixo.appendChild(el("div", "pf-cab-trilha", "Prof. (m)"));
@@ -335,6 +387,7 @@ function desenharTrilhas() {
   const dpr = window.devicePixelRatio || 1;
   if (cvLito) desenharLitologia(cvLito, yDe, dpr);
   desenharLegendaLitologia();
+  desenharNavegador();
   for (const [cv, t] of telas) {
     const w = cv.parentElement.clientWidth;
     cv.width = w * dpr; cv.height = ALTURA_TRILHAS * dpr;
@@ -566,21 +619,36 @@ function ligarInteracao(box, yDe) {
     f.firstChild.textContent = `${numero(profDe(a), 2)} – ${numero(profDe(b), 2)} m (${numero(profDe(b) - profDe(a), 2)} m)`;
   };
   const esconderFaixa = () => { const f = $("pf-faixa-sel"); if (f) f.hidden = true; };
-  box.onmouseleave = () => { if (arraste) { arraste = null; esconderFaixa(); } };
-  for (const cv of box.querySelectorAll("canvas")) {
+  // 0.64: a roda só anda no perfil depois de clicar nele (ou com Shift); sem isso, a página rola normalmente.
+  // Ctrl+roda: zoom no ponto do mouse. Com o perfil ativo: ↑ ↓, PgUp PgDn, + − e Esc.
+  box.tabIndex = 0;
+  const ativar = (sim) => { pf.ativo = sim; box.classList.toggle("ativo", sim); if (sim) box.focus({ preventScroll: true }); };
+  ativar(!!pf.ativo && document.activeElement === box);
+  box.onmouseleave = () => { if (arraste) { arraste = null; esconderFaixa(); } ativar(false); };
+  box.onkeydown = (ev) => {
+    if (!pf.ativo) return;
+    const k = ev.key;
+    if (k === "ArrowDown" || k === "ArrowUp") andarJanela(k === "ArrowDown" ? 0.1 : -0.1);
+    else if (k === "PageDown" || k === "PageUp") andarJanela(k === "PageDown" ? 0.9 : -0.9);
+    else if (k === "+" || k === "=") zoomJanela(0.8);
+    else if (k === "-") zoomJanela(1.25);
+    else if (k === "Escape") ativar(false);
+    else return;
+    ev.preventDefault();
+    ev.stopPropagation();
+  };
+  for (const cv of box.querySelectorAll("canvas:not(#pf-nav)")) {
     cv.onwheel = (ev) => {
-      ev.preventDefault();
-      const yRel = ev.offsetY / ALTURA_TRILHAS;
       if (ev.ctrlKey || ev.metaKey) {
-        const fator = ev.deltaY > 0 ? 1.25 : 0.8;
-        const centro = profDe(ev.offsetY);
-        definirJanela(centro - (centro - pf.topo) * fator, centro + (pf.base - centro) * fator);
-      } else {
-        const d = faixa * 0.15 * Math.sign(ev.deltaY);
-        definirJanela(pf.topo + d, pf.base + d, yRel);
+        ev.preventDefault();
+        zoomJanela(ev.deltaY > 0 ? 1.25 : 0.8, profDe(ev.offsetY));
+        return;
       }
+      if (!pf.ativo && !ev.shiftKey) { dicaRodaPerfil(box); return; }       // deixa a página rolar
+      ev.preventDefault();
+      andarJanela(0.15 * Math.sign(ev.deltaY || ev.deltaX));
     };
-    cv.onmousedown = (ev) => { ev.preventDefault(); arraste = { y0: yNa(ev) }; };
+    cv.onmousedown = (ev) => { ev.preventDefault(); ativar(true); arraste = { y0: yNa(ev) }; };
     cv.onmouseup = (ev) => {
       const y = yNa(ev);
       esconderFaixa();
@@ -635,12 +703,91 @@ function definirJanela(topo, base) {
   topo = Math.max(lo, Math.min(topo, hi - faixa));
   pf.topo = topo;
   pf.base = topo + faixa;
-  atualizarGrafico(false);
+  const b = pf.buf;
+  const dentro = b && b.chave === chaveSelecao() && pf.topo >= b.topo - 1e-6 && pf.base <= b.base + 1e-6 &&
+                 faixa >= b.faixa * 0.6 && faixa <= b.faixa * 1.5;
+  if (dentro) {
+    // redesenha já com o que tem; perto da borda da faixa buscada, busca a próxima sem pressa
+    cancelAnimationFrame(pf.quadro);
+    pf.quadro = requestAnimationFrame(() => { desenharTrilhas(); mostrarJanelaNosCampos(); });
+    const folga = b.faixa * 0.25;
+    if ((pf.topo - b.topo < folga && b.topo > lo) || (b.base - pf.base < folga && b.base < hi)) atualizarGrafico(false);
+  } else {
+    atualizarGrafico(false);
+  }
+}
+
+function andarJanela(fracao) {
+  const f = pf.base - pf.topo;
+  definirJanela(pf.topo + f * fracao, pf.base + f * fracao);
+}
+
+function zoomJanela(fator, centro = (pf.topo + pf.base) / 2) {
+  definirJanela(centro - (centro - pf.topo) * fator, centro + (pf.base - centro) * fator);
+}
+
+function desenharNavegador() {
+  const cv = $("pf-nav");
+  if (!cv || !pf.limites) return;
+  const dpr = window.devicePixelRatio || 1, w = cv.parentElement.clientWidth, h = ALTURA_TRILHAS;
+  cv.width = w * dpr; cv.height = h * dpr; cv.style.width = w + "px"; cv.style.height = h + "px";
+  const g = cv.getContext("2d");
+  g.scale(dpr, dpr);
+  const [lo, hi] = pf.limites, yN = (p) => ((p - lo) / Math.max(hi - lo, 1e-6)) * h;
+  g.fillStyle = "#f6f5f1"; g.fillRect(0, 0, w, h);
+  const c = pf.mini && pf.mini.curva;
+  if (c) {
+    const vs = c.valores.filter((v) => v !== null && Number.isFinite(v)).sort((a, b) => a - b);
+    if (vs.length) {
+      const a = vs[Math.floor(vs.length * 0.02)], b = vs[Math.floor(vs.length * 0.98)] || a + 1;
+      g.strokeStyle = "#8a9399"; g.lineWidth = 1; g.beginPath();
+      let aberto = false;
+      for (let i = 0; i < c.prof.length; i++) {
+        const v = c.valores[i];
+        if (v === null) { aberto = false; continue; }
+        const x = 3 + Math.max(0, Math.min(1, (v - a) / ((b - a) || 1))) * (w - 6), y = yN(c.prof[i]);
+        if (aberto) g.lineTo(x, y); else { g.moveTo(x, y); aberto = true; }
+      }
+      g.stroke();
+    }
+  }
+  const y0 = yN(pf.topo), y1 = yN(pf.base);
+  g.fillStyle = "rgba(14, 90, 98, 0.18)"; g.fillRect(0, y0, w, Math.max(3, y1 - y0));
+  g.strokeStyle = "#0e5a62"; g.lineWidth = 1.5; g.strokeRect(0.75, y0 + 0.75, w - 1.5, Math.max(3, y1 - y0) - 1.5);
+  g.fillStyle = "#5f6b73"; g.font = "9px Consolas, monospace";
+  g.fillText(numero(lo, 0), 2, 10); g.fillText(numero(hi, 0), 2, h - 3);
+  const irPara = (ev) => {
+    const prof = lo + (Math.max(0, Math.min(h, ev.clientY - cv.getBoundingClientRect().top)) / h) * (hi - lo);
+    const f = pf.base - pf.topo;
+    definirJanela(prof - f / 2, prof + f / 2);
+  };
+  cv.onmousedown = (ev) => {
+    ev.preventDefault();
+    irPara(ev);
+    const mover = (e) => irPara(e);
+    const soltar = () => { window.removeEventListener("mousemove", mover); window.removeEventListener("mouseup", soltar); };
+    window.addEventListener("mousemove", mover);
+    window.addEventListener("mouseup", soltar);
+  };
+  cv.onwheel = (ev) => { ev.preventDefault(); andarJanela(0.15 * Math.sign(ev.deltaY || ev.deltaX)); };
 }
 
 function lerNumero(id) {
   const v = $(id).value.trim().replace(/\./g, "").replace(",", ".");
   return v === "" ? null : Number(v);
+}
+
+// Aviso discreto (uma vez por ida ao perfil) de como rolar a profundidade.
+function dicaRodaPerfil(box) {
+  if (pf.dicaMostrada && Date.now() - pf.dicaMostrada < 8000) return;
+  pf.dicaMostrada = Date.now();
+  let d = $("pf-dica-roda");
+  if (!d) { d = el("div", "pf-dica-roda"); d.id = "pf-dica-roda"; }
+  d.textContent = "Para andar no perfil com a roda: clique nele (ou segure Shift). Ctrl + roda: zoom.";
+  if (d.parentElement !== box) box.appendChild(d);
+  d.hidden = false;
+  clearTimeout(pf.esperaDica);
+  pf.esperaDica = setTimeout(() => { d.hidden = true; }, 2500);
 }
 
 // ------------------------------------------------------ fatos e exportação
@@ -691,8 +838,16 @@ function ligarPerfis() {
     if (a !== null && b !== null && b > a) definirJanela(a, b);
   };
   $("pf-tudo").onclick = () => definirJanela(pf.limites[0], pf.limites[1]);
-  $("pf-mais").onclick = () => { const c = (pf.topo + pf.base) / 2, f = (pf.base - pf.topo) / 4; definirJanela(c - f, c + f); };
-  $("pf-menos").onclick = () => { const c = (pf.topo + pf.base) / 2, f = pf.base - pf.topo; definirJanela(c - f, c + f); };
+  $("pf-mais").onclick = () => zoomJanela(0.5);
+  $("pf-menos").onclick = () => zoomJanela(2);
+  $("pf-sobe").onclick = () => andarJanela(-0.9);
+  $("pf-desce").onclick = () => andarJanela(0.9);
+  $("pf-escala").onchange = () => {
+    const n = Number($("pf-escala").value);
+    if (!n) return;
+    const f = ALTURA_TRILHAS / (PX_POR_MM * 1000 / n), c = (pf.topo + pf.base) / 2;      // metros na tela
+    definirJanela(c - f / 2, c + f / 2);
+  };
   $("pf-form-int").onsubmit = salvarIntervalo;
   $("pf-las").onclick = () => exportarCurvas("las", $("pf-las"));
   $("pf-csv").onclick = () => exportarCurvas("csv", $("pf-csv"));

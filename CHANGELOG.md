@@ -6,6 +6,22 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 
 ## [Não lançado]
 
+## [0.64.0] — 2026-11-13
+Navegar melhor no perfil, nas caixas do Modelo 3D e no mapa 2D.
+### Alterado
+- **Perfis: a roda do mouse não "prende" mais a página.** Rolar a página por cima do perfil rola a página; para andar
+  no perfil com a roda, clique nele (a borda fica destacada) ou segure Shift. Ctrl + roda dá zoom no ponto do mouse.
+  Com o perfil ativo: ↑ ↓, PgUp PgDn, + − e Esc.
+- **Perfis: navegador do poço inteiro** à esquerda do eixo, com a janela visível marcada; clique ou arraste para ir a
+  outra profundidade. Botões ▲ ▼ (uma tela) e **escala** (1:100 a 1:5000) ao lado de + e −.
+- **Perfis mais leves**: a janela busca uma faixa 3× maior que a vista e anda dentro dela sem voltar ao motor (antes,
+  cada giro da roda pedia os dados de novo). A altura das trilhas acompanha o tamanho da janela (antes, 560 px fixos).
+- **Modelo 3D: caixas que abrem acompanham a rolagem.** Abrir uma etapa (ou qualquer caixa numa coluna que rola) leva
+  a coluna até ela, acima do pé fixo (Montar). O conteúdo também não aparece mais por baixo desse pé.
+- **Mapa 2D do bloco**: zoom (Ctrl + roda, + −, duplo clique) e arraste; **Ajustar** volta ao mapa inteiro; embaixo do
+  mouse, leste, norte, o valor do mapa e o poço mais perto; ◀ ▶ (ou [ ]) passam de um mapa a outro; opções menos usadas
+  recolhidas em "Mais opções do desenho"; o mapa ocupa a altura da janela.
+
 ## [0.63.0] — 2026-11-13
 Fontes e prioridade num lugar só, contagens com o critério ao lado e dicionário de ferramentas da Halliburton.
 ### Adicionado

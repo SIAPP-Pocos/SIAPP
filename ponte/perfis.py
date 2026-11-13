@@ -118,12 +118,14 @@ class PerfisAPI:
         return self._curvas(rel, poco, self._cl().reclassificar(inv))
 
     @resposta_segura
-    def grafico_perfil(self, rel: str, selecao: list, topo=None, base=None):
+    def grafico_perfil(self, rel: str, selecao: list, topo=None, base=None, max_pontos=None):
         _, arq = self._arquivo_perfil(rel)
         rel = mp.rel_padrao(rel)
+        # 0.64: a janela pede uma faixa maior que a vista (para andar sem voltar ao motor) com mais pontos
+        pontos = 2500 if max_pontos in (None, "") else max(200, min(int(max_pontos), 10000))
         dados = mpf.dados_grafico(self._cache(arq.get("poco_id", "")), os.path.basename(rel),
                                   selecao, None if topo is None else float(topo),
-                                  None if base is None else float(base))
+                                  None if base is None else float(base), max_pontos=pontos)
         return {"curvas": dados}
 
     @resposta_segura
