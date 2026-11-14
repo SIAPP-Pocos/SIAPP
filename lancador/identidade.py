@@ -127,7 +127,10 @@ def _ler(loja, campo: str) -> str | None:
 
 # ------------------------------------------------------------------------------------------------------ a janela
 def comando_de_reabertura(pasta_app: str) -> str:
-    """Linha de comando que reabre o SIAPP pelo lançador silencioso (a mesma do atalho)."""
+    """Linha de comando que reabre o SIAPP pelo lançador silencioso (a mesma do atalho); instalado, o SIAPP.exe."""
+    if getattr(sys, "frozen", False):
+        return f'"{sys.executable}"'
+
     # o comando é sempre do Windows: ntpath usa a barra invertida também quando os testes rodam no Linux
     wscript = ntpath.join(os.environ.get("WINDIR") or os.environ.get("SystemRoot") or r"C:\Windows", "System32", "wscript.exe")
     return f'"{wscript}" //nologo "{ntpath.join(pasta_app, NOME_LANCADOR)}"'

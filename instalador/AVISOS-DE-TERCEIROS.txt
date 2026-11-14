@@ -1,0 +1,44 @@
+SIAPP — Sistema Integrado de Aquisição e Processamento de Perfis
+Copyright (C) 2026 Ruan da Silva Nobre
+Licença: GNU Affero General Public License, versão 3 (AGPL-3.0) — texto completo no arquivo LICENSE.
+Código-fonte: https://github.com/SIAPP-Pocos/SIAPP
+
+O instalador do SIAPP inclui os componentes abaixo, de terceiros, cada um com a sua licença. Eles são usados sem
+modificação. As versões exatas de cada instalador estão na pasta _internal (arquivos *.dist-info de cada pacote, com o
+texto da licença).
+
+Componente                  Licença                                   Onde obter o código
+--------------------------  ----------------------------------------  --------------------------------------------------
+Python 3.12                 PSF License                               https://www.python.org
+PyMuPDF (MuPDF)             GNU AGPL-3.0 (ou licença comercial)       https://github.com/pymupdf/PyMuPDF
+  inclui o Tesseract OCR    Apache-2.0                                https://github.com/tesseract-ocr/tesseract
+dlisio                      GNU LGPL-3.0                              https://github.com/equinor/dlisio
+lasio                       MIT                                       https://github.com/kinverarity1/lasio
+NumPy                       BSD-3-Clause (e componentes 0BSD, MIT,    https://numpy.org
+                            Zlib, CC0-1.0)
+openpyxl / et_xmlfile       MIT                                       https://foss.heptapod.net/openpyxl/openpyxl
+xlrd                        BSD                                       https://github.com/python-excel/xlrd
+requests                    Apache-2.0                                https://github.com/psf/requests
+urllib3                     MIT                                       https://github.com/urllib3/urllib3
+idna                        BSD-3-Clause                              https://github.com/kjd/idna
+charset-normalizer          MIT                                       https://github.com/jawah/charset_normalizer
+certifi                     MPL-2.0                                   https://github.com/certifi/python-certifi
+pywebview                   BSD-3-Clause                              https://github.com/r0x0r/pywebview
+bottle                      MIT                                       https://github.com/bottlepy/bottle
+proxy_tools                 MIT                                       https://github.com/jtushman/proxy_tools
+pythonnet / clr_loader      MIT                                       https://github.com/pythonnet/pythonnet
+cffi / pycparser            MIT / BSD-3-Clause                        https://github.com/python-cffi/cffi
+typing_extensions           PSF License                               https://github.com/python/typing_extensions
+Leaflet 1.9.4               BSD-2-Clause                              https://leafletjs.com   (ui/vendor/leaflet/LICENSE)
+three.js                    MIT                                       https://threejs.org     (ui/vendor/three/LICENSE)
+
+Sobre a GNU LGPL-3.0 (dlisio): a biblioteca vai como arquivos separados na pasta _internal; quem quiser pode trocá-la
+por outra versão compatível. O código dela está no endereço acima.
+
+Não vêm no instalador, mas o SIAPP usa pela internet, com as regras de quem os oferece:
+- Microsoft Edge WebView2 (já vem no Windows 10 e 11): mostra a janela do SIAPP.
+- Mapas de ruas: © colaboradores do OpenStreetMap (ODbL) — https://www.openstreetmap.org/copyright
+- Imagens de satélite: Esri, Maxar, Earthstar Geographics (World Imagery) — https://www.esri.com/en-us/legal/terms
+- Modelos de idioma do OCR (tessdata, Apache-2.0), baixados na primeira vez — https://github.com/tesseract-ocr/tessdata_fast
+- Dados de poços: ANP (portal REATE e cadastro de poços). Os arquivos originais não vêm com o SIAPP; cada usuário os baixa
+  do portal, nas condições de uso da ANP.

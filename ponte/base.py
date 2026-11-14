@@ -15,6 +15,7 @@ import collections
 import functools
 import json
 import os
+import sys
 import time
 from datetime import datetime
 
@@ -24,17 +25,34 @@ from motor.registro import filho
 
 log = filho("ponte")
 
-PASTA_APP = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# 0.67: "instalado" = o SIAPP.exe do instalador (PyInstaller). Aí o programa fica numa pasta própria e os dados vão
+# para Documentos\SIAPP (ou a pasta de SIAPP_DADOS), que sobrevivem a desinstalar e reinstalar.
+INSTALADO = bool(getattr(sys, "frozen", False))
+PASTA_APP = getattr(sys, "_MEIPASS", None) if INSTALADO else os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-# Por enquanto o projeto mora SEMPRE nesta pasta, ao lado do aplicativo.
-# Assim, ao compactar a pasta do SIAPP para outra pessoa, os dados vão junto e
-# ficam no mesmo lugar em todos os computadores. Para liberar outras pastas no
-# futuro, basta remover a checagem em API.escolher_pasta.
+
+def _pasta_documentos() -> str:
+    """Documentos do usuário (a de verdade, mesmo quando o OneDrive a mudou de lugar)."""
+    if sys.platform == "win32":
+        try:
+            import ctypes
+            buf = ctypes.create_unicode_buffer(260)
+            if ctypes.windll.shell32.SHGetFolderPathW(None, 5, None, 0, buf) == 0 and buf.value:   # CSIDL_PERSONAL
+                return buf.value
+        except Exception:  # noqa: BLE001
+            pass
+    return os.path.join(os.path.expanduser("~"), "Documents")
+
+
+PASTA_DADOS = os.environ.get("SIAPP_DADOS") or (os.path.join(_pasta_documentos(), "SIAPP") if INSTALADO else PASTA_APP)
+
+# O projeto principal mora SEMPRE nesta pasta: ao lado do aplicativo (pasta clonada do GitHub) ou em
+# Documentos\SIAPP (instalado). Outros projetos ficam em <PASTA_DADOS>\projetos.
 NOME_PASTA_PROJETO = "ambiente_teste"
-PASTA_PROJETO = os.path.join(PASTA_APP, NOME_PASTA_PROJETO)
-# Modelo de idioma do OCR: baixado uma vez e guardado junto do aplicativo.
-PASTA_TESSDATA = os.path.join(PASTA_APP, "recursos", "tessdata")
+PASTA_PROJETO = os.path.join(PASTA_DADOS, NOME_PASTA_PROJETO)
 PASTA_RECURSOS = os.path.join(PASTA_APP, "recursos")
+# Modelo de idioma do OCR: baixado uma vez (instalado: junto dos dados, para não se perder ao reinstalar).
+PASTA_TESSDATA = os.path.join(PASTA_DADOS if INSTALADO else PASTA_APP, "recursos", "tessdata")
 # Dicionário de domínio que vem com o SIAPP (editável; ver motor/vocabulario.py).
 CAMINHO_VOCAB_BASE = os.path.join(PASTA_RECURSOS, "vocabulario_base.json")
 

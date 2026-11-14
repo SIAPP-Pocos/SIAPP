@@ -85,12 +85,14 @@ class ProjetosAPI:
     def _reiniciar(self):
         """Fecha esta instância e abre outra (pelo lançador, quando existe: mesma janelinha de carregamento)."""
         vbs = os.path.join(base.PASTA_APP, "SIAPP.vbs")
-        if sys.platform == "win32" and os.path.isfile(vbs):
+        if base.INSTALADO:                                   # 0.67: o SIAPP.exe do instalador
+            cmd = [sys.executable]
+        elif sys.platform == "win32" and os.path.isfile(vbs):
             cmd = [os.path.join(os.environ.get("WINDIR", r"C:\Windows"), "System32", "wscript.exe"), "//nologo", vbs]
         else:
             cmd = [sys.executable, os.path.join(base.PASTA_APP, "siapp.py")]
         extra = {"creationflags": 0x08000000} if sys.platform == "win32" else {}   # CREATE_NO_WINDOW
-        subprocess.Popen(cmd, cwd=base.PASTA_APP, close_fds=True, **extra)
+        subprocess.Popen(cmd, cwd=os.path.dirname(cmd[-1]) if base.INSTALADO else base.PASTA_APP, close_fds=True, **extra)
 
         def fechar():
             try:

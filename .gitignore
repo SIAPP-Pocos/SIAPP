@@ -32,3 +32,8 @@ desktop.ini
 # Pastas locais de publicação (pacotes git para enviar ao GitHub)
 _publicar/
 _backup_git/
+
+# Instalador (0.67): gerados pelo GitHub ao montar
+instalador/versao.txt
+build/
+dist/

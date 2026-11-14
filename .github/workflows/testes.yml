@@ -17,6 +17,7 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
-      # pywebview precisa de interface gráfica; os testes usam um substituto
-      - run: pip install requests pymupdf numpy -r requirements-dev.txt
-      - run: pytest -q
+      # pywebview precisa de interface gráfica; os testes usam um substituto. O resto do requirements.txt entra
+      # (0.67: lasio, openpyxl, dlisio e xlrd faltavam, e os testes de perfis e planilhas nem eram coletados)
+      - run: pip install requests pymupdf numpy dlisio lasio xlrd openpyxl -r requirements-dev.txt
+      - run: pytest -q -m "not interface"

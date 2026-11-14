@@ -1,0 +1,60 @@
+name: instalador
+
+# 0.67: monta o instalador do Windows (SIAPP-<versão>-instalador.exe) numa máquina Windows do GitHub.
+# Roda à mão (Actions › instalador › Run workflow) ou ao criar uma etiqueta vX.Y.Z. O .exe fica em "Artifacts" da
+# execução (30 dias).
+on:
+  workflow_dispatch:
+  push:
+    tags: ["v*"]
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Bibliotecas
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pyinstaller
+      - name: Versão
+        id: versao
+        shell: python
+        run: |
+          import os, re
+          v = re.search(r'__version__ = "([^"]+)"', open("motor/__init__.py", encoding="utf-8").read()).group(1)
+          with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+              f.write(f"versao={v}\n")
+          n = [int(x) for x in v.split(".")] + [0]
+          texto = open("instalador/versao.modelo.txt", encoding="utf-8").read()
+          texto = texto.replace("{V4}", ", ".join(str(x) for x in n[:4])).replace("{V}", v)
+          open("instalador/versao.txt", "w", encoding="utf-8").write(texto)
+      - name: PyInstaller (dist/SIAPP)
+        run: pyinstaller instalador/siapp.spec --noconfirm --distpath dist --workpath build
+      - name: Conferir o pacote (SIAPP.exe --verificar)
+        shell: pwsh
+        run: |
+          $env:SIAPP_DADOS = "$env:RUNNER_TEMP\siapp-dados"
+          $p = Start-Process -FilePath "dist\SIAPP\SIAPP.exe" -ArgumentList "--verificar" -Wait -PassThru
+          Copy-Item "$env:SIAPP_DADOS\verificar.json" verificar.json -ErrorAction SilentlyContinue
+          Get-Content verificar.json -ErrorAction SilentlyContinue
+          if ($p.ExitCode -ne 0) { throw "SIAPP.exe --verificar falhou ($($p.ExitCode))" }
+      - name: Inno Setup
+        shell: pwsh
+        run: |
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) { choco install innosetup -y --no-progress; }
+          & $iscc "/DVersao=${{ steps.versao.outputs.versao }}" instalador\siapp.iss
+          Get-ChildItem dist\*.exe | ForEach-Object { "{0}  {1:N1} MB" -f $_.Name, ($_.Length / 1MB) }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SIAPP-${{ steps.versao.outputs.versao }}-instalador
+          path: dist/SIAPP-*-instalador.exe
+          retention-days: 30
+      - uses: actions/upload-artifact@v4
+        with:
+          name: verificar-${{ steps.versao.outputs.versao }}
+          path: verificar.json

@@ -28,7 +28,50 @@ from ponte.api import API
 __all__ = ["API", "main"]
 
 
+def verificar() -> int:
+    """`SIAPP.exe --verificar` (0.67): sem abrir janela, confere se o pacote tem tudo (módulos, interface, recursos) e
+    se a pasta de dados é gravável. Usado pelo GitHub ao montar o instalador. Imprime um JSON; 0 = tudo certo."""
+    import importlib
+    import json
+    import pkgutil
+    import tempfile
+    erros, mods = [], 0
+    for pacote in ("motor", "ponte", "lancador"):
+        pk = importlib.import_module(pacote)
+        for m in pkgutil.iter_modules(pk.__path__):
+            try:
+                importlib.import_module(f"{pacote}.{m.name}")
+                mods += 1
+            except Exception as e:  # noqa: BLE001
+                erros.append(f"{pacote}.{m.name}: {type(e).__name__}: {e}")
+    for rel in ("ui/index.html", "ui/estilo.css", "recursos/ferramentas.json", "recursos/icone/siapp.ico", "CHANGELOG.md"):
+        if not os.path.isfile(os.path.join(base.PASTA_APP, rel)):
+            erros.append(f"falta {rel}")
+    for lib in ("dlisio", "lasio", "pymupdf", "numpy", "openpyxl", "xlrd", "requests"):
+        try:
+            importlib.import_module(lib)
+        except Exception as e:  # noqa: BLE001
+            erros.append(f"{lib}: {e}")
+    try:
+        os.makedirs(base.PASTA_DADOS, exist_ok=True)
+        tempfile.NamedTemporaryFile(dir=base.PASTA_DADOS).close()
+    except OSError as e:
+        erros.append(f"pasta de dados: {e}")
+    texto = json.dumps({"versao": mp.VERSAO_SIAPP, "instalado": base.INSTALADO, "app": base.PASTA_APP,
+                        "dados": base.PASTA_DADOS, "modulos": mods, "erros": erros}, ensure_ascii=False, indent=1)
+    try:                                       # o SIAPP.exe não tem console: o resultado também vai para um arquivo
+        with open(os.path.join(base.PASTA_DADOS, "verificar.json"), "w", encoding="utf-8") as f:
+            f.write(texto)
+    except OSError:
+        pass
+    if sys.stdout is not None:
+        print(texto)
+    return 1 if erros else 0
+
+
 def main():
+    if "--verificar" in sys.argv:
+        sys.exit(verificar())
     os.makedirs(base.PASTA_PROJETO, exist_ok=True)
     icone.preparar_processo()        # identidade própria na barra de tarefas (Windows)
     icone.criar_atalho()             # SIAPP.lnk com o ícone, uma vez (em segundo plano)
@@ -52,4 +95,8 @@ def main():
 
 
 if __name__ == "__main__":
+    # 0.67: no SIAPP.exe, o processo do OCR (multiprocessing "spawn") reabre o próprio executável; sem isto ele
+    # abriria outra janela do SIAPP em vez de ler o documento
+    import multiprocessing
+    multiprocessing.freeze_support()
     main()
