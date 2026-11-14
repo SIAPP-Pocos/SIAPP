@@ -3,6 +3,10 @@
   "ativo": true,
   "titulo": "Apoie o SIAPP",
   "texto": "",
-  "pix": {"chave": "", "nome": "", "cidade": ""},
+  "pix": {
+    "chave": "+5582987697197",
+    "nome": "Ruan da Silva Nobre",
+    "cidade": "Maceió"
+  },
   "links": []
 }

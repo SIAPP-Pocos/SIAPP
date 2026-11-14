@@ -24,9 +24,17 @@ def test_br_code_tira_acentos_e_corta_nome_e_cidade():
     assert s[-8:-4] == "6304" and s[-4:] == mdo._crc16(s[:-4])
 
 
-def test_repositorio_vem_desligado():
-    r = mdo.ler()                                       # recursos/doacao.json do repositório: sem chave nem link
-    assert r["ativo"] is False and r["pix"] is None and r["links"] == []
+def test_repositorio_com_a_chave_do_autor():
+    r = mdo.ler()                                       # recursos/doacao.json do repositório (0.67.1: chave do autor)
+    assert r["ativo"] and r["pix"]["tipo"] == "celular" and r["pix"]["chave"].startswith("+55")
+    s = r["pix"]["copia_e_cola"]
+    assert s.startswith("000201") and "br.gov.bcb.pix" in s and s[-4:] == mdo._crc16(s[:-4])
+
+
+def test_tipo_da_chave():
+    assert [mdo.tipo_da_chave(c) for c in ("+5582999999999", "a@b.com", "12345678909", "12345678000199",
+                                           "123e4567-e12b-12d1-a456-426655440000")] == \
+        ["celular", "e-mail", "CPF", "CNPJ", "aleatória"]
 
 
 def test_ligado_com_pix_e_link(tmp_path):
@@ -46,4 +54,4 @@ def test_pix_incompleto_ou_desligado_nao_mostra(tmp_path):
 
 
 def test_api_doacao(api):
-    assert api.doacao()["ok"] and api.doacao()["ativo"] is False
+    assert api.doacao()["ok"] and api.doacao()["ativo"] is True

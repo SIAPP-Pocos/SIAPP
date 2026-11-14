@@ -150,7 +150,7 @@ function abrirDoacao() {
   c.appendChild(el("p", "", d.texto));
   if (d.pix) {
     c.appendChild(el("h3", "", "Pix"));
-    c.appendChild(linhaCopiavel("Chave", d.pix.chave, "doacao-pix-chave"));
+    c.appendChild(linhaCopiavel(`Chave (${d.pix.tipo})`, d.pix.chave, "doacao-pix-chave"));
     c.appendChild(linhaCopiavel("Pix copia e cola", d.pix.copia_e_cola, "doacao-pix-codigo"));
     c.appendChild(el("p", "ajuda", `No app do banco: Pix › Pix copia e cola. Recebedor: ${d.pix.nome} (${d.pix.cidade}). ` +
       "Você escolhe o valor."));

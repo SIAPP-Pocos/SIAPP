@@ -6,6 +6,12 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 
 ## [Não lançado]
 
+## [0.67.1] — 2026-11-14
+"Apoie o projeto" ligado.
+### Alterado
+- Ajuda › **Apoie o projeto** agora aparece: chave Pix do autor (celular), com o "Pix copia e cola" pronto e o tipo da
+  chave na tela.
+
 ## [0.67.0] — 2026-11-14
 Instalador do Windows e tela "Apoie o projeto".
 ### Adicionado

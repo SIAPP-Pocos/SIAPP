@@ -62,6 +62,20 @@ def pix_copia_e_cola(chave: str, nome: str, cidade: str, valor: float | None = N
     return texto + _crc16(texto)
 
 
+def tipo_da_chave(chave: str) -> str:
+    """Rótulo do tipo de chave Pix, só para a tela: celular (+55…), e-mail, CPF, CNPJ ou aleatória."""
+    c = (chave or "").strip()
+    if re.fullmatch(r"\+55\d{10,11}", c):
+        return "celular"
+    if "@" in c:
+        return "e-mail"
+    if re.fullmatch(r"\d{11}", c):
+        return "CPF"
+    if re.fullmatch(r"\d{14}", c):
+        return "CNPJ"
+    return "aleatória"
+
+
 def _link_valido(url: str) -> bool:
     return bool(re.match(r"^https://[^\s/]+\.[^\s]+$", url or ""))
 
@@ -84,6 +98,7 @@ def ler(caminho: str = CAMINHO_PADRAO) -> dict:
             pix = {"chave": str(p["chave"]).strip(), "nome": str(p.get("nome") or "").strip(),
                    "cidade": str(p.get("cidade") or "").strip()}
             pix["copia_e_cola"] = pix_copia_e_cola(pix["chave"], pix["nome"], pix["cidade"])
+            pix["tipo"] = tipo_da_chave(pix["chave"])
         except ValueError as e:
             avisos.append(f"Pix: {e}")
             pix = None

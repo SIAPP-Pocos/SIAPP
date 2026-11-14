@@ -132,6 +132,14 @@ Precisa de internet. Comece por uma categoria pequena para ver o tempo.
 - [ ] Sem intervalo marcado, **Calcular** explica que precisa de um intervalo-alvo.
 - [ ] Repetir no `5PX__0011__RN_5PX__0011__RN.tif` (DLIS de 2020).
 
+## 0.67.1 — "Apoie o projeto" ligado
+
+- [ ] Ajuda › **Apoie o projeto** aparece (e o botão de mesmo nome em Ajuda › Sobre).
+- [ ] A tela mostra "Chave (celular)" com +5582987697197 e o "Pix copia e cola". Copiar põe o texto na área de
+      transferência.
+- [ ] No app do banco: Pix › Pix copia e cola › cole o código. Confira que aparece **Ruan da Silva Nobre** e que o valor
+      fica em aberto. Não precisa pagar: cancele depois de conferir.
+
 ## 0.67 — instalador do Windows e "Apoie o projeto"
 
 - [ ] GitHub › SIAPP › Actions › **instalador**: a última execução está verde; em *Artifacts*, baixe
@@ -147,10 +155,7 @@ Precisa de internet. Comece por uma categoria pequena para ver o tempo.
 - [ ] Menu Iniciar › SIAPP abre o programa; Menu Iniciar › "Pasta de dados do SIAPP" abre Documentos\SIAPP.
 - [ ] Fixe o SIAPP na barra de tarefas, feche e abra pelo botão fixado: um botão só.
 - [ ] Configurações do Windows › Aplicativos › SIAPP › Desinstalar: o programa sai, **Documentos\SIAPP fica**.
-- [ ] Ajuda: **não** aparece "Apoie o projeto" (o arquivo de doação ainda está vazio). Quando quiser ligar, preencha
-      `recursos/doacao.json` (chave Pix, nome e cidade, ou um link https) e abra de novo: o item aparece, com o
-      "Pix copia e cola" e o botão Copiar; leia o código no app do banco (Pix › Pix copia e cola) sem pagar, só para
-      conferir o nome do recebedor.
+- [ ] Ajuda › "Apoie o projeto": na 0.67 ainda não aparecia (arquivo de doação vazio); a 0.67.1 liga (seção acima).
 
 ## 0.66 — ferramentas da Baker e da Weatherford
 

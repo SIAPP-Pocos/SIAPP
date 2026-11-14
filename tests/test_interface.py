@@ -2718,13 +2718,15 @@ def test_ver_arquivos_da_ficha_conecta_e_abre_o_poco(janela, monkeypatch):
 def test_apoie_o_projeto_so_quando_configurado(janela, tmp_path, monkeypatch):
     from ponte import base
     p = janela.page
-    assert p.is_hidden("#menu-doacao")                               # repositório: sem chave nem link
     rec = tmp_path / "recursos"
     rec.mkdir()
+    (rec / "doacao.json").write_text("{}", encoding="utf-8")
+    monkeypatch.setattr(base, "PASTA_RECURSOS", str(rec))
+    p.evaluate("prepararDoacao().then(() => 0)")
+    janela.esperar("document.getElementById('menu-doacao').hidden")      # sem chave nem link: escondida
     (rec / "doacao.json").write_text(json.dumps({"pix": {"chave": "a@b.com", "nome": "Fulano", "cidade": "Maceio"},
                                                  "links": [{"rotulo": "Apoia", "url": "https://exemplo.org/siapp"}]}),
                                      encoding="utf-8")
-    monkeypatch.setattr(base, "PASTA_RECURSOS", str(rec))
     p.evaluate("prepararDoacao().then(() => 0)")
     janela.esperar("!document.getElementById('menu-doacao').hidden")
     p.click("#btn-ajuda")
