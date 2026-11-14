@@ -37,6 +37,10 @@ Name: "pt"; MessagesFile: "compiler:Languages\BrazilianPortuguese.isl"
 [Tasks]
 Name: "atalho"; Description: "Criar um atalho na Área de Trabalho"; GroupDescription: "Atalhos:"
 
+[InstallDelete]
+; numa atualização, apaga as bibliotecas da versão anterior antes de copiar as novas (nada de arquivo velho misturado)
+Type: filesandordirs; Name: "{app}\_internal"
+
 [Files]
 Source: "..\dist\SIAPP\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 

@@ -59,6 +59,25 @@ jobs:
           if (-not (Test-Path $iscc)) { choco install innosetup -y --no-progress; }
           & $iscc "/DVersao=${{ steps.versao.outputs.versao }}" instalador\siapp.iss
           Get-ChildItem dist\*.exe | ForEach-Object { "{0}  {1:N1} MB" -f $_.Name, ($_.Length / 1MB) }
+      - name: Testar o instalador (instala, abre e desinstala, sem perguntas)
+        shell: pwsh
+        timeout-minutes: 8
+        run: |
+          $setup = Get-ChildItem dist\SIAPP-*-instalador.exe | Select-Object -First 1
+          $p = Start-Process -FilePath $setup.FullName -ArgumentList "/VERYSILENT","/SUPPRESSMSGBOXES","/NORESTART","/CURRENTUSER" -Wait -PassThru
+          if ($p.ExitCode -ne 0) { throw "o instalador saiu com $($p.ExitCode)" }
+          $exe = "$env:LOCALAPPDATA\Programs\SIAPP\SIAPP.exe"
+          if (-not (Test-Path $exe)) { throw "não achei $exe" }
+          $atalho = Get-ChildItem "$env:APPDATA\Microsoft\Windows\Start Menu\Programs" -Recurse -Filter "SIAPP.lnk" | Select-Object -First 1
+          if (-not $atalho) { throw "o atalho do menu Iniciar não foi criado" }
+          $env:SIAPP_DADOS = "$env:RUNNER_TEMP\siapp-instalado"
+          $p = Start-Process -FilePath $exe -ArgumentList "--verificar-janela" -Wait -PassThru
+          Get-Content "$env:SIAPP_DADOS\verificar-janela.json" -ErrorAction SilentlyContinue
+          if ($p.ExitCode -ne 0) { throw "o SIAPP instalado não abriu a janela ($($p.ExitCode))" }
+          $p = Start-Process -FilePath "$env:LOCALAPPDATA\Programs\SIAPP\unins000.exe" -ArgumentList "/VERYSILENT","/SUPPRESSMSGBOXES","/NORESTART" -Wait -PassThru
+          Start-Sleep -Seconds 3
+          if (Test-Path $exe) { throw "a desinstalação deixou o SIAPP.exe" }
+          "instalou, abriu e desinstalou: ok"
       - uses: actions/upload-artifact@v4
         with:
           name: SIAPP-${{ steps.versao.outputs.versao }}-instalador
