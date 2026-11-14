@@ -87,6 +87,7 @@ const AJUDA = {
   atalhos: () => abrirAtalhos(),
   novidades: () => abrirNovidades(),
   diag: () => abrirConfig("diag"),
+  doacao: () => abrirDoacao(),
   sobre: () => {
     const c = el("div", "dlg-sobre");
     c.append(el("p", "dlg-sobre-nome", `SIAPP ${$("versao").textContent}`),
@@ -94,9 +95,83 @@ const AJUDA = {
              el("p", "", "Transforma o acervo público de poços da ANP (portal REATE) em dados organizados: " +
                "catálogo, documentos, perfis, correlação e modelo 3D."),
              el("p", "ajuda", "Código aberto (AGPL-3.0) · Ruan da Silva Nobre · PIBIC UFAL"));
-    abrirDialogo("Sobre o SIAPP", c);
+    const botoes = [];
+    if (doacaoConfig) {
+      const b = el("button", "btn secundario", "Apoie o projeto");
+      b.type = "button";
+      b.onclick = abrirDoacao;
+      botoes.push(b);
+    }
+    abrirDialogo("Sobre o SIAPP", c, botoes);
   },
 };
+
+// ---------------------------------------------------------------- Apoie o projeto (0.67)
+// Só aparece se recursos/doacao.json tiver chave Pix (com nome e cidade) ou um link https. Nada é inventado aqui.
+let doacaoConfig = null;
+
+async function prepararDoacao() {
+  const r = await chamar(null, "doacao");
+  doacaoConfig = r.ok && r.ativo ? r : null;
+  $("menu-doacao").hidden = !doacaoConfig;
+}
+
+async function copiarParaDoacao(texto, botao) {
+  let ok = false;
+  try { await navigator.clipboard.writeText(texto); ok = true; } catch (e) { /* abaixo: seleciona para Ctrl+C */ }
+  if (ok) {
+    const antes = botao.textContent;
+    botao.textContent = "Copiado";
+    setTimeout(() => { botao.textContent = antes; }, 1500);
+  } else {
+    status("Não deu para copiar sozinho: o texto ficou selecionado, use Ctrl+C.", "erro");
+  }
+  return ok;
+}
+
+function linhaCopiavel(rotulo, valor, id) {
+  const caixa = el("div", "doacao-linha");
+  const campo = el("input");
+  campo.readOnly = true;
+  campo.value = valor;
+  campo.id = id;
+  campo.onfocus = () => campo.select();
+  const b = el("button", "btn secundario pequeno", "Copiar");
+  b.type = "button";
+  b.onclick = async () => { if (!(await copiarParaDoacao(valor, b))) { campo.focus(); campo.select(); } };
+  caixa.append(el("label", "doacao-rotulo", rotulo), campo, b);
+  return caixa;
+}
+
+function abrirDoacao() {
+  const d = doacaoConfig;
+  if (!d) return;
+  const c = el("div", "dlg-doacao");
+  c.appendChild(el("p", "", d.texto));
+  if (d.pix) {
+    c.appendChild(el("h3", "", "Pix"));
+    c.appendChild(linhaCopiavel("Chave", d.pix.chave, "doacao-pix-chave"));
+    c.appendChild(linhaCopiavel("Pix copia e cola", d.pix.copia_e_cola, "doacao-pix-codigo"));
+    c.appendChild(el("p", "ajuda", `No app do banco: Pix › Pix copia e cola. Recebedor: ${d.pix.nome} (${d.pix.cidade}). ` +
+      "Você escolhe o valor."));
+  }
+  if (d.links.length) {
+    c.appendChild(el("h3", "", d.pix ? "Outras formas" : "Como apoiar"));
+    const ul = el("ul", "doacao-links");
+    for (const l of d.links) {
+      const a = el("a", "", l.rotulo);
+      a.href = l.url;
+      a.target = "_blank";
+      a.rel = "noopener";
+      const li = el("li");
+      li.append(a, el("span", "ajuda", " " + l.url));
+      ul.appendChild(li);
+    }
+    c.appendChild(ul);
+  }
+  c.appendChild(el("p", "ajuda", "Doar é opcional: o SIAPP é gratuito e continua igual para todos."));
+  abrirDialogo(d.titulo, c);
+}
 
 // O que mudou nas últimas versões (do CHANGELOG), para quem acabou de receber uma versão nova.
 async function abrirNovidades() {

@@ -132,6 +132,26 @@ Precisa de internet. Comece por uma categoria pequena para ver o tempo.
 - [ ] Sem intervalo marcado, **Calcular** explica que precisa de um intervalo-alvo.
 - [ ] Repetir no `5PX__0011__RN_5PX__0011__RN.tif` (DLIS de 2020).
 
+## 0.67 — instalador do Windows e "Apoie o projeto"
+
+- [ ] GitHub › SIAPP › Actions › **instalador**: a última execução está verde; em *Artifacts*, baixe
+      `SIAPP-0.67.0-instalador` (vem em .zip) e extraia o `.exe`. (Se você já criou a etiqueta v0.67.0, ele está em
+      Releases.)
+- [ ] Dê dois cliques no instalador. Se o Windows avisar "editor desconhecido": **Mais informações › Executar assim
+      mesmo**. Não deve pedir administrador. Aceite a licença, marque o atalho na Área de Trabalho e conclua com
+      "Abrir o SIAPP agora".
+- [ ] A janela abre com o título **SIAPP 0.67.0** e o ícone do SIAPP na barra de tarefas (não o do Python). O texto do
+      Início diz que os projetos ficam em **Documentos\SIAPP**.
+- [ ] Abra o projeto, conecte a uma bacia, abra um PDF escaneado em Documentos e rode o OCR (o modelo de português é
+      baixado na primeira vez) e abra um DLIS em Perfis: tudo como no SIAPP pelo código.
+- [ ] Menu Iniciar › SIAPP abre o programa; Menu Iniciar › "Pasta de dados do SIAPP" abre Documentos\SIAPP.
+- [ ] Fixe o SIAPP na barra de tarefas, feche e abra pelo botão fixado: um botão só.
+- [ ] Configurações do Windows › Aplicativos › SIAPP › Desinstalar: o programa sai, **Documentos\SIAPP fica**.
+- [ ] Ajuda: **não** aparece "Apoie o projeto" (o arquivo de doação ainda está vazio). Quando quiser ligar, preencha
+      `recursos/doacao.json` (chave Pix, nome e cidade, ou um link https) e abra de novo: o item aparece, com o
+      "Pix copia e cola" e o botão Copiar; leia o código no app do banco (Pix › Pix copia e cola) sem pagar, só para
+      conferir o nome do recebedor.
+
 ## 0.66 — ferramentas da Baker e da Weatherford
 
 - [ ] Ficha do **7-PQO-1-RN** (aba Poços) › esquemas de ferramentas: leia os esquemas. O de "MAI-MFE-MSS-MDN-MPD-MCG"

@@ -6,19 +6,21 @@ authors:
   - family-names: "Nobre"
     given-names: "Ruan da Silva"
     affiliation: "Universidade Federal de Alagoas (UFAL)"
-version: "0.16.0"
-date-released: "2026-10-16"
+version: "0.67.0"
+date-released: "2026-11-14"
 license: AGPL-3.0-only
-repository-code: "https://github.com/SIAPP-Pocos/siapp"
+repository-code: "https://github.com/SIAPP-Pocos/SIAPP"
 keywords:
-  - perfis de poço
-  - DLIS
-  - REATE
+  - perfilagem de poços
   - ANP
-  - dados abertos
+  - REATE
+  - DLIS
+  - LAS
   - OCR
+  - avaliação de formação
   - petrofísica
+  - dados abertos
 abstract: >-
-  Ferramenta aberta para catalogar, baixar e organizar o acervo público de dados
-  de poços da ANP (portal REATE), com extração de texto de documentos (OCR),
-  busca tolerante a erros e correção colaborativa.
+  Ferramenta aberta que transforma o acervo público de poços da ANP (portal REATE) em dados organizados:
+  catálogo e download, leitura de documentos (OCR), perfis DLIS/LIS/LAS, avaliação de formação, seção
+  estratigráfica, modelo 3D, viabilidade e base comunitária.

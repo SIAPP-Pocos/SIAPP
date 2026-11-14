@@ -1,0 +1,66 @@
+# Instalador do Windows
+
+Desde a 0.67, o SIAPP também sai como um instalador comum do Windows: `SIAPP-<versão>-instalador.exe`. Quem só quer
+usar o programa não precisa de Python, git nem do lançador; quem desenvolve continua com o clone e o `SIAPP.vbs`
+(ver [`lancador.md`](lancador.md)).
+
+## O que o instalador faz
+
+| Item | Onde fica |
+|---|---|
+| Programa (`SIAPP.exe` e a pasta `_internal` com Python e bibliotecas) | `%LOCALAPPDATA%\Programs\SIAPP` |
+| Atalhos | Menu Iniciar › SIAPP (e na Área de Trabalho, se marcar) |
+| Projetos, preferências, registro (`siapp.log`), modelo do OCR | `Documentos\SIAPP` (ou a pasta da variável `SIAPP_DADOS`) |
+| Desinstalar | Configurações do Windows › Aplicativos › SIAPP |
+
+- Instala só para o usuário: não pede administrador.
+- Ao desinstalar, `Documentos\SIAPP` **fica** (os projetos são seus).
+- Numa atualização, a pasta `_internal` da versão anterior é apagada antes de copiar a nova, para não misturar
+  bibliotecas de versões diferentes.
+- A janela usa o Microsoft Edge WebView2, que já vem no Windows 10 e 11.
+- O modelo de português do OCR (~8 MB) é baixado no primeiro documento escaneado, para `Documentos\SIAPP\recursos\tessdata`.
+- O Windows pode avisar "editor desconhecido" (SmartScreen): o `.exe` ainda não tem assinatura digital. Clique em
+  **Mais informações › Executar assim mesmo**.
+
+## Como é montado
+
+Tudo no GitHub, numa máquina Windows (`.github/workflows/instalador.yml`), à mão (Actions › instalador › Run workflow)
+ou ao chegar uma etiqueta `vX.Y.Z`:
+
+1. Instala as bibliotecas de `requirements.txt` e o PyInstaller.
+2. Escreve a versão (de `motor/__init__.py`) nas propriedades do `.exe` (`instalador/versao.modelo.txt`).
+3. **PyInstaller** (`instalador/siapp.spec`) monta `dist/SIAPP/`: `SIAPP.exe` sem console, a interface (`ui/`),
+   `recursos/` (menos o modelo do OCR), `CHANGELOG.md`, `LICENSE` e `AVISOS-DE-TERCEIROS.txt`. Ficam fora bibliotecas que
+   o PyMuPDF 2 traz mas o SIAPP não usa (pymupdf4llm, onnxruntime etc.).
+4. **Confere o pacote**: `SIAPP.exe --verificar` importa todos os módulos do motor, da ponte e do lançador e as
+   bibliotecas, procura os arquivos da interface e grava `verificar.json`; qualquer erro para a montagem.
+5. **Confere a janela**: `SIAPP.exe --verificar-janela` abre a janela de verdade, espera a interface pedir a versão ao
+   motor (WebView2 → página → scripts → ponte → Python) e fecha sozinho; grava `verificar-janela.json`.
+6. **Inno Setup** (`instalador/siapp.iss`) faz o instalador.
+7. **Testa o instalador**: instala sem perguntas, confere o `.exe` e o atalho do menu Iniciar, abre a janela do SIAPP
+   instalado (`--verificar-janela`) e desinstala.
+8. Guarda o instalador e o **código-fonte** (`git archive`) em *Artifacts* da execução, por 30 dias. Com etiqueta
+   `vX.Y.Z` (que tem de bater com a versão), anexa os dois à página da versão (Releases).
+
+## Como baixar
+
+- **Uma versão etiquetada**: GitHub › SIAPP › Releases › `vX.Y.Z` › `SIAPP-X.Y.Z-instalador.exe`.
+- **Qualquer montagem**: GitHub › Actions › instalador › a execução › Artifacts › `SIAPP-X.Y.Z-instalador` (vem em .zip).
+
+Enquanto o repositório for privado, só quem tem acesso a ele baixa. Ao entregar o instalador a outra pessoa, entregue
+junto o `SIAPP-X.Y.Z-codigo-fonte.zip`: a licença (AGPL-3.0) dá a quem recebe o programa o direito ao código.
+
+## Modo instalado, no código
+
+`ponte/base.py` sabe se está instalado (`sys.frozen` do PyInstaller):
+
+| | Pelo código | Instalado |
+|---|---|---|
+| `PASTA_APP` (interface, recursos) | pasta do clone | `_internal` do PyInstaller |
+| `PASTA_DADOS` | pasta do clone | `Documentos\SIAPP` (ou `SIAPP_DADOS`) |
+| Reabrir o SIAPP (trocar de projeto) | `pythonw siapp.py` pelo lançador | o próprio `SIAPP.exe` |
+| Atalho `SIAPP.lnk` na pasta | criado na primeira abertura | não (o instalador cria os do menu) |
+| Atualizar | `git pull` no lançador | instalar a versão nova por cima |
+
+O processo do OCR (multiprocessing, modo *spawn*) reabre o próprio `SIAPP.exe`; por isso `siapp.py` chama
+`multiprocessing.freeze_support()` antes de tudo.

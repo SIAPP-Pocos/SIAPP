@@ -93,8 +93,8 @@ existe e a validação científica ficam **para o final**, antes do lançamento 
       perfilagem convencional, passada principal).
 - [x] **Seção pelo mapa** (0.34): a linha desenhada no mapa (A, pontos intermediários, B) escolhe os
       poços e abre a seção nessa ordem.
-- [ ] **Instalador para Windows** (.exe que roda sem instalar Python). A 0.47 (lançador silencioso) é um passo
-      nessa direção.
+- [x] **Instalador para Windows** (0.67): .exe que roda sem instalar Python, montado e testado pelo GitHub
+      (ver `docs/instalador.md`). Falta: assinatura digital do .exe (o Windows avisa "editor desconhecido").
 - [ ] Ajustes finos do estilo clássico da seção a partir de uma figura de referência
       (ex.: Boletim de Geociências da Petrobras).
 - [x] Esquemas: dicionário de ferramentas da **Halliburton** ampliado com esquemas reais (0.63; ver `docs/ferramentas.md`).

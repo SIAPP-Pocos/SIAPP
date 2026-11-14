@@ -2,13 +2,13 @@
 
 [![testes](https://github.com/SIAPP-Pocos/siapp/actions/workflows/testes.yml/badge.svg)](https://github.com/SIAPP-Pocos/siapp/actions/workflows/testes.yml)
 [![licença: AGPL-3.0](https://img.shields.io/badge/licen%C3%A7a-AGPL--3.0-blue)](LICENSE)
-![versão](https://img.shields.io/badge/vers%C3%A3o-0.66.0-informational)
+![versão](https://img.shields.io/badge/vers%C3%A3o-0.67.0-informational)
 
 Ferramenta aberta para transformar o acervo **público** de dados de poços da ANP
 (portal [REATE](https://reate.cprm.gov.br/anp/TERRESTRE), ANP/CPRM) em dados
 organizados, pesquisáveis e prontos para análise — sem software comercial.
 
-> **Estado:** em desenvolvimento ativo (v0.66). A interface e os formatos ainda
+> **Estado:** em desenvolvimento ativo (v0.67). A interface e os formatos ainda
 > podem mudar entre versões; a 1.0 sai no lançamento público.
 
 ---
@@ -41,6 +41,13 @@ qual documento, página e trecho o sustentam.
 
 ## Como usar (Windows)
 
+**Pelo instalador (desde a 0.67):** baixe `SIAPP-<versão>-instalador.exe` e dê dois cliques. Não pede
+administrador nem Python; instala em `%LOCALAPPDATA%\Programs\SIAPP`, cria o atalho no menu Iniciar e guarda os
+projetos em **Documentos\SIAPP** (que ficam lá mesmo se desinstalar). Como o instalador é montado e testado, ver
+[`docs/instalador.md`](docs/instalador.md).
+
+**Pelo código (para quem desenvolve):**
+
 1. Instale o Python 3.10 ou mais novo ([python.org](https://www.python.org/downloads/)).
 2. Baixe ou clone este repositório.
 3. Dê dois cliques em **`iniciar.bat`** (ou no atalho `SIAPP.lnk`, que o SIAPP cria na primeira abertura).
@@ -54,7 +61,8 @@ Poços da ANP (~12 MB).
 Qualquer aba abre numa **janela própria** (para outro monitor), a janela principal se **divide**
 em duas áreas, e as cores (sete paletas, claro e escuro) ficam em **Configurações** (engrenagem).
 
-Os dados ficam sempre em `ambiente_teste/`, ao lado do aplicativo. O guia de teste
+Pelo código, os dados ficam em `ambiente_teste/`, ao lado do aplicativo; pelo instalador, em
+`Documentos\SIAPP\ambiente_teste`. O guia de teste
 passo a passo está em [`docs/guia-de-teste.md`](docs/guia-de-teste.md).
 
 ## Como funciona

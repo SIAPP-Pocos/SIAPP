@@ -25,3 +25,11 @@ def test_versao_no_changelog():
 def test_versao_semver():
     from motor import __version__
     assert re.fullmatch(r"0\.\d+\.\d+", __version__), "Versões 0.x até o lançamento"
+
+
+def test_citation_na_versao_atual():
+    from motor import __version__
+    with open(os.path.join(RAIZ, "CITATION.cff"), encoding="utf-8") as f:
+        texto = f.read()
+    assert f'version: "{__version__}"' in texto, "Atualize a versão no CITATION.cff"
+    assert "license: AGPL-3.0-only" in texto

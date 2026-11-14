@@ -323,6 +323,12 @@ class JanelasAPI:
         return {"versoes": ler_changelog(os.path.join(base.PASTA_APP, "CHANGELOG.md"), int(n or 3))}
 
     @resposta_segura
+    def doacao(self):
+        """Ajuda › Apoie o projeto (0.67): o que está em recursos/doacao.json. `ativo` False = a tela fica escondida."""
+        from motor import doacao as mdo
+        return mdo.ler(os.path.join(base.PASTA_RECURSOS, "doacao.json"))
+
+    @resposta_segura
     def aviso_atualizacao(self):
         """O lançador atualizou o SIAPP ao abrir? Mostra uma vez ("SIAPP atualizado: 0.57.0 → 0.58.0")."""
         caminho = os.path.join(base.PASTA_PROJETO, "atualizacao.json")      # gravado pelo lançador

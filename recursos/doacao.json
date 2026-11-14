@@ -1,0 +1,8 @@
+{
+  "_leia": "Tela 'Apoie o projeto' (Ajuda). Fica escondida enquanto não houver chave Pix (com nome e cidade) ou link https. Para ligar: preencha e deixe ativo = true.",
+  "ativo": true,
+  "titulo": "Apoie o SIAPP",
+  "texto": "",
+  "pix": {"chave": "", "nome": "", "cidade": ""},
+  "links": []
+}

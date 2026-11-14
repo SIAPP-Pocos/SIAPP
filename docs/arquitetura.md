@@ -63,6 +63,7 @@
                     execucoes/viabilidade/ (JSON + HTML); constantes e equações editáveis
     direcionais.py  dados direcionais: 5 leiautes, curvatura mínima (tabela direcionais)
     ferramentas.py  esquemas de ferramentas: tipo da corrida, ferramentas, vínculo com os perfis (tabela esquemas)
+    doacao.py       tela "Apoie o projeto": lê recursos/doacao.json e monta o Pix copia e cola (BR Code do Banco Central)
                ▼
   ambiente_teste/  — pasta de projeto (contrato entre as partes)
 ```
@@ -214,3 +215,9 @@ ambiente_teste/
   só onde são seguros.
 - A Tabela de Poços da ANP usa `;`, vírgula decimal (às vezes ponto), datas `dd/mm/aaaa hh:mm`
   e espaços sobrando nos campos (`"7 "`).
+
+## Instalador (0.67)
+
+Além do clone com o lançador, o SIAPP sai como instalador do Windows, montado pelo PyInstaller e pelo Inno Setup no
+GitHub e testado lá (pacote, janela, instalar e desinstalar). Instalado, `ponte/base.py` aponta a interface para a pasta
+do PyInstaller e os dados para `Documentos\SIAPP`. Detalhes em [`instalador.md`](instalador.md).

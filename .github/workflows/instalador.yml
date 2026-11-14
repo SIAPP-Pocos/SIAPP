@@ -8,6 +8,9 @@ on:
   push:
     tags: ["v*"]
 
+permissions:
+  contents: write          # só para anexar o instalador à versão (Release) quando a etiqueta vX.Y.Z chega
+
 jobs:
   windows:
     runs-on: windows-latest
@@ -78,11 +81,29 @@ jobs:
           Start-Sleep -Seconds 3
           if (Test-Path $exe) { throw "a desinstalação deixou o SIAPP.exe" }
           "instalou, abriu e desinstalou: ok"
+      - name: Código-fonte junto (AGPL: quem recebe o instalador tem direito ao código)
+        shell: pwsh
+        run: git archive --format=zip --prefix=SIAPP-${{ steps.versao.outputs.versao }}/ -o "dist\SIAPP-${{ steps.versao.outputs.versao }}-codigo-fonte.zip" HEAD
       - uses: actions/upload-artifact@v4
         with:
           name: SIAPP-${{ steps.versao.outputs.versao }}-instalador
-          path: dist/SIAPP-*-instalador.exe
+          path: |
+            dist/SIAPP-*-instalador.exe
+            dist/SIAPP-*-codigo-fonte.zip
           retention-days: 30
+      - name: Anexar à versão (só com etiqueta vX.Y.Z)
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $v = "${{ steps.versao.outputs.versao }}"
+          $tag = "${{ github.ref_name }}"
+          if ($tag -ne "v$v") { throw "a etiqueta $tag não bate com a versão $v de motor/__init__.py" }
+          $arquivos = @("dist\SIAPP-$v-instalador.exe", "dist\SIAPP-$v-codigo-fonte.zip")
+          $existe = @(gh release list --limit 100 --json tagName --jq ".[].tagName") -contains $tag
+          if ($existe) { gh release upload $tag @arquivos --clobber }
+          else { gh release create $tag @arquivos --title "SIAPP $v" --notes "Instalador do Windows e código-fonte desta versão. O que mudou: CHANGELOG.md." }
       - uses: actions/upload-artifact@v4
         if: always()
         with:

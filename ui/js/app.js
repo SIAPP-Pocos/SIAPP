@@ -51,7 +51,8 @@ async function iniciar() {
   const ajuda = $("ini-pasta-ajuda");
   limpar(ajuda);
   ajuda.append("Tudo fica na pasta ", el("strong", "", r.nome_pasta_projeto),
-               ", ao lado do aplicativo. O diálogo já abre nela: é só confirmar.");
+               r.instalado ? ", em Documentos\\SIAPP. O diálogo já abre nela: é só confirmar."
+                           : ", ao lado do aplicativo. O diálogo já abre nela: é só confirmar.");
   ajuda.title = r.pasta_projeto;
   const sel = $("sel-bacia");
   for (const b of r.bacias) {
@@ -67,6 +68,7 @@ async function iniciar() {
   for (const b of document.querySelectorAll("[data-ir]")) b.onclick = () => trocarAba(b.dataset.ir);
   ligarJanelas();
   ligarInterface();
+  prepararDoacao();
   ligarLarguraLateral();
   ligarInicio();
 

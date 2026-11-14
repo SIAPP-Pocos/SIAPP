@@ -1,4 +1,5 @@
 """Interface de verdade num navegador sem tela (pulado sem Playwright)."""
+import json
 import os
 
 import pytest
@@ -2711,4 +2712,29 @@ def test_ver_arquivos_da_ficha_conecta_e_abre_o_poco(janela, monkeypatch):
     p.locator("#ficha button", has_text="Ver arquivos").click()
     janela.esperar("document.getElementById('g-arvore').textContent.includes('Pasta de Poco')", 30)
     assert len(conexoes) == n
+    assert not janela.erros_js, janela.erros_js
+
+
+def test_apoie_o_projeto_so_quando_configurado(janela, tmp_path, monkeypatch):
+    from ponte import base
+    p = janela.page
+    assert p.is_hidden("#menu-doacao")                               # repositório: sem chave nem link
+    rec = tmp_path / "recursos"
+    rec.mkdir()
+    (rec / "doacao.json").write_text(json.dumps({"pix": {"chave": "a@b.com", "nome": "Fulano", "cidade": "Maceio"},
+                                                 "links": [{"rotulo": "Apoia", "url": "https://exemplo.org/siapp"}]}),
+                                     encoding="utf-8")
+    monkeypatch.setattr(base, "PASTA_RECURSOS", str(rec))
+    p.evaluate("prepararDoacao().then(() => 0)")
+    janela.esperar("!document.getElementById('menu-doacao').hidden")
+    p.click("#btn-ajuda")
+    p.click("#menu-doacao")
+    janela.esperar("document.getElementById('doacao-pix-codigo') !== null")
+    assert p.input_value("#doacao-pix-chave") == "a@b.com"
+    assert p.input_value("#doacao-pix-codigo").startswith("000201")
+    assert p.get_attribute(".doacao-links a", "href") == "https://exemplo.org/siapp"
+    p.keyboard.press("Escape")
+    p.click("#btn-ajuda")
+    p.click("[data-ajuda='sobre']")
+    assert "Apoie o projeto" in p.text_content("#dlg-pe")
     assert not janela.erros_js, janela.erros_js

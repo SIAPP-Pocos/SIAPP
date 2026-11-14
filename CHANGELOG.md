@@ -6,6 +6,29 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 
 ## [Não lançado]
 
+## [0.67.0] — 2026-11-14
+Instalador do Windows e tela "Apoie o projeto".
+### Adicionado
+- **Instalador do Windows** (`SIAPP-0.67.0-instalador.exe`, ~74 MB): instala sem Python e sem pedir administrador, em
+  `%LOCALAPPDATA%\Programs\SIAPP`, com atalho no menu Iniciar (e na Área de Trabalho, se quiser) e desinstalador. Os
+  projetos ficam em **Documentos\SIAPP** e continuam lá se desinstalar. Numa atualização, as bibliotecas da versão
+  anterior são apagadas antes de copiar as novas.
+- O instalador é montado pelo GitHub numa máquina Windows (Actions › instalador) e **testado antes de sair**: o pacote
+  confere todos os módulos e as bibliotecas (`SIAPP.exe --verificar`), abre a janela de verdade e espera a interface
+  responder (`--verificar-janela`), e depois instala, abre e desinstala sem perguntas. Com a etiqueta `vX.Y.Z`, o
+  instalador e o código-fonte vão para a página da versão (Releases).
+- **Código-fonte junto do instalador** e **AVISOS-DE-TERCEIROS.txt** com a licença de cada biblioteca que vai dentro
+  (AGPL: quem recebe o instalador tem direito ao código).
+- **Ajuda › Apoie o projeto**: chave Pix com "Pix copia e cola" (padrão do Banco Central) e links de doação. Fica
+  escondida até o autor preencher `recursos/doacao.json`; nada é inventado. Também aparece como botão em Sobre.
+### Alterado
+- `CITATION.cff` (como citar o SIAPP; o Zenodo lê esse arquivo) estava parado na 0.16: agora acompanha a versão, e um
+  teste confere.
+- Instalado, o SIAPP guarda tudo em Documentos\SIAPP (ou na pasta da variável `SIAPP_DADOS`), inclusive o modelo de
+  idioma do OCR; o texto do Início diz onde.
+### Corrigido
+- Os testes do GitHub falhavam desde a 0.62 por falta de bibliotecas (lasio, openpyxl) na máquina de teste.
+
 ## [0.66.0] — 2026-11-14
 Dicionário de ferramentas da Baker e da Weatherford.
 ### Adicionado
