@@ -42,6 +42,16 @@ jobs:
           Copy-Item "$env:SIAPP_DADOS\verificar.json" verificar.json -ErrorAction SilentlyContinue
           Get-Content verificar.json -ErrorAction SilentlyContinue
           if ($p.ExitCode -ne 0) { throw "SIAPP.exe --verificar falhou ($($p.ExitCode))" }
+      - name: Conferir a janela (SIAPP.exe --verificar-janela)
+        shell: pwsh
+        timeout-minutes: 5
+        run: |
+          $env:SIAPP_DADOS = "$env:RUNNER_TEMP\siapp-dados"
+          $p = Start-Process -FilePath "dist\SIAPP\SIAPP.exe" -ArgumentList "--verificar-janela" -Wait -PassThru
+          Copy-Item "$env:SIAPP_DADOS\verificar-janela.json" verificar-janela.json -ErrorAction SilentlyContinue
+          Get-Content verificar-janela.json -ErrorAction SilentlyContinue
+          Get-Content "$env:SIAPP_DADOS\ambiente_teste\*.log" -ErrorAction SilentlyContinue | Select-Object -Last 40
+          if ($p.ExitCode -ne 0) { throw "SIAPP.exe --verificar-janela falhou ($($p.ExitCode))" }
       - name: Inno Setup
         shell: pwsh
         run: |
@@ -55,6 +65,9 @@ jobs:
           path: dist/SIAPP-*-instalador.exe
           retention-days: 30
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: verificar-${{ steps.versao.outputs.versao }}
-          path: verificar.json
+          path: |
+            verificar.json
+            verificar-janela.json

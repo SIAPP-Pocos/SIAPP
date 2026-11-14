@@ -69,9 +69,55 @@ def verificar() -> int:
     return 1 if erros else 0
 
 
+def verificar_janela(espera: float = 90) -> int:
+    """`SIAPP.exe --verificar-janela` (0.67): abre a janela de verdade, espera a interface pedir a versão ao motor (o
+    caminho inteiro: WebView2 → página → scripts → ponte → Python → resposta) e fecha sozinha. Grava
+    verificar-janela.json na pasta de dados; 0 = a janela abriu e a ponte respondeu."""
+    import json
+    import time
+XX, url=os.path.join(base.PASTA_APP, "ui", "index.html"),
+                                   js_api=api, width=1280, height=820)
+    api._janela = janela
+    resultado = {"versao": mp.VERSAO_SIAPP, "ok": False, "tela": "", "segundos": 0.0, "erro": ""}
+
+    def conferir():
+        t0 = time.time()
+        try:
+            while time.time() - t0 < espera:
+                try:
+                    tela = janela.evaluate_js('(document.getElementById("versao") || {}).textContent || ""') or ""
+                except Exception as e:  # noqa: BLE001  (a página ainda não carregou)
+                    resultado["erro"] = f"{type(e).__name__}: {e}"
+                    tela = ""
+                if tela.strip() == "v" + mp.VERSAO_SIAPP:
+                    resultado.update(ok=True, tela=tela.strip(), erro="")
+                    break
+                resultado["tela"] = tela
+                time.sleep(1)
+            else:
+                resultado["erro"] = resultado["erro"] or "a interface não mostrou a versão a tempo"
+        finally:
+            resultado["segundos"] = round(time.time() - t0, 1)
+            resultado["motor_da_janela"] = webview.renderer or ""
+            janela.destroy()
+
+    webview.start(conferir, http_server=True)
+    texto = json.dumps(resultado, ensure_ascii=False, indent=1)
+    try:
+        with open(os.path.join(base.PASTA_DADOS, "verificar-janela.json"), "w", encoding="utf-8") as f:
+            f.write(texto)
+    except OSError:
+        pass
+    if sys.stdout is not None:
+        print(texto)
+    return 0 if resultado["ok"] else 1
+
+
 def main():
     if "--verificar" in sys.argv:
         sys.exit(verificar())
+    if "--verificar-janela" in sys.argv:
+        sys.exit(verificar_janela())
     os.makedirs(base.PASTA_PROJETO, exist_ok=True)
     icone.preparar_processo()        # identidade própria na barra de tarefas (Windows)
     icone.criar_atalho()             # SIAPP.lnk com o ícone, uma vez (em segundo plano)
