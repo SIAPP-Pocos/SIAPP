@@ -24,6 +24,9 @@ class CatalogoAPI:
 
     @resposta_segura
     def conectar(self, bacia: str):
+        return self._conectar(bacia)
+
+    def _conectar(self, bacia: str) -> dict:
         self._exigir_projeto()
         cliente = reate.ClienteREATE.da_bacia(bacia)
         base, categorias = cliente.descobrir_categorias()
@@ -39,6 +42,42 @@ class CatalogoAPI:
         self._projeto.registrar("conectou", bacia=bacia, categorias=len(cats))
         return {"bacia": bacia, "base": base, "categorias": cats,
                 "salvo_em": self._projeto.rel(arquivo)}
+
+    @resposta_segura
+    def catalogo_abrir_poco(self, bacia: str, categoria: str, nome_pasta: str, caminho: str, parte: str | None = None):
+        """0.65: "Ver arquivos" da ficha do poço, num passo só. Conecta à bacia se preciso, mostra a categoria pela lista
+        já salva (sem listar tudo de novo no portal) e devolve o poço pronto para abrir. Sem lista salva, a categoria
+        aparece só com este poço — o caminho dele no portal já é conhecido (tabela reate)."""
+        self._exigir_projeto()
+        with self._trava_conexao:
+            conectado = self._cliente is not None and self._bacia == bacia
+        if conectado:
+            salvo = mp.ler_json(os.path.join(self._projeto.pasta_catalogo(bacia), "categorias.json"), {}) or {}
+            conexao = {"bacia": bacia, "base": self._base_remota, "categorias": salvo.get("categorias", []),
+                       "salvo_em": self._projeto.rel(os.path.join(self._projeto.pasta_catalogo(bacia), "categorias.json")),
+                       "ja_conectado": True}
+            if not conexao["categorias"]:
+                conexao = self._conectar(bacia)
+        else:
+            conexao = self._conectar(bacia)
+        lista = mp.ler_json(os.path.join(self._projeto.pasta_catalogo(bacia), mp.nome_seguro(categoria) + ".json"), None)
+        poco = {"nome": nome_pasta, "caminho": caminho, "parte": parte}
+        if isinstance(lista, dict) and isinstance(lista.get("pocos"), list):
+            achado = next((q for q in lista["pocos"] if q.get("caminho") == caminho or q.get("nome") == nome_pasta), None)
+            if achado:
+                poco = achado
+            else:
+                lista["pocos"] = [*lista["pocos"], poco]
+            r = {"categoria": categoria, "bacia": bacia, "pocos": lista["pocos"], "partes": lista.get("partes", []),
+                 "duplicados": lista.get("duplicados", []), "arquivos_soltos": lista.get("arquivos_soltos", []),
+                 "listado_em": lista.get("listado_em", ""), "parcial": False}
+        else:
+            r = {"categoria": categoria, "bacia": bacia, "pocos": [poco], "partes": [], "duplicados": [],
+                 "arquivos_soltos": [], "listado_em": "", "parcial": True}
+        if not str(poco.get("caminho") or "").startswith(conexao.get("base") or self._base_remota):
+            raise ErroUsuario(f"O caminho guardado de {nome_pasta} não é da bacia {bacia}. Liste a categoria de novo.")
+        self._projeto.registrar("abriu_poco_no_catalogo", bacia=bacia, categoria=categoria, poco=nome_pasta)
+        return {"conexao": conexao, "lista": r, "poco": poco}
 
     def _exigir_conexao(self):
         if self._cliente is None:

@@ -44,6 +44,12 @@ async function conectar() {
   status(`Conectando ao REATE — Bacia ${bacia}…`, "trab");
   const r = await chamar($("btn-conectar"), "conectar", bacia);
   if (!r.ok) return;
+  desenharConexao(r, bacia);
+  status(`Conectado à Bacia ${bacia}. Catálogo salvo em ${r.salvo_em}.`, "ok");
+}
+
+// Desenha as categorias de uma conexão (do clique em Conectar ou do "Ver arquivos" da ficha, 0.65).
+function desenharConexao(r, bacia) {
   baciaConectada = bacia;
   // a lista e a gaveta abertas eram da bacia anterior: some com elas
   pedidoLista++;
@@ -66,7 +72,6 @@ async function conectar() {
   liberar("etapa-categoria");
   $("ajuda-categoria").textContent =
     `${r.categorias.length} categorias em ${r.base}. Clique para listar os poços.`;
-  status(`Conectado à Bacia ${bacia}. Catálogo salvo em ${r.salvo_em}.`, "ok");
 }
 
 // Listar uma categoria grande leva segundos. Se nesse meio-tempo o usuário listar
@@ -87,8 +92,14 @@ async function listarPocos(categoria, botao) {
     return;
   }
   if (!r.ok) return;
+  desenharListaPocos(r, categoria, bacia);
+  status(`${r.pocos.length} poços em "${categoria}". Lista salva em ${r.salvo_em}.`, "ok");
+}
 
+function desenharListaPocos(r, categoria, bacia) {
+  document.querySelectorAll(".lista-cat button").forEach((b) => b.classList.toggle("ativa", b.textContent === categoria));
   fecharGaveta();
+  listaParcial = !!r.parcial;
   pocosAtuais = r.pocos;
   baciaDaLista = r.bacia || bacia;
   $("vazio").hidden = true;
@@ -98,18 +109,19 @@ async function listarPocos(categoria, botao) {
   if (r.partes.length) resumoBase += ` · reunidos de ${r.partes.length} subpastas "parte"`;
   if (r.duplicados.length) resumoBase += ` · ${r.duplicados.length} repetido(s) entre partes`;
   if (r.arquivos_soltos.length) resumoBase += ` · ${r.arquivos_soltos.length} arquivo(s) solto(s)`;
-  if (r.pocos.length) resumoBase += " · clique num poço para ver os arquivos";
+  if (r.parcial) resumoBase = "só este poço (a categoria ainda não foi listada: clique nela, à esquerda, para ver todos)";
+  else if (r.pocos.length) resumoBase += " · clique num poço para ver os arquivos";
   $("filtro").value = "";
   desenharPocos();
-  status(`${r.pocos.length} poços em "${categoria}". Lista salva em ${r.salvo_em}.`, "ok");
 }
 
 let resumoBase = "";
+let listaParcial = false;     // 0.65: categoria mostrada só com o poço aberto pela ficha
 
 function desenharPocos() {
   const termo = $("filtro").value.trim().toUpperCase();
   const visiveis = termo ? pocosAtuais.filter((p) => p.nome.toUpperCase().includes(termo)) : pocosAtuais;
-  $("resumo-pocos").textContent = termo ? `${visiveis.length} de ${pocosAtuais.length} poços` : resumoBase;
+  $("resumo-pocos").textContent = termo && !listaParcial ? `${visiveis.length} de ${pocosAtuais.length} poços` : resumoBase;
   const grade = $("grade-pocos");
   grade.innerHTML = "";
   const frag = document.createDocumentFragment();

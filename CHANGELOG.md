@@ -6,6 +6,15 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 
 ## [Não lançado]
 
+## [0.65.0] — 2026-11-14
+"Ver arquivos" da ficha do poço num passo só.
+### Alterado
+- **Ficha do poço › Ver arquivos** abre o poço no catálogo sozinho: conecta à bacia se ainda não estiver conectada,
+  mostra a categoria pela lista já salva (sem listar tudo de novo no portal) e abre a gaveta com os arquivos do poço.
+  Se a categoria nunca foi listada, ela aparece só com este poço (o caminho dele no portal já é conhecido), com o aviso
+  para clicar nela se quiser ver todos. Antes, com a bacia não conectada, era preciso conectar, abrir a categoria e
+  procurar o poço à mão.
+
 ## [0.64.0] — 2026-11-13
 Navegar melhor no perfil, nas caixas do Modelo 3D e no mapa 2D.
 ### Alterado

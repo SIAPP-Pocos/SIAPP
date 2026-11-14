@@ -132,6 +132,15 @@ Precisa de internet. Comece por uma categoria pequena para ver o tempo.
 - [ ] Sem intervalo marcado, **Calcular** explica que precisa de um intervalo-alvo.
 - [ ] Repetir no `5PX__0011__RN_5PX__0011__RN.tif` (DLIS de 2020).
 
+## 0.65 — "Ver arquivos" da ficha num passo só
+
+- [ ] Feche e abra o SIAPP (para nenhuma bacia estar conectada). Ctrl+K, procure um poço que esteja no REATE (ex.:
+      7-GMR-13-RN) e, na ficha, em "No portal REATE", clique **Ver arquivos**: o catálogo abre conectado à bacia, com a
+      categoria marcada e a gaveta do poço já mostrando as pastas e arquivos.
+- [ ] Se a categoria ainda não tinha sido listada, aparece "só este poço…"; clique na categoria, à esquerda, para ver
+      todos os poços dela.
+- [ ] Volte à ficha e clique de novo: abre na hora, sem reconectar.
+
 ## 0.64 — navegar no perfil, nas caixas do Modelo 3D e no mapa 2D
 
 - [ ] **3 Perfis**, um perfil aberto: com o mouse em cima do perfil, gire a roda: a **página** rola (aparece uma dica).

@@ -647,18 +647,24 @@ function fecharFicha() {
 // Leva o usuário à árvore de arquivos do poço (Acervo › Catálogo do REATE).
 function abrirPocoNoCatalogo(x) { irPara("catalogo", "mostrarPocoNoCatalogo", x); }
 
+// 0.65: "Ver arquivos" faz tudo sozinho — conecta à bacia (se preciso), mostra a categoria pela lista já salva (sem
+// listar de novo no portal) e abre a gaveta do poço. Antes, com a bacia ainda não conectada, sobrava fazer tudo à mão.
 async function mostrarPocoNoCatalogo(x) {
-  if ($("sel-bacia").value !== x.bacia || !document.querySelector("#lista-cat button")) {
-    $("sel-bacia").value = x.bacia;
-    await conectar();
-  }
-  const botaoCat = [...document.querySelectorAll("#lista-cat button")].find((b) => b.textContent === x.categoria);
-  if (!botaoCat) { status(`Categoria ${x.categoria} não encontrada na bacia ${x.bacia}.`, "erro"); return; }
-  if ($("titulo-pocos").textContent !== x.categoria || $("painel-pocos").hidden) await listarPocos(x.categoria, botaoCat);
-  $("filtro").value = x.nome_pasta;
+  status(`Abrindo ${x.nome_pasta} no catálogo (${x.bacia} · ${x.categoria})…`, "trab");
+  const r = await chamar(null, "catalogo_abrir_poco", x.bacia, x.categoria, x.nome_pasta, x.caminho, x.parte || null);
+  if (!r.ok) return;
+  if (![...$("sel-bacia").options].some((o) => o.value === x.bacia)) $("sel-bacia").appendChild(new Option(x.bacia, x.bacia));
+  $("sel-bacia").value = x.bacia;
+  pedidoLista++;
+  desenharConexao(r.conexao, x.bacia);
+  desenharListaPocos(r.lista, x.categoria, x.bacia);
+  $("filtro").value = r.poco.nome;
   desenharPocos();
-  const botaoPoco = [...document.querySelectorAll("#grade-pocos button")].find((b) => b.textContent === x.nome_pasta);
-  if (botaoPoco) botaoPoco.click();
+  const botaoPoco = [...document.querySelectorAll("#grade-pocos button")].find((b) => b.textContent === r.poco.nome);
+  if (botaoPoco) {
+    botaoPoco.scrollIntoView({ block: "nearest" });
+    explorarPoco(r.poco, botaoPoco);
+  }
 }
 
 async function baixarCadastro(botao, funcao) {

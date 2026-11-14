@@ -135,3 +135,10 @@ o que é novo e só se tira o que saiu. Um só ouvinte no `L.featureGroup` abre 
   inteira, acima do pé fixo, sem passar do título dela.
 - **Mapa 2D do bloco** (`ui/js/bloco.js`): o SVG do motor é ampliado e arrastado por CSS (sem refazer o desenho); o
   motor manda junto a posição da área do mapa e a grade reduzida (≤ 160 × 160) para a leitura sob o mouse.
+
+## "Ver arquivos" da ficha (0.65)
+
+`mostrarPocoNoCatalogo` (mapa.js) chama `catalogo_abrir_poco` (ponte/catalogo.py) com bacia, categoria, nome e caminho
+da pasta (tabela `reate`). A ponte conecta se a bacia não está conectada, lê `catalogo/<bacia>/<categoria>.json` se
+existir (senão devolve só este poço, `parcial`), e a janela desenha conexão e lista com as mesmas funções do clique
+manual (`desenharConexao`, `desenharListaPocos`, catalogo.js) e abre a gaveta (`explorarPoco`).

@@ -2672,3 +2672,43 @@ def test_modelo_3d_caixa_aberta_aparece_acima_do_pe(janela):
     })()""")
     assert visivel == {"titulo": True, "rolou": True, "cabe": True}, visivel
     assert not janela.erros_js, janela.erros_js
+
+
+# ---------------------------------------------------------------- 0.65: "Ver arquivos" da ficha num passo só
+def test_ver_arquivos_da_ficha_conecta_e_abre_o_poco(janela, monkeypatch):
+    from test_levantamento import PDF, ClienteFalso
+    from test_pocos import csv_exemplo
+    from motor import pocos as mpo
+    from motor import reate
+
+    class Falso(ClienteFalso):
+        mapear_poco = reate.ClienteREATE.mapear_poco
+
+    cam = "/POCO/Categoria-7/Categoria-7_parte1/7-GMR-13-RN/"
+    falso = Falso({cam + "Pasta de Poco/pasta.pdf": PDF, "/POCO/Categoria-1/1-AURI-12-RN/Perfil/a.las": b"x"})
+    conexoes = []
+    monkeypatch.setattr(reate.ClienteREATE, "da_bacia",
+                        classmethod(lambda cls, bacia, **kw: conexoes.append(bacia) or falso))
+    p = janela.page
+    abrir_projeto(janela)
+    janela.api._importar_cadastro(csv_exemplo(), "anp:teste")
+    mpo.registrar_reate(janela.api._banco, "Potiguar", "Categoria-7",
+                        [{"nome": "7-GMR-13-RN", "caminho": cam, "parte": "Categoria-7_parte1"}])
+    p.click("#aba-mapa")
+    p.evaluate("abrirFicha('7-GMR-13-RN')")
+    janela.esperar("document.getElementById('fi-titulo').textContent === '7-GMR-13-RN'")
+    p.locator("#ficha button", has_text="Ver arquivos").click()       # bacia não conectada, categoria não listada
+    janela.esperar("!document.getElementById('gaveta').hidden && "
+                   "document.getElementById('g-titulo').textContent === '7-GMR-13-RN'", 30)
+    janela.esperar("document.getElementById('g-arvore').textContent.includes('Pasta de Poco')", 30)
+    assert p.is_visible("#vista-dados")
+    assert "só este poço" in p.text_content("#resumo-pocos")
+    assert p.input_value("#sel-bacia") == "Potiguar" and p.locator("#lista-cat button").count() == 2
+    assert p.locator("#lista-cat button.ativa").text_content() == "Categoria-7"
+    # de novo, já conectado: não reconecta
+    n = len(conexoes)
+    p.click("#aba-mapa")
+    p.locator("#ficha button", has_text="Ver arquivos").click()
+    janela.esperar("document.getElementById('g-arvore').textContent.includes('Pasta de Poco')", 30)
+    assert len(conexoes) == n
+    assert not janela.erros_js, janela.erros_js
