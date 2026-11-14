@@ -81,7 +81,7 @@ jobs:
           Start-Sleep -Seconds 3
           if (Test-Path $exe) { throw "a desinstalação deixou o SIAPP.exe" }
           "instalou, abriu e desinstalou: ok"
-      - name: Código-fonte junto (AGPL: quem recebe o instalador tem direito ao código)
+      - name: "Código-fonte junto (AGPL: quem recebe o instalador tem direito ao código)"
         shell: pwsh
         run: git archive --format=zip --prefix=SIAPP-${{ steps.versao.outputs.versao }}/ -o "dist\SIAPP-${{ steps.versao.outputs.versao }}-codigo-fonte.zip" HEAD
       - uses: actions/upload-artifact@v4
