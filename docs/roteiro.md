@@ -98,7 +98,7 @@ existe e a validação científica ficam **para o final**, antes do lançamento 
 - [ ] Ajustes finos do estilo clássico da seção a partir de uma figura de referência
       (ex.: Boletim de Geociências da Petrobras).
 - [x] Esquemas: dicionário de ferramentas da **Halliburton** ampliado com esquemas reais (0.63; ver `docs/ferramentas.md`).
-- [ ] Esquemas: Baker e Weatherford (falta baixar esquemas deles; candidatos em `docs/ferramentas.md`).
+- [x] Esquemas: Baker e Weatherford (0.66; 29 esquemas reais, ver `docs/ferramentas.md`).
 
 ## No final — validação científica
 

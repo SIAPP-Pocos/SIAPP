@@ -84,6 +84,8 @@ def ler_dicionario(caminho: str) -> dict:
     d["_ferramentas"] = [{**fe, "_classe": _classe(fe["codigo"])} for fe in d.get("ferramentas", [])]
     d["_palavras"] = [(re.compile(p["padrao"], re.IGNORECASE), p["familia"]) for p in d.get("palavras", [])]
     d["_fabricantes"] = [(re.compile(p["padrao"], re.IGNORECASE), p["nome"]) for p in d.get("fabricantes", [])]
+    d["_fabricantes_desenho"] = [(re.compile(p["padrao"], re.IGNORECASE), p["nome"])
+                                 for p in d.get("fabricantes_pelo_desenho", [])]
     return d
 
 
@@ -180,9 +182,38 @@ def _imagem_ocr(page: pymupdf.Page, rotacao: int = 0) -> pymupdf.Pixmap:
     return _rgb(np.frombuffer(pix.samples, np.uint8).reshape(pix.height, pix.width))
 
 
-def _ocr(pix: pymupdf.Pixmap, tessdata: str, idioma: str) -> str:
+# 0.65: esquema de uma página só, muito comprida (1-IMET-17-AL, Baker: 2.484 × 58.950 px), passa do limite do
+# Tesseract ("Image too large") e derrubava a leitura inteira. Agora a página vai em faixas de até 8.000 px, que se
+# sobrepõem 300 px para não cortar um código ao meio; uma faixa que ainda assim falhar fica de fora, sem parar o resto.
+LIMITE_OCR_PX = 8000
+SOBRA_FAIXA_PX = 300
+
+
+def _ocr_um(pix: pymupdf.Pixmap, tessdata: str, idioma: str) -> str:
     doc = pymupdf.open("pdf", pix.pdfocr_tobytes(language=idioma, tessdata=tessdata))
     return doc[0].get_text()
+
+
+def _ocr(pix: pymupdf.Pixmap, tessdata: str, idioma: str) -> str:
+    if pix.height <= LIMITE_OCR_PX and pix.width <= LIMITE_OCR_PX:
+        return _ocr_um(pix, tessdata, idioma)
+    img = np.frombuffer(pix.samples, np.uint8).reshape(pix.height, pix.width, pix.n)[:, :, 0]
+    if pix.width > LIMITE_OCR_PX:                     # larga demais (raro): reduz a largura, mantendo a proporção
+        k = int(np.ceil(pix.width / LIMITE_OCR_PX))
+        img = img[::k, ::k]
+    partes = []
+    passo = LIMITE_OCR_PX - SOBRA_FAIXA_PX
+    for y0 in range(0, img.shape[0], passo):
+        faixa = np.ascontiguousarray(img[y0:y0 + LIMITE_OCR_PX])
+        if faixa.shape[0] < 20:
+            break
+        try:
+            partes.append(_ocr_um(_rgb(faixa), tessdata, idioma))
+        except Exception:  # noqa: BLE001 — uma faixa ruim não derruba a página
+            continue
+        if y0 + LIMITE_OCR_PX >= img.shape[0]:
+            break
+    return "\n".join(partes)
 
 
 def idioma_disponivel(tessdata: str, idioma: str = IDIOMA_OCR) -> bool:
@@ -265,9 +296,12 @@ def reconhecer_codigo(token: str, sufixo: bool, dic: dict) -> dict | None:
     for fe in fs:                     # grafia exata primeiro: NCT-B (superfície) não é NGT-D
         if fe["codigo"] == token.upper():
             return fe
-    for fe in fs:
-        if fe["_classe"] == c:
-            return fe
+    # trocas do OCR só para código de 4+ letras ou com sufixo de peça: em código curto e solto, o ruído do OCR
+    # inventava ferramenta (OSN = DSN, EGS = ECS; esquemas da Baker e da Weatherford, 0.65)
+    if len(c) >= 4 or sufixo:
+        for fe in fs:
+            if fe["_classe"] == c:
+                return fe
     if not sufixo:
         return None
     candidatos = [fe for fe in fs if len(fe["_classe"]) >= 3 and c.startswith(fe["_classe"])
@@ -320,7 +354,21 @@ def analisar_texto(texto: str, dic: dict) -> dict:
             vistos.add(fe["codigo"])
             ferramentas.append({"codigo": fe["codigo"], "lido": m.group(0), "nome": fe["nome"],
                                 "fabricante": fe.get("fabricante", ""), "familias": fe.get("familias", []),
-                                "apoio": bool(fe.get("apoio"))})
+                                "apoio": bool(fe.get("apoio")),
+                                "_solto": len(m.group(1)) <= 3 and not m.group(2)})
+    fabricante = next((nome for rx, nome in dic["_fabricantes"] if rx.search(texto or "")), "")
+    if not fabricante:
+        cont: dict[str, int] = {}
+        for fe in ferramentas:
+            if fe["fabricante"] and not fe["apoio"]:
+                cont[fe["fabricante"]] = cont.get(fe["fabricante"], 0) + 1
+        fabricante = max(cont, key=cont.get) if cont else ""
+    if fabricante:
+        # código curto, solto (sem sufixo de peça) e de outro fabricante, num esquema que já se sabe de quem é: ruído
+        ferramentas = [fe for fe in ferramentas
+                       if not (fe["_solto"] and fe["fabricante"] and fe["fabricante"] != fabricante)]
+    for fe in ferramentas:
+        fe.pop("_solto", None)
     familias = []
     for fe in ferramentas:
         for f in fe["familias"]:
@@ -329,13 +377,10 @@ def analisar_texto(texto: str, dic: dict) -> dict:
     for rx, f in dic["_palavras"]:
         if f not in familias and rx.search(texto or ""):
             familias.append(f)
-    fabricante = next((nome for rx, nome in dic["_fabricantes"] if rx.search(texto or "")), "")
     if not fabricante:
-        cont: dict[str, int] = {}
-        for fe in ferramentas:
-            if fe["fabricante"] and not fe["apoio"]:
-                cont[fe["fabricante"]] = cont.get(fe["fabricante"], 0) + 1
-        fabricante = max(cont, key=cont.get) if cont else ""
+        # 0.65: o jeito do desenho ("DOWNHOLE EQUIPMENT", "measurements relative to tool zero") vale só por último: a
+        # Weatherford usa as mesmas frases, e os esquemas dela saíam como Schlumberger
+        fabricante = next((nome for rx, nome in dic.get("_fabricantes_desenho", []) if rx.search(texto or "")), "")
     medidas = {}
     m = re.search(r"MAXIMUM\s+STRING\s+DIAMETER\s+([\d.,]+)\s*IN", texto or "", re.IGNORECASE)
     if m and _numero(m.group(1)):

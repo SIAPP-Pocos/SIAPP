@@ -115,6 +115,30 @@ Ainda faltam **Baker** e **Weatherford**: não há esquema deles baixado no proj
 candidatos: 7-PQO-1-RN, 7-PML-38-RN, 3-GALP-35-SE e 4-GALP-36-SE (Weatherford: MCG, MAI, MSS, MDN, CMI no nome);
 1-IMET-17-AL e 8-CP-1502-SE (Baker: RCI, MREX).
 
+## Baker e Weatherford (0.66, conferência de 14/11/2026)
+
+Dicionário versão 3, com 29 esquemas reais baixados no projeto (1-IMET-17-AL, 7-PQO-1-RN, 7-PML-38-RN, 3-GALP-35-SE,
+4-GALP-36-SE, 8-CP-1502-SE; cópias fora do repositório). Cada verbete novo cita o esquema e a linha.
+
+- **Baker Atlas**: DSL (Digital Spectralog), XMF1 (Cross Multipole Array Acoustilog), WGI (Well Geometry Instrument) e
+  as peças DHPA, SWVL, WTS. O esquema da Baker escreve "Nome … Mnemonic : CÓDIGO".
+- **Weatherford** (série Compact): MCG, MDN, MPD, MSS, MFE, MAI, MMR, MIE, MIM, MDM, MRD, MTD, MFT e as peças MTA, SHA,
+  SKJ, MIS. **Os esquemas não escrevem "Weatherford"**: o fabricante vem da série Compact, documentada no site da
+  Weatherford (fonte em cada verbete).
+- Nomes de arquivo: `cmi` = imagem, `mft` = testador.
+- **Fabricante**: primeiro o nome escrito no esquema; depois a maioria das ferramentas reconhecidas; só por último as
+  frases do desenho ("DOWNHOLE EQUIPMENT", "measurements relative to tool zero", "TOOL STRING DIAGRAM"), que a
+  Weatherford também usa — antes, os esquemas dela saíam como Schlumberger.
+- **Ruído do OCR**: trocas de letras parecidas (O↔D, I↔L…) só valem para código de 4+ letras ou com sufixo de peça; código
+  curto, solto e de outro fabricante num esquema que já se sabe de quem é fica de fora. Antes, "OSN" virava DSN e
+  "DSL" virava DSI.
+- **Página muito comprida** (1-IMET-17-AL GR-RCI: 2.484 × 58.950 px) passava do limite do OCR e derrubava a leitura;
+  agora vai em faixas de 8.000 px com 300 px de sobreposição.
+
+Resultado nos 29: todos com o fabricante certo e o tipo de corrida certo, menos um (3-GALP-35-SE "mcg_toolsketch"
+sai como imagem por um "MIE" no meio do ruído do OCR; o certo é convencional). Limite conhecido: código de 2 letras da
+Baker (CN, CH) não entra — casaria com muito texto comum.
+
 ## Limites (a interface deixa claro)
 
 - O OCR **erra**. A ficha diz "confira no PDF antes de citar" e guarda o PDF para abrir.

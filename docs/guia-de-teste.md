@@ -132,6 +132,14 @@ Precisa de internet. Comece por uma categoria pequena para ver o tempo.
 - [ ] Sem intervalo marcado, **Calcular** explica que precisa de um intervalo-alvo.
 - [ ] Repetir no `5PX__0011__RN_5PX__0011__RN.tif` (DLIS de 2020).
 
+## 0.66 — ferramentas da Baker e da Weatherford
+
+- [ ] Ficha do **7-PQO-1-RN** (aba Poços) › esquemas de ferramentas: leia os esquemas. O de "MAI-MFE-MSS-MDN-MPD-MCG"
+      sai **Weatherford**, convencional, com raios gama, nêutron, densidade, sônico, indução; o "CMI" sai **imagem**.
+- [ ] **7-PML-38-RN**: "mft" sai teste de formação a cabo (Weatherford).
+- [ ] **1-IMET-17-AL**: os esquemas saem **Baker Atlas**; o "GR-RCI" (arquivo grande, 4 MB) lê sem erro e sai testador.
+- [ ] **8-CP-1502-SE**: "mrex" sai RMN (Baker); os outros, Halliburton.
+
 ## 0.65 — "Ver arquivos" da ficha num passo só
 
 - [ ] Feche e abra o SIAPP (para nenhuma bacia estar conectada). Ctrl+K, procure um poço que esteja no REATE (ex.:

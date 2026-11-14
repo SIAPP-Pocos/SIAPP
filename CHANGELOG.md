@@ -6,6 +6,20 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 
 ## [Não lançado]
 
+## [0.66.0] — 2026-11-14
+Dicionário de ferramentas da Baker e da Weatherford.
+### Adicionado
+- **Dicionário de ferramentas, versão 3**: Baker Atlas (DSL, XMF1, WGI e peças) e Weatherford, série Compact (MCG, MDN,
+  MPD, MSS, MFE, MAI, MMR, MIE, MIM, MDM, MRD, MTD, MFT e peças), tirados de 29 esquemas reais do projeto, cada um
+  com a fonte. Nomes de arquivo `cmi` (imagem) e `mft` (testador).
+### Corrigido
+- Esquemas da Weatherford saíam como Schlumberger (as frases do desenho são as mesmas); agora o fabricante vem do nome
+  escrito, depois das ferramentas, e só por último do jeito do desenho.
+- Ruído do OCR virava ferramenta em código curto ("OSN" = DSN, "DSL" lido como DSI); as trocas de letras parecidas só
+  valem para código de 4+ letras ou com sufixo de peça.
+- Esquema de uma página muito comprida (2.484 × 58.950 px) derrubava a leitura ("Image too large"); agora o OCR lê em
+  faixas.
+
 ## [0.65.0] — 2026-11-14
 "Ver arquivos" da ficha do poço num passo só.
 ### Alterado

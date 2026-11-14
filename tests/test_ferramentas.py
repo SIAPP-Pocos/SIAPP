@@ -333,3 +333,49 @@ def test_levantamento_com_esquemas(tmp_path):
     assert r["resumo"]["esquemas_lidos"] == 1
     d = mf.do_poco(banco, "7-XX-1-RN", DIC)
     assert d["perfis"]["7-xx-1-rn_raw.dlis"]["fonte"] == "esquema lido"
+
+
+# 0.66: Baker e Weatherford, com esquemas reais do projeto (textos abaixo: sintéticos, no mesmo formato)
+def test_baker_mnemonic_e_dsl_nao_vira_dsi():
+    t = ("TOOL: GR/CN/ZDL/XMAC/HDIL\nINSTRUMENT CONFIGURATION\nDOWNHOLE POWER ADAPTER\nMnemonic\n:\nDHPA\n"
+         "DIGITAL SPECTRALOG\nMnemonic\n:\nDSL\nZ-DENSILOG\nMnemonic\n:\nZDL\nCROSS MULTIPOLE ARRAY ACOUSTILOG\n"
+         "Mnemonic\n: XMF1\nWELL GEOMETRY INSTRUMENT\nMnemonic\n: WGI\nOSN=H\nEGS|")
+    a = mf.analisar_texto(t, DIC)
+    cods = [f["codigo"] for f in a["ferramentas"]]
+    assert {"DHPA", "DSL", "ZDL", "XMF1", "WGI", "XMAC", "HDIL"} <= set(cods)
+    assert "DSI" not in cods and "DSN" not in cods and "ECS" not in cods       # ruído do OCR não vira ferramenta
+    assert a["fabricante"] == "Baker Atlas"
+
+
+def test_weatherford_compact_mesmo_sem_o_nome_da_empresa():
+    t = ("DOWNHOLE EQUIPMENT\nMTA-K.A Compact Tool Adaptor\nCompact Gamma\nGRGC - Gamma Ray\nMCG-D.A 359\n"
+         "Compact Neutron\nMDN-B.A 323\nCompact Density/Caliper\nMPD-C.A 329\nCompact Sonic\nMSS-C.B 267\n"
+         "Compact Induction\nMAI-B.A 319\nAIT 4.18 M\nAll measurements relative to tool zero.")
+    a = mf.analisar_texto(t, DIC)
+    assert a["fabricante"] == "Weatherford"          # antes: Schlumberger, pelas frases do desenho
+    cods = [f["codigo"] for f in a["ferramentas"]]
+    assert {"MCG", "MDN", "MPD", "MSS", "MAI", "MTA"} <= set(cods) and "AIT" not in cods
+    assert mf.tipo_pelas_familias(a["familias"]) == "convencional"
+    img = mf.analisar_texto("Compact MMI Memory Section\nMIM-A.A 109\nCompact MMI Electrode Section\nMIE-A.A 109", DIC)
+    assert mf.tipo_pelas_familias(img["familias"]) == "imagem" and img["fabricante"] == "Weatherford"
+    assert mf.tipo_pelas_familias(mf.analisar_texto("Compact Repeat Formation Tester\nMFT-C.J129", DIC)["familias"]) == "testador"
+    assert mf.ler_nome("7-x-1-rn_cmi_toolstring.pdf", DIC)["tipo"] == "imagem"
+
+
+def test_frases_do_desenho_so_valem_sem_nome_nem_ferramenta():
+    assert mf.analisar_texto("DOWNHOLE EQUIPMENT\nAll measurements relative to tool zero.", DIC)["fabricante"] == "Schlumberger"
+
+
+def test_pagina_muito_comprida_vai_em_faixas(monkeypatch):
+    import numpy as np
+    vistas = []
+    monkeypatch.setattr(mf, "_ocr_um", lambda pix, td, idi: vistas.append(pix.height) or f"faixa{len(vistas)}")
+    pix = mf._rgb(np.full((20000, 300), 255, np.uint8))
+    t = mf._ocr(pix, "td", "eng")
+    assert max(vistas) <= mf.LIMITE_OCR_PX and len(vistas) == 3 and t == "faixa1\nfaixa2\nfaixa3"
+
+
+def test_verbetes_da_versao_3_citam_a_fonte():
+    novos = [f for f in DIC["ferramentas"] if f.get("fabricante") == "Weatherford" or f["codigo"] in ("DSL", "XMF1", "WGI")]
+    assert len(novos) >= 20 and all("Esquema real do REATE" in f.get("fonte", "") for f in novos)
+    assert all("weatherford.com" in f["fonte"] for f in novos if f["fabricante"] == "Weatherford")
