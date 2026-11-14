@@ -75,7 +75,10 @@ def verificar_janela(espera: float = 90) -> int:
     verificar-janela.json na pasta de dados; 0 = a janela abriu e a ponte respondeu."""
     import json
     import time
-XX, url=os.path.join(base.PASTA_APP, "ui", "index.html"),
+    os.makedirs(base.PASTA_PROJETO, exist_ok=True)
+    registro.configurar(base.PASTA_PROJETO)
+    api = API()
+    janela = webview.create_window(f"SIAPP {mp.VERSAO_SIAPP} (verificação)", url=os.path.join(base.PASTA_APP, "ui", "index.html"),
                                    js_api=api, width=1280, height=820)
     api._janela = janela
     resultado = {"versao": mp.VERSAO_SIAPP, "ok": False, "tela": "", "segundos": 0.0, "erro": ""}
