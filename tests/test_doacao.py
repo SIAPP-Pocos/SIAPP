@@ -25,8 +25,8 @@ def test_br_code_tira_acentos_e_corta_nome_e_cidade():
 
 
 def test_repositorio_com_a_chave_do_autor():
-    r = mdo.ler()                                       # recursos/doacao.json do repositório (0.67.1: chave do autor)
-    assert r["ativo"] and r["pix"]["tipo"] == "celular" and r["pix"]["chave"].startswith("+55")
+    r = mdo.ler()                                       # recursos/doacao.json do repositório (0.67.2: chave aleatória)
+    assert r["ativo"] and r["pix"]["tipo"] == "aleatória" and r["pix"]["nome"] == "Ruan da Silva Nobre"
     s = r["pix"]["copia_e_cola"]
     assert s.startswith("000201") and "br.gov.bcb.pix" in s and s[-4:] == mdo._crc16(s[:-4])
 

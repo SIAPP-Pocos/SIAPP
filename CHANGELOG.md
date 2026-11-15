@@ -6,6 +6,10 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 
 ## [Não lançado]
 
+## [0.67.2] — 2026-11-15
+### Alterado
+- "Apoie o projeto": a chave Pix passou a ser uma chave aleatória (antes, o número de celular).
+
 ## [0.67.1] — 2026-11-14
 "Apoie o projeto" ligado.
 ### Alterado

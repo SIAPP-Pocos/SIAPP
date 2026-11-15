@@ -132,10 +132,15 @@ Precisa de internet. Comece por uma categoria pequena para ver o tempo.
 - [ ] Sem intervalo marcado, **Calcular** explica que precisa de um intervalo-alvo.
 - [ ] Repetir no `5PX__0011__RN_5PX__0011__RN.tif` (DLIS de 2020).
 
+## 0.67.2 — chave Pix aleatória
+
+- [ ] Ajuda › Apoie o projeto mostra "Chave (aleatória)" com 5c09b50e-2b2d-41d6-a844-855a0f7c8913, e não mais o celular.
+- [ ] No app do banco, Pix › Pix copia e cola: o código copiado mostra **Ruan da Silva Nobre**. Cancele sem pagar.
+
 ## 0.67.1 — "Apoie o projeto" ligado
 
 - [ ] Ajuda › **Apoie o projeto** aparece (e o botão de mesmo nome em Ajuda › Sobre).
-- [ ] A tela mostra "Chave (celular)" com +5582987697197 e o "Pix copia e cola". Copiar põe o texto na área de
+- [ ] A tela mostra a chave Pix e o "Pix copia e cola". Copiar põe o texto na área de
       transferência.
 - [ ] No app do banco: Pix › Pix copia e cola › cole o código. Confira que aparece **Ruan da Silva Nobre** e que o valor
       fica em aberto. Não precisa pagar: cancele depois de conferir.
