@@ -50,6 +50,20 @@ ou ao chegar uma etiqueta `vX.Y.Z`:
 Enquanto o repositório for privado, só quem tem acesso a ele baixa. Ao entregar o instalador a outra pessoa, entregue
 junto o `SIAPP-X.Y.Z-codigo-fonte.zip`: a licença (AGPL-3.0) dá a quem recebe o programa o direito ao código.
 
+## Como cada um recebe as versões novas
+
+| | Pelo clone + atalho (quem desenvolve; hoje, o Ruan) | Pelo instalador (quem só usa) |
+|---|---|---|
+| De onde vem | GitHub, branch `main` | GitHub, página da versão (Releases) |
+| Quando atualiza | **a cada abertura pelo atalho**: o lançador faz `git fetch` e avança a pasta para a versão nova (só se nada foi mudado à mão; senão avisa e abre a versão que está); depois instala as bibliotecas novas, se houver | quando a pessoa baixa o instalador novo e instala por cima |
+| Aviso | "SIAPP atualizado: 0.67.2 → 0.68.0" na primeira abertura depois da atualização | — |
+| Desligar | Configurações › "Atualizar o SIAPP ao abrir" | — |
+| Os dados | ficam em `ambiente_teste\`, que o git não toca | ficam em `Documentos\SIAPP`, que o instalador não toca |
+| O que precisa ter | git e internet (sem eles, abre a versão que está) | nada |
+
+Falta, para quem usa o instalador, um aviso de "versão nova disponível" dentro do SIAPP: depende de o repositório ser
+público (a consulta às versões do GitHub sem login só funciona em repositório público).
+
 ## Modo instalado, no código
 
 `ponte/base.py` sabe se está instalado (`sys.frozen` do PyInstaller):

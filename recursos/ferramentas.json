@@ -1,5 +1,5 @@
 {
-  "versao": 3,
+  "versao": 4,
   "descricao": "Dicionário do SIAPP para ler os esquemas de ferramentas (tool strings) do acervo REATE. 'ferramentas': códigos (prefixo antes do hífen, ex.: HGNSD-B -> HGNS) e o que medem; 'apoio' = cabeça, telemetria e acessórios, que aparecem no esquema mas não definem o tipo da corrida; 'superficie' = equipamento de superfície, ignorado (está aqui só para não ser confundido com ferramenta de poço). 'nomes_arquivo': palavras do nome do arquivo e o tipo de corrida que indicam. 'palavras': rótulos escritos no desenho (Gamma Ray, Neutron...). 'fonte' (desde a versão 2): de onde veio o verbete — o esquema real em que o código aparece com o nome. Correções e acréscimos são bem-vindos.",
   "familias": {
     "gr": "Raios gama",
@@ -35,7 +35,8 @@
     "resistividade": "Perfil de resistividade",
     "sonico": "Perfil sônico",
     "correlacao": "Correlação (GR/CCL)",
-    "sismica": "Sísmica de poço (checkshot, VSP)"
+    "sismica": "Sísmica de poço (checkshot, VSP)",
+    "geoquimica": "Geoquímica (espectroscopia de elementos)"
   },
   "ferramentas": [
     {"codigo": "GSR", "nome": "Equipamento de superfície", "fabricante": "Schlumberger", "familias": [], "apoio": true, "superficie": true},
@@ -159,7 +160,12 @@
     {"codigo": "GRT", "nome": "Raios gama", "fabricante": "Tucker", "familias": ["gr"]},
     {"codigo": "FTT", "nome": "Testador de formação", "fabricante": "Tucker", "familias": ["testador"]},
     {"codigo": "CBL", "nome": "Perfil de aderência do cimento (CBL)", "fabricante": "", "familias": ["cimentacao"]},
-    {"codigo": "CCL", "nome": "Localizador de luvas (CCL)", "fabricante": "", "familias": ["ccl"]}
+    {"codigo": "CCL", "nome": "Localizador de luvas (CCL)", "fabricante": "", "familias": ["ccl"]},
+    {"codigo": "HRSC", "nome": "Testemunhador lateral rotativo para poço hostil (HRSC)", "fabricante": "Halliburton", "familias": ["amostrador"], "fonte": "Esquema real do REATE (acervo do projeto, lido em 16/11/2026): 8-cp-1502-se_brsa_tsc_hrsct.pdf: 'HRSC Hostile Rotary Sidewall 1.5 inch Coring Tool … HRSCT- B Tube #1'"},
+    {"codigo": "PTMS", "nome": "Módulo de potência (PTMS)", "fabricante": "Halliburton", "familias": [], "apoio": true, "fonte": "Esquema real do REATE (acervo do projeto, lido em 16/11/2026): 8-cp-1502-se_brsa_tsc_hrsct.pdf: 'PTMS W6 Power Sub for RDT/HRSC'"},
+    {"codigo": "GEMT", "nome": "Raios gama, elementos e minerais (GEM)", "fabricante": "Halliburton", "familias": ["espectroscopia"], "fonte": "Esquema real do REATE (acervo do projeto, lido em 16/11/2026): 8-cp-1502-se_brsa_tsc_gem.pdf: 'GEMT Gamma, Elements and Minerals Tool … BGO Crystal'"},
+    {"codigo": "SCBL", "nome": "Aderência do cimento por setores (SCBL)", "fabricante": "Computer Sonics", "familias": ["cimentacao"], "fonte": "Esquema real do REATE (acervo do projeto, lido em 16/11/2026): 3-GALP-35-SE_CBL_toolstring.pdf: 'SCBL-CSSMRad (CSS-1195) … Computer Sonics Multiplexed CSSM Sector Bond'"},
+    {"codigo": "CSSM", "nome": "Ferramenta de perfil de poço revestido (CSSM)", "fabricante": "Computer Sonics", "familias": [], "apoio": true, "fonte": "Esquema real do REATE (acervo do projeto, lido em 16/11/2026): 3-GALP-35-SE_CBL_toolstring.pdf: 'CCL-CSSM … Computer Sonics CSSM Collar Locator; GR-CSSM … Computer Sonics CSSM Gamma Ray'"}
   ],
   "nomes_arquivo": {
     "raw": "convencional", "conv": "convencional", "pex": "convencional", "quadstack": "convencional",
@@ -171,7 +177,8 @@
     "dipmeter": "mergulho", "hdt": "mergulho", "shdt": "mergulho",
     "mril": "rmn", "cmr": "rmn", "mrex": "rmn", "nmr": "rmn",
     "cst": "amostrador", "msct": "amostrador", "rsct": "amostrador", "swc": "amostrador",
-    "cbl": "cimentacao", "vdl": "cimentacao", "usit": "cimentacao", "cbt": "cimentacao",
+    "cbl": "cimentacao", "vdl": "cimentacao", "usit": "cimentacao", "cbt": "cimentacao", "scbl": "cimentacao",
+    "hrsct": "amostrador", "hrsc": "amostrador", "gem": "geoquimica",
     "ccl": "correlacao",
     "lwd": "lwd", "mwd": "lwd",
     "ait": "resistividade", "hri": "resistividade", "hdil": "resistividade", "dil": "resistividade",
@@ -212,6 +219,7 @@
     {"padrao": "halliburton", "nome": "Halliburton"},
     {"padrao": "tucker", "nome": "Tucker"},
     {"padrao": "baker", "nome": "Baker Atlas"},
-    {"padrao": "weatherford", "nome": "Weatherford"}
+    {"padrao": "weatherford", "nome": "Weatherford"},
+    {"padrao": "computer\\s+sonics", "nome": "Computer Sonics"}
   ]
 }

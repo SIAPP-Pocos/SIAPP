@@ -177,7 +177,7 @@ def test_estilo_classico(banco):
     assert m["parametros"]["estilo"] == "classico"
     svg = ms.desenhar(m, "Teste", autor="Fulana de Tal", data="16/10/2026")
     for txt in ("SEÇÃO ESTRATIGRÁFICA A–A′", "A′", "Fm. Açu", "DATUM: topo da Formação Açu", "Localização",
-                "Litologia (calha)", "Calcário", "Arenito", "Elaboração: Fulana de Tal · 16/10/2026",
+                "Litologia (calha)", "Calcarenito", "Arenito, areia", "Elaboração: Fulana de Tal · 16/10/2026",
                 "Sem descrição de calha", "Topo de unidade (AGP)"):
         assert txt in svg, txt
     assert "<pattern" not in svg and "clip-path" not in svg        # o PyMuPDF não entende
@@ -187,9 +187,21 @@ def test_estilo_classico(banco):
 
 def test_padroes_litologicos():
     from motor import secao_classica as cl
-    assert cl.litologia("CALCARENITO")[0] == "calcario"         # não é arenito
-    assert cl.litologia("ARENITO")[0] == "arenito" and cl.litologia("FOLHELHO")[0] == "folhelho"
-    assert cl.litologia("GNAISSE")[0] == "embasamento" and cl.litologia("XYZ")[0] == "outra"
+    # 0.68: legenda Petrobras (código de 3 letras); o termo mais longo ganha
+    assert cl.litologia("CALCARENITO")[0] == "cre"              # não é arenito
+    assert cl.litologia("ARENITO")[0] == "arn" and cl.litologia("FOLHELHO")[0] == "flh"
+    assert cl.litologia("ARENITO ARGILOSO")[0] == "arl" and cl.litologia("CALCARIO CRISTAL")[0] == "clc"
+    assert cl.litologia("GNAISSE")[0] == "gna" and cl.litologia("XYZ")[0] == "outra"
+    assert cl.litologia("GPSITA")[0] == "gip" and cl.litologia("META-ARENITO")[0] == "mar"
+    assert cl.litologia("ARENITO")[1:3] == ("Arenito, areia", "#ffff40")      # cor do perfil composto
+    assert cl.litologia("CINZA")[0] == "outra"                  # cor solta não é rocha
+    # ladrilhos: tudo dentro do retângulo, sem <pattern> nem recorte
+    for cod in cl.legenda_petrobras():
+        svg = "".join(cl.ladrilhos_petrobras(cod, 10, 10, 26, 40))
+        for x, y in re.findall(r"[ML](-?[\d.]+) (-?[\d.]+)", svg):
+            assert 9.8 <= float(x) <= 36.2 and 9.8 <= float(y) <= 50.2, (cod, x, y)
+    assert len(cl.legenda_petrobras()) == 95
+    assert cl.ladrilhos_petrobras("arn", 0, 0, 26, 1.0) == []   # camada fina: só a cor
     tr, pt = cl.marcas("pontos", 10, 10, 26, 40)
     assert pt and not tr
     for pat in ("tracos", "tijolo", "grade", "cruzes", "vees", "seixos", "marga", "silte", "tijolo_obliquo", "sem"):

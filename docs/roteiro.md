@@ -36,8 +36,8 @@ existe e a validação científica ficam **para o final**, antes do lançamento 
 - [x] **API e densidade do gás das pastas de poço** (0.29): dados transcritos (tipo propriedade_fluido) e leitura
       automática do texto dos documentos dos poços do campo, com a página como fonte.
 - [x] Viabilidade — refinamentos (0.52): diâmetro pela vazão, correção do custo pela inflação (IPCA/INCC) e restrições
-      ambientais (UCs federais e terras indígenas importadas). Ver `docs/viabilidade.md`. Falta transcrever API e densidade de Guamaré
-      (depende dos documentos dos poços baixados: ver o guia, seção 0.52).
+      ambientais (UCs federais e terras indígenas importadas). Ver `docs/viabilidade.md`. (API e densidade de Guamaré: fora
+      do escopo, decisão de 16/11/2026.)
 - [x] **Gasodutos e blocos exploratórios** (0.28): distância de cada bloco exploratório (ou campo) à feição mais
       próxima da camada escolhida e o custo do duto; mapa colorido por distância; CSV com fórmulas e entradas.
 - [x] **Bo, Rs e Bg estimados por correlação** (0.28): Standing (pede o API) e Sutton + Papay, com aviso de faixa.
@@ -55,7 +55,7 @@ existe e a validação científica ficam **para o final**, antes do lançamento 
       apresentação (11/11), o foco é melhorar o próprio aplicativo; a validação científica fica para depois.
 - [x] **Bloco 9 — petrofísica básica** (0.48): plugs (porosidade, permeabilidade, densidade) e gama do testemunho
       (planilhas `_COREGAMA.xls` / `Petrofisica Basica.xls`; 162 poços). Visto só no 1-ALG-1-RN; ver `docs/petrofisica.md`.
-      Falta comparar plug × perfil (próximo passo, a combinar).
+      Comparação plug × perfil feita na 0.50. **Validar em outros poços: fora do escopo** (decisão de 16/11/2026).
 - [x] **Dados › Arquivos baixados** (0.54; pedido de 31/10, "achar e abrir o que já existe"): tudo o que foi baixado, de
       qualquer formato (CSV, XLS, ZIP, SEG-Y…), em níveis bacia › poço › pasta, com tipo, formato, tamanho, data, se
       algum leitor leu e onde o dado aparece; botões **Abrir**, **Mostrar na pasta** (Explorer com o arquivo selecionado)
@@ -63,7 +63,7 @@ existe e a validação científica ficam **para o final**, antes do lançamento 
       ao Ruan antes de programar.**
 - [x] **Bloco 4 — leitura do OCR** (0.53): segunda passada (450 dpi, limiar de Otsu) nas páginas ruins, escolhida pela
       legibilidade. Ver `docs/ocr.md`. Falta medir em mais documentos e tratar tabelas/manuscrito (limites antigos).
-- [ ] **Viabilidade**: transcrever API e densidade de Guamaré (o resto entrou na 0.52).
+- [-] ~~**Viabilidade**: transcrever API e densidade de Guamaré~~: **fora do escopo** (decisão de 16/11/2026).
 - [ ] **Pendências que dependem do Ruan**: Rw de referência por formação; conferir os números antigos do
       relatório (LIS convertidos); disponibilidade de RHOB/NPHI/DT pelo levantamento do acervo.
 
@@ -95,8 +95,8 @@ existe e a validação científica ficam **para o final**, antes do lançamento 
       poços e abre a seção nessa ordem.
 - [x] **Instalador para Windows** (0.67): .exe que roda sem instalar Python, montado e testado pelo GitHub
       (ver `docs/instalador.md`). Falta: assinatura digital do .exe (o Windows avisa "editor desconhecido").
-- [ ] Ajustes finos do estilo clássico da seção a partir de uma figura de referência
-      (ex.: Boletim de Geociências da Petrobras).
+- [x] Estilo clássico da seção (0.68): **cores e padrões de rocha da legenda dos perfis compostos da Petrobras** (95
+      litologias, copiadas do vetor do perfil composto do 1-BRSA-1041D-AL). Ver `docs/secao.md`.
 - [x] Esquemas: dicionário de ferramentas da **Halliburton** ampliado com esquemas reais (0.63; ver `docs/ferramentas.md`).
 - [x] Esquemas: Baker e Weatherford (0.66; 29 esquemas reais, ver `docs/ferramentas.md`).
 

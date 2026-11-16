@@ -51,9 +51,22 @@ deposição, sem a estrutura posterior. Poço sem o topo do datum sai da seção
 | Fonte | Helvetica/Arial | serifada (Times) |
 
 O clássico segue as convenções usuais das seções de correlação de boletins técnicos e
-relatórios de poço. Padrões de rocha, no espírito da convenção FGDC/USGS:
+relatórios de poço.
 
-| Rocha (descrição de calha) | Padrão |
+**Cores e padrões de rocha (desde a 0.68): os da legenda "Código das litologias" dos perfis compostos da Petrobras.**
+Os 95 quadradinhos da legenda (arenito, folhelho, calcilutito, calcarenito, halita, gnaisse… até os carbonatos de Dunham
+e as vulcânicas) foram copiados do vetor do PDF do perfil composto do 1-BRSA-1041D-AL (portal REATE) para
+`recursos/litologias.json`: cor de fundo e desenho de cada um, em coordenadas 0–1 do quadradinho. Na coluna litológica,
+o quadradinho vira um ladrilho de 13 px, repetido numa grade fixa (o padrão continua entre camadas vizinhas). A rocha da
+calha casa com a legenda pelo nome, e o nome mais longo ganha: "ARENITO ARGILOSO" é arenito argiloso, não arenito;
+"CALCARENITO" é calcarenito; "CALCARIO CRISTAL" é calcário cristalino. Só o desenho da legenda é usado: a disposição das
+curvas e o resto do perfil composto não.
+
+Os 47 nomes de rocha que apareceram nas calhas do projeto (Potiguar, Sergipe-Alagoas, Recôncavo) casam todos com a
+legenda, menos palavras de cor que o AGP às vezes deixa no lugar da rocha (CINZA, CREME, VARIEGADO…). Rocha fora da
+legenda usa os padrões simples de antes, no espírito da convenção FGDC/USGS:
+
+| Rocha (descrição de calha) | Padrão (só fora da legenda Petrobras) |
 |---|---|
 | Arenito | pontilhado sobre amarelo |
 | Folhelho / argilito | tracejado horizontal sobre verde-acinzentado |
@@ -74,7 +87,9 @@ preenchido com raios = óleo e gás; vazio com quatro traços = seco; vazio = ou
 
 Os padrões são desenhados como geometria e recortados no Python (o PyMuPDF, que gera o
 PNG e o PDF, não entende `<pattern>` nem `clipPath`), então o arquivo exportado é igual ao
-que aparece na tela.
+que aparece na tela. Nos ladrilhos da legenda Petrobras, as linhas são cortadas na borda da camada; bolinhas, curvas e
+formas preenchidas só entram inteiras. O carimbo cita a fonte ("Cores e padrões de rocha: legenda dos perfis compostos da
+Petrobras").
 
 ## O que o desenho mostra
 

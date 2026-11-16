@@ -136,8 +136,22 @@ Dicionário versão 3, com 29 esquemas reais baixados no projeto (1-IMET-17-AL, 
   agora vai em faixas de 8.000 px com 300 px de sobreposição.
 
 Resultado nos 29: todos com o fabricante certo e o tipo de corrida certo, menos um (3-GALP-35-SE "mcg_toolsketch"
-sai como imagem por um "MIE" no meio do ruído do OCR; o certo é convencional). Limite conhecido: código de 2 letras da
+saía como imagem por um "MIE" no meio do ruído do OCR; corrigido na 0.68). Limite conhecido: código de 2 letras da
 Baker (CN, CH) não entra — casaria com muito texto comum.
+
+## Amostrador, geoquímica e cimentação (0.68, conferência de 16/11/2026)
+
+Dicionário versão 4. Os 51 esquemas baixados no projeto foram relidos com as regras da 0.66 (inclusive os 22 antigos da
+Halliburton e da Schlumberger): fabricante e tipo certos em 47. Os quatro que escapavam:
+
+| Esquema | Saía como | Agora | O que mudou |
+|---|---|---|---|
+| 8-CP-1502-SE `hrsct` | testador (RDT) | amostrador | verbete **HRSC** (Hostile Rotary Sidewall Coring Tool) e a peça **PTMS**; "Power Sub **for** RDT/HRSC": o que vem depois de "for" é a ferramenta que a peça atende, não outra ferramenta |
+| 8-CP-1502-SE `gem` | correlação (pelo GR) | geoquímica | verbete **GEMT** (Gamma, Elements and Minerals Tool) e o tipo de corrida novo **geoquímica** (espectroscopia de elementos) |
+| 3-GALP-35-SE `CBL` | correlação, sem fabricante | cimentação, Computer Sonics | verbetes **SCBL** (Sector Bond) e **CSSM**, fabricante **Computer Sonics** (escrito no esquema) |
+| 3-GALP-35-SE `mcg` | imagem | convencional | código curto e solto escrito em minúscula ("Mie" no ruído do OCR) não conta: os esquemas escrevem os códigos em maiúsculas |
+
+Resultado: os 51 com fabricante e tipo certos. Cada verbete novo cita o esquema e a linha de onde veio.
 
 ## Limites (a interface deixa claro)
 

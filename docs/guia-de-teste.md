@@ -132,6 +132,21 @@ Precisa de internet. Comece por uma categoria pequena para ver o tempo.
 - [ ] Sem intervalo marcado, **Calcular** explica que precisa de um intervalo-alvo.
 - [ ] Repetir no `5PX__0011__RN_5PX__0011__RN.tif` (DLIS de 2020).
 
+## 0.68 — legenda Petrobras na seção e esquemas
+
+- [ ] Correlação › monte uma seção com poços que tenham AGP (ex.: os da Potiguar). Estilo **clássico**: a coluna
+      litológica de cada poço mostra as cores e os padrões do perfil composto da Petrobras (arenito amarelo com
+      bolinhas, folhelho verde com traços, calcilutito azul-claro com tijolo e traço, calcarenito azul com tijolo e ponto…).
+- [ ] Compare com a legenda "Código das litologias" do perfil composto do 1-BRSA-1041D-AL (Documentos): mesmas cores e
+      mesmos desenhos. Passe o mouse numa camada: a dica mostra a rocha da calha.
+- [ ] Legenda da seção (rodapé, "Litologia (calha)"): só as rochas que aparecem, com o nome da legenda Petrobras
+      ("Arenito, areia", "Calcarenito"…). O carimbo traz "Cores e padrões de rocha: legenda dos perfis compostos da
+      Petrobras".
+- [ ] Exportar PNG e PDF: os padrões saem iguais aos da tela.
+- [ ] Ficha do 8-CP-1502-SE e do 3-GALP-35-SE › Esquemas de ferramentas › **Ler os esquemas (OCR)**: `hrsct` =
+      amostragem lateral; `gem` = geoquímica; `CBL` = cimentação, Computer Sonics; `mcg_toolsketch` = perfilagem
+      convencional.
+
 ## 0.67.2 — chave Pix aleatória
 
 - [ ] Ajuda › Apoie o projeto mostra "Chave (aleatória)" com 5c09b50e-2b2d-41d6-a844-855a0f7c8913, e não mais o celular.

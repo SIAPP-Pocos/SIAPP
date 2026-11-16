@@ -6,6 +6,28 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 
 ## [Não lançado]
 
+## [0.68.0] — 2026-11-16
+Legenda de litologias da Petrobras na seção e esquemas de ferramentas que ainda escapavam.
+### Adicionado
+- **Seção estratigráfica, estilo clássico**: cores e padrões de rocha da legenda "Código das litologias" dos perfis
+  compostos da Petrobras: 95 litologias (das siliciclásticas aos carbonatos de Dunham, evaporitos, vulcânicas e
+  metamórficas), copiadas do vetor do perfil composto do 1-BRSA-1041D-AL para `recursos/litologias.json`. Cada
+  quadradinho da legenda vira um ladrilho repetido na coluna litológica; a rocha da calha casa pelo nome mais longo
+  ("ARENITO ARGILOSO" ≠ "ARENITO"). O carimbo cita a fonte.
+- **Esquemas de ferramentas (dicionário v4)**: HRSC (testemunhador lateral rotativo) e PTMS da Halliburton; GEMT (raios
+  gama, elementos e minerais) e o tipo de corrida novo **geoquímica**; SCBL e CSSM da Computer Sonics (cimentação). Cada
+  verbete cita o esquema real de onde veio.
+### Corrigido
+- Quatro dos 51 esquemas do projeto saíam com o tipo errado; agora os 51 batem: o `hrsct` do 8-CP-1502-SE era lido como
+  testador ("Power Sub for RDT/HRSC": o que vem depois de "for" não é outra ferramenta), o `gem` como correlação, o `CBL`
+  do 3-GALP-35-SE sem fabricante e o `mcg` do 3-GALP-35-SE como imagem (código curto em minúscula no ruído do OCR, "Mie",
+  não conta mais).
+- **`docs/estrutura-da-pasta.md`**: revisão guiada da pasta: o que é cada pasta, arquivo, extensão e nome, o que pode ou
+  não ser apagado, e o glossário da interface e do código ("árvore", "calha", "corrida", "marca"…).
+- `docs/instalador.md`: como cada um recebe as versões novas (clone + atalho × instalador).
+### Alterado
+- Roteiro: validar a petrofísica em outros poços e a API/densidade de Guamaré saíram do escopo (decisão de 16/11/2026).
+
 ## [0.67.2] — 2026-11-15
 ### Alterado
 - "Apoie o projeto": a chave Pix passou a ser uma chave aleatória (antes, o número de celular).

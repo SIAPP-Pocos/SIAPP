@@ -379,3 +379,26 @@ def test_verbetes_da_versao_3_citam_a_fonte():
     novos = [f for f in DIC["ferramentas"] if f.get("fabricante") == "Weatherford" or f["codigo"] in ("DSL", "XMF1", "WGI")]
     assert len(novos) >= 20 and all("Esquema real do REATE" in f.get("fonte", "") for f in novos)
     assert all("weatherford.com" in f["fonte"] for f in novos if f["fabricante"] == "Weatherford")
+
+
+def test_versao_4_amostrador_geoquimica_cimentacao_e_ruido_em_minuscula():
+    # HRSC da Halliburton; "for RDT/HRSC" é a peça que atende a ferramenta, não um testador RDT
+    a = mf.analisar_texto("HALLIBURTON\nPTMS Power Sub for RDT/HRSC 7690\nHRSC Hostile Rotary Sidewall 1.5 inch Coring Tool"
+                          "\nHRSCT- B Tube #1", DIC)
+    cods = [f["codigo"] for f in a["ferramentas"]]
+    assert "HRSC" in cods and "RDT" not in cods and mf.tipo_pelas_familias(a["familias"]) == "amostrador"
+    # GEM: espectroscopia de elementos, não "correlação" pelo GR
+    a = mf.analisar_texto("HALLIBURTON\nGTET Gamma Telemetry Tool\nGEMT Gamma, Elements and Minerals Tool 4433", DIC)
+    assert mf.tipo_pelas_familias(a["familias"]) == "geoquimica" and "geoquimica" in DIC["tipos"]
+    # CBL setorial da Computer Sonics
+    a = mf.analisar_texto("CCL-CSSM (CSS-1195) Computer Sonics CSSM Collar Locator\n"
+                          "SCBL-CSSMRad (CSS-1195) Computer Sonics Multiplexed CSSM Sector Bond", DIC)
+    assert mf.tipo_pelas_familias(a["familias"]) == "cimentacao" and a["fabricante"] == "Computer Sonics"
+    # "Mie" no meio do ruído do OCR não é o imageador MIE; "MIE" em maiúsculas é
+    ruido = "MCG-A.A MDN-A.A MPD-A.A MSS-A.A MAI-A.A\na(S lol Mie ow = er"
+    a = mf.analisar_texto(ruido, DIC)
+    assert "MIE" not in [f["codigo"] for f in a["ferramentas"]] and mf.tipo_pelas_familias(a["familias"]) == "convencional"
+    assert "MIE" in [f["codigo"] for f in mf.analisar_texto("Compact MMI\nMIE 109", DIC)["ferramentas"]]
+    novos = [f for f in DIC["ferramentas"] if f["codigo"] in ("HRSC", "PTMS", "GEMT", "SCBL", "CSSM")]
+    assert len(novos) == 5 and all("Esquema real do REATE" in f["fonte"] for f in novos)
+    assert mf.ler_nome("8-x-1-se_brsa_tsc_hrsct.pdf", DIC)["tipo"] == "amostrador"

@@ -2,13 +2,13 @@
 
 [![testes](https://github.com/SIAPP-Pocos/siapp/actions/workflows/testes.yml/badge.svg)](https://github.com/SIAPP-Pocos/siapp/actions/workflows/testes.yml)
 [![licença: AGPL-3.0](https://img.shields.io/badge/licen%C3%A7a-AGPL--3.0-blue)](LICENSE)
-![versão](https://img.shields.io/badge/vers%C3%A3o-0.67.2-informational)
+![versão](https://img.shields.io/badge/vers%C3%A3o-0.68.0-informational)
 
 Ferramenta aberta para transformar o acervo **público** de dados de poços da ANP
 (portal [REATE](https://reate.cprm.gov.br/anp/TERRESTRE), ANP/CPRM) em dados
 organizados, pesquisáveis e prontos para análise — sem software comercial.
 
-> **Estado:** em desenvolvimento ativo (v0.67.2). A interface e os formatos ainda
+> **Estado:** em desenvolvimento ativo (v0.68). A interface e os formatos ainda
 > podem mudar entre versões; a 1.0 sai no lançamento público.
 
 ---
@@ -44,7 +44,8 @@ qual documento, página e trecho o sustentam.
 **Pelo instalador (desde a 0.67):** baixe `SIAPP-<versão>-instalador.exe` e dê dois cliques. Não pede
 administrador nem Python; instala em `%LOCALAPPDATA%\Programs\SIAPP`, cria o atalho no menu Iniciar e guarda os
 projetos em **Documentos\SIAPP** (que ficam lá mesmo se desinstalar). Como o instalador é montado e testado, ver
-[`docs/instalador.md`](docs/instalador.md).
+[`docs/instalador.md`](docs/instalador.md). O mapa da pasta (o que é cada pasta, arquivo, extensão e termo) está em
+[`docs/estrutura-da-pasta.md`](docs/estrutura-da-pasta.md).
 
 **Pelo código (para quem desenvolve):**
 

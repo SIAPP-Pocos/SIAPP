@@ -342,11 +342,23 @@ def carimbo(texto: str) -> dict:
     return out
 
 
+# "Power Sub for RDT/HRSC": o que vem depois de "for" é a ferramenta que a peça atende, não outra ferramenta (0.68)
+_RE_PARA = re.compile(r"\bFOR\s+[A-Z0-9]+(?:\s*/\s*[A-Z0-9]+)*")
+
+
 def analisar_texto(texto: str, dic: dict) -> dict:
     """Ferramentas, famílias, fabricante e medidas que o texto do esquema traz."""
-    limpo = _sem_carimbo(texto or "").upper()
+    original = _sem_carimbo(texto or "")
+    limpo = original.upper()
+    if len(limpo) != len(original):          # maiúscula que muda o tamanho (raro): sem a conferência de caixa
+        original = limpo
+    limpo = _RE_PARA.sub(lambda m: " " * len(m.group(0)), limpo)
     vistos, ferramentas = set(), []
     for m in _RE_CODIGO.finditer(limpo):
+        # código curto e solto escrito em minúscula ("Mie" no meio do ruído do OCR) não é ferramenta: os esquemas
+        # escrevem os códigos em maiúsculas (0.68; o 3-GALP-35-SE saía como imagem por um "Mie")
+        if len(m.group(1)) <= 3 and not m.group(2) and not original[m.start(1):m.end(1)].isupper():
+            continue
         fe = reconhecer_codigo(m.group(1), bool(m.group(2)), dic)
         if fe and fe.get("superficie"):
             continue
@@ -403,6 +415,8 @@ def tipo_pelas_familias(familias: list[str]) -> str | None:
         if t in fs:
             return t
     conv = fs & FAMILIAS_CONVENCIONAL
+    if "espectroscopia" in fs and len(conv) < 2:
+        return "geoquimica"                  # 0.68: GEM da Halliburton (antes saía como correlação, pelo GR)
     if len(conv) >= 2:
         return "convencional"
     if conv & {"inducao", "laterolog", "micro"}:

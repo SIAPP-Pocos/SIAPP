@@ -54,16 +54,14 @@ Python 3.13 da Microsoft Store pelo `py`, e a `.venv` da pasta do app (`.venv\Sc
 
 Detalhe em `docs/roteiro.md`. Resumo:
 
-1. Validar no Windows as versões 0.37–0.46 e 0.48–0.55 pelo guia de teste (o Ruan testa; o Claude corrige). A 0.47
+1. Validar no Windows as versões 0.37–0.46 e 0.48 em diante pelo guia de teste (o Ruan testa; o Claude corrige). A 0.47
    (lançador) já foi testada.
-2. Bloco 9: petrofísica de testemunho lida (0.48/0.48.1) e comparada ao perfil (0.50); falta validar outros poços
-   (outras grafias de pasta e de planilha, ex.: 1-BRSA-1006-RN, 7-ET-854-RN).
-3. Viabilidade: API e densidade de Guamaré (depende de baixar as pastas de poço do campo: ver guia, seção 0.52).
-4. Melhorias: instalador `.exe`, estilo clássico da seção, dicionário de ferramentas (Halliburton, Baker, Weatherford).
+2. Fora do escopo (decisão de 16/11/2026): validar a petrofísica de testemunho em outros poços; API e densidade de Guamaré.
+3. Feito: instalador `.exe` (0.67), estilo clássico da seção com a legenda Petrobras (0.68), dicionário de ferramentas
+   (Halliburton, Baker, Weatherford, 0.63–0.68). Falta a assinatura digital do `.exe`.
+4. Revisão guiada da pasta do projeto (`docs/estrutura-da-pasta.md`), depois da 0.68.
 5. Validação científica (Rw publicado, carta estratigráfica, avaliação em lote por formação, 100 esquemas).
-6. Por último: análise do 1-BRSA-1304-BA × à mão; revisão guiada da pasta do projeto (o que é cada pasta, arquivo,
-   extensão e nome; glossário da interface e do código, ex.: "árvore"; vira `docs/estrutura-da-pasta.md`); e a
-   bibliografia completa.
+6. Por último: análise do 1-BRSA-1304-BA × à mão; e a bibliografia completa.
 7. Antes da 1.0: termos de uso da ANP, DOI no Zenodo, repositórios públicos.
 8. Pendências do Ruan: Rw de referência por formação; números antigos do relatório (LIS); RHOB/NPHI/DT no acervo; terras
-   indígenas da FUNAI (baixar o shapefile e importar); unidade da densidade nas planilhas de petrofísica.
+   indígenas da FUNAI (baixar o shapefile e importar); unidade da densidade nas planilhas de petrofísica (esta, fora do escopo junto com o Bloco 9).

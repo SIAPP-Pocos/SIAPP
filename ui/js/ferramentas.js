@@ -104,5 +104,5 @@ const NOMES_TIPO_CORRIDA = {
   mergulho: "Perfil de mergulho", amostrador: "Amostragem lateral", cimentacao: "Perfil de cimentação",
   lwd: "Perfilagem durante a perfuração", convencional: "Perfilagem convencional",
   resistividade: "Perfil de resistividade", sonico: "Perfil sônico", correlacao: "Correlação (GR/CCL)",
-  sismica: "Sísmica de poço (checkshot, VSP)",
+  sismica: "Sísmica de poço (checkshot, VSP)", geoquimica: "Geoquímica (espectroscopia de elementos)",
 };

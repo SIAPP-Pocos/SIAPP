@@ -14,12 +14,21 @@ Convenções usadas (as usuais em boletins técnicos e relatórios de poço):
 Os padrões são desenhados como geometria (não ``<pattern>``) e tudo é recortado no
 Python: o PyMuPDF, que gera o PNG e o PDF, não entende ``<pattern>`` nem ``clipPath``.
 A litologia vem das amostras de calha do AGP — é descrição, não interpretação de perfil.
+
+Desde a 0.68, as cores e os padrões de rocha são os da legenda "Código das litologias" dos
+perfis compostos da Petrobras (``recursos/litologias.json``, copiados do vetor do PDF do
+1-BRSA-1041D-AL): cada quadradinho da legenda vira um ladrilho repetido na coluna. Rocha que
+não está na legenda usa os padrões simples de antes (``LITOLOGIAS``).
 """
 
 from __future__ import annotations
 
+import json
 import math
+import os
 import re
+import unicodedata
+from functools import lru_cache
 from html import escape
 
 from . import __version__
@@ -54,7 +63,44 @@ SEM_CALHA = ("sem", "Sem descrição de calha", "#ffffff", "sem")
 ABREV = {"Formação": "Fm.", "Membro": "Mb.", "Grupo": "Gr.", "Camadas": "Cam.", "Supergrupo": "Sgr."}
 
 
+CAMINHO_LITOLOGIAS = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "recursos",
+                                  "litologias.json")
+LADO_LADRILHO = 13.0          # px de um ladrilho da legenda Petrobras (2 na largura da coluna)
+
+
+def _sem_acento(t: str) -> str:
+    return unicodedata.normalize("NFKD", t or "").encode("ascii", "ignore").decode("ascii").upper()
+
+
+@lru_cache(maxsize=4)
+def legenda_petrobras(caminho: str = CAMINHO_LITOLOGIAS) -> dict:
+    """{codigo: {codigo, nome, termos, fundo, desenho}} da legenda Petrobras; {} se o arquivo faltar."""
+    try:
+        with open(caminho, encoding="utf-8") as f:
+            dados = json.load(f)
+    except (OSError, ValueError):
+        return {}
+    return {d["codigo"]: d for d in dados.get("litologias", [])}
+
+
+@lru_cache(maxsize=1024)
+def _termo_petrobras(rocha: str) -> str | None:
+    """Código da legenda Petrobras para a rocha da calha: o termo mais longo que casa."""
+    r = " ".join(_sem_acento(rocha).replace("-", " - ").split()).replace(" - ", "-")
+    melhor, tam = None, 0
+    for cod, d in legenda_petrobras().items():
+        for termo in d["termos"]:
+            if len(termo) > tam and re.search(r"(^|\s)" + re.escape(termo), r):
+                melhor, tam = cod, len(termo)
+    return melhor
+
+
 def litologia(rocha: str) -> tuple[str, str, str, str]:
+    """(chave, nome, cor de fundo, padrão). Padrão "pb:<código>" = ladrilho da legenda Petrobras."""
+    cod = _termo_petrobras(rocha or "")
+    if cod:
+        d = legenda_petrobras()[cod]
+        return cod, d["nome"][:1].upper() + d["nome"][1:], d["fundo"], "pb:" + cod
     r = (rocha or "").upper()
     for padrao, chave, nome, cor, pat in LITOLOGIAS:
         if re.search(padrao, r):
@@ -183,7 +229,130 @@ def marcas(pat: str, x: float, y: float, w: float, h: float) -> tuple[str, str]:
     return "".join(tr), "".join(pt)
 
 
+_RE_CMD = re.compile(r"([MLCHVhvz])([^MLCHVhvz]*)")
+
+
+@lru_cache(maxsize=256)
+def _subcaminhos(d: str) -> tuple:
+    """Path compacto da legenda (M, L, C, h, v, z em coordenadas 0–1) → subcaminhos, cada um uma
+    lista de segmentos ("l", x1, y1, x2, y2) ou ("c", x1, y1, ..., x4, y4), e se é fechado."""
+    subs, atual, ini, pos = [], [], None, (0.0, 0.0)
+    for cmd, args in _RE_CMD.findall(d):
+        v = [float(a) for a in args.replace(",", " ").split()]
+        if cmd == "M":
+            if atual:
+                subs.append((tuple(atual), False))
+            atual, pos = [], (v[0], v[1])
+            ini = pos
+        elif cmd == "L":
+            for k in range(0, len(v), 2):
+                atual.append(("l", *pos, v[k], v[k + 1]))
+                pos = (v[k], v[k + 1])
+        elif cmd == "C":
+            for k in range(0, len(v), 6):
+                atual.append(("c", *pos, *v[k:k + 6]))
+                pos = (v[k + 4], v[k + 5])
+        elif cmd in "hH":
+            novo = (pos[0] + v[0], pos[1]) if cmd == "h" else (v[0], pos[1])
+            atual.append(("l", *pos, *novo))
+            pos = novo
+        elif cmd in "vV":
+            novo = (pos[0], pos[1] + v[0]) if cmd == "v" else (pos[0], v[0])
+            atual.append(("l", *pos, *novo))
+            pos = novo
+        elif cmd == "z":
+            if ini and pos != ini:
+                atual.append(("l", *pos, *ini))
+            subs.append((tuple(atual), True))
+            atual, pos = [], ini or pos
+    if atual:
+        subs.append((tuple(atual), False))
+    return tuple(subs)
+
+
+def _corta_segmento(x1, y1, x2, y2, rx0, ry0, rx1, ry1):
+    """Liang–Barsky: o pedaço do segmento dentro do retângulo, ou None."""
+    dx, dy = x2 - x1, y2 - y1
+    t0, t1 = 0.0, 1.0
+    for p, q in ((-dx, x1 - rx0), (dx, rx1 - x1), (-dy, y1 - ry0), (dy, ry1 - y1)):
+        if p == 0:
+            if q < 0:
+                return None
+            continue
+        t = q / p
+        if p < 0:
+            t0 = max(t0, t)
+        else:
+            t1 = min(t1, t)
+        if t0 > t1:
+            return None
+    return x1 + t0 * dx, y1 + t0 * dy, x1 + t1 * dx, y1 + t1 * dy
+
+
+def ladrilhos_petrobras(cod: str, x: float, y: float, w: float, h: float, lado: float = LADO_LADRILHO) -> list[str]:
+    """SVG do desenho da legenda Petrobras repetido em ladrilhos (grade absoluta, para o padrão
+    continuar entre camadas vizinhas), recortado no retângulo à mão: linhas são cortadas na borda;
+    curvas e formas preenchidas só entram inteiras."""
+    d = legenda_petrobras().get(cod)
+    if not d or w < 2 or h < 1.6:
+        return []
+    x1, y1 = x + w, y + h
+    eps = 0.15
+    saida = []
+    i0, i1 = math.floor(x / lado), math.ceil(x1 / lado)
+    j0, j1 = math.floor(y / lado), math.ceil(y1 / lado)
+    for parte in d["desenho"]:
+        subs = _subcaminhos(parte["d"])
+        preenche = parte.get("f")
+        caminho = []
+        for i in range(i0, i1):
+            for j in range(j0, j1):
+                ox, oy = i * lado, j * lado
+                for cx, cy, r in parte.get("o", ()):
+                    px, py, rr = ox + cx * lado, oy + cy * lado, max(r * lado, 0.35)
+                    if x <= px - rr and px + rr <= x1 and y <= py - rr and py + rr <= y1:
+                        caminho.append(f"M{px - rr:.1f} {py:.1f}a{rr:.2f} {rr:.2f} 0 1 0 {2 * rr:.2f} 0"
+                                       f"a{rr:.2f} {rr:.2f} 0 1 0 {-2 * rr:.2f} 0")
+                for segs, fechado in subs:
+                    pts = [(ox + s[k] * lado, oy + s[k + 1] * lado) for s in segs for k in range(1, len(s), 2)]
+                    dentro = all(x - eps <= px <= x1 + eps and y - eps <= py <= y1 + eps for px, py in pts)
+                    if dentro:
+                        p0 = pts[0]
+                        caminho.append(f"M{p0[0]:.1f} {p0[1]:.1f}")
+                        for s in segs:
+                            q = [(ox + s[k] * lado, oy + s[k + 1] * lado) for k in range(1, len(s), 2)]
+                            if s[0] == "l":
+                                caminho.append(f"L{q[1][0]:.1f} {q[1][1]:.1f}")
+                            else:
+                                caminho.append("C" + " ".join(f"{a:.1f} {b:.1f}" for a, b in q[1:]))
+                        if fechado:
+                            caminho.append("z")
+                    elif not preenche:
+                        for s in segs:
+                            if s[0] != "l":
+                                continue
+                            c = _corta_segmento(ox + s[1] * lado, oy + s[2] * lado, ox + s[3] * lado, oy + s[4] * lado,
+                                                x, y, x1, y1)
+                            if c and (abs(c[2] - c[0]) + abs(c[3] - c[1])) > 0.3:
+                                caminho.append(f"M{c[0]:.1f} {c[1]:.1f}L{c[2]:.1f} {c[3]:.1f}")
+        if not caminho:
+            continue
+        if preenche:
+            traco = (f' stroke="{parte["s"]}" stroke-width="{max(0.25, parte.get("w", 0) * lado):.2f}"'
+                     if parte.get("s") else "")
+            saida.append(f'<path d="{"".join(caminho)}" fill="{preenche}"{traco}/>')
+        else:
+            saida.append(f'<path d="{"".join(caminho)}" fill="none" stroke="{parte.get("s") or TINTA}" '
+                         f'stroke-width="{max(0.3, parte.get("w", 0) * lado):.2f}"/>')
+    return saida
+
+
 def bloco_litologico(x, y, w, h, cor, pat, dica="") -> str:
+    if pat.startswith("pb:"):
+        s = [f'<rect x="{x:.1f}" y="{y:.1f}" width="{w:.1f}" height="{max(h, 0.5):.1f}" fill="{cor}"/>']
+        s += ladrilhos_petrobras(pat[3:], x, y, w, h)
+        corpo = "".join(s)
+        return f"<g><title>{escape(dica)}</title>{corpo}</g>" if dica else corpo
     tr, pt = marcas(pat, x, y, w, h)
     s = [f'<rect x="{x:.1f}" y="{y:.1f}" width="{w:.1f}" height="{max(h, 0.5):.1f}" fill="{cor}"/>']
     if tr:
@@ -662,6 +831,7 @@ def desenhar_classico(modelo: dict, titulo: str = "", autor: str = "", data: str
          (f" · exagero vertical ≈ {exag:,.0f}×".replace(",", ".") if exag else ""), 8.5, "normal"),
         ("Topos e litologia: AGP (ANP, portal REATE)" + (" · GR: perfis do poço" if tem_gr else ""), 7.5, "normal"),
         ("Topos interpretados pela operadora; litologia de amostras de calha", 7.5, "normal"),
+        ("Cores e padrões de rocha: legenda dos perfis compostos da Petrobras", 7.5, "normal"),
         (f"Elaboração: {autor or '—'} · {data or ''}", 7.5, "normal"),
         (f"SIAPP {__version__}", 7.5, "normal"),
     ]
