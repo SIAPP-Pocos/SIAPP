@@ -14,6 +14,7 @@ from __future__ import annotations
 import collections
 import functools
 import json
+import ntpath
 import os
 import sys
 import time
@@ -44,10 +45,36 @@ def _pasta_documentos() -> str:
     return os.path.join(os.path.expanduser("~"), "Documents")
 
 
-PASTA_DADOS = os.environ.get("SIAPP_DADOS") or (os.path.join(_pasta_documentos(), "SIAPP") if INSTALADO else PASTA_APP)
+# 1.0: o instalador pergunta onde ficam os projetos e grava a resposta em pasta_dados.txt, ao lado do SIAPP.exe.
+ARQUIVO_PASTA_DADOS = "pasta_dados.txt"
 
-# O projeto principal mora SEMPRE nesta pasta: ao lado do aplicativo (pasta clonada do GitHub) ou em
-# Documentos\SIAPP (instalado). Outros projetos ficam em <PASTA_DADOS>\projetos.
+
+def _pasta_escolhida_no_instalador() -> str:
+    try:
+        with open(os.path.join(os.path.dirname(sys.executable), ARQUIVO_PASTA_DADOS), encoding="utf-8-sig") as f:
+            return f.read().strip()
+    except OSError:
+        return ""
+
+
+def resolver_pasta_dados(variavel: str, instalado: bool, escolhida: str, documentos: str, pasta_app: str) -> str:
+    """Onde ficam os projetos, nesta ordem: a variável SIAPP_DADOS; instalado, a pasta escolhida no instalador (se for
+    um caminho completo) ou Documentos\\SIAPP; pelo código, a pasta do clone."""
+    if variavel:
+        return variavel
+    if not instalado:
+        return pasta_app
+    if escolhida and (os.path.isabs(escolhida) or ntpath.isabs(escolhida)):
+        return escolhida
+    return os.path.join(documentos, "SIAPP")
+
+
+PASTA_DADOS = resolver_pasta_dados(os.environ.get("SIAPP_DADOS", ""), INSTALADO,
+                                   _pasta_escolhida_no_instalador() if INSTALADO else "",
+                                   _pasta_documentos() if INSTALADO else "", PASTA_APP)
+
+# O projeto principal mora SEMPRE nesta pasta: ao lado do aplicativo (pasta clonada do GitHub) ou, instalado, na pasta
+# escolhida no instalador (padrão: Documentos\SIAPP). Outros projetos ficam em <PASTA_DADOS>\projetos.
 NOME_PASTA_PROJETO = "ambiente_teste"
 PASTA_PROJETO = os.path.join(PASTA_DADOS, NOME_PASTA_PROJETO)
 PASTA_RECURSOS = os.path.join(PASTA_APP, "recursos")

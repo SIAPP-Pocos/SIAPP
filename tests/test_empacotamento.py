@@ -33,3 +33,17 @@ def test_citation_na_versao_atual():
         texto = f.read()
     assert f'version: "{__version__}"' in texto, "Atualize a versão no CITATION.cff"
     assert "license: AGPL-3.0-only" in texto
+
+
+def test_pasta_dos_projetos_escolhida_no_instalador():
+    from ponte import base
+    r = base.resolver_pasta_dados
+    docs, app = r"C:\Users\x\Documents", r"C:\clone\SIAPP"
+    assert r("", False, "", docs, app) == app                                       # pelo código: a pasta do clone
+    assert r("", True, "", docs, app).endswith("SIAPP") and r("", True, "", docs, app).startswith(docs)
+    assert r("", True, r"D:\Meus projetos\SIAPP", docs, app) == r"D:\Meus projetos\SIAPP"   # escolhida no instalador
+    assert r("", True, "relativa", docs, app).startswith(docs)                     # caminho incompleto: ignora
+    assert r(r"E:\teste", True, r"D:\x", docs, app) == r"E:\teste"                  # SIAPP_DADOS ganha de tudo
+    with open(os.path.join(RAIZ, "instalador", "siapp.iss"), encoding="utf-8") as f:
+        iss = f.read()
+    assert "pasta_dados.txt" in iss and base.ARQUIVO_PASTA_DADOS == "pasta_dados.txt" and "/PASTADADOS=" in iss

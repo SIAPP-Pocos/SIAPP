@@ -64,7 +64,8 @@ class API(BaseAPI, JanelasAPI, PocosAPI, CatalogoAPI, DocumentosAPI, Vocabulario
     def info(self):
         return {"versao": mp.VERSAO_SIAPP, "bacias": sorted(reate.BACIAS),
                 "nome_pasta_projeto": base.NOME_PASTA_PROJETO,
-                "pasta_projeto": base.PASTA_PROJETO, "instalado": base.INSTALADO}
+                "pasta_projeto": base.PASTA_PROJETO, "instalado": base.INSTALADO,
+                "pasta_dados": base.PASTA_DADOS}
 
     @resposta_segura
     def escolher_pasta(self):

@@ -1,7 +1,8 @@
-; SIAPP — instalador do Windows (Inno Setup 6), 0.67.
+; SIAPP — instalador do Windows (Inno Setup 6), desde a 0.67.
 ; Instala só para o usuário (sem pedir administrador) em %LOCALAPPDATA%\Programs\SIAPP.
-; Os dados ficam em Documentos\SIAPP e NÃO são apagados ao desinstalar.
-; Compilar:  ISCC.exe /DVersao=0.67.0 instalador\siapp.iss   (depois do PyInstaller)
+; 1.0: pergunta a "Pasta dos projetos" (padrão Documentos\SIAPP; sem perguntas: /PASTADADOS="C:\...") e grava a
+; escolha em {app}\pasta_dados.txt, que o SIAPP lê ao abrir. A pasta dos projetos NÃO é apagada ao desinstalar.
+; Compilar:  ISCC.exe /DVersao=1.0.0 instalador\siapp.iss   (depois do PyInstaller)
 
 #ifndef Versao
   #define Versao "0.0.0"
@@ -46,14 +47,71 @@ Source: "..\dist\SIAPP\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs
 
 [Icons]
 Name: "{group}\SIAPP"; Filename: "{app}\SIAPP.exe"; AppUserModelID: "SIAPP.Pocos.SIAPP"
-Name: "{group}\Pasta de dados do SIAPP"; Filename: "{userdocs}\SIAPP"
+Name: "{group}\Pasta dos projetos do SIAPP"; Filename: "{code:PastaDados}"
 Name: "{userdesktop}\SIAPP"; Filename: "{app}\SIAPP.exe"; AppUserModelID: "SIAPP.Pocos.SIAPP"; Tasks: atalho
 
 [Dirs]
-Name: "{userdocs}\SIAPP"; Flags: uninsneveruninstall
+Name: "{code:PastaDados}"; Flags: uninsneveruninstall
 
 [Run]
 Filename: "{app}\SIAPP.exe"; Description: "Abrir o SIAPP agora"; Flags: nowait postinstall skipifsilent
 
 [Messages]
-pt.FinishedLabel=O SIAPP foi instalado. Os seus projetos ficam em Documentos\SIAPP e continuam lá mesmo se você desinstalar.
+pt.FinishedLabel=O SIAPP foi instalado. Os seus projetos ficam na pasta escolhida e continuam lá mesmo se você desinstalar.
+
+[Code]
+var
+  PaginaDados: TInputDirWizardPage;
+
+function ParametroPastaDados(): String;
+var
+  I: Integer;
+  P: String;
+begin
+  Result := '';
+  for I := 1 to ParamCount do
+  begin
+    P := ParamStr(I);
+    if CompareText(Copy(P, 1, 12), '/PASTADADOS=') = 0 then
+      Result := RemoveQuotes(Copy(P, 13, Length(P)));
+  end;
+end;
+
+procedure InitializeWizard();
+var
+  Inicial: String;
+begin
+  PaginaDados := CreateInputDirPage(wpSelectDir, 'Pasta dos projetos',
+    'Onde o SIAPP vai guardar os projetos, os arquivos baixados e os resultados?',
+    'Escolha uma pasta com espaço livre (os arquivos do portal REATE podem somar alguns GB). Se você já usa o SIAPP, ' +
+    'escolha a pasta que tem o ambiente_teste: os seus projetos continuam de onde pararam. Esta pasta não é apagada ' +
+    'ao desinstalar.', False, 'SIAPP');
+  PaginaDados.Add('');
+  Inicial := ParametroPastaDados();
+  if Inicial = '' then
+    Inicial := GetPreviousData('PastaDados', ExpandConstant('{userdocs}\SIAPP'));
+  PaginaDados.Values[0] := Inicial;
+end;
+
+procedure RegisterPreviousData(PreviousDataKey: Integer);
+begin
+  SetPreviousData(PreviousDataKey, 'PastaDados', PaginaDados.Values[0]);
+end;
+
+function PastaDados(Param: String): String;
+begin
+  Result := PaginaDados.Values[0];
+end;
+
+procedure CurStepChanged(CurStep: TSetupStep);
+var
+  Linhas: TArrayOfString;
+begin
+  if CurStep = ssPostInstall then
+  begin
+    ForceDirectories(PaginaDados.Values[0]);
+    SetArrayLength(Linhas, 1);
+    Linhas[0] := PaginaDados.Values[0];
+    SaveStringsToUTF8File(ExpandConstant('{app}\pasta_dados.txt'), Linhas, False);
+  end;
+end;

@@ -51,7 +51,7 @@ async function iniciar() {
   const ajuda = $("ini-pasta-ajuda");
   limpar(ajuda);
   ajuda.append("Tudo fica na pasta ", el("strong", "", r.nome_pasta_projeto),
-               r.instalado ? ", em Documentos\\SIAPP. O diálogo já abre nela: é só confirmar."
+               r.instalado ? `, em ${r.pasta_dados}. O diálogo já abre nela: é só confirmar.`
                            : ", ao lado do aplicativo. O diálogo já abre nela: é só confirmar.");
   ajuda.title = r.pasta_projeto;
   const sel = $("sel-bacia");
