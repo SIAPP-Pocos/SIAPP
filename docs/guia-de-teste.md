@@ -132,6 +132,13 @@ Precisa de internet. Comece por uma categoria pequena para ver o tempo.
 - [ ] Sem intervalo marcado, **Calcular** explica que precisa de um intervalo-alvo.
 - [ ] Repetir no `5PX__0011__RN_5PX__0011__RN.tif` (DLIS de 2020).
 
+## 1.0.2 — marca do projeto no Windows
+
+- [ ] Crie a versão pelo site (Releases › Draft a new release › etiqueta `v1.0.2` › Publish) e espere o instalador
+      aparecer nela (~5 min).
+- [ ] Instale por cima da 1.0.1: a página "Pasta dos projetos" já vem com a sua pasta; o projeto abre igual.
+- [ ] Baixe algo novo no Acervo e troque de aba: a aba Documentos mostra o arquivo novo sem precisar fechar o SIAPP.
+
 ## 1.0.1 — instalador da versão oficial
 
 - [ ] GitHub › Releases › **v1.0.1** traz `SIAPP-1.0.1-instalador.exe` e `SIAPP-1.0.1-codigo-fonte.zip`. Siga a seção

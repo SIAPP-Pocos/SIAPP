@@ -253,7 +253,10 @@ class Projeto:
                         if e.name in self.IGNORAR_NA_MARCA or e.name.endswith((".log", ".tmp", ".part")):
                             continue
                         try:
-                            st = e.stat()
+                            # 1.0.2: no Windows, o stat() de um DirEntry vem da listagem da pasta-mãe, e o NTFS só
+                            # atualiza ali a data de uma subpasta mais tarde: arquivo novo no 3º nível não mudava a
+                            # marca. Para pastas, os.stat() lê a data de verdade.
+                            st = os.stat(e.path) if e.is_dir() else e.stat()
                         except OSError:
                             continue
                         partes.append(f"{e.name}:{st.st_mtime_ns}:{st.st_size if e.is_file() else ''}")

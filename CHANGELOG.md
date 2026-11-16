@@ -6,6 +6,12 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 
 ## [Não lançado]
 
+## [1.0.2] — 2026-11-16
+### Corrigido
+- No Windows, criar um arquivo no terceiro nível da pasta do projeto (ex.: um catálogo novo) às vezes não mudava a
+  "marca" do projeto, e a aba não recarregava: a data da subpasta vinha da listagem da pasta-mãe, que o NTFS atualiza
+  depois. Agora a data das pastas é lida direto. (Era o teste que falhava de vez em quando no GitHub.)
+
 ## [1.0.1] — 2026-11-16
 ### Corrigido
 - O instalador da etiqueta v1.0.0 não saiu: no pacote, o lasio não achava os próprios metadados e procurava a versão

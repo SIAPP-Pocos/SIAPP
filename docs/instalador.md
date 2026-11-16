@@ -25,6 +25,12 @@ usar o programa não precisa de Python, git nem do lançador; quem desenvolve co
 - O Windows pode avisar "editor desconhecido" (SmartScreen): o `.exe` ainda não tem assinatura digital. Clique em
   **Mais informações › Executar assim mesmo**.
 
+## Como sai uma versão
+
+Cada versão é publicada por uma pessoa: GitHub › **Releases** › **Draft a new release** › etiqueta `vX.Y.Z` (alvo
+`main`) › **Publish release**. A etiqueta dispara o workflow `instalador`, que monta, testa e anexa o instalador e o
+código-fonte à versão em uns 5 minutos. Se algum teste falhar, nada é anexado.
+
 ## Como é montado
 
 Tudo no GitHub, numa máquina Windows (`.github/workflows/instalador.yml`), à mão (Actions › instalador › Run workflow)

@@ -30,9 +30,9 @@ a 0.47, o lançador silencioso (`lancador/`). Versão atual: veja `motor/__init_
 3. Antes de entregar: `python -m pytest -q -m "not interface"` e `python -m pytest -q -m interface` (Playwright,
    navegador sem tela). Não entregar com teste falhando.
 4. Commits com o autor "Ruan da Silva Nobre <nobrenadja9@gmail.com>".
-5. Entrega = push para `main`. A sessão na nuvem não envia etiquetas (o proxy recusa com 403): no fim de cada versão,
-   passar ao Ruan os comandos `git pull`, `git tag -a vX.Y.Z -m "SIAPP X.Y.Z — resumo" <hash>` e
-   `git push origin vX.Y.Z`.
+5. Entrega = push para `main`. A sessão na nuvem não cria etiquetas nem versões: no fim de cada versão, o Ruan cria a
+   versão pelo site (Releases › Draft a new release › etiqueta `vX.Y.Z` › alvo `main` › Publish); o workflow
+   `instalador` monta o instalador e o anexa. Depois, conferir com `gh api repos/SIAPP-Pocos/SIAPP/releases/tags/vX.Y.Z`.
 6. Os repositórios ficam privados até a apresentação. Não publicar nada fora deles.
 7. Interface, textos e documentação em português do Brasil, linguagem simples. Nada vem pré-selecionado para download.
 8. Nenhuma referência bibliográfica inventada; nenhum número sem procedência; convergência entre métodos que partem
