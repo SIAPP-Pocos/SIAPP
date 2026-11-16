@@ -2,8 +2,8 @@
 Projetos (0.58): cada projeto é uma pasta com o seu banco (`projeto.sqlite`), os seus arquivos baixados, textos e
 execuções. Dá para separar, por exemplo, Sergipe-Alagoas e o campo de Guamaré, cada um com o seu acervo.
 
-- O projeto principal continua sendo `ambiente_teste/`, ao lado do app (nada muda para quem já usa).
-- Projetos novos ficam em `projetos/<nome>/`, também ao lado do app (fora do git).
+- Pelo código (desenvolvimento): o principal é `ambiente_teste/` e os novos ficam em `projetos/<nome>/`, ao lado do app.
+- Instalado (1.1): tudo em `<pasta dos projetos>\\Projetos\\`: `Projeto principal\\` e os novos ao lado.
 - Qual projeto abre e a lista dos conhecidos ficam nas preferências (`projeto_atual`, `projetos`).
 
 Este módulo só lê o banco de cada projeto (em modo somente leitura) para montar o cartão da tela inicial: nome,
@@ -49,12 +49,11 @@ def apelido_de_pasta(nome: str) -> str:
     return t[:40].strip("-") or "projeto"
 
 
-def criar(pasta_app: str, nome: str, bacias: list | None = None) -> str:
-    """Cria a pasta de um projeto novo em `projetos/` e grava o nome e as bacias. Devolve a pasta."""
+def criar(raiz: str, nome: str, bacias: list | None = None) -> str:
+    """Cria a pasta de um projeto novo em `raiz` (a pasta dos outros projetos) e grava o nome e as bacias."""
     nome = " ".join(str(nome or "").split())[:60]
     if len(nome) < 2:
         raise ErroProjeto("Dê um nome ao projeto (2 letras ou mais).")
-    raiz = os.path.join(pasta_app, PASTA_PROJETOS)
     os.makedirs(raiz, exist_ok=True)
     base = apelido_de_pasta(nome)
     pasta, k = os.path.join(raiz, base), 2
@@ -139,9 +138,9 @@ def resumo(pasta: str, pasta_principal: str = "") -> dict:
     return r
 
 
-def conhecidos(pasta_principal: str, lista: list, pasta_app: str = "") -> list[str]:
-    """Pastas de projeto, sem repetir: a principal primeiro, depois as das preferências e as que estão em
-    `projetos/` (uma pasta copiada para lá aparece sozinha)."""
+def conhecidos(pasta_principal: str, lista: list, raiz: str = "") -> list[str]:
+    """Pastas de projeto, sem repetir: a principal primeiro, depois as das preferências e as que estão em `raiz`
+    (a pasta dos outros projetos: uma pasta copiada para lá aparece sozinha)."""
     vistos, out = set(), []
 
     def por(p):
@@ -153,7 +152,6 @@ def conhecidos(pasta_principal: str, lista: list, pasta_app: str = "") -> list[s
     for p in lista or []:
         if isinstance(p, str) and p:
             por(p)
-    raiz = os.path.join(pasta_app, PASTA_PROJETOS) if pasta_app else ""
     if raiz and os.path.isdir(raiz):
         for nome in sorted(os.listdir(raiz)):
             if eh_projeto(os.path.join(raiz, nome)):

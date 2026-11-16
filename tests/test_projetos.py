@@ -108,3 +108,25 @@ def test_nenhum_nome_publico_repetido_entre_as_partes_da_api():
             assert nome not in vistos, f"{nome} está em {vistos[nome]} e em {parte.__name__}"
             vistos[nome] = parte.__name__
     assert len(vistos) > 150
+
+
+def test_instalado_passa_ambiente_teste_para_projetos(tmp_path):
+    """1.1: a pasta de quem já usava (ambiente_teste e projetos/) vira Projetos\\Projeto principal e Projetos\\<nome>."""
+    import json
+    from ponte import base
+    antigo = tmp_path / "ambiente_teste"
+    antigo.mkdir()
+    Projeto.abrir_ou_criar(str(antigo))
+    outro = mpj.criar(str(tmp_path / "projetos"), "Guamaré")
+    (antigo / "preferencias.json").write_text(json.dumps({"projeto_atual": outro, "projetos": [outro]}), encoding="utf-8")
+    feito = base.migrar_pastas_antigas(str(tmp_path))
+    novo = tmp_path / "Projetos" / "Projeto principal"
+    assert len(feito) == 2 and (novo / "siapp.json").is_file() and not antigo.exists()
+    assert (tmp_path / "Projetos" / "guamare" / "siapp.json").is_file() and not (tmp_path / "projetos").exists()
+    prefs = json.loads((novo / "preferencias.json").read_text(encoding="utf-8"))
+    assert prefs["projeto_atual"] == str(tmp_path / "Projetos" / "guamare") and prefs["projetos"] == [prefs["projeto_atual"]]
+    assert base.migrar_pastas_antigas(str(tmp_path)) == []                       # de novo: nada a fazer
+    # já existe o novo: não mexe no antigo
+    antigo.mkdir()
+    Projeto.abrir_ou_criar(str(antigo))
+    assert base.migrar_pastas_antigas(str(tmp_path)) == [] and antigo.exists()

@@ -38,7 +38,8 @@ Use o padrão [Conventional Commits](https://www.conventionalcommits.org/pt-br/)
 - `main` está sempre funcionando; ninguém envia direto para ela — tudo entra por *pull request*.
 - Nome do ramo: `tipo/descricao-curta` (ex.: `feat/exportar-contribuicao`, `fix/retomada-download`).
 - Versões seguem [SemVer](https://semver.org/lang/pt-BR/) com etiqueta `vX.Y.Z`; cada versão
-  tem sua seção no `CHANGELOG.md`.
+  tem sua seção no `CHANGELOG.md`. A versão é publicada em **Releases** (etiqueta `vX.Y.Z`, alvo `main`); o GitHub
+  monta, testa e anexa o instalador sozinho.
 
 ### Etiquetas das issues
 

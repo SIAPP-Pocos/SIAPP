@@ -255,7 +255,7 @@ function marcarArquivo(item, estado) {
     item.no.baixado = true;
     item.cb.checked = false;
     item.cb.disabled = true;
-    item.linha.title = `${item.no.nome}\n${tamanho(item.no.tamanho)}\nJá está em ambiente_teste\\bruto`;
+    item.linha.title = `${item.no.nome}\n${tamanho(item.no.tamanho)}\nJá está na pasta bruto do projeto`;
     if (item.no.rel && !item.abrir) {
       item.abrir = botaoAbrir(item.no.rel, item.no.tipo);
       item.selo.after(item.abrir);
@@ -325,7 +325,7 @@ window.eventoDownload = function (ev) {
     if (ev.cancelados) partes.push(`${ev.cancelados} cancelado(s)`);
     if (ev.erros) partes.push(`${ev.erros} com erro`);
     status(`Downloads encerrados: ${partes.join(" · ") || "nada a fazer"}. ` +
-           `Arquivos em ambiente_teste\\bruto.`, ev.erros ? "erro" : "ok");
+           `Arquivos na pasta bruto do projeto.`, ev.erros ? "erro" : "ok");
   }
 };
 

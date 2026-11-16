@@ -1,13 +1,16 @@
-name: Sugerir funcionalidade
-description: Uma ideia para o SIAPP fazer algo novo ou melhor.
+name: Sugerir melhoria
+description: Uma ideia para o SIAPP fazer algo novo ou fazer melhor.
 title: "[ideia] "
 labels: ["tipo: funcionalidade", "triagem"]
 body:
+  - type: markdown
+    attributes:
+      value: Ideias são bem-vindas! Conte o problema antes da solução; às vezes já existe um jeito de fazer.
   - type: textarea
     id: problema
     attributes:
       label: Qual problema isso resolve?
-      description: Descreva a tarefa que hoje é difícil, lenta ou impossível.
+      description: A tarefa que hoje é difícil, lenta ou impossível.
     validations:
       required: true
   - type: textarea

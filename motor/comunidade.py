@@ -50,7 +50,7 @@ FORMATO = "siapp-contribuicao"
 VERSAO_FORMATO = 3
 VERSOES_ACEITAS = (1, 2, 3)
 LICENCA = "CC-BY-4.0"
-URL_ULTIMA_BASE = "https://api.github.com/repos/SIAPP-Pocos/SIAPP-dados/releases/latest"
+URL_ULTIMA_BASE = "https://api.github.com/repos/SIAPP-Perfis/SIAPP-dados/releases/latest"
 NOME_ARQUIVO_BASE = "siapp-dados.sqlite"
 
 # Tipos de fato aceitos. A interface oferece estes; o validador do SIAPP-dados

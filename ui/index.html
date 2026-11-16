@@ -71,7 +71,7 @@
           <div class="ini-titulo">
             <p class="rotulo" id="ini-rotulo">Projeto</p>
             <h1 id="ini-nome">Nenhum projeto aberto</h1>
-            <p class="ajuda" id="ini-pasta-ajuda">Tudo fica na pasta <strong>ambiente_teste</strong>, ao lado do aplicativo.</p>
+            <p class="ajuda" id="ini-pasta-ajuda">Tudo fica na pasta do projeto.</p>
           </div>
           <div class="linha">
             <button class="btn" id="ini-pasta">Abrir o projeto</button>
@@ -238,7 +238,7 @@
       <div class="sub-painel cartoes" data-sub-painel="baixados" hidden>
       <section class="etapa" id="etapa-baixados">
         <h2>Arquivos baixados</h2>
-        <p class="ajuda">Tudo o que já foi baixado para este projeto (<code>ambiente_teste\bruto</code>), de qualquer formato, por
+        <p class="ajuda">Tudo o que já foi baixado para este projeto (pasta <code>bruto</code> do projeto), de qualquer formato, por
           bacia › poço › pasta, e o que o SIAPP fez com cada arquivo: se foi lido, por qual leitor e <strong>onde o dado aparece</strong>.
           Aqui você abre, mostra no Explorer, vai para a ficha do poço ou manda o arquivo para a Lixeira.</p>
         <div class="filtros">
@@ -304,7 +304,7 @@
       <section class="etapa" id="cm-etapa">
         <h2>Camadas geográficas</h2>
         <p class="ajuda">Gasodutos, campos, blocos exploratórios, unidades de hidrogênio verde, termelétricas, portos… de fontes oficiais, em SIRGAS
-          2000. Ficam em <code>ambiente_teste\sig</code> (GeoJSON e o shapefile original, para o QGIS) e ligam
+          2000. Ficam na pasta <code>sig</code> do projeto (GeoJSON e o shapefile original, para o QGIS) e ligam
           e desligam no Mapa (barra lateral, “Camadas no mapa”).</p>
         <div class="cm-lista" id="cm-lista"></div>
         <div class="linha">
@@ -634,7 +634,7 @@
     <aside class="lateral" data-titulo="Documentos">
       <section class="etapa">
         <h2>Documentos baixados</h2>
-        <p class="ajuda" id="docs-resumo">PDFs e imagens (TIF) em ambiente_teste\bruto.</p>
+        <p class="ajuda" id="docs-resumo">PDFs e imagens (TIF) na pasta bruto do projeto.</p>
         <div class="linha">
           <button id="btn-processar" class="btn" disabled>Processar pendentes</button>
           <button id="btn-atualizar-docs" class="btn secundario" title="Atualizar a lista">↻</button>
@@ -868,7 +868,7 @@
         <p class="vazio-curto">Escolha um arquivo de perfil na lista ao lado.</p>
         <details class="saiba-mais"><summary>Saiba mais</summary>
           <p>Escolha um arquivo ao lado. Na primeira vez, o SIAPP lê todas as curvas, converte a
-          profundidade para metros e guarda uma cópia rápida em <code>ambiente_teste\pocos</code>.</p>
+          profundidade para metros e guarda uma cópia rápida na pasta <code>pocos</code> do projeto.</p>
         </details>
       </div>
       <div id="pf-painel" hidden>
@@ -1110,7 +1110,7 @@
         <details class="saiba-mais"><summary>Saiba mais</summary>
           <p>Poços lado a lado, correlacionados pelos topos de formação que a operadora registrou no AGP da ANP.
           Escolha dois ou mais poços ao lado — ou as pontas de uma linha — e monte a seção. Cada seção fica
-          registrada em <code>ambiente_teste\execucoes</code> com os poços, os topos usados e de qual AGP vieram.</p>
+          registrada na pasta <code>execucoes</code> do projeto, com os poços, os topos usados e de qual AGP vieram.</p>
         </details>
       </div>
       <div id="sec-painel" hidden>
@@ -1314,7 +1314,7 @@
           <p>Os poços no espaço e as superfícies de topo das formações, a partir dos topos que a operadora registrou
           no AGP. É <strong>contexto espacial</strong>: entre poços, a superfície é interpolação — o resultado
           quantitativo continua sendo a seção e a avaliação. Cada bloco fica registrado em
-          <code>ambiente_teste\execucoes</code> com os poços e os parâmetros.</p>
+          na pasta <code>execucoes</code> do projeto, com os poços e os parâmetros.</p>
         </details>
       </div>
       <div id="bl-painel" hidden>

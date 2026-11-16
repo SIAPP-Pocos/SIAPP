@@ -210,7 +210,7 @@ async function exportarSecao(botao) {
   if (!sec.ultima) return;
   const r = await chamar(botao, "secao_exportar", sec.ultima, botao.dataset.formato);
   if (r.ok) {
-    $("sec-exportado").textContent = `Salvo em ambiente_teste/${r.arquivo}`;
+    $("sec-exportado").textContent = `Salvo na pasta do projeto: ${r.arquivo}`;
     status(`Seção exportada: ${r.arquivo}`);
   }
 }

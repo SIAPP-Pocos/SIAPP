@@ -75,8 +75,70 @@ PASTA_DADOS = resolver_pasta_dados(os.environ.get("SIAPP_DADOS", ""), INSTALADO,
 
 # O projeto principal mora SEMPRE nesta pasta: ao lado do aplicativo (pasta clonada do GitHub) ou, instalado, na pasta
 # escolhida no instalador (padrão: Documentos\SIAPP). Outros projetos ficam em <PASTA_DADOS>\projetos.
-NOME_PASTA_PROJETO = "ambiente_teste"
-PASTA_PROJETO = os.path.join(PASTA_DADOS, NOME_PASTA_PROJETO)
+# 1.1: instalado, o usuário vê pastas com nome de usuário: <pasta dos projetos>\Projetos\Projeto principal (e os outros
+# projetos ao lado, em Projetos\). Pelo código (desenvolvimento e testes), continua ambiente_teste\ e projetos\.
+PASTA_PROJETOS_INSTALADO = "Projetos"
+NOME_PRINCIPAL_INSTALADO = "Projeto principal"
+NOME_PASTA_PROJETO = NOME_PRINCIPAL_INSTALADO if INSTALADO else "ambiente_teste"
+PASTA_PROJETO = (os.path.join(PASTA_DADOS, PASTA_PROJETOS_INSTALADO, NOME_PRINCIPAL_INSTALADO) if INSTALADO
+                 else os.path.join(PASTA_DADOS, NOME_PASTA_PROJETO))
+
+
+def migrar_pastas_antigas(dados: str = PASTA_DADOS) -> list[str]:
+    """1.1: quem instalou a 1.0 (ou escolheu uma pasta de antes) tem <dados>\\ambiente_teste e <dados>\\projetos\\*.
+    Passa para <dados>\\Projetos\\Projeto principal e <dados>\\Projetos\\* e corrige os caminhos guardados nas
+    preferências. Só move o que não colide; devolve o que fez. Erro (arquivo aberto, sem permissão) = deixa como está."""
+    feito = []
+    raiz = os.path.join(dados, PASTA_PROJETOS_INSTALADO)
+    antigo = os.path.join(dados, "ambiente_teste")
+    novo = os.path.join(raiz, NOME_PRINCIPAL_INSTALADO)
+    trocas = []
+    try:
+        if os.path.isfile(os.path.join(antigo, "siapp.json")) and not os.path.exists(novo):
+            os.makedirs(raiz, exist_ok=True)
+            os.rename(antigo, novo)
+            trocas.append((antigo, novo))
+            feito.append(f"{antigo} → {novo}")
+        velhos = os.path.join(dados, "projetos")
+        if os.path.isdir(velhos):
+            for nome in sorted(os.listdir(velhos)):
+                de, para = os.path.join(velhos, nome), os.path.join(raiz, nome)
+                if os.path.isdir(de) and not os.path.exists(para):
+                    os.makedirs(raiz, exist_ok=True)
+                    os.rename(de, para)
+                    trocas.append((de, para))
+                    feito.append(f"{de} → {para}")
+            if not os.listdir(velhos):
+                os.rmdir(velhos)
+    except OSError:
+        return feito
+    if trocas:
+        _corrigir_preferencias(os.path.join(novo, "preferencias.json"), trocas)
+    return feito
+
+
+def _corrigir_preferencias(caminho: str, trocas: list) -> None:
+    import json
+    try:
+        with open(caminho, encoding="utf-8") as f:
+            prefs = json.load(f)
+    except (OSError, ValueError):
+        return
+
+    def trocar(p):
+        if not isinstance(p, str) or not p:
+            return p
+        for de, para in trocas:
+            if os.path.normcase(os.path.abspath(p)) == os.path.normcase(os.path.abspath(de)):
+                return "" if para.endswith(NOME_PRINCIPAL_INSTALADO) else para
+        return p
+    prefs["projeto_atual"] = trocar(prefs.get("projeto_atual", ""))
+    prefs["projetos"] = [x for x in (trocar(p) for p in prefs.get("projetos", []) or []) if x]
+    try:
+        with open(caminho, "w", encoding="utf-8") as f:
+            json.dump(prefs, f, ensure_ascii=False, indent=1)
+    except OSError:
+        pass
 PASTA_RECURSOS = os.path.join(PASTA_APP, "recursos")
 # Modelo de idioma do OCR: baixado uma vez (instalado: junto dos dados, para não se perder ao reinstalar).
 PASTA_TESSDATA = os.path.join(PASTA_DADOS if INSTALADO else PASTA_APP, "recursos", "tessdata")

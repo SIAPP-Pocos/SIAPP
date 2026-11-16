@@ -12,8 +12,19 @@ termos da interface e do código. Revisão guiada feita em 16/11/2026 (0.68), ol
 | `SIAPP\ambiente_teste\` | o **projeto principal**: tudo o que o SIAPP baixa e produz | não, nunca (arquivos do REATE não entram no git) |
 | `SIAPP\projetos\<nome>\` | outros projetos (desde a 0.58), ao lado do `ambiente_teste`, cada um com a mesma estrutura | não |
 
-Pelo **instalador** (0.67; a escolha da pasta, 1.0) o programa vai para `%LOCALAPPDATA%\Programs\SIAPP` e os projetos
-para a pasta escolhida na instalação, padrão `Documentos\SIAPP\ambiente_teste` (outros projetos em `Documentos\SIAPP\projetos`). Ver [`instalador.md`](instalador.md).
+Isso é o desenvolvimento. **Quem instala o SIAPP** (0.67; pastas com nome de usuário desde a 1.1) vê outra coisa:
+
+```
+%LOCALAPPDATA%\Programs\SIAPP\      o programa (o instalador cuida dele)
+Documentos\SIAPP\                   a "pasta dos projetos", escolhida na instalação
+  Projetos\
+    Projeto principal\              o que aqui se chama ambiente_teste
+    <outros projetos>\
+  recursos\tessdata\                modelo de português do OCR
+```
+
+Não há `ambiente_teste` para quem instala: é nome de desenvolvimento. Quem veio da 1.0 tem as pastas renomeadas
+sozinhas na primeira abertura da 1.1. Ver [`instalador.md`](instalador.md).
 
 Uma regra resume a separação: **o programa pode ser apagado e baixado de novo; o projeto é o trabalho de quem usa.**
 

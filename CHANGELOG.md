@@ -6,6 +6,22 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 
 ## [Não lançado]
 
+## [1.1.0] — 2026-11-16
+Pastas com nome de usuário e o GitHub arrumado.
+### Alterado
+- **Pastas de quem instala**: o projeto principal agora fica em `<pasta dos projetos>\Projetos\Projeto principal` e
+  os outros projetos ao lado, em `Projetos\`. O nome `ambiente_teste` ficou só para o desenvolvimento. Quem veio da
+  1.0 tem as pastas renomeadas sozinhas na primeira abertura (e os caminhos guardados nas preferências, corrigidos).
+- A tela inicial e as mensagens de "Salvo em…" falam da pasta do projeto, não de `ambiente_teste`.
+- O instalador explica que dentro da pasta escolhida ficam `Projetos\Projeto principal`.
+- Endereços do projeto passam para a organização **SIAPP-Perfis** no GitHub.
+### Adicionado
+- README novo: o que é, o que faz, instalar, primeiros passos, dados e procedência, contribuir, apoiar e citar.
+- `docs/README.md` (índice da documentação), `docs/funcionalidades.md` (a lista completa, aba por aba) e `SUPPORT.md`
+  (onde pedir ajuda).
+- Modelos de issue e de pull request revistos (áreas do SIAPP de hoje; o texto do Diagnóstico no relato de erro).
+- A versão criada em Releases sem texto ganha sozinha o trecho do CHANGELOG e o "como instalar".
+
 ## [1.0.2] — 2026-11-16
 ### Corrigido
 - No Windows, criar um arquivo no terceiro nível da pasta do projeto (ex.: um catálogo novo) às vezes não mudava a

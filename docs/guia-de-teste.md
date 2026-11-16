@@ -132,6 +132,17 @@ Precisa de internet. Comece por uma categoria pequena para ver o tempo.
 - [ ] Sem intervalo marcado, **Calcular** explica que precisa de um intervalo-alvo.
 - [ ] Repetir no `5PX__0011__RN_5PX__0011__RN.tif` (DLIS de 2020).
 
+## 1.1 — pastas com nome de usuário
+
+- [ ] Instale a 1.1 por cima. Na primeira abertura, a pasta dos projetos (`...\PIBIC\SIAPP`) passa a ter
+      `Projetos\Projeto principal` com tudo o que estava em `ambiente_teste` (e `ambiente_teste` some).
+- [ ] O projeto abre igual: poços, documentos, perfis, seções e blocos. A tela inicial diz "Os seus projetos ficam em
+      …\Projetos".
+- [ ] Início › Novo projeto: a pasta nova aparece em `Projetos\`, ao lado do Projeto principal.
+- [ ] Exporte uma seção: a mensagem diz "Salvo na pasta do projeto: exportacoes\…".
+- [ ] No GitHub: o README novo, Issues › New issue mostra "Relatar erro", "Sugerir melhoria", "Dúvida de uso" e
+      "Documentação".
+
 ## 1.0.2 — marca do projeto no Windows
 
 - [ ] Crie a versão pelo site (Releases › Draft a new release › etiqueta `v1.0.2` › Publish) e espere o instalador

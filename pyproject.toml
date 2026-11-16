@@ -28,8 +28,8 @@ dependencies = [
 dev = ["pytest>=8", "jsonschema>=4", "pillow>=10"]
 
 [project.urls]
-"Código" = "https://github.com/SIAPP-Pocos/siapp"
-"Dados comunitários" = "https://github.com/SIAPP-Pocos/SIAPP-dados"
+"Código" = "https://github.com/SIAPP-Perfis/siapp"
+"Dados comunitários" = "https://github.com/SIAPP-Perfis/SIAPP-dados"
 
 [tool.setuptools]
 packages = ["motor", "ponte", "lancador"]

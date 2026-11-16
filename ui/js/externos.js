@@ -140,7 +140,7 @@ async function baixarProducao() {
 
 async function exportarProducao() {
   const r = await chamar($("pr-csv"), "producao_exportar_csv", $("pr-campo").value.trim());
-  if (r.ok) status(`Salvo em ambiente_teste/${r.arquivos.join(" e ")}`, "ok");
+  if (r.ok) status(`Salvo na pasta do projeto: ${r.arquivos.join(" e ")}`, "ok");
 }
 
 // ---------------------------------------------------------------- camadas
@@ -192,7 +192,7 @@ async function baixarCamadas() {
   carregarAreas();
   const ul = limpar($("cm-erros"));
   for (const e of r.erros) ul.appendChild(el("li", "", `${e.nome || e.id}: ${e.erro}`));
-  status(`${r.feitos.length} camada(s) guardada(s) em ambiente_teste/sig` +
+  status(`${r.feitos.length} camada(s) guardada(s) na pasta sig do projeto` +
          (r.erros.length ? `; ${r.erros.length} com erro (veja a lista).` : "."), r.erros.length ? "erro" : "ok");
 }
 
@@ -227,7 +227,7 @@ function ligarExternos() {
   });
   ligar("ba-csv", "onclick", async () => {
     const r = await chamar($("ba-csv"), "areas_csv");
-    if (r.ok) status(`Salvo em ambiente_teste/${r.arquivo}`, "ok");
+    if (r.ok) status(`Salvo na pasta do projeto: ${r.arquivo}`, "ok");
   });
   ligar("ba-filtro", "oninput", () => ba.resultado && desenharAreas(ba.resultado));
   ligar("vb-eq-padrao", "onclick", () => preencherParametrosVb({ ...lerParametrosVb(), constantes: {}, equacoes: {} }));
@@ -463,7 +463,7 @@ function desenharViabilidadeNoMapa(rel) {
 
 async function exportarViabilidade() {
   const r = await chamar($("vb-csv"), "viabilidade_csv", $("vb-campo").value.trim());
-  if (r.ok) status(`Salvo em ambiente_teste/${r.arquivo}`, "ok");
+  if (r.ok) status(`Salvo na pasta do projeto: ${r.arquivo}`, "ok");
 }
 
 // ---------------------------------------------------------------- viabilidade econômica (0.26)
@@ -723,7 +723,7 @@ function desenharEconomia(av) {
 
 async function exportarEconomia() {
   const r = await chamar($("vb-eco-csv"), "viabilidade_economia_csv", $("vb-campo").value.trim(), lerParametrosVb());
-  if (r.ok) status(`Salvo em ambiente_teste/${r.arquivo}`, "ok");
+  if (r.ok) status(`Salvo na pasta do projeto: ${r.arquivo}`, "ok");
 }
 
 // memória de cálculo na tela (a mesma que vai para o HTML e o JSON em execucoes/viabilidade)
@@ -763,7 +763,7 @@ function desenharMemoria(av, arquivos) {
   const box = limpar($("vb-memoria"));
   const m = av.memoria;
   $("vb-mem-caixa").hidden = false;
-  $("vb-mem-arquivo").textContent = arquivos ? `Gravada em ambiente_teste/${arquivos.html} (e .json ao lado), com ` +
+  $("vb-mem-arquivo").textContent = arquivos ? `Gravada na pasta do projeto: ${arquivos.html} (e .json ao lado), com ` +
     `todos os dados, equações e resultados desta execução.` : "";
   box.appendChild(el("h5", "", "Dados de entrada e de onde vieram"));
   const t = document.createElement("table");
@@ -876,8 +876,8 @@ function desenharAreas(res) {
   }
   box.appendChild(t);
   box.appendChild(el("p", "ajuda", `${lista.length} área(s)${filtro ? " no filtro" : ""}; a tabela mostra as 40 mais ` +
-    `próximas (clique no nome para ir até ela). O CSV traz todas, com as fórmulas e as entradas. Gravado em ` +
-    `ambiente_teste/${res.arquivo}.`));
+    `próximas (clique no nome para ir até ela). O CSV traz todas, com as fórmulas e as entradas. Gravado na pasta ` +
+    `do projeto: ${res.arquivo}.`));
 }
 
 async function desenharAreasNoMapa(res) {

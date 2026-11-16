@@ -8,11 +8,12 @@ a 0.47, o lançador silencioso (`lancador/`). Versão atual: veja `motor/__init_
 
 ## Onde está cada coisa
 
-- Código: GitHub `SIAPP-Pocos/SIAPP` (privado), branch `main`. Base comunitária: `SIAPP-Pocos/SIAPP-dados`
-  (formato de contribuição v3).
+- Código: GitHub `SIAPP-Perfis/SIAPP` (organização renomeada de `SIAPP-Pocos` em 16/11/2026; **público** desde 30/10),
+  branch `main`. Base comunitária: `SIAPP-Perfis/SIAPP-dados` (privada; formato de contribuição v3).
 - No computador do Ruan, desde a 1.0 (16/11/2026): o SIAPP **instalado** (`%LOCALAPPDATA%\Programs\SIAPP`) e os
   projetos em `C:\Users\ruan.nobre\Desktop\Ruan\Pessoal\Faculdade\PIBIC\SIAPP` (pasta escolhida no instalador;
-  `ambiente_teste\` dentro). Não há mais clone de desenvolvimento lá: o código está só no GitHub.
+  desde a 1.1, `Projetos\Projeto principal\` dentro; `ambiente_teste` é só o nome no desenvolvimento). Não há mais
+  clone de desenvolvimento lá: o código está só no GitHub.
 - Vault (Obsidian): `C:\Users\ruan.nobre\Desktop\Ruan\Vault\1. Projetos\SIAPP\`. Se houver acesso, ler "SIAPP — README.md"
   (estado, versões, roteiro), "SIAPP — Mudanças em análise.md" (pedidos e decisões por bloco), "SIAPP — Decisões e
   Armadilhas.md" (o que não repetir), "SIAPP — Estrutura do Acervo REATE.md", "SIAPP — Tratamento por Tipo de
@@ -32,8 +33,8 @@ a 0.47, o lançador silencioso (`lancador/`). Versão atual: veja `motor/__init_
 4. Commits com o autor "Ruan da Silva Nobre <nobrenadja9@gmail.com>".
 5. Entrega = push para `main`. A sessão na nuvem não cria etiquetas nem versões: no fim de cada versão, o Ruan cria a
    versão pelo site (Releases › Draft a new release › etiqueta `vX.Y.Z` › alvo `main` › Publish); o workflow
-   `instalador` monta o instalador e o anexa. Depois, conferir com `gh api repos/SIAPP-Pocos/SIAPP/releases/tags/vX.Y.Z`.
-6. Os repositórios ficam privados até a apresentação. Não publicar nada fora deles.
+   `instalador` monta o instalador e o anexa. Depois, conferir com `gh api repos/SIAPP-Perfis/SIAPP/releases/tags/vX.Y.Z`.
+6. O repositório SIAPP é público (desde 30/10/2026); o SIAPP-dados é privado. Não publicar nada fora deles.
 7. Interface, textos e documentação em português do Brasil, linguagem simples. Nada vem pré-selecionado para download.
 8. Nenhuma referência bibliográfica inventada; nenhum número sem procedência; convergência entre métodos que partem
    da mesma entrada não é validação.

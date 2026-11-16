@@ -129,10 +129,13 @@ def main():
         sys.exit(verificar())
     if "--verificar-janela" in sys.argv:
         sys.exit(verificar_janela())
+    movidas = base.migrar_pastas_antigas() if base.INSTALADO else []    # 1.1: ambiente_teste → Projetos\Projeto principal
     os.makedirs(base.PASTA_PROJETO, exist_ok=True)
     icone.preparar_processo()        # identidade própria na barra de tarefas (Windows)
     icone.criar_atalho()             # SIAPP.lnk com o ícone, uma vez (em segundo plano)
     registro.configurar(base.PASTA_PROJETO)
+    for m in movidas:
+        registro.log.info("pasta reorganizada (1.1): %s", m)
     api = API()
     # posição e tamanho da última vez (se a tela ainda existir; senão, centralizada)
     geometria = api._kwargs_geometria(api._preferencias().ler()["principal"], padrao=(1280, 820))

@@ -961,7 +961,7 @@ def test_camadas_no_mapa_e_distancias_do_campo(janela, tmp_path, monkeypatch):
     assert "★ Hidrogênio verde" in p.text_content("#vb-eco-resultado")
     # memória de cálculo, equações e constantes editáveis
     janela.esperar("!document.getElementById('vb-mem-caixa').hidden", 30)
-    assert "ambiente_teste/execucoes/viabilidade/" in p.text_content("#vb-mem-arquivo")
+    assert "pasta do projeto: execucoes/viabilidade/" in p.text_content("#vb-mem-arquivo")
     mem = p.text_content("#vb-memoria")
     assert "oe = Np + Gp / gas_por_oe" in mem and "Peng-Robinson" in mem and "Plano de Desenvolvimento" in mem
     pasta_mem = os.path.join(janela.api._projeto.pasta, "execucoes", "viabilidade")

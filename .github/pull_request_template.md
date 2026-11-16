@@ -1,17 +1,18 @@
 ## O que muda
 
-<!-- Uma ou duas frases. Referencie a issue: "Resolve #12". -->
+<!-- Uma ou duas frases. Se resolve uma issue: "Resolve #12". -->
 
 ## Por quê
 
 ## Como foi testado
 
-- [ ] `pytest` passa localmente
+- [ ] `pytest -m "not interface"` passa
+- [ ] `pytest -m interface` passa (se mexeu na interface)
 - [ ] Comportamento novo do `motor/` tem teste
-- [ ] Testei na janela (`iniciar.bat`) — descreva o que conferiu:
+- [ ] Conferi na janela; o que conferi:
 
 ## Conferência
 
-- [ ] Nenhum arquivo do REATE ou dado de `ambiente_teste/` incluído
+- [ ] Nenhum arquivo do REATE nem dado de projeto incluído
 - [ ] `CHANGELOG.md` atualizado (seção "Não lançado")
-- [ ] Mensagem de commit no padrão Conventional Commits
+- [ ] Textos da interface em português simples

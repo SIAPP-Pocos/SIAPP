@@ -10,12 +10,15 @@ usar o programa não precisa de Python, git nem do lançador; quem desenvolve co
 |---|---|
 | Programa (`SIAPP.exe` e a pasta `_internal` com Python e bibliotecas) | `%LOCALAPPDATA%\Programs\SIAPP` |
 | Atalhos | Menu Iniciar › SIAPP (e na Área de Trabalho, se marcar) |
-| Projetos, preferências, registro (`siapp.log`), modelo do OCR | a **pasta dos projetos** escolhida na instalação (padrão `Documentos\SIAPP`; a variável `SIAPP_DADOS` ganha dela) |
+| Projetos | `<pasta dos projetos>\Projetos\Projeto principal` e os outros projetos ao lado, em `Projetos\` |
+| Modelo do OCR | `<pasta dos projetos>\recursos\tessdata` |
+| A pasta dos projetos | a escolhida na instalação (padrão `Documentos\SIAPP`; a variável `SIAPP_DADOS` ganha dela) |
 | Desinstalar | Configurações do Windows › Aplicativos › SIAPP |
 
 - Instala só para o usuário: não pede administrador.
 - **Pasta dos projetos (1.0)**: o instalador pergunta onde guardar os projetos, depois da pasta do programa. Quem já
-  usa o SIAPP escolhe a pasta que tem o `ambiente_teste`. A escolha fica em `pasta_dados.txt`, ao lado do `SIAPP.exe`,
+  usa o SIAPP escolhe a mesma pasta de antes. Dentro dela ficam `Projetos\Projeto principal` e os outros projetos
+  (1.1; quem tinha `ambiente_teste` e `projetos\` da 1.0 tem as pastas renomeadas sozinhas na primeira abertura). A escolha fica em `pasta_dados.txt`, ao lado do `SIAPP.exe`,
   e volta marcada na próxima atualização. Sem perguntas: `SIAPP-1.0.0-instalador.exe /VERYSILENT /PASTADADOS="D:\SIAPP"`.
 - Ao desinstalar, a pasta dos projetos **fica** (os projetos são seus).
 - Numa atualização, a pasta `_internal` da versão anterior é apagada antes de copiar a nova, para não misturar
@@ -67,7 +70,7 @@ junto o `SIAPP-X.Y.Z-codigo-fonte.zip`: a licença (AGPL-3.0) dá a quem recebe 
 | Quando atualiza | **a cada abertura pelo atalho**: o lançador faz `git fetch` e avança a pasta para a versão nova (só se nada foi mudado à mão; senão avisa e abre a versão que está); depois instala as bibliotecas novas, se houver | quando a pessoa baixa o instalador novo e instala por cima |
 | Aviso | "SIAPP atualizado: 0.67.2 → 0.68.0" na primeira abertura depois da atualização | — |
 | Desligar | Configurações › "Atualizar o SIAPP ao abrir" | — |
-| Os dados | ficam em `ambiente_teste\`, que o git não toca | ficam na pasta dos projetos, que o instalador não toca |
+| Os dados | ficam em `ambiente_teste\` e `projetos\`, que o git não toca | ficam em `<pasta dos projetos>\Projetos\`, que o instalador não toca |
 | O que precisa ter | git e internet (sem eles, abre a versão que está) | nada |
 
 Falta, para quem usa o instalador, um aviso de "versão nova disponível" dentro do SIAPP: depende de o repositório ser

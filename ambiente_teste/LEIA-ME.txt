@@ -1,5 +1,7 @@
-PROJETO PRINCIPAL DO SIAPP (ambiente_teste)
-==========================================
+PROJETO PRINCIPAL DO SIAPP
+==========================
+
+(No desenvolvimento esta pasta se chama ambiente_teste; para quem instala, Projetos\Projeto principal.)
 
 Esta e a pasta do projeto principal do SIAPP. Tudo o que o aplicativo baixar e
 produzir fica aqui dentro. Ela fica na "pasta dos projetos" escolhida na

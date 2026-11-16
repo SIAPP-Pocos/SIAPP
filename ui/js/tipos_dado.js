@@ -222,7 +222,7 @@ function pedirDownloadTipos(area, m) {
   area.appendChild(el("p", m.bytes > AVISO_DOWNLOAD_BYTES ? "erro" : "ajuda",
     `Baixar ${m.arqs} arquivo(s) de ${m.pocos.length} poço(s), ${tamanho(m.bytes)}, só das pastas dos tipos procurados` +
     (m.bytes > AVISO_DOWNLOAD_BYTES ? " — é bastante dado; confira antes." : ".") +
-    " Eles caem na fila de downloads e ficam em ambiente_teste/bruto/, na mesma pasta de sempre."));
+    " Eles caem na fila de downloads e ficam na pasta bruto do projeto, como sempre."));
   const ok = el("button", "btn", "Confirmar e baixar");
   const nao = el("button", "btn secundario", "Cancelar");
   nao.onclick = () => limpar(area);

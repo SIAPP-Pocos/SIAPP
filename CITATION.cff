@@ -6,10 +6,10 @@ authors:
   - family-names: "Nobre"
     given-names: "Ruan da Silva"
     affiliation: "Universidade Federal de Alagoas (UFAL)"
-version: "1.0.2"
+version: "1.1.0"
 date-released: "2026-11-16"
 license: AGPL-3.0-only
-repository-code: "https://github.com/SIAPP-Pocos/SIAPP"
+repository-code: "https://github.com/SIAPP-Perfis/SIAPP"
 keywords:
   - perfilagem de poços
   - ANP

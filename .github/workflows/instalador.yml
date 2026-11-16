@@ -95,6 +95,18 @@ jobs:
             dist/SIAPP-*-instalador.exe
             dist/SIAPP-*-codigo-fonte.zip
           retention-days: 30
+      - name: O que mudou (trecho do CHANGELOG desta versão)
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: python
+        run: |
+          import re
+          v = "${{ steps.versao.outputs.versao }}"
+          texto = open("CHANGELOG.md", encoding="utf-8").read()
+          m = re.search(r"^## \[" + re.escape(v) + r"\][^\n]*\n(.*?)(?=^## \[|\Z)", texto, re.S | re.M)
+          corpo = m.group(1).strip() if m else "Ver CHANGELOG.md."
+          corpo += ("\n\n---\n**Instalar:** baixe `SIAPP-" + v + "-instalador.exe` abaixo e dê dois cliques. Para atualizar, "
+                    "instale por cima da versão anterior: os projetos continuam onde estão.")
+          open("notas-da-versao.md", "w", encoding="utf-8").write(corpo)
       - name: Anexar à versão (só com etiqueta vX.Y.Z)
         if: startsWith(github.ref, 'refs/tags/v')
         shell: pwsh
@@ -106,8 +118,13 @@ jobs:
           if ($tag -ne "v$v") { throw "a etiqueta $tag não bate com a versão $v de motor/__init__.py" }
           $arquivos = @("dist\SIAPP-$v-instalador.exe", "dist\SIAPP-$v-codigo-fonte.zip")
           $existe = @(gh release list --limit 100 --json tagName --jq ".[].tagName") -contains $tag
-          if ($existe) { gh release upload $tag @arquivos --clobber }
-          else { gh release create $tag @arquivos --title "SIAPP $v" --notes "Instalador do Windows e código-fonte desta versão. O que mudou: CHANGELOG.md." }
+          if ($existe) {
+            gh release upload $tag @arquivos --clobber
+            # a versão criada no site sem texto ganha o trecho do CHANGELOG
+            $texto = gh release view $tag --json body --jq ".body"
+            if (-not $texto -or $texto.Trim().Length -lt 3) { gh release edit $tag --notes-file notas-da-versao.md }
+          }
+          else { gh release create $tag @arquivos --title "SIAPP $v" --notes-file notas-da-versao.md }
       - uses: actions/upload-artifact@v4
         if: always()
         with:

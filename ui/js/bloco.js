@@ -540,7 +540,7 @@ async function exportarEcl() {
   status("Gerando o deck do simulador…", "trab");
   const r = await chamar($("bl-ecl"), "bloco_exportar_eclipse", bl.ultimo, opcoesEcl(false));
   if (!r.ok) return;
-  $("bl-exportado").textContent = `Salvo em ambiente_teste/${r.pasta}/${r.deck}`;
+  $("bl-exportado").textContent = `Salvo na pasta do projeto: ${r.pasta}/${r.deck}`;
   $("bl-ecl-previa").textContent = `${r.deck}: ${r.nx} × ${r.ny} × ${r.nz} = ${numero(r.celulas, 0)} células ` +
     `(${numero(r.ativas, 0)} ativas), células de ${numero(r.dx, 0)} m, ${r.pocos} poço(s). ` + r.notas.join("; ") +
     ". Permeabilidade, PVT, curvas relativas e contatos: provisórios (veja o LEIA-ME).";
@@ -586,7 +586,7 @@ async function desenharMapa2d(formato) {
   const r = await chamar(formato ? $(`bl-m2d-${formato}`) : null, "bloco_mapa2d", bl.ultimo, nome, opcoesMapa2d(), formato || "");
   if (!r.ok) return;
   if (formato) {
-    $("bl-exportado").textContent = `Salvo em ambiente_teste/${r.arquivo}`;
+    $("bl-exportado").textContent = `Salvo na pasta do projeto: ${r.arquivo}`;
     status(`Mapa salvo: ${r.arquivo}`, "ok");
     return;
   }
@@ -712,7 +712,7 @@ async function exportarMapas() {
   status("Gerando os mapas…", "trab");
   const r = await chamar($("bl-mapas"), "bloco_exportar_mapas", bl.ultimo, $("bl-mapas-passo").value);
   if (!r.ok) return;
-  $("bl-exportado").textContent = `Salvo em ambiente_teste/${r.pasta}/ (${r.mapas.length} mapas, ${r.nx} × ${r.ny} ` +
+  $("bl-exportado").textContent = `Salvo na pasta do projeto: ${r.pasta}/ (${r.mapas.length} mapas, ${r.nx} × ${r.ny} ` +
     `pixels de ${numero(r.passo_m, 0)} m, EPSG:${r.epsg})`;
   status(`Mapas exportados: ${r.pasta}`, "ok");
 }
@@ -775,7 +775,7 @@ function mostrarVolumetria(v, inf) {
 async function exportarVolumetria() {
   const r = await chamar($("bl-vol-csv"), "bloco_exportar_volumetria", bl.ultimo, informadosVol(), co2Vol());
   if (r.ok) {
-    $("bl-exportado").textContent = `Salvo em ambiente_teste/${r.arquivo}`;
+    $("bl-exportado").textContent = `Salvo na pasta do projeto: ${r.arquivo}`;
     status(`Volumetria exportada: ${r.arquivo}`, "ok");
   }
 }
@@ -787,7 +787,7 @@ async function exportarGlb() {
                          { exagero: va.exagero, camadas: va.camadas && va.camadas.length ? va.camadas : null,
                            pocos: $("bl-glb-pocos").checked });
   if (r.ok) {
-    $("bl-exportado").textContent = `Salvo em ambiente_teste/${r.arquivo} (${numero(r.triangulos, 0)} triângulos, ` +
+    $("bl-exportado").textContent = `Salvo na pasta do projeto: ${r.arquivo} (${numero(r.triangulos, 0)} triângulos, ` +
       `${numero(r.bytes / 1e6, 1)} MB)`;
     status(`Modelo 3D exportado: ${r.arquivo}`, "ok");
   }
@@ -885,7 +885,7 @@ async function exportarComparacao(botao) {
   if (!bl.ultimo) return;
   const r = await chamar(botao, "bloco_exportar_comparacao", bl.ultimo, botao.dataset.comparacao);
   if (r.ok) {
-    $("bl-exportado").textContent = `Salvo em ambiente_teste/${r.arquivo}`;
+    $("bl-exportado").textContent = `Salvo na pasta do projeto: ${r.arquivo}`;
     status(`Comparação exportada: ${r.arquivo}`, "ok");
   }
 }
@@ -959,7 +959,7 @@ async function exportarValidacao(botao) {
   if (!bl.ultimo) return;
   const r = await chamar(botao, "bloco_exportar_validacao", bl.ultimo, botao.dataset.validacao);
   if (r.ok) {
-    $("bl-exportado").textContent = `Salvo em ambiente_teste/${r.arquivo}`;
+    $("bl-exportado").textContent = `Salvo na pasta do projeto: ${r.arquivo}`;
     status(`Validação exportada: ${r.arquivo}`, "ok");
   }
 }
@@ -1010,7 +1010,7 @@ async function exportarPrognostico() {
   if (!bl.ultimo || !bl.prog) return;
   const r = await chamar($("bl-prog-csv"), "bloco_exportar_prognostico", bl.ultimo, { x: bl.prog.x, y: bl.prog.y });
   if (r.ok) {
-    $("bl-exportado").textContent = `Salvo em ambiente_teste/${r.arquivo}`;
+    $("bl-exportado").textContent = `Salvo na pasta do projeto: ${r.arquivo}`;
     status(`Prognóstico exportado: ${r.arquivo}`, "ok");
   }
 }
@@ -1210,7 +1210,7 @@ async function exportarPngBloco() {
   const url = window.BlocoVisor.imagem({ titulo: bl.modelo.titulo || "", autor: bl.autor, versao: $("versao").textContent });
   const r = await chamar($("bl-png"), "bloco_salvar_png", bl.ultimo, url);
   if (r.ok) {
-    $("bl-exportado").textContent = `Salvo em ambiente_teste/${r.arquivo}`;
+    $("bl-exportado").textContent = `Salvo na pasta do projeto: ${r.arquivo}`;
     status(`Bloco exportado: ${r.arquivo}`, "ok");
   }
 }
@@ -1220,7 +1220,7 @@ async function exportarFiguraBloco(botao) {
   const r = await chamar(botao, "bloco_figura", bl.ultimo, { ...window.BlocoVisor.vistaAtual(),
                                                               titulo: bl.modelo.titulo || "" }, botao.dataset.figura);
   if (r.ok) {
-    $("bl-exportado").textContent = `Salvo em ambiente_teste/${r.arquivo}`;
+    $("bl-exportado").textContent = `Salvo na pasta do projeto: ${r.arquivo}`;
     status(`Figura do bloco: ${r.arquivo}`, "ok");
   }
 }
@@ -1229,7 +1229,7 @@ async function exportarCsvBloco() {
   if (!bl.ultimo) return;
   const r = await chamar($("bl-csv"), "bloco_exportar_csv", bl.ultimo);
   if (r.ok) {
-    $("bl-exportado").textContent = `Salvo em ambiente_teste/${r.arquivos.join(" e ")}`;
+    $("bl-exportado").textContent = `Salvo na pasta do projeto: ${r.arquivos.join(" e ")}`;
     status(`Bloco exportado: ${r.arquivos.join(" e ")}`, "ok");
   }
 }

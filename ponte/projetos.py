@@ -16,8 +16,10 @@ class ProjetosAPI:
     # ------------------------------------------------------------ lista e cartões
     @staticmethod
     def _raiz_app() -> str:
-        """Onde fica a pasta projetos/: ao lado do ambiente_teste (a pasta do app, fora dos testes)."""
-        return os.path.dirname(os.path.abspath(base.PASTA_PROJETO))
+        """Onde nascem os projetos novos: `projetos/` ao lado do ambiente_teste (código) ou `Projetos\\` (instalado)."""
+        if base.INSTALADO:
+            return os.path.dirname(os.path.abspath(base.PASTA_PROJETO))
+        return os.path.join(os.path.dirname(os.path.abspath(base.PASTA_PROJETO)), mpj.PASTA_PROJETOS)
 
     def _pastas_projetos(self) -> list[str]:
         prefs = self._preferencias().ler()

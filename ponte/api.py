@@ -65,7 +65,7 @@ class API(BaseAPI, JanelasAPI, PocosAPI, CatalogoAPI, DocumentosAPI, Vocabulario
         return {"versao": mp.VERSAO_SIAPP, "bacias": sorted(reate.BACIAS),
                 "nome_pasta_projeto": base.NOME_PASTA_PROJETO,
                 "pasta_projeto": base.PASTA_PROJETO, "instalado": base.INSTALADO,
-                "pasta_dados": base.PASTA_DADOS}
+                "pasta_dados": base.PASTA_DADOS, "pasta_projetos": os.path.dirname(base.PASTA_PROJETO)}
 
     @resposta_segura
     def escolher_pasta(self):
@@ -79,7 +79,7 @@ class API(BaseAPI, JanelasAPI, PocosAPI, CatalogoAPI, DocumentosAPI, Vocabulario
         if not mesma_pasta(pasta, pasta_projeto):
             raise ErroUsuario(
                 f"Pasta recusada: {pasta}. Por enquanto o projeto precisa ficar "
-                f"exatamente na pasta '{base.NOME_PASTA_PROJETO}', ao lado do aplicativo. "
+                f"exatamente na pasta '{base.NOME_PASTA_PROJETO}' ({os.path.dirname(pasta_projeto)}). "
                 f"Com o diálogo aberto nela, clique direto em 'Selecionar pasta' "
                 f"sem entrar em nenhuma subpasta.")
         return self._abrir_projeto(pasta_projeto)

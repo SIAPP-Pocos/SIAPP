@@ -14,7 +14,7 @@ AppName=SIAPP
 AppVersion={#Versao}
 AppVerName=SIAPP {#Versao}
 AppPublisher=Ruan da Silva Nobre
-AppPublisherURL=https://github.com/SIAPP-Pocos
+AppPublisherURL=https://github.com/SIAPP-Perfis
 AppComments=Sistema Integrado de Aquisição e Processamento de Perfis — software livre (AGPL-3.0)
 DefaultDirName={localappdata}\Programs\SIAPP
 DefaultGroupName=SIAPP
@@ -83,9 +83,9 @@ var
 begin
   PaginaDados := CreateInputDirPage(wpSelectDir, 'Pasta dos projetos',
     'Onde o SIAPP vai guardar os projetos, os arquivos baixados e os resultados?',
-    'Escolha uma pasta com espaço livre (os arquivos do portal REATE podem somar alguns GB). Se você já usa o SIAPP, ' +
-    'escolha a pasta que tem o ambiente_teste: os seus projetos continuam de onde pararam. Esta pasta não é apagada ' +
-    'ao desinstalar.', False, 'SIAPP');
+    'Escolha uma pasta com espaço livre (os arquivos do portal REATE podem somar alguns GB). Dentro dela o SIAPP cria ' +
+    'a pasta Projetos, com o Projeto principal. Se você já usa o SIAPP, escolha a mesma pasta de antes: os seus ' +
+    'projetos continuam de onde pararam. Esta pasta não é apagada ao desinstalar.', False, 'SIAPP');
   PaginaDados.Add('');
   Inicial := ParametroPastaDados();
   if Inicial = '' then

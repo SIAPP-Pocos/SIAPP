@@ -50,9 +50,13 @@ async function iniciar() {
   $("versao").textContent = "v" + r.versao;
   const ajuda = $("ini-pasta-ajuda");
   limpar(ajuda);
-  ajuda.append("Tudo fica na pasta ", el("strong", "", r.nome_pasta_projeto),
-               r.instalado ? `, em ${r.pasta_dados}. O diálogo já abre nela: é só confirmar.`
-                           : ", ao lado do aplicativo. O diálogo já abre nela: é só confirmar.");
+  if (r.instalado) {
+    ajuda.append("Os seus projetos ficam em ", el("strong", "", r.pasta_projetos),
+                 ". O diálogo já abre no projeto principal: é só confirmar.");
+  } else {
+    ajuda.append("Tudo fica na pasta ", el("strong", "", r.nome_pasta_projeto),
+                 ", ao lado do aplicativo. O diálogo já abre nela: é só confirmar.");
+  }
   ajuda.title = r.pasta_projeto;
   const sel = $("sel-bacia");
   for (const b of r.bacias) {

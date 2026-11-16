@@ -1,6 +1,6 @@
 # Base comunitária
 
-O SIAPP é a ferramenta; o repositório [SIAPP-dados](https://github.com/SIAPP-Pocos/SIAPP-dados)
+O SIAPP é a ferramenta; o repositório [SIAPP-dados](https://github.com/SIAPP-Perfis/SIAPP-dados)
 é a base. O que uma pessoa corrige ou transcreve vira um **pacote de contribuição**; os
 pacotes aceitos são compilados numa **base** que todo mundo baixa.
 

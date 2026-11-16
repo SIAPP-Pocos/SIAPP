@@ -6,14 +6,14 @@ body:
   - type: markdown
     attributes:
       value: |
-        Obrigado por relatar. Quanto mais exato, mais rápido conseguimos corrigir.
-        **Não anexe arquivos baixados do REATE** — informe o caminho do arquivo no portal.
+        Obrigado por relatar! Quanto mais exato, mais rápido dá para corrigir.
+        **Não anexe arquivos baixados do REATE**: informe o poço e o caminho do arquivo no portal.
   - type: input
     id: versao
     attributes:
       label: Versão do SIAPP
-      description: Aparece no título da janela ou em `ambiente_teste/siapp.json` (campo siapp_versao).
-      placeholder: "0.6"
+      description: Aparece em Ajuda › Sobre e no título da janela.
+      placeholder: "1.1.0"
     validations:
       required: true
   - type: dropdown
@@ -21,21 +21,25 @@ body:
     attributes:
       label: Onde aconteceu
       options:
-        - Instalação / iniciar.bat
-        - Catálogo (bacias, categorias, poços)
-        - Download
-        - Documentos / OCR
-        - Busca
-        - Correção de texto / dicionário
+        - Instalação, abertura ou atualização
+        - Início e projetos
+        - 1 Acervo (catálogo, download, levantamento)
+        - 2 Documentos (PDF, TIF, OCR, transcrição)
+        - 3 Perfis (DLIS, LIS, LAS, avaliação)
+        - 4 Poços (mapa, ficha)
+        - 5 Correlação (seção estratigráfica)
+        - 6 Modelo 3D
+        - Viabilidade
+        - Comunidade
         - Outro
     validations:
       required: true
   - type: textarea
     id: passos
     attributes:
-      label: Passo a passo para reproduzir
+      label: Passo a passo para repetir o erro
       placeholder: |
-        1. Conectar na bacia Potiguar
+        1. Abrir 1 Acervo › Catálogo do REATE, bacia Potiguar
         2. Abrir o poço 7-GMR-13-RN
         3. ...
     validations:
@@ -47,13 +51,13 @@ body:
     validations:
       required: true
   - type: textarea
-    id: mensagens
+    id: diagnostico
     attributes:
-      label: Mensagem da barra inferior e texto do terminal
-      description: Copie e cole. Vira bloco de código automaticamente.
+      label: Diagnóstico
+      description: Em Ajuda › Diagnóstico, clique em **Copiar para enviar** e cole aqui (versões, pasta, últimos erros).
       render: text
-  - type: input
-    id: sistema
+  - type: textarea
+    id: imagens
     attributes:
-      label: Sistema operacional e versão do Python
-      placeholder: "Windows 11, Python 3.12"
+      label: Capturas de tela (opcional)
+      description: Arraste imagens para cá.
