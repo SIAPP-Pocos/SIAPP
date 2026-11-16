@@ -10,8 +10,9 @@ a 0.47, o lançador silencioso (`lancador/`). Versão atual: veja `motor/__init_
 
 - Código: GitHub `SIAPP-Pocos/SIAPP` (privado), branch `main`. Base comunitária: `SIAPP-Pocos/SIAPP-dados`
   (formato de contribuição v3).
-- No computador do Ruan: `C:\Users\ruan.nobre\Desktop\Ruan\Pessoal\Faculdade\PIBIC\PIBIC.26\SIAPP` (até 31/10 se
-  chamava `siapp.vf`), um clone do GitHub: ele traz cada versão com `git pull` e abre pelo atalho.
+- No computador do Ruan, desde a 1.0 (16/11/2026): o SIAPP **instalado** (`%LOCALAPPDATA%\Programs\SIAPP`) e os
+  projetos em `C:\Users\ruan.nobre\Desktop\Ruan\Pessoal\Faculdade\PIBIC\SIAPP` (pasta escolhida no instalador;
+  `ambiente_teste\` dentro). Não há mais clone de desenvolvimento lá: o código está só no GitHub.
 - Vault (Obsidian): `C:\Users\ruan.nobre\Desktop\Ruan\Vault\1. Projetos\SIAPP\`. Se houver acesso, ler "SIAPP — README.md"
   (estado, versões, roteiro), "SIAPP — Mudanças em análise.md" (pedidos e decisões por bloco), "SIAPP — Decisões e
   Armadilhas.md" (o que não repetir), "SIAPP — Estrutura do Acervo REATE.md", "SIAPP — Tratamento por Tipo de
@@ -21,8 +22,8 @@ a 0.47, o lançador silencioso (`lancador/`). Versão atual: veja `motor/__init_
 
 ## Regras do projeto
 
-1. Versões 0.x até o lançamento. Cada entrega é uma versão: `motor/__init__.py`, selo do `README`, `CHANGELOG.md`
-   (português, formato Keep a Changelog), seção nova em `docs/guia-de-teste.md` (logo antes da seção da versão
+1. A 1.0 saiu em 16/11/2026: daqui em diante, 1.x (correção = 1.0.x; novidade = 1.x.0). Cada entrega é uma versão:
+   `motor/__init__.py`, selo do `README`, `CHANGELOG.md` (português, formato Keep a Changelog), seção nova em `docs/guia-de-teste.md` (logo antes da seção da versão
    anterior), documentação do módulo e testes.
 2. Arquivos originais do REATE nunca entram no git; os testes usam só dados sintéticos (`tests/*_util.py`). A pasta
    `ambiente_teste/` é do usuário e fica fora do git.
@@ -59,9 +60,10 @@ Detalhe em `docs/roteiro.md`. Resumo:
 2. Fora do escopo (decisão de 16/11/2026): validar a petrofísica de testemunho em outros poços; API e densidade de Guamaré.
 3. Feito: instalador `.exe` (0.67), estilo clássico da seção com a legenda Petrobras (0.68), dicionário de ferramentas
    (Halliburton, Baker, Weatherford, 0.63–0.68). Falta a assinatura digital do `.exe`.
-4. Revisão guiada da pasta do projeto (`docs/estrutura-da-pasta.md`), depois da 0.68.
+4. Feito: revisão guiada da pasta (`docs/estrutura-da-pasta.md`, 0.68).
 5. Validação científica (Rw publicado, carta estratigráfica, avaliação em lote por formação, 100 esquemas).
 6. Por último: análise do 1-BRSA-1304-BA × à mão; e a bibliografia completa.
-7. Antes da 1.0: termos de uso da ANP, DOI no Zenodo, repositórios públicos.
+7. Antes de divulgar (a 1.0 saiu antes): NIT da UFAL, termos de uso da ANP, DOI no Zenodo, repositórios públicos,
+   assinatura digital do instalador.
 8. Pendências do Ruan: Rw de referência por formação; números antigos do relatório (LIS); RHOB/NPHI/DT no acervo; terras
    indígenas da FUNAI (baixar o shapefile e importar); unidade da densidade nas planilhas de petrofísica (esta, fora do escopo junto com o Bloco 9).

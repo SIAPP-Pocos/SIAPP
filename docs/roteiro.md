@@ -1,7 +1,9 @@
 # Roteiro
 
 Decidido em 16/10/2026: primeiro as **funcionalidades novas**; as melhorias do que já
-existe e a validação científica ficam **para o final**, antes do lançamento (1.0).
+existe e a validação científica ficam **para o final**.
+
+**1.0 lançada em 16/11/2026** (primeira versão oficial, com instalador). O que ainda está aberto abaixo segue em 1.x.
 
 ## Agora — funcionalidades novas
 
@@ -111,7 +113,7 @@ existe e a validação científica ficam **para o final**, antes do lançamento 
 
 - [ ] **Análise de um perfil no SIAPP × feita à mão**: escolher o poço juntos e comparar os
       resultados da avaliação de formação com a análise manual (validação científica).
-- [ ] **Revisão guiada da pasta do projeto** (pedido de 31/10; junto com a análise à mão do 1-BRSA-1304-BA, Recôncavo,
+- [x] **Revisão guiada da pasta do projeto** (feita em 16/11/2026, 0.68; pedido de 31/10; junto com a análise à mão do 1-BRSA-1304-BA, Recôncavo,
       arenito de 1.679–1.693,5 m, Fm Água Grande): explicar o que é cada pasta, arquivo, extensão e nome, e para que
       serve; **glossário** dos termos da interface e do código (ex.: "árvore"). O resultado também vira
       `docs/estrutura-da-pasta.md`.
@@ -119,6 +121,8 @@ existe e a validação científica ficam **para o final**, antes do lançamento 
       Dubrule, Clark e Evans…), fontes de dados (ANP/REATE, EPE, IBGE) e softwares e
       bibliotecas usados, com as referências completas.
 
-## Antes do lançamento
+## Antes de divulgar (a 1.0 saiu antes destes, por decisão de 16/11/2026)
 
-- [ ] Termos de uso dos dados da ANP; DOI (Zenodo); publicar no GitHub (SIAPP-Pocos).
+- [ ] Conversar com o NIT da UFAL (titularidade, licença, doações, registro no INPI).
+- [ ] Termos de uso dos dados da ANP (consulta sobre a base comunitária); DOI (Zenodo); repositórios públicos.
+- [ ] Assinatura digital do instalador (o Windows avisa "editor desconhecido").

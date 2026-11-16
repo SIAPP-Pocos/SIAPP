@@ -132,6 +132,18 @@ Precisa de internet. Comece por uma categoria pequena para ver o tempo.
 - [ ] Sem intervalo marcado, **Calcular** explica que precisa de um intervalo-alvo.
 - [ ] Repetir no `5PX__0011__RN_5PX__0011__RN.tif` (DLIS de 2020).
 
+## 1.0 — primeira versão oficial (instalador com a pasta dos projetos)
+
+- [ ] Baixe `SIAPP-1.0.0-instalador.exe` (GitHub › Releases › v1.0.0, depois de criar a etiqueta; ou Actions ›
+      instalador › Artifacts) e dê dois cliques.
+- [ ] A página **Pasta dos projetos** aparece depois da pasta de instalação, com Documentos\SIAPP marcado. Troque
+      pela pasta onde está o seu `ambiente_teste` (depois da arrumação: `...\PIBIC\SIAPP`).
+- [ ] Ao abrir, a tela inicial diz "Tudo fica na pasta ambiente_teste, em <a pasta escolhida>" e o projeto abre com
+      tudo o que você já tinha (poços, perfis, seções, blocos).
+- [ ] Menu Iniciar › SIAPP › "Pasta dos projetos do SIAPP" abre a pasta escolhida.
+- [ ] Instale o mesmo instalador de novo: a página já vem com a pasta escolhida da primeira vez.
+- [ ] Ajuda › Sobre mostra 1.0.0.
+
 ## 0.68 — legenda Petrobras na seção e esquemas
 
 - [ ] Correlação › monte uma seção com poços que tenham AGP (ex.: os da Potiguar). Estilo **clássico**: a coluna

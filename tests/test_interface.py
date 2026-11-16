@@ -1,6 +1,7 @@
 """Interface de verdade num navegador sem tela (pulado sem Playwright)."""
 import json
 import os
+import re
 
 import pytest
 
@@ -47,7 +48,7 @@ def abrir_avancado(p, ident):
 
 def test_abre_no_inicio_e_abre_projeto(janela):
     p = janela.page
-    assert p.text_content("#versao").startswith("v0.")
+    assert re.match(r"v\d+\.\d+\.\d+", p.text_content("#versao"))
     assert p.is_visible("#vista-projeto") and not p.is_visible("#vista-dados")
     abrir_projeto(janela)
     janela.esperar("document.querySelectorAll('#ini-modulos .mod').length === 6")     # 0.58: módulos com estado
@@ -2259,7 +2260,7 @@ def test_abas_pelo_fluxo_menus_e_ajuda(janela):
     p.click("#dlg-fechar")
     p.click("#btn-ajuda")
     p.click("[data-ajuda='sobre']")
-    assert p.text_content("#dlg-corpo").startswith("SIAPP v0.")
+    assert re.match(r"SIAPP v\d+\.\d+", p.text_content("#dlg-corpo"))
     p.keyboard.press("Escape")
     p.click("#btn-ajuda")
     p.click("[data-ajuda='diag']")
@@ -2414,7 +2415,7 @@ def test_novidades_e_configuracao_de_atualizar(janela):
     p.click("#btn-ajuda")
     p.click("[data-ajuda='novidades']")
     janela.esperar("document.querySelector('#dlg-corpo h2') !== null")
-    assert p.text_content("#dlg-corpo h2").startswith("0.")
+    assert re.match(r"\d+\.\d+", p.text_content("#dlg-corpo h2"))
     p.keyboard.press("Escape")
     p.click("#btn-config")
     assert p.is_checked("#cfg-atualizar")

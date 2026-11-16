@@ -24,7 +24,7 @@ def test_versao_no_changelog():
 
 def test_versao_semver():
     from motor import __version__
-    assert re.fullmatch(r"0\.\d+\.\d+", __version__), "Versões 0.x até o lançamento"
+    assert re.fullmatch(r"[1-9]\d*\.\d+\.\d+", __version__), "Desde a 1.0 (16/11/2026): 1.x.y"
 
 
 def test_citation_na_versao_atual():

@@ -6,6 +6,18 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 
 ## [Não lançado]
 
+## [1.0.0] — 2026-11-16
+**Primeira versão oficial do SIAPP**, com instalador para o Windows (`SIAPP-1.0.0-instalador.exe`).
+### Adicionado
+- **Instalador: "Pasta dos projetos"**. Na instalação o SIAPP pergunta onde guardar os projetos, os arquivos baixados e
+  os resultados (padrão: Documentos\SIAPP). Quem já usa o SIAPP escolhe a pasta que tem o `ambiente_teste` e continua
+  de onde parou. Numa atualização, a pasta escolhida antes vem marcada. Sem perguntas:
+  `/VERYSILENT /PASTADADOS="D:\SIAPP"`. A pasta não é apagada ao desinstalar.
+- O GitHub testa também isso: instala numa pasta escolhida e confere que o SIAPP usa essa pasta.
+### Alterado
+- A tela inicial mostra a pasta dos projetos de verdade (antes dizia sempre Documentos\SIAPP).
+- Numeração: a partir daqui, 1.x (correção = 1.0.x; novidade = 1.x.0).
+
 ## [0.68.0] — 2026-11-16
 Legenda de litologias da Petrobras na seção e esquemas de ferramentas que ainda escapavam.
 ### Adicionado

@@ -1,5 +1,6 @@
 """Preferências, janelas destacadas, diagnóstico e pastas de exportação (0.30)."""
 import os
+import re
 import sys
 import types
 
@@ -190,7 +191,7 @@ def test_diagnostico_com_erros_do_log_e_da_sessao(api, monkeypatch):
                 "2026-10-16 10:45:00,000 INFO    siapp: tudo bem\n")
     api.conectar("Bacia que não existe")
     d = api.diagnostico()
-    assert d["ok"] and d["versoes"]["SIAPP"].startswith("0.") and "Python" in d["versoes"]
+    assert d["ok"] and re.fullmatch(r"\d+\.\d+\.\d+", d["versoes"]["SIAPP"]) and "Python" in d["versoes"]
     assert d["erros_log"][0]["causa"].startswith("pymupdf.mupdf.FzErrorFormat")
     assert any(e["funcao"] == "conectar" for e in d["erros_sessao"])
     assert d["janelas"] == ["principal"]

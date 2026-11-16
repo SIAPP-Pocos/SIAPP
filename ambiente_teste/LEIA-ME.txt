@@ -1,24 +1,26 @@
-AMBIENTE DE TESTE DO SIAPP
-==========================
+PROJETO PRINCIPAL DO SIAPP (ambiente_teste)
+==========================================
 
-Esta e a pasta de projeto do SIAPP. Tudo o que o aplicativo baixar e
-produzir fica aqui dentro, sempre neste mesmo lugar, ao lado do aplicativo.
-
-Ao clicar em "Abrir o projeto", o SIAPP abre direto nesta pasta e so aceita
-ela. Basta confirmar sem entrar em nenhuma subpasta.
+Esta e a pasta do projeto principal do SIAPP. Tudo o que o aplicativo baixar e
+produzir fica aqui dentro. Ela fica na "pasta dos projetos" escolhida na
+instalacao (padrao: Documentos\SIAPP) e NAO e apagada ao desinstalar o SIAPP.
 
 O que o SIAPP cria aqui:
 
-  siapp.json       configuracao do projeto e historico de cada acao
-  projeto.sqlite   banco do projeto: pocos, arquivos, curvas, correcoes, dados transcritos
+  projeto.sqlite   banco do projeto: pocos, arquivos, curvas, topos, dados transcritos
+  historico.jsonl  historico do projeto, uma acao por linha
+  siapp.json       configuracao do projeto
+  preferencias.json  cores, tamanho do texto e arranjo das janelas
   siapp.log        registro de erros (envie este arquivo quando algo falhar)
   catalogo\        o que existe no portal REATE, por bacia e categoria
   bruto\           arquivos baixados, intocados (.dlis, .lis, .las, .pdf, .tif)
-  texto\           texto extraido dos documentos e indice de busca
+  texto\           texto extraido dos documentos (OCR) e indice de busca
   pocos\           copia rapida das curvas de cada perfil ja lido
-  cadastro\        Tabela de Pocos baixada da ANP
-  exportacoes\     LAS e CSV exportados
-  contribuicoes\   pacotes de contribuicao exportados por voce
-  comunidade\      base comunitaria baixada
+  agp\, cadastro\, direcionais\, fontes\, sig\   dados da ANP, EPE e IBGE
+  execucoes\       cada avaliacao, secao e bloco salvos, com os parametros
+  exportacoes\     o que voce exportou (LAS, CSV, PNG, PDF, ECLIPSE)
 
-Para recomecar do zero, apague tudo desta pasta, menos este arquivo.
+Nao apague projeto.sqlite, historico.jsonl nem bruto\: sao o seu trabalho.
+O resto o SIAPP refaz (o texto\ do OCR leva horas para refazer).
+
+Mapa completo da pasta: docs/estrutura-da-pasta.md no repositorio do SIAPP.
