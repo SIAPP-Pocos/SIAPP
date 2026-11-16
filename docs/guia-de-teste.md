@@ -132,6 +132,12 @@ Precisa de internet. Comece por uma categoria pequena para ver o tempo.
 - [ ] Sem intervalo marcado, **Calcular** explica que precisa de um intervalo-alvo.
 - [ ] Repetir no `5PX__0011__RN_5PX__0011__RN.tif` (DLIS de 2020).
 
+## 1.0.1 — instalador da versão oficial
+
+- [ ] GitHub › Releases › **v1.0.1** traz `SIAPP-1.0.1-instalador.exe` e `SIAPP-1.0.1-codigo-fonte.zip`. Siga a seção
+      1.0 abaixo com esse instalador (a v1.0.0 ficou sem instalador).
+- [ ] Configurações › Diagnóstico mostra as versões das bibliotecas (lasio, dlisio, PyMuPDF…), não "?".
+
 ## 1.0 — primeira versão oficial (instalador com a pasta dos projetos)
 
 - [ ] Baixe `SIAPP-1.0.0-instalador.exe` (GitHub › Releases › v1.0.0, depois de criar a etiqueta; ou Actions ›

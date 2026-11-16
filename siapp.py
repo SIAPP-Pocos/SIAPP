@@ -47,11 +47,19 @@ def verificar() -> int:
     for rel in ("ui/index.html", "ui/estilo.css", "recursos/ferramentas.json", "recursos/icone/siapp.ico", "CHANGELOG.md"):
         if not os.path.isfile(os.path.join(base.PASTA_APP, rel)):
             erros.append(f"falta {rel}")
-    for lib in ("dlisio", "lasio", "pymupdf", "numpy", "openpyxl", "xlrd", "requests"):
+    from importlib import metadata
+    for lib, dist in (("dlisio", "dlisio"), ("lasio", "lasio"), ("pymupdf", "pymupdf"), ("numpy", "numpy"),
+                      ("openpyxl", "openpyxl"), ("xlrd", "xlrd"), ("requests", "requests"), ("webview", "pywebview")):
         try:
             importlib.import_module(lib)
         except Exception as e:  # noqa: BLE001
             erros.append(f"{lib}: {e}")
+        # 1.0.1: sem os metadados do pacote, o lasio procura a própria versão com "git describe" na pasta de onde o
+        # SIAPP foi aberto, e quebra quando ela é um repositório com etiqueta (aconteceu na montagem da v1.0.0)
+        try:
+            metadata.version(dist)
+        except Exception as e:  # noqa: BLE001
+            erros.append(f"{dist}: sem metadados no pacote ({type(e).__name__})")
     try:
         os.makedirs(base.PASTA_DADOS, exist_ok=True)
         tempfile.NamedTemporaryFile(dir=base.PASTA_DADOS).close()

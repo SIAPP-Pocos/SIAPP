@@ -2,7 +2,7 @@
 # SIAPP — receita do PyInstaller (0.67). Gera dist/SIAPP/SIAPP.exe (uma pasta, sem console).
 # Rodar a partir da raiz do repositório:  pyinstaller instalador/siapp.spec --noconfirm
 import os
-from PyInstaller.utils.hooks import collect_submodules, collect_data_files
+from PyInstaller.utils.hooks import collect_submodules, collect_data_files, copy_metadata
 
 RAIZ = os.path.abspath(os.path.join(SPECPATH, ".."))
 
@@ -20,6 +20,10 @@ for raiz, _, arquivos in os.walk(os.path.join(RAIZ, "recursos")):
         origem = os.path.join(raiz, a)
         dados.append((origem, os.path.relpath(raiz, RAIZ)))
 dados += collect_data_files("dlisio") + collect_data_files("lasio") + collect_data_files("webview")
+# 1.0.1: metadados (.dist-info) das bibliotecas: o lasio lê a própria versão deles; sem eles, roda "git describe" na
+# pasta atual e quebra numa pasta com etiqueta git. Também servem ao Diagnóstico (versões) e aos avisos de licença.
+for _dist in ("lasio", "dlisio", "pymupdf", "numpy", "openpyxl", "xlrd", "requests", "pywebview"):
+    dados += copy_metadata(_dist)
 
 ocultos = collect_submodules("motor") + collect_submodules("ponte") + collect_submodules("lancador")
 ocultos += collect_submodules("webview") + ["clr", "openpyxl", "xlrd"]

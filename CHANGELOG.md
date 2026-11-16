@@ -6,6 +6,12 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 
 ## [Não lançado]
 
+## [1.0.1] — 2026-11-16
+### Corrigido
+- O instalador da etiqueta v1.0.0 não saiu: no pacote, o lasio não achava os próprios metadados e procurava a versão
+  com `git describe` na pasta de onde o SIAPP foi aberto; numa pasta com etiqueta git, quebrava ao importar. O pacote
+  agora leva os metadados das bibliotecas, e `SIAPP.exe --verificar` confere que eles estão lá.
+
 ## [1.0.0] — 2026-11-16
 **Primeira versão oficial do SIAPP**, com instalador para o Windows (`SIAPP-1.0.0-instalador.exe`).
 ### Adicionado
