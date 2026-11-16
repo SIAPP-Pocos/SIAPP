@@ -85,6 +85,18 @@ existe e a validação científica ficam **para o final**.
 - [x] Medir o mapa com o cadastro inteiro (A25) e deixá-lo leve (0.62): todas as bacias em ~0,75 s.
 - [x] Uma tela de fontes e prioridade (topos e zonas) e contagens com o critério ao lado (A12, A13) (0.63).
 
+## Anotado em 16/11/2026 (noite) — juntar na próxima versão, não lançar sozinho
+
+- [ ] Documentos: as setas do teclado (← →) não trocam de página quando o PDF está em tela cheia.
+- [ ] Início: doação à vista, num espaço pequeno reservado no canto direito, ao lado dos projetos (xícara de café
+      desenhada e a palavra "Doe"); hoje fica só em Ajuda › Apoie o projeto.
+- [ ] Comunidade: o dado transcrito que chega por pacote ou pela base não aparece marcado na página quando o documento é
+      baixado depois (a busca é pelo caminho local de quem transcreveu; ligar pelo SHA-256 ou pelo caminho no REATE). A
+      prévia da importação deve listar os poços e quais arquivos faltam (nada pré-selecionado para baixar).
+- [ ] Comunidade pelo GitHub, direto do app (em análise): entrar com a conta do GitHub (código de dispositivo), enviar o
+      pacote como pedido de inclusão no SIAPP-dados e puxar a base de lá; a exportação em arquivo continua. Pré-requisito:
+      SIAPP-dados público.
+
 ## No final — melhorias do que já existe
 
 - [x] **Procurar por tipo de dado** (0.49): em quais poços há petrofísica, PVT, etc., pelo levantamento; ver no mapa,
