@@ -93,6 +93,8 @@ existe e a validação científica ficam **para o final**.
 - [ ] Comunidade: o dado transcrito que chega por pacote ou pela base não aparece marcado na página quando o documento é
       baixado depois (a busca é pelo caminho local de quem transcreveu; ligar pelo SHA-256 ou pelo caminho no REATE). A
       prévia da importação deve listar os poços e quais arquivos faltam (nada pré-selecionado para baixar).
+- [ ] Perfis: nomes de topos próximos se sobrepõem na coluna de profundidade (ex.: "Penedo" e "PDO-1" no 3-PIR-13-AL).
+- [ ] Modelo 3D, PNG exportado: os rótulos dos eixos ("norte (km)", números) caem por cima da legenda embaixo.
 - [ ] Comunidade pelo GitHub, direto do app (em análise): entrar com a conta do GitHub (código de dispositivo), enviar o
       pacote como pedido de inclusão no SIAPP-dados e puxar a base de lá; a exportação em arquivo continua. Pré-requisito:
       SIAPP-dados público.
