@@ -28,6 +28,19 @@ usar o programa não precisa de Python, git nem do lançador; quem desenvolve co
 - O Windows pode avisar "editor desconhecido" (SmartScreen): o `.exe` ainda não tem assinatura digital. Clique em
   **Mais informações › Executar assim mesmo**.
 
+### "Uma política de Controle de Aplicativo bloqueou este arquivo" (código 4551)
+
+Aparece ao abrir o `SIAPP.exe` quando o **Controle Inteligente de Aplicativos** (Smart App Control) do Windows 11 está
+ligado, ou num computador de empresa ou universidade com política de aplicativos. Enquanto o `.exe` não tiver
+assinatura digital, não há como liberar só o SIAPP: o próprio Windows não permite exceção por aplicativo.
+
+- **Computador pessoal:** Segurança do Windows › Controle de aplicativos e navegador › Configurações do Controle
+  Inteligente de Aplicativos › Desativado. Isso tira uma proteção do Windows para todos os programas, então a decisão é
+  de quem usa o computador; atualizações recentes do Windows permitem ligar de novo sem reinstalar.
+- **Computador gerenciado** (empresa, laboratório): só o setor de TI pode liberar.
+- **Solução definitiva:** assinar o `.exe` (ver o roteiro). Com assinatura válida, o Controle Inteligente deixa o
+  programa abrir.
+
 ## Como sai uma versão
 
 Cada versão é publicada por uma pessoa: GitHub › **Releases** › **Draft a new release** › etiqueta `vX.Y.Z` (alvo
