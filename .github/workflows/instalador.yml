@@ -3,6 +3,9 @@ name: instalador
 # 0.67: monta o instalador do Windows (SIAPP-<versão>-instalador.exe) numa máquina Windows do GitHub.
 # Roda à mão (Actions › instalador › Run workflow) ou ao criar uma etiqueta vX.Y.Z. O .exe fica em "Artifacts" da
 # execução (30 dias).
+# Assinatura digital (SignPath, ver CODE_SIGNING_POLICY.md e docs/instalador.md): só com etiqueta vX.Y.Z e com o
+# segredo SIGNPATH_API_TOKEN e a variável SIGNPATH_ORGANIZATION_ID configurados no repositório. Cada envio espera a
+# aprovação à mão no site do SignPath (o SIAPP.exe e, depois, o instalador). Sem o segredo, sai sem assinatura.
 on:
   workflow_dispatch:
   push:
@@ -14,6 +17,8 @@ permissions:
 jobs:
   windows:
     runs-on: windows-latest
+    env:
+      ASSINAR: ${{ startsWith(github.ref, 'refs/tags/v') && secrets.SIGNPATH_API_TOKEN != '' && 'sim' || 'nao' }}
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
@@ -53,8 +58,37 @@ jobs:
           $p = Start-Process -FilePath "dist\SIAPP\SIAPP.exe" -ArgumentList "--verificar-janela" -Wait -PassThru
           Copy-Item "$env:SIAPP_DADOS\verificar-janela.json" verificar-janela.json -ErrorAction SilentlyContinue
           Get-Content verificar-janela.json -ErrorAction SilentlyContinue
-          Get-Content "$env:SIAPP_DADOS\ambiente_teste\*.log" -ErrorAction SilentlyContinue | Select-Object -Last 40
+          Get-ChildItem $env:SIAPP_DADOS -Recurse -Filter siapp.log -ErrorAction SilentlyContinue | Get-Content | Select-Object -Last 40
           if ($p.ExitCode -ne 0) { throw "SIAPP.exe --verificar-janela falhou ($($p.ExitCode))" }
+      - name: "Assinatura 1/2: enviar o SIAPP.exe ao SignPath"
+        id: exe-sem-assinatura
+        if: env.ASSINAR == 'sim'
+        uses: actions/upload-artifact@v4
+        with:
+          name: SIAPP-exe-sem-assinatura
+          path: dist/SIAPP/SIAPP.exe
+          retention-days: 1
+      - name: "Assinatura 1/2: esperar a aprovação no SignPath (SIAPP.exe)"
+        if: env.ASSINAR == 'sim'
+        uses: signpath/github-action-submit-signing-request@v3
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG || 'SIAPP' }}
+          signing-policy-slug: ${{ vars.SIGNPATH_POLICY_SLUG || 'release-signing' }}
+          artifact-configuration-slug: programa
+          github-artifact-id: ${{ steps.exe-sem-assinatura.outputs.artifact-id }}
+          wait-for-completion: true
+          wait-for-completion-timeout-in-seconds: 14400
+          output-artifact-directory: assinado/programa
+      - name: "Assinatura 1/2: conferir e usar o SIAPP.exe assinado"
+        if: env.ASSINAR == 'sim'
+        shell: pwsh
+        run: |
+          $s = Get-AuthenticodeSignature assinado\programa\SIAPP.exe
+          "$($s.Status) · $($s.SignerCertificate.Subject)"
+          if ($s.Status -ne 'Valid') { throw "a assinatura do SIAPP.exe não é válida ($($s.Status))" }
+          Copy-Item assinado\programa\SIAPP.exe dist\SIAPP\SIAPP.exe -Force
       - name: Inno Setup
         shell: pwsh
         run: |
@@ -62,6 +96,41 @@ jobs:
           if (-not (Test-Path $iscc)) { choco install innosetup -y --no-progress; }
           & $iscc "/DVersao=${{ steps.versao.outputs.versao }}" instalador\siapp.iss
           Get-ChildItem dist\*.exe | ForEach-Object { "{0}  {1:N1} MB" -f $_.Name, ($_.Length / 1MB) }
+      - name: "Assinatura 2/2: separar o instalador"
+        if: env.ASSINAR == 'sim'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force para-assinar | Out-Null
+          Copy-Item "dist\SIAPP-${{ steps.versao.outputs.versao }}-instalador.exe" para-assinar\instalador.exe
+      - name: "Assinatura 2/2: enviar o instalador ao SignPath"
+        id: instalador-sem-assinatura
+        if: env.ASSINAR == 'sim'
+        uses: actions/upload-artifact@v4
+        with:
+          name: SIAPP-instalador-sem-assinatura
+          path: para-assinar/instalador.exe
+          retention-days: 1
+      - name: "Assinatura 2/2: esperar a aprovação no SignPath (instalador)"
+        if: env.ASSINAR == 'sim'
+        uses: signpath/github-action-submit-signing-request@v3
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG || 'SIAPP' }}
+          signing-policy-slug: ${{ vars.SIGNPATH_POLICY_SLUG || 'release-signing' }}
+          artifact-configuration-slug: instalador
+          github-artifact-id: ${{ steps.instalador-sem-assinatura.outputs.artifact-id }}
+          wait-for-completion: true
+          wait-for-completion-timeout-in-seconds: 14400
+          output-artifact-directory: assinado/instalador
+      - name: "Assinatura 2/2: conferir e usar o instalador assinado"
+        if: env.ASSINAR == 'sim'
+        shell: pwsh
+        run: |
+          $s = Get-AuthenticodeSignature assinado\instalador\instalador.exe
+          "$($s.Status) · $($s.SignerCertificate.Subject)"
+          if ($s.Status -ne 'Valid') { throw "a assinatura do instalador não é válida ($($s.Status))" }
+          Copy-Item assinado\instalador\instalador.exe "dist\SIAPP-${{ steps.versao.outputs.versao }}-instalador.exe" -Force
       - name: Testar o instalador (instala, abre e desinstala, sem perguntas)
         shell: pwsh
         timeout-minutes: 8
@@ -72,6 +141,8 @@ jobs:
           if ($p.ExitCode -ne 0) { throw "o instalador saiu com $($p.ExitCode)" }
           $exe = "$env:LOCALAPPDATA\Programs\SIAPP\SIAPP.exe"
           if (-not (Test-Path $exe)) { throw "não achei $exe" }
+          foreach ($a in @($setup.FullName, $exe)) { "assinatura de {0}: {1}" -f (Split-Path $a -Leaf), (Get-AuthenticodeSignature $a).Status }
+          if ($env:ASSINAR -eq 'sim' -and (Get-AuthenticodeSignature $exe).Status -ne 'Valid') { throw "o SIAPP.exe instalado não está assinado" }
           $atalho = Get-ChildItem "$env:APPDATA\Microsoft\Windows\Start Menu\Programs" -Recurse -Filter "SIAPP.lnk" | Select-Object -First 1
           if (-not $atalho) { throw "o atalho do menu Iniciar não foi criado" }
           "pasta_dados.txt: " + (Get-Content "$env:LOCALAPPDATA\Programs\SIAPP\pasta_dados.txt" -Raw)

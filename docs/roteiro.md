@@ -94,9 +94,8 @@ existe e a validação científica ficam **para o final**.
       baixado depois (a busca é pelo caminho local de quem transcreveu; ligar pelo SHA-256 ou pelo caminho no REATE). A
       prévia da importação deve listar os poços e quais arquivos faltam (nada pré-selecionado para baixar).
 - [ ] **Assinatura digital (urgente, 18/11):** um usuário com o Controle Inteligente de Aplicativos do Windows 11 não
-      consegue abrir o SIAPP (código 4551). Caminho: SignPath Foundation (gratuito para código aberto; assina no
-      GitHub Actions, com aprovação manual de cada versão). Assinar todos os `.exe`, `.dll` e `.pyd` sem assinatura do
-      pacote, não só o `SIAPP.exe`, e o instalador.
+      consegue abrir o SIAPP (código 4551). Pronto no workflow (SignPath, com aprovação manual; `docs/instalador.md`).
+      Falta: o Ruan pedir à SignPath Foundation e, aprovado, configurar o segredo e as variáveis no repositório.
 - [ ] Perfis: nomes de topos próximos se sobrepõem na coluna de profundidade (ex.: "Penedo" e "PDO-1" no 3-PIR-13-AL).
 - [ ] Modelo 3D, PNG exportado: os rótulos dos eixos ("norte (km)", números) caem por cima da legenda embaixo.
 - [ ] Comunidade pelo GitHub, direto do app (em análise): entrar com a conta do GitHub (código de dispositivo), enviar o

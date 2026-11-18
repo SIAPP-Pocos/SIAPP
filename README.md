@@ -118,6 +118,12 @@ Use o botão **Cite this repository**, no alto desta página (ele lê o [`CITATI
 > Nobre, R. S. *SIAPP — Sistema Integrado de Aquisição e Processamento de Perfis* (versão 1.1.0). Universidade Federal
 > de Alagoas, 2026. Disponível em: https://github.com/SIAPP-Perfis/SIAPP.
 
+## Assinatura de código
+
+Free code signing provided by [SignPath.io](https://about.signpath.io/), certificate by
+[SignPath Foundation](https://signpath.org/). Quem assina, o que é assinado e a privacidade do programa:
+[Política de assinatura de código (Code signing policy)](CODE_SIGNING_POLICY.md).
+
 ## Licença
 
 Código sob a **GNU AGPL-3.0** ([LICENSE](LICENSE)): use, estude, modifique e redistribua à vontade, mantendo o código

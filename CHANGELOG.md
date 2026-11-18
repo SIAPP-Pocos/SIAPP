@@ -5,6 +5,13 @@ versões seguem [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 
 ## [Não lançado]
+### Adicionado
+- **Assinatura digital** pelo SignPath (gratuita para código aberto), pronta no workflow do instalador: o `SIAPP.exe` e
+  o instalador são enviados para assinatura e esperam a aprovação à mão; liga quando o repositório tiver o segredo
+  `SIGNPATH_API_TOKEN`. Política em `CODE_SIGNING_POLICY.md`; configurações em `instalador/signpath/`.
+- O instalador passa a ter nome e versão do produto nas propriedades do arquivo.
+- Guia do instalador: o que fazer quando o Controle Inteligente de Aplicativos do Windows 11 bloqueia o SIAPP
+  (código 4551).
 
 ## [1.1.0] — 2026-11-16
 Pastas com nome de usuário e o GitHub arrumado.

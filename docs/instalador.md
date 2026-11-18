@@ -38,8 +38,8 @@ assinatura digital, não há como liberar só o SIAPP: o próprio Windows não p
   Inteligente de Aplicativos › Desativado. Isso tira uma proteção do Windows para todos os programas, então a decisão é
   de quem usa o computador; atualizações recentes do Windows permitem ligar de novo sem reinstalar.
 - **Computador gerenciado** (empresa, laboratório): só o setor de TI pode liberar.
-- **Solução definitiva:** assinar o `.exe` (ver o roteiro). Com assinatura válida, o Controle Inteligente deixa o
-  programa abrir.
+- **Solução definitiva:** assinar o `.exe` (ver [Assinatura digital](#assinatura-digital-signpath)). Com assinatura
+  válida, o Controle Inteligente deixa o programa abrir.
 
 ## Como sai uma versão
 
@@ -61,11 +61,41 @@ ou ao chegar uma etiqueta `vX.Y.Z`:
    bibliotecas, procura os arquivos da interface e grava `verificar.json`; qualquer erro para a montagem.
 5. **Confere a janela**: `SIAPP.exe --verificar-janela` abre a janela de verdade, espera a interface pedir a versão ao
    motor (WebView2 → página → scripts → ponte → Python) e fecha sozinho; grava `verificar-janela.json`.
-6. **Inno Setup** (`instalador/siapp.iss`) faz o instalador.
-7. **Testa o instalador**: instala sem perguntas, confere o `.exe` e o atalho do menu Iniciar, abre a janela do SIAPP
-   instalado (`--verificar-janela`) e desinstala.
-8. Guarda o instalador e o **código-fonte** (`git archive`) em *Artifacts* da execução, por 30 dias. Com etiqueta
+6. **Assina o `SIAPP.exe`** (só com etiqueta e o SignPath configurado; ver abaixo) e põe o assinado no lugar.
+7. **Inno Setup** (`instalador/siapp.iss`) faz o instalador, com nome e versão do produto nas propriedades; com o
+   SignPath configurado, **assina o instalador** também.
+8. **Testa o instalador**: instala sem perguntas, confere o `.exe` e o atalho do menu Iniciar, abre a janela do SIAPP
+   instalado (`--verificar-janela`) e desinstala. Mostra o estado da assinatura dos dois `.exe` e, quando a versão
+   devia sair assinada, para se o `SIAPP.exe` instalado não estiver.
+9. Guarda o instalador e o **código-fonte** (`git archive`) em *Artifacts* da execução, por 30 dias. Com etiqueta
    `vX.Y.Z` (que tem de bater com a versão), anexa os dois à página da versão (Releases).
+
+## Assinatura digital (SignPath)
+
+Sem assinatura, o Windows avisa "editor desconhecido" e o Controle Inteligente de Aplicativos bloqueia o SIAPP. A
+assinatura vem da [SignPath Foundation](https://signpath.org/), que assina de graça projetos de código aberto; as
+regras do SIAPP estão em [`CODE_SIGNING_POLICY.md`](../CODE_SIGNING_POLICY.md).
+
+**Como funciona numa versão:** ao chegar a etiqueta `vX.Y.Z`, o workflow monta e confere o pacote, envia o `SIAPP.exe`
+ao SignPath e **espera a aprovação** (até 4 horas). O aprovador recebe o aviso, confere e aprova no site do SignPath;
+o arquivo volta assinado, o instalador é montado e enviado do mesmo jeito (segunda aprovação). Depois vêm os testes e
+o instalador assinado é anexado à versão. Sem aprovação no prazo, a execução falha e nada é anexado.
+
+**O que o repositório precisa** (Settings › Secrets and variables › Actions):
+
+| Nome | Tipo | Valor |
+|---|---|---|
+| `SIGNPATH_API_TOKEN` | segredo (*secret*) | token de API do usuário de CI do SignPath (papel *submitter*) |
+| `SIGNPATH_ORGANIZATION_ID` | variável (*variable*) | o Organization ID do SignPath |
+| `SIGNPATH_PROJECT_SLUG` | variável, opcional | se o projeto no SignPath não se chamar `SIAPP` |
+| `SIGNPATH_POLICY_SLUG` | variável, opcional | se a política não se chamar `release-signing` |
+
+No SignPath, o projeto tem duas configurações de artefato, com os textos de `instalador/signpath/`: `programa`
+(`programa.xml`, o `SIAPP.exe`) e `instalador` (`instalador.xml`). Enquanto o segredo não existir, tudo segue como
+antes, sem assinatura.
+
+Ficam sem assinatura do SIAPP: as bibliotecas de terceiros (seguem com a assinatura de quem as publica, quando há) e o
+desinstalador `unins000.exe`, que o Inno Setup gera durante a instalação.
 
 ## Como baixar
 

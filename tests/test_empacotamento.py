@@ -47,3 +47,26 @@ def test_pasta_dos_projetos_escolhida_no_instalador():
     with open(os.path.join(RAIZ, "instalador", "siapp.iss"), encoding="utf-8") as f:
         iss = f.read()
     assert "pasta_dados.txt" in iss and base.ARQUIVO_PASTA_DADOS == "pasta_dados.txt" and "/PASTADADOS=" in iss
+
+
+def test_assinatura_signpath_preparada():
+    raiz = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    ler = lambda *p: open(os.path.join(raiz, *p), encoding="utf-8").read()
+    politica = ler("CODE_SIGNING_POLICY.md")
+    # exigências da SignPath Foundation: o termo, o crédito, papéis e privacidade
+    assert "Code signing policy" in politica
+    assert "Free code signing provided by [SignPath.io]" in politica and "SignPath Foundation" in politica
+    assert "Aprovadores" in politica and "Privacy policy" in politica
+    readme = ler("README.md")
+    assert "CODE_SIGNING_POLICY.md" in readme and "Free code signing provided by" in readme
+    fluxo = ler(".github", "workflows", "instalador.yml")
+    for slug in ("programa", "instalador"):
+        assert f"artifact-configuration-slug: {slug}" in fluxo
+        xml = ler("instalador", "signpath", f"{slug}.xml")
+        assert "http://signpath.io/artifact-configuration/v1" in xml and "<authenticode-sign/>" in xml
+    assert 'pe-file path="SIAPP.exe"' in ler("instalador", "signpath", "programa.xml")
+    assert "para-assinar/instalador.exe" in fluxo and 'pe-file path="instalador.exe"' in ler("instalador", "signpath", "instalador.xml")
+    # sem o segredo, nada de assinatura (e só com etiqueta)
+    assert "secrets.SIGNPATH_API_TOKEN != ''" in fluxo and "startsWith(github.ref, 'refs/tags/v')" in fluxo
+    assert "VersionInfoProductName=SIAPP" in ler("instalador", "siapp.iss")
+    assert "StringStruct('ProductName', 'SIAPP')" in ler("instalador", "versao.modelo.txt")
