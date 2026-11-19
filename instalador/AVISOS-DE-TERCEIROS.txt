@@ -18,6 +18,7 @@ NumPy                       BSD-3-Clause (e componentes 0BSD, MIT,    https://nu
                             Zlib, CC0-1.0)
 openpyxl / et_xmlfile       MIT                                       https://foss.heptapod.net/openpyxl/openpyxl
 xlrd                        BSD                                       https://github.com/python-excel/xlrd
+segno (QR Code do Pix)      BSD-3-Clause                              https://github.com/heuer/segno
 requests                    Apache-2.0                                https://github.com/psf/requests
 urllib3                     MIT                                       https://github.com/urllib3/urllib3
 idna                        BSD-3-Clause                              https://github.com/kjd/idna

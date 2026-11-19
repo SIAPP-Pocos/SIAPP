@@ -329,6 +329,12 @@ class JanelasAPI:
         return mdo.ler(os.path.join(base.PASTA_RECURSOS, "doacao.json"))
 
     @resposta_segura
+    def doacao_pix(self, valor=None):
+        """1.3: o Pix da tela de apoio com o valor escolhido ("copia e cola" e QR Code em SVG)."""
+        from motor import doacao as mdo
+        return mdo.pix_com_valor(mdo.ler(os.path.join(base.PASTA_RECURSOS, "doacao.json")), valor)
+
+    @resposta_segura
     def aviso_atualizacao(self):
         """O lançador atualizou o SIAPP ao abrir? Mostra uma vez ("SIAPP atualizado: 0.57.0 → 0.58.0")."""
         caminho = os.path.join(base.PASTA_PROJETO, "atualizacao.json")      # gravado pelo lançador

@@ -63,7 +63,8 @@
                     execucoes/viabilidade/ (JSON + HTML); constantes e equações editáveis
     direcionais.py  dados direcionais: 5 leiautes, curvatura mínima (tabela direcionais)
     ferramentas.py  esquemas de ferramentas: tipo da corrida, ferramentas, vínculo com os perfis (tabela esquemas)
-    doacao.py       tela "Apoie o projeto": lê recursos/doacao.json e monta o Pix copia e cola (BR Code do Banco Central)
+    doacao.py       tela "Apoie o projeto": lê recursos/doacao.json e monta o Pix copia e cola (BR Code do Banco Central),
+                    com valor e QR Code (segno)
                ▼
   ambiente_teste/  — pasta de projeto (contrato entre as partes)
 ```

@@ -6,3 +6,4 @@ dlisio>=1.0
 lasio>=0.31
 xlrd>=2.0
 openpyxl>=3.1
+segno>=1.6

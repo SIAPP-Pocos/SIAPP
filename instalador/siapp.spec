@@ -22,11 +22,11 @@ for raiz, _, arquivos in os.walk(os.path.join(RAIZ, "recursos")):
 dados += collect_data_files("dlisio") + collect_data_files("lasio") + collect_data_files("webview")
 # 1.0.1: metadados (.dist-info) das bibliotecas: o lasio lê a própria versão deles; sem eles, roda "git describe" na
 # pasta atual e quebra numa pasta com etiqueta git. Também servem ao Diagnóstico (versões) e aos avisos de licença.
-for _dist in ("lasio", "dlisio", "pymupdf", "numpy", "openpyxl", "xlrd", "requests", "pywebview"):
+for _dist in ("lasio", "dlisio", "pymupdf", "numpy", "openpyxl", "xlrd", "requests", "pywebview", "segno"):
     dados += copy_metadata(_dist)
 
 ocultos = collect_submodules("motor") + collect_submodules("ponte") + collect_submodules("lancador")
-ocultos += collect_submodules("webview") + ["clr", "openpyxl", "xlrd"]
+ocultos += collect_submodules("webview") + ["clr", "openpyxl", "xlrd", "segno"]
 
 a = Analysis(
     [os.path.join(RAIZ, "siapp.py")],

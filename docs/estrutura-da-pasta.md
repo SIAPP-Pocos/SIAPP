@@ -80,7 +80,7 @@ Uma regra resume a separação: **o programa pode ser apagado e baixado de novo;
 | `mnemonicos.json` | mnemônicos das curvas de perfil (GR, RHOB, NPHI…) e a família de cada um |
 | `guia_interpolacao.json` | regras da sugestão de método de interpolação do bloco 3D |
 | `vocabulario_base.json`, `palavras_pt.txt.gz` | palavras do português para corrigir o texto do OCR |
-| `doacao.json` | dados da tela "Apoie o projeto" (chave Pix) |
+| `doacao.json` | dados da tela "Apoie o projeto": chave Pix, texto "Quem faz o SIAPP", LinkedIn do autor e botões de valor |
 | `icone\` | o ícone do SIAPP em vários tamanhos (`siapp.ico` é o do Windows) |
 | `tessdata\` | modelos de idioma do OCR (`por.traineddata`, `eng.traineddata`), baixados na primeira vez; não vão para o git |
 

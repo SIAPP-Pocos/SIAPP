@@ -132,6 +132,16 @@ Precisa de internet. Comece por uma categoria pequena para ver o tempo.
 - [ ] Sem intervalo marcado, **Calcular** explica que precisa de um intervalo-alvo.
 - [ ] Repetir no `5PX__0011__RN_5PX__0011__RN.tif` (DLIS de 2020).
 
+## Próxima versão (em preparação) — tela "Apoie o SIAPP"
+
+- [ ] Ajuda › Apoie o projeto (ou a xícara "Doe" do Início): abre com o mascote acenando e a fala dizendo que é opcional.
+- [ ] "Quem faz o SIAPP": o seu texto, em parágrafos, e o link "Fale comigo no LinkedIn" (abre no navegador).
+- [ ] Nenhum valor vem escolhido. Clique em "Um lanche": o botão fica marcado e o QR Code e o copia e cola passam a
+      ter R$ 15,00. Leia o QR com o app do banco: o valor deve vir preenchido (não precisa concluir o Pix).
+- [ ] Digite 7,50 em "Outro valor" › Gerar Pix: o QR passa a ter R$ 7,50.
+- [ ] "Outras formas de ajudar": os links abrem no navegador; "Abrir a Comunidade" fecha a tela e vai à aba.
+- [ ] Tema escuro: textos, botões e o QR continuam legíveis.
+
 ## 1.2 — mascote, ajuda e doação à vista
 
 - [ ] Início: o mascote aparece no canto de baixo, à direita, com o balão "Dúvidas? Clique em mim." (numa janela

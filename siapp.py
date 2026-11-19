@@ -49,7 +49,8 @@ def verificar() -> int:
             erros.append(f"falta {rel}")
     from importlib import metadata
     for lib, dist in (("dlisio", "dlisio"), ("lasio", "lasio"), ("pymupdf", "pymupdf"), ("numpy", "numpy"),
-                      ("openpyxl", "openpyxl"), ("xlrd", "xlrd"), ("requests", "requests"), ("webview", "pywebview")):
+                      ("openpyxl", "openpyxl"), ("xlrd", "xlrd"), ("requests", "requests"), ("webview", "pywebview"),
+                      ("segno", "segno")):
         try:
             importlib.import_module(lib)
         except Exception as e:  # noqa: BLE001

@@ -2802,3 +2802,32 @@ def test_mascote_abre_como_usar(janela):
     p.click("#menu-como-usar")
     janela.esperar("document.querySelector('.cu-tema-btn') !== null")
     assert not janela.erros_js, janela.erros_js
+
+
+def test_tela_de_apoio_com_quem_faz_valores_e_qr(janela):
+    """1.3: a tela de apoio do repositório: mascote, quem faz o SIAPP, valores com QR Code e outras formas de ajudar."""
+    p = janela.page
+    p.evaluate("prepararDoacao().then(() => 0)")
+    janela.esperar("!document.getElementById('menu-doacao').hidden")
+    p.evaluate("abrirDoacao()")
+    janela.esperar("document.getElementById('doacao-qr') !== null && document.getElementById('doacao-qr').naturalWidth > 0")
+    assert "opcional" in p.text_content(".apoio-fala")
+    assert "Ruan da Silva Nobre" in p.text_content(".apoio-sobre")
+    # começa sem valor escolhido; o código é o de sempre
+    assert p.locator(".apoio-valor[aria-pressed='true']").count() == 0
+    assert "5405" not in p.input_value("#doacao-pix-codigo")
+    rotulos = [t.strip() for t in p.locator(".apoio-valor strong").all_text_contents()]
+    assert rotulos == ["Um cafezinho", "Um lanche", "Uma tarde de código"]
+    p.click(".apoio-valor >> nth=1")
+    janela.esperar("document.getElementById('doacao-pix-codigo').value.includes('540515.00')")
+    assert p.get_attribute(".apoio-valor >> nth=1", "aria-pressed") == "true"
+    assert "15,00" in p.text_content("#doacao-valor")
+    p.fill("#doacao-outro", "7,5")
+    p.click(".apoio-outro button")
+    janela.esperar("document.getElementById('doacao-pix-codigo').value.includes('54047.50')")
+    assert p.locator(".apoio-valor[aria-pressed='true']").count() == 0
+    # outras formas de ajudar, com o caminho para a Comunidade
+    assert p.locator(".apoio-outras li").count() == 5
+    p.click(".apoio-outras .link-botao")
+    assert p.evaluate("document.getElementById('dialogo').hidden")
+    assert not janela.erros_js, janela.erros_js

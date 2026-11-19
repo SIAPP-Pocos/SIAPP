@@ -159,3 +159,20 @@ manual (`desenharConexao`, `desenharListaPocos`, catalogo.js) e abre a gaveta (`
   (`abrirDoacao`). Aparece e some junto com o item do menu: só quando `recursos/doacao.json` tem chave Pix ou link.
 - **Setas no visor**: com a página em tela cheia, ← → (os mesmos atalhos de "Página anterior/Próxima página") trocam a
   página do visor (`paginaVisor`, visor.js), a não ser que a página ampliada passe da largura da tela: aí as setas rolam.
+
+## Tela "Apoie o SIAPP" (1.3)
+
+`ui/js/apoio.js`, aberta por Ajuda › Apoie o projeto, pela xícara "Doe" do Início e pelo botão do "Sobre". Tudo o que
+ela mostra vem de `recursos/doacao.json` (lido por `motor/doacao.py`); sem chave Pix nem link, a tela fica escondida.
+
+- **Abertura**: o mascote acenando e a fala (`texto`), que deixa claro que doar é opcional.
+- **Quem faz o SIAPP** (`sobre`, uma lista de parágrafos) e o link **Fale comigo no LinkedIn** (`linkedin`; só aceita
+  `https://www.linkedin.com/in/...`, e sem ele o link não aparece). Sem foto: o mascote representa o autor.
+- **Apoie com um Pix**: os botões de `valores` (padrão: Um cafezinho R$ 5, Um lanche R$ 15, Uma tarde de código R$ 30) e
+  "Outro valor". Cada escolha pede ao motor (`doacao_pix`) o "copia e cola" com o valor (campo 54 do BR Code) e o **QR
+  Code** em SVG, feito pelo `segno` (BSD-3-Clause, sem internet). A tela abre sem valor escolhido: o QR e o código são
+  os de sempre, e o valor fica para o app do banco.
+- **Outras formas de ajudar, sem dinheiro**: estrela no GitHub, citar o SIAPP ("Cite this repository"), compartilhar
+  correções pela Comunidade (botão que leva à aba), relatar um problema e indicar a um colega.
+- **Fim**: o mascote fazendo joinha e "Doar é opcional: o SIAPP é gratuito e continua igual para todos."
+- Não há mural de apoiadores (talvez no futuro, só com nomes autorizados).

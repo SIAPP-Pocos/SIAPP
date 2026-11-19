@@ -145,35 +145,7 @@ function linhaCopiavel(rotulo, valor, id) {
   return caixa;
 }
 
-function abrirDoacao() {
-  const d = doacaoConfig;
-  if (!d) return;
-  const c = el("div", "dlg-doacao");
-  c.appendChild(el("p", "", d.texto));
-  if (d.pix) {
-    c.appendChild(el("h3", "", "Pix"));
-    c.appendChild(linhaCopiavel(`Chave (${d.pix.tipo})`, d.pix.chave, "doacao-pix-chave"));
-    c.appendChild(linhaCopiavel("Pix copia e cola", d.pix.copia_e_cola, "doacao-pix-codigo"));
-    c.appendChild(el("p", "ajuda", `No app do banco: Pix › Pix copia e cola. Recebedor: ${d.pix.nome} (${d.pix.cidade}). ` +
-      "Você escolhe o valor."));
-  }
-  if (d.links.length) {
-    c.appendChild(el("h3", "", d.pix ? "Outras formas" : "Como apoiar"));
-    const ul = el("ul", "doacao-links");
-    for (const l of d.links) {
-      const a = el("a", "", l.rotulo);
-      a.href = l.url;
-      a.target = "_blank";
-      a.rel = "noopener";
-      const li = el("li");
-      li.append(a, el("span", "ajuda", " " + l.url));
-      ul.appendChild(li);
-    }
-    c.appendChild(ul);
-  }
-  c.appendChild(el("p", "ajuda", "Doar é opcional: o SIAPP é gratuito e continua igual para todos."));
-  abrirDialogo(d.titulo, c);
-}
+// abrirDoacao (a tela "Apoie o SIAPP") fica em apoio.js desde a 1.3.
 
 // O que mudou nas últimas versões (do CHANGELOG), para quem acabou de receber uma versão nova.
 async function abrirNovidades() {
