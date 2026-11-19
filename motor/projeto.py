@@ -242,8 +242,9 @@ class Projeto:
         """Uma "impressão" barata do estado da pasta do projeto (0.61): data e tamanho de cada arquivo e pasta dos dois
         primeiros níveis (o banco, o histórico, os registros, `bruto/<bacia>`…). A janela compara a marca ao trocar de
         aba e só recarrega a aba se ela mudou. Criar, apagar ou regravar um JSON (temporário + troca) no terceiro nível
-        muda a data da pasta onde ele está, então aparece também. Os downloads e os textos, mais fundos, entram pelos
-        registros (`registro_downloads`, `resumo`). Preferências e registros de erro não contam."""
+        muda a data da pasta onde ele está (e, se for novo, o número de itens dela), então aparece também. Os downloads e
+        os textos, mais fundos, entram pelos registros (`registro_downloads`, `resumo`). Preferências e registros de erro
+        não contam."""
         partes = []
 
         def anotar(caminho, nivel):
@@ -259,7 +260,15 @@ class Projeto:
                             st = os.stat(e.path) if e.is_dir() else e.stat()
                         except OSError:
                             continue
-                        partes.append(f"{e.name}:{st.st_mtime_ns}:{st.st_size if e.is_file() else ''}")
+                        extra = st.st_size if e.is_file() else ""
+                        if nivel == 2 and e.is_dir():
+                            # 1.2: e quantos itens há na pasta do 2º nível. No Windows, dois arquivos criados na
+                            # mesma pasta dentro do mesmo "tique" do relógio (~16 ms) deixam a data da pasta igual.
+                            try:
+                                extra = len(os.listdir(e.path))
+                            except OSError:
+                                pass
+                        partes.append(f"{e.name}:{st.st_mtime_ns}:{extra}")
                         if nivel < 2 and e.is_dir():
                             anotar(e.path, nivel + 1)
             except OSError:

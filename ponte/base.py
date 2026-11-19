@@ -94,13 +94,25 @@ def migrar_pastas_antigas(dados: str = PASTA_DADOS) -> list[str]:
     novo = os.path.join(raiz, NOME_PRINCIPAL_INSTALADO)
     trocas = []
     try:
+        velhos = os.path.join(dados, "projetos")
+        # 1.2: no Windows, "projetos" e "Projetos" são a mesma pasta. Aí só se acerta a caixa do nome (por um nome
+        # provisório, porque o Windows não renomeia trocando só maiúsculas por minúsculas em todos os casos).
+        if (os.path.isdir(velhos) and os.path.isdir(raiz) and os.path.samefile(velhos, raiz)
+                and "projetos" in os.listdir(dados)):
+            filhos = [n for n in sorted(os.listdir(velhos)) if os.path.isdir(os.path.join(velhos, n))]
+            provisorio = os.path.join(dados, "projetos.migrando")
+            os.rename(velhos, provisorio)
+            os.rename(provisorio, raiz)
+            for nome in filhos:
+                trocas.append((os.path.join(velhos, nome), os.path.join(raiz, nome)))
+                feito.append(f"{os.path.join(velhos, nome)} → {os.path.join(raiz, nome)}")
         if os.path.isfile(os.path.join(antigo, "siapp.json")) and not os.path.exists(novo):
             os.makedirs(raiz, exist_ok=True)
             os.rename(antigo, novo)
             trocas.append((antigo, novo))
             feito.append(f"{antigo} → {novo}")
-        velhos = os.path.join(dados, "projetos")
-        if os.path.isdir(velhos):
+        mesma = os.path.isdir(velhos) and os.path.isdir(raiz) and os.path.samefile(velhos, raiz)
+        if os.path.isdir(velhos) and not mesma:
             for nome in sorted(os.listdir(velhos)):
                 de, para = os.path.join(velhos, nome), os.path.join(raiz, nome)
                 if os.path.isdir(de) and not os.path.exists(para):

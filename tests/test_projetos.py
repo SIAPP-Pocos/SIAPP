@@ -122,7 +122,9 @@ def test_instalado_passa_ambiente_teste_para_projetos(tmp_path):
     feito = base.migrar_pastas_antigas(str(tmp_path))
     novo = tmp_path / "Projetos" / "Projeto principal"
     assert len(feito) == 2 and (novo / "siapp.json").is_file() and not antigo.exists()
-    assert (tmp_path / "Projetos" / "guamare" / "siapp.json").is_file() and not (tmp_path / "projetos").exists()
+    # pela listagem, e não por exists(): no Windows, "projetos" e "Projetos" são a mesma pasta (1.2)
+    assert (tmp_path / "Projetos" / "guamare" / "siapp.json").is_file()
+    assert "Projetos" in os.listdir(tmp_path) and "projetos" not in os.listdir(tmp_path)
     prefs = json.loads((novo / "preferencias.json").read_text(encoding="utf-8"))
     assert prefs["projeto_atual"] == str(tmp_path / "Projetos" / "guamare") and prefs["projetos"] == [prefs["projeto_atual"]]
     assert base.migrar_pastas_antigas(str(tmp_path)) == []                       # de novo: nada a fazer

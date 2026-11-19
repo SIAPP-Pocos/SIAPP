@@ -24,6 +24,11 @@ O mascote do SIAPP, a ajuda de como usar e a doação à vista.
 ### Corrigido
 - Documentos: com a página em tela cheia (Ampliar), as setas ← → agora trocam de página. Com a página ampliada além
   da largura da tela, as setas continuam rolando para os lados.
+- Windows: quem vinha da 1.0 com projetos em `projetos\` ficava com a pasta em minúsculas (no Windows, `projetos` e
+  `Projetos` são a mesma pasta, e a mudança da 1.1 não acertava o nome). Agora a pasta passa a se chamar `Projetos`.
+- Windows: dois arquivos novos na mesma pasta do projeto em menos de ~16 ms podiam não mudar a "marca" do projeto (a
+  data da pasta ficava igual); a marca agora conta também os itens dessas pastas. (Os dois eram os testes que falhavam
+  no GitHub desde a 1.1.)
 
 ## [1.1.0] — 2026-11-16
 Pastas com nome de usuário e o GitHub arrumado.
