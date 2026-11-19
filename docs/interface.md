@@ -152,6 +152,9 @@ manual (`desenharConexao`, `desenharListaPocos`, catalogo.js) e abre a gaveta (`
   etapa do trabalho; cada um com uma pose do mascote, uma fala curta, os passos e, quando cabe, um botão que fecha a
   ajuda e leva à aba (`trocarAba`). Os rótulos de botão aparecem entre `**` no texto e saem em negrito;
   `tests/test_ajuda.py` confere que cada um existe na tela, então renomear um botão sem atualizar a ajuda quebra o teste.
+  As abas aparecem com ponto depois do número ("4. Poços"), para não parecer quantidade. "Achar dados no acervo" é
+  organizado por objetivo ("Para achar um poço pelo nome", "Para mapear o que existe numa bacia inteira"…), em lista
+  sem números; os objetivos vão entre `__` (negrito, mas não são rótulos da tela).
 - **Poses** em `ui/img/mascote/` (acenando, apontando, pensando, joinha, lupa, ops): PNG com fundo transparente, 320 px
   de altura e 256 cores (menos de 25 KB cada). Desenhadas no Masko a partir do mascote do autor, com o S do SIAPP em
   pixel no capacete.

@@ -2,7 +2,8 @@
 // Ajuda › Como usar o SIAPP. Um assunto por etapa do trabalho, com o caminho de botões e um atalho para a aba.
 //
 // Os nomes entre ** ** são os rótulos que aparecem na tela: se um botão mudar de nome, mude aqui também
-// (tests/test_interface.py confere que cada um existe em ui/index.html).
+// (tests/test_ajuda.py confere que cada um existe na tela). As abas vão com ponto depois do número ("4. Poços"),
+// para não parecer quantidade.
 "use strict";
 
 const COMO_USAR = [
@@ -13,38 +14,47 @@ const COMO_USAR = [
       "seu computador. O caminho mais comum é este:",
     passos: [
       "Em **Início**, abra um projeto ou crie um em **Novo projeto**. Tudo o que você baixar e fizer fica na pasta dele.",
-      "Em **1 Acervo** › **Catálogo do REATE**, escolha a bacia, clique em **Conectar** e escolha uma categoria.",
-      "Abra um poço para ver as pastas e os arquivos dele, marque só o que quer e clique em **Baixar selecionados**. " +
-        "Nada vem marcado.",
-      "O que foi baixado abre em **2 Documentos** (PDF e imagens escaneadas) e em **3 Perfis** (DLIS, LIS e LAS).",
-      "Em **4 Poços**, veja os poços no mapa e abra a ficha de cada um.",
-      "Com os topos de formação, monte a seção em **5 Correlação** e o bloco em **6 Modelo 3D**.",
+      "Em **1. Acervo** › **Catálogo do REATE**, escolha a bacia, clique em **Conectar** e escolha uma categoria de poço " +
+        "(Categoria-1 a Categoria-7: o número é o primeiro do nome do poço, como 1 = pioneiro e 7 = desenvolvimento).",
+      "Abra um poço para ver as pastas e os arquivos dele, marque o que quer e clique em **Baixar selecionados**.",
+      "Cada tipo de arquivo tem o seu lugar. Os documentos, em PDF ou em imagem escaneada (relatórios, boletins, " +
+        "perfis em papel), abrem em **2. Documentos**. Os perfis digitais, em DLIS, LIS ou LAS, abrem em **3. Perfis**. " +
+        "Planilhas e outros formatos ficam guardados em **Meus arquivos**, no Acervo.",
+      "Em **4. Poços**, verifique o posicionamento dos poços no mapa em relação a outros pontos de interesse e abra a " +
+        "ficha de cada um.",
+      "Com as informações registradas nas etapas anteriores, monte a seção estratigráfica em **5. Correlação** e o " +
+        "bloco 3D em **6. Modelo 3D**.",
     ],
     dica: "Os números do topo (1 a 6) seguem a ordem do trabalho, mas você pode ir direto à aba que quiser.",
     ir: ["Ir ao Catálogo do REATE", "catalogo"],
   },
   {
-    id: "acervo", titulo: "Achar dados no acervo", pose: "lupa",
+    id: "acervo", titulo: "Achar dados no acervo", pose: "lupa", porObjetivo: true,   // lista por objetivo, sem ordem
     fala: "Dá para saber o que cada poço tem antes de baixar um único arquivo.",
-    intro: "A aba **1 Acervo** tem tudo o que se baixa. Para achar os dados certos:",
+    intro: "Tudo o que se baixa está em **1. Acervo**. O caminho depende do que você procura:",
     passos: [
-      "**Catálogo do REATE**: escolha a bacia, clique em **Conectar**, escolha a categoria e abra um poço. Você vê as " +
-        "pastas, os arquivos e o tamanho de cada um.",
-      "**Levantamento**: para uma bacia inteira, o SIAPP lê só o começo de cada arquivo e diz quais poços têm perfil " +
-        "digital, só imagem ou nada. Escolha as categorias e clique em **Levantar**.",
-      "**Buscar por tipo**: depois do levantamento, marque os tipos de dado (por exemplo, PVT e perfis digitais), " +
-        "escolha **todos os tipos marcados** em **Mostrar poços que têm**, escreva o campo, se quiser, e clique em " +
-        "**Procurar**. Nada é baixado para procurar.",
-      "**Meus arquivos**: tudo o que já foi baixado para o projeto, de qualquer formato.",
-      "Em **Mais**: **Cadastro da ANP**, **Produção da ANP**, **Camadas geográficas** e **Dados consolidados**.",
+      "__Para achar um poço pelo nome__: clique em **Buscar poço** (Ctrl+K), no alto da tela, e escreva o nome em " +
+        "qualquer grafia. O SIAPP abre a ficha do poço no mapa.",
+      "__Para ver e baixar os arquivos de um poço__: em **Catálogo do REATE**, escolha a bacia, clique em **Conectar**, " +
+        "escolha a categoria de poço e abra o poço. Você vê as pastas, os arquivos e o tamanho de cada um antes de baixar.",
+      "__Para mapear o que existe numa bacia inteira__: em **Levantamento**, escolha as categorias e clique em " +
+        "**Levantar**. O SIAPP lê só o começo de cada arquivo e diz quais poços têm perfil digital, só imagem ou nada.",
+      "__Para achar os poços que têm um tipo de dado__ (por exemplo, PVT e perfis digitais juntos): depois do " +
+        "levantamento, em **Buscar por tipo**, marque os tipos, escolha **todos os tipos marcados** em " +
+        "**Mostrar poços que têm**, escreva o campo, se quiser, e clique em **Procurar**. Nada é baixado para procurar.",
+      "__Para achar uma informação dentro dos documentos__ (por exemplo, perda de circulação ou cimentação): baixe os " +
+        "documentos do poço e use a busca de **2. Documentos**.",
+      "__Para rever o que já baixou__: **Meus arquivos** lista tudo o que está no projeto, de qualquer formato.",
+      "__Para cadastro, produção e mapas da ANP__: em **Mais**, use **Cadastro da ANP**, **Produção da ANP**, " +
+        "**Camadas geográficas** e **Dados consolidados**.",
     ],
     dica: "Os downloads correm em segundo plano e, se a internet cair, continuam de onde pararam.",
-    ir: ["Ir a Buscar por tipo", "tipos"],
+    ir: ["Ir ao Acervo", "catalogo"],
   },
   {
     id: "documentos", titulo: "Ler documentos", pose: "apontando",
     fala: "O OCR encontra a página. O número, você confere na imagem.",
-    intro: "Relatórios, boletins e perfis escaneados abrem em **2 Documentos**.",
+    intro: "Relatórios, boletins e perfis escaneados abrem em **2. Documentos**.",
     passos: [
       "Os PDFs e as imagens baixados aparecem em **Documentos baixados**. Os escaneados precisam de leitura por OCR: " +
         "clique em **Processar pendentes**.",
@@ -60,7 +70,7 @@ const COMO_USAR = [
   {
     id: "perfis", titulo: "Perfis e avaliação", pose: "pensando",
     fala: "Escolha as curvas, marque o intervalo e calcule.",
-    intro: "Os perfis digitais (DLIS, LIS e LAS) abrem em **3 Perfis**, já em metros e com as curvas separadas por família.",
+    intro: "Os perfis digitais (DLIS, LIS e LAS) abrem em **3. Perfis**, já em metros e com as curvas separadas por família.",
     passos: [
       "Em **Arquivos de perfil**, escolha um arquivo baixado.",
       "**Visão padrão** mostra uma curva de cada família. Roda do mouse rola, Ctrl + roda aproxima e arrastar na " +
@@ -76,9 +86,9 @@ const COMO_USAR = [
   {
     id: "pocos", titulo: "Poços no mapa", pose: "apontando",
     fala: "Clique num poço: a ficha junta tudo o que já se sabe dele.",
-    intro: "A aba **4 Poços** mostra os poços no mapa, com cores pelo que há no acervo.",
+    intro: "A aba **4. Poços** mostra os poços no mapa, com cores pelo que há no acervo.",
     passos: [
-      "O mapa usa o cadastro de poços da ANP. Baixe uma vez em **1 Acervo** › **Mais** › **Cadastro da ANP**, no " +
+      "O mapa usa o cadastro de poços da ANP. Baixe uma vez em **1. Acervo** › **Mais** › **Cadastro da ANP**, no " +
         "botão **Baixar da ANP**.",
       "Use os **Filtros** para ver só os poços que interessam.",
       "Clique num poço para abrir a ficha: cadastro, pastas no REATE, arquivos baixados, curvas, AGP e esquemas de " +
@@ -92,7 +102,7 @@ const COMO_USAR = [
   {
     id: "correlacao", titulo: "Montar uma seção", pose: "apontando",
     fala: "Os topos de formação ligam um poço ao outro.",
-    intro: "A seção estratigráfica de **5 Correlação** usa os topos de formação do AGP de cada poço.",
+    intro: "A seção estratigráfica de **5. Correlação** usa os topos de formação do AGP de cada poço.",
     passos: [
       "Os topos vêm do AGP: leia os AGPs no **Levantamento** do acervo.",
       "Em **Poços da seção**, escreva o nome do poço e clique em **Adicionar** (até 20 poços). Ou, em " +
@@ -106,7 +116,7 @@ const COMO_USAR = [
   {
     id: "modelo", titulo: "Modelo 3D", pose: "joinha",
     fala: "Um clique monta o bloco de um campo.",
-    intro: "Em **6 Modelo 3D**, os topos de formação viram superfícies e um bloco em três dimensões.",
+    intro: "Em **6. Modelo 3D**, os topos de formação viram superfícies e um bloco em três dimensões.",
     passos: [
       "Em **Poços do bloco**, escolha de onde vêm os poços (um campo, em volta de um poço, a bacia toda ou os poços da " +
         "seção) e clique em **Trazer os poços**.",
@@ -130,7 +140,7 @@ const COMO_USAR = [
         "**Calcular a viabilidade** e veja a conta em **Abrir a memória (HTML)**.",
       "Em **Blocos e campos × infraestrutura**, **Medir todas** mede todas as áreas de uma vez.",
     ],
-    dica: "Antes, baixe as camadas em **1 Acervo** › **Mais** › **Camadas geográficas**.",
+    dica: "Antes, baixe as camadas em **1. Acervo** › **Mais** › **Camadas geográficas**.",
     ir: ["Ir a Viabilidade", "viab"],
   },
   {
@@ -165,12 +175,14 @@ const COMO_USAR = [
   },
 ];
 
-// "texto com **rótulo**" → nós de texto e <strong>, sem innerHTML
+// "texto com **rótulo**" → nós de texto e <strong>, sem innerHTML. __destaque__ também sai em negrito, mas não é
+// rótulo da tela (o teste não procura): serve para os objetivos ("Para achar um poço…").
 function comRotulos(texto) {
   const f = document.createDocumentFragment();
-  texto.split(/\*\*(.+?)\*\*/).forEach((parte, i) => {
+  texto.split(/\*\*(.+?)\*\*|__(.+?)__/).forEach((parte, i) => {
     if (!parte) return;
-    f.appendChild(i % 2 ? el("strong", "", parte) : document.createTextNode(parte));
+    const k = i % 3;
+    f.appendChild(k === 0 ? document.createTextNode(parte) : el("strong", k === 2 ? "cu-objetivo" : "", parte));
   });
   return f;
 }
@@ -190,7 +202,7 @@ function desenharTema(caixa, t) {
   img.dataset.pose = t.pose;
   cab.append(img, el("p", "cu-fala", t.fala));
   caixa.append(cab, el("h3", "cu-titulo", t.titulo), paragrafo("", t.intro));
-  const ol = el("ol", "cu-passos");
+  const ol = el(t.porObjetivo ? "ul" : "ol", t.porObjetivo ? "cu-passos cu-objetivos" : "cu-passos");
   for (const passo of t.passos) {
     const li = el("li");
     li.appendChild(comRotulos(passo));

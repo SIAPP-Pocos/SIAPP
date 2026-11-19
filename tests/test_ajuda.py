@@ -31,8 +31,10 @@ def test_rotulos_da_ajuda_existem_na_interface():
     js = _ler(os.path.join(UI, "js", "ajuda.js"))
     rotulos = set(re.findall(r"\*\*(.+?)\*\*", js))
     assert len(rotulos) > 40
+    assert not any(re.match(r"\d ", r) for r in rotulos), "abas com ponto depois do número: **4. Poços**"
     tela = _texto_da_interface()
-    faltando = sorted(r for r in rotulos if _sem_espacos(r) not in tela)
+    # "4. Poços" na ajuda = <span class="aba-num">4</span>Poços na tela
+    faltando = sorted(r for r in rotulos if _sem_espacos(re.sub(r"^(\d)\.", r"\1", r)) not in tela)
     assert not faltando, f"rótulos do guia que não aparecem na tela: {faltando}"
 
 

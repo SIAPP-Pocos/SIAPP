@@ -142,6 +142,8 @@ Precisa de internet. Comece por uma categoria pequena para ver o tempo.
 - [ ] Digite 7,50 em "Outro valor" › Gerar Pix: o QR passa a ter R$ 7,50.
 - [ ] Aba "Sem dinheiro": os links abrem no navegador; "Abrir a Comunidade" fecha a tela e vai à aba.
 - [ ] Nada fica cortado: a tela inteira aparece sem rolar, nas duas abas (inclusive no notebook).
+- [ ] Como usar o SIAPP › Primeiros passos: as abas aparecem como "1. Acervo", "4. Poços"…; o passo 4 diz onde abre
+      cada tipo de arquivo. "Achar dados no acervo" vem por objetivo ("Para achar um poço pelo nome"…), sem números.
 - [ ] Tema escuro: textos, botões e o QR continuam legíveis.
 
 ## 1.2 — mascote, ajuda e doação à vista

@@ -13,6 +13,12 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
   SIAPP, compartilhar correções pela Comunidade, relatar um problema, indicar a um colega). A tela inteira cabe numa
   tela de notebook (1366 × 768) sem rolar.
 - Biblioteca nova: `segno` (BSD-3-Clause), que desenha o QR Code sem internet.
+### Alterado
+- **Como usar o SIAPP**: "Primeiros passos" reescrito (a categoria do poço explicada; cada tipo de arquivo no seu
+  lugar: documentos em PDF ou imagem em 2. Documentos, perfis DLIS, LIS e LAS em 3. Perfis; o mapa para ver os poços em
+  relação a outros pontos de interesse). "Achar dados no acervo" agora vai por objetivo: achar um poço, ver os
+  arquivos de um poço, mapear uma bacia, achar poços com um tipo de dado, achar uma informação nos documentos. As abas
+  aparecem com ponto depois do número ("4. Poços"), para não parecer quantidade.
 
 ## [1.2.0] — 2026-11-19
 O mascote do SIAPP, a ajuda de como usar e a doação à vista.

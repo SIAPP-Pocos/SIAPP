@@ -1800,3 +1800,6 @@ p.criterio .ajuda { display: inline; }
 .apoio-lado .apoio-pix { padding: 10px 14px; }
 .apoio-lado .apoio-pix > .ajuda { font-size: 12px; margin: 4px 0 0; }
 .dlg-doacao.apoio { gap: 10px; }
+.cu-objetivo { color: var(--destaque); }
+.cu-objetivos { list-style: none; padding-left: 0; }
+.cu-objetivos li { padding-left: 12px; border-left: 3px solid var(--destaque-claro); }
