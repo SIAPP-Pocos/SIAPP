@@ -68,6 +68,10 @@ existe e a validação científica ficam **para o final**.
 - [-] ~~**Viabilidade**: transcrever API e densidade de Guamaré~~: **fora do escopo** (decisão de 16/11/2026).
 - [ ] **Pendências que dependem do Ruan**: Rw de referência por formação; conferir os números antigos do
       relatório (LIS convertidos); disponibilidade de RHOB/NPHI/DT pelo levantamento do acervo.
+- [ ] **Pendência do Ruan (19/11)**: completar os trabalhos dos PIBICs na tela "Apoie o SIAPP"
+      (`recursos/doacao.json` › `publicacoes`: título, evento e link dos anais). Já está o CILAMCE 2024 (Maceió).
+      Faltam: MeComPE 2024 (Recife), COBEQ 2025 (dois trabalhos; um com Helem da Costa Mello como primeira autora)
+      e Rio Oil & Gas 2026. O Ruan ainda vai descobrir onde estão publicados.
 
 ## Melhorias do aplicativo (revisão de 11/11, relatório do Fable)
 

@@ -34,7 +34,6 @@ function valorEmReais(v) {
 
 function blocoPix(d) {
   const sec = el("section", "apoio-pix");
-  sec.appendChild(el("h3", "", "Apoie com um Pix"));
   const botoes = el("div", "apoio-valores");
   const qr = el("img", "apoio-qr");
   qr.alt = "QR Code do Pix";
@@ -92,7 +91,14 @@ function blocoPix(d) {
 
 function blocoSobre(d) {
   const sec = el("section", "apoio-sobre");
-  sec.appendChild(el("h3", "", "Quem faz o SIAPP"));
+  const cab = el("div", "apoio-sobre-cab");
+  cab.appendChild(el("h3", "", "Quem faz o SIAPP"));
+  if (d.linkedin) {
+    const p = el("p", "apoio-linkedin");
+    p.appendChild(linkExterno("Fale comigo no LinkedIn", d.linkedin));
+    cab.appendChild(p);
+  }
+  sec.appendChild(cab);
   for (const p of d.sobre) sec.appendChild(el("p", "", p));
   if (d.publicacoes && d.publicacoes.length) {
     sec.appendChild(el("h4", "apoio-pub-titulo", "Trabalhos publicados nos PIBICs"));
@@ -105,22 +111,19 @@ function blocoSobre(d) {
     }
     sec.appendChild(ul);
   }
-  if (d.linkedin) {
-    const p = el("p", "apoio-linkedin");
-    p.appendChild(linkExterno("Fale comigo no LinkedIn", d.linkedin));
-    sec.appendChild(p);
-  }
   return sec;
 }
 
 function blocoOutrasFormas() {
   const sec = el("section", "apoio-outras");
-  sec.appendChild(el("h3", "", "Outras formas de ajudar, sem dinheiro"));
+  sec.appendChild(el("p", "apoio-outras-intro", "Também ajuda muito, e não custa nada:"));
   const ul = el("ul");
   const item = (titulo, texto, acao) => {
     const li = el("li");
-    li.append(el("strong", "", titulo), el("span", "", texto));
-    if (acao) li.appendChild(acao);
+    const linha = el("div", "apoio-outras-linha");
+    linha.appendChild(el("strong", "", titulo));
+    if (acao) linha.appendChild(acao);
+    li.append(linha, el("span", "", texto));
     ul.appendChild(li);
   };
   item("Dê uma estrela no GitHub", "Ajuda o SIAPP a aparecer para mais gente.", linkExterno("Abrir o GitHub", REPO_SIAPP));
@@ -137,6 +140,45 @@ function blocoOutrasFormas() {
   return sec;
 }
 
+// 1.3: o lado direito tem duas abas, "Com um Pix" e "Sem dinheiro", para caber tudo sem rolar a tela
+function ladoDeApoio(d) {
+  const lado = el("div", "apoio-lado");
+  const abas = el("div", "apoio-abas");
+  abas.setAttribute("role", "tablist");
+  const paineis = [];
+  if (d.pix || d.links.length) {
+    const p = d.pix ? blocoPix(d) : el("section", "apoio-pix");
+    if (d.links.length) {
+      p.appendChild(el("h4", "apoio-pub-titulo", d.pix ? "Outras formas de doar" : "Como apoiar"));
+      const ul = el("ul", "doacao-links");
+      for (const l of d.links) {
+        const li = el("li");
+        li.append(linkExterno(l.rotulo, l.url), el("span", "ajuda", " " + l.url));
+        ul.appendChild(li);
+      }
+      p.appendChild(ul);
+    }
+    paineis.push(["Com um Pix", p]);
+  }
+  paineis.push(["Sem dinheiro", blocoOutrasFormas()]);
+  const mostrar = (i) => paineis.forEach(([, p], j) => {
+    p.hidden = i !== j;
+    abas.children[j].setAttribute("aria-selected", String(i === j));
+  });
+  paineis.forEach(([rotulo, p], i) => {
+    const b = el("button", "apoio-aba", rotulo);
+    b.type = "button";
+    b.setAttribute("role", "tab");
+    b.dataset.aba = rotulo === "Sem dinheiro" ? "outras" : "pix";
+    b.onclick = () => mostrar(i);
+    abas.appendChild(b);
+    p.setAttribute("role", "tabpanel");
+  });
+  lado.append(abas, ...paineis.map(([, p]) => p));
+  mostrar(0);
+  return lado;
+}
+
 function abrirDoacao() {
   const d = doacaoConfig;
   if (!d) return;
@@ -145,30 +187,14 @@ function abrirDoacao() {
   const masc = el("img", "apoio-masc");
   masc.src = "img/mascote/acenando.png";
   masc.alt = "";
-  cab.append(masc, el("p", "apoio-fala", d.texto));
+  const fala = el("div", "apoio-fala-caixa");
+  fala.append(el("p", "apoio-fala", d.texto),
+              el("p", "apoio-opcional", "Doar é opcional: o SIAPP é gratuito e continua igual para todos. Obrigado por usar!"));
+  cab.append(masc, fala);
   c.appendChild(cab);
   const colunas = el("div", "apoio-colunas");
   if (d.sobre.length) colunas.appendChild(blocoSobre(d));
-  if (d.pix) colunas.appendChild(blocoPix(d));
+  colunas.appendChild(ladoDeApoio(d));
   c.appendChild(colunas);
-  if (d.links.length) {
-    const sec = el("section", "apoio-links");
-    sec.appendChild(el("h3", "", d.pix ? "Outras formas de doar" : "Como apoiar"));
-    const ul = el("ul", "doacao-links");
-    for (const l of d.links) {
-      const li = el("li");
-      li.append(linkExterno(l.rotulo, l.url), el("span", "ajuda", " " + l.url));
-      ul.appendChild(li);
-    }
-    sec.appendChild(ul);
-    c.appendChild(sec);
-  }
-  c.appendChild(blocoOutrasFormas());
-  const fim = el("div", "apoio-fim");
-  const joinha = el("img", "apoio-joinha");
-  joinha.src = "img/mascote/joinha.png";
-  joinha.alt = "";
-  fim.append(joinha, el("p", "", "Doar é opcional: o SIAPP é gratuito e continua igual para todos. Obrigado por usar!"));
-  c.appendChild(fim);
   abrirDialogo(d.titulo, c, [], "largo apoio-dlg");
 }

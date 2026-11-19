@@ -2811,7 +2811,7 @@ def test_tela_de_apoio_com_quem_faz_valores_e_qr(janela):
     janela.esperar("!document.getElementById('menu-doacao').hidden")
     p.evaluate("abrirDoacao()")
     janela.esperar("document.getElementById('doacao-qr') !== null && document.getElementById('doacao-qr').naturalWidth > 0")
-    assert "opcional" in p.text_content(".apoio-fala")
+    assert "opcional" in p.text_content(".apoio-opcional")
     assert "Ruan da Silva Nobre" in p.text_content(".apoio-sobre")
     assert p.locator(".apoio-pub a").count() >= 1 and p.locator(".apoio-linkedin a").count() == 1
     # começa sem valor escolhido; o código é o de sempre
@@ -2827,8 +2827,18 @@ def test_tela_de_apoio_com_quem_faz_valores_e_qr(janela):
     p.click(".apoio-outro button")
     janela.esperar("document.getElementById('doacao-pix-codigo').value.includes('54047.50')")
     assert p.locator(".apoio-valor[aria-pressed='true']").count() == 0
-    # outras formas de ajudar, com o caminho para a Comunidade
+    # outras formas de ajudar: na aba "Sem dinheiro", com o caminho para a Comunidade
+    assert not p.is_visible(".apoio-outras")
+    p.click(".apoio-aba[data-aba='outras']")
+    assert p.is_visible(".apoio-outras") and not p.is_visible(".apoio-pix")
     assert p.locator(".apoio-outras li").count() == 5
+    # numa tela de notebook (1366 × 768), nada fica cortado: as duas abas cabem sem rolar
+    p.set_viewport_size({"width": 1366, "height": 768})
+    cabe = "(() => { const c = document.getElementById('dlg-corpo'); return c.scrollHeight <= c.clientHeight + 1; })()"
+    assert p.evaluate(cabe)
+    p.click(".apoio-aba[data-aba='pix']")
+    assert p.evaluate(cabe)
+    p.click(".apoio-aba[data-aba='outras']")
     p.click(".apoio-outras .link-botao")
     assert p.evaluate("document.getElementById('dialogo').hidden")
     assert not janela.erros_js, janela.erros_js

@@ -1761,3 +1761,42 @@ p.criterio .ajuda { display: inline; }
 .apoio-pub { margin: 0 0 10px; padding-left: 18px; display: grid; gap: 6px; }
 .apoio-pub li { display: grid; gap: 1px; }
 .apoio-pub li .ajuda { font-size: 12px; }
+/* 1.3: lado direito com abas ("Com um Pix" | "Sem dinheiro"), tudo à vista sem rolar */
+.apoio-lado { display: grid; align-content: start; border: 1px solid var(--linha); border-radius: 12px; background: var(--painel2);
+  overflow: hidden; }
+.apoio-abas { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; border-bottom: 1px solid var(--linha); }
+.apoio-aba { padding: 10px 8px; border: 0; background: none; color: var(--suave); font: 600 13px var(--sans); cursor: pointer;
+  border-bottom: 3px solid transparent; }
+.apoio-aba:hover { color: var(--tinta); }
+.apoio-aba[aria-selected="true"] { color: var(--destaque); border-bottom-color: var(--destaque); background: var(--painel); }
+.apoio-lado .apoio-pix { border: 0; border-radius: 0; background: none; padding: 12px 14px; }
+.apoio-lado .apoio-outras { padding: 12px 14px; }
+.apoio-outras-intro { margin: 0 0 8px; color: var(--suave); font-size: 12.5px; }
+.apoio-lado .apoio-outras ul { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+.apoio-lado .apoio-outras li { background: var(--painel); padding: 9px 11px; }
+.apoio-cab { gap: 12px; }
+.apoio-masc { height: 96px; }
+.apoio-qr { width: 168px; height: 168px; }
+.dlg-doacao.apoio { gap: 14px; }
+/* 1.3: tudo cabe numa tela de notebook (1366 × 768) sem rolar */
+.modal.dialogo.apoio-dlg { width: min(1100px, 96vw); }
+.apoio-masc { height: 84px; }
+.apoio-fala-caixa { display: grid; gap: 6px; }
+.apoio-fala { font-size: 14.5px; padding: 11px 16px; }
+.apoio-opcional { margin: 0 0 0 4px; font-size: 12.5px; color: var(--suave); }
+.apoio-colunas { grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); }
+.apoio-sobre-cab { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.apoio-sobre-cab .apoio-linkedin { margin: 0; font-size: 13px; }
+.apoio-sobre p { font-size: 13px; line-height: 1.5; margin: 0 0 7px; }
+.apoio-pub-titulo { margin: 10px 0 4px; }
+.apoio-lado .apoio-outras ul { gap: 6px; }
+.apoio-lado .apoio-outras li { padding: 7px 10px; gap: 1px; }
+.apoio-outras-linha { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.apoio-outras-linha a, .apoio-outras-linha .link-botao { flex: none; font-size: 12px; font-weight: 600; }
+.apoio-qr { width: 148px; height: 148px; }
+.apoio-valor { padding: 7px 6px; }
+.apoio-outro { margin: 8px 0 8px; }
+.apoio-qr-caixa { margin-bottom: 8px; gap: 4px; }
+.apoio-lado .apoio-pix { padding: 10px 14px; }
+.apoio-lado .apoio-pix > .ajuda { font-size: 12px; margin: 4px 0 0; }
+.dlg-doacao.apoio { gap: 10px; }

@@ -85,7 +85,7 @@ def test_repositorio_tem_quem_faz_e_valores():
     assert len(r["sobre"]) >= 3 and r["sobre"][0].startswith("Olá! Meu nome é Ruan da Silva Nobre")
     assert [v["rotulo"] for v in r["valores"]] == ["Um cafezinho", "Um lanche", "Uma tarde de código"]
     assert [v["valor"] for v in r["valores"]] == [5.0, 15.0, 30.0]
-    assert "opcional" in r["texto"]
+    assert "melhorias contínuas" in r["texto"]
 
 
 def test_linkedin_e_valores_validados(tmp_path):

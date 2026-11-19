@@ -140,7 +140,8 @@ Precisa de internet. Comece por uma categoria pequena para ver o tempo.
 - [ ] Nenhum valor vem escolhido. Clique em "Um lanche": o botão fica marcado e o QR Code e o copia e cola passam a
       ter R$ 15,00. Leia o QR com o app do banco: o valor deve vir preenchido (não precisa concluir o Pix).
 - [ ] Digite 7,50 em "Outro valor" › Gerar Pix: o QR passa a ter R$ 7,50.
-- [ ] "Outras formas de ajudar": os links abrem no navegador; "Abrir a Comunidade" fecha a tela e vai à aba.
+- [ ] Aba "Sem dinheiro": os links abrem no navegador; "Abrir a Comunidade" fecha a tela e vai à aba.
+- [ ] Nada fica cortado: a tela inteira aparece sem rolar, nas duas abas (inclusive no notebook).
 - [ ] Tema escuro: textos, botões e o QR continuam legíveis.
 
 ## 1.2 — mascote, ajuda e doação à vista

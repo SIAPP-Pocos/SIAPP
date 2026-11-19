@@ -9,8 +9,9 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 - **Tela "Apoie o SIAPP" refeita**: o mascote abre a tela dizendo que doar é opcional; "Quem faz o SIAPP" conta a
   história do projeto (do primeiro PIBIC, em 2023-24, até a ferramenta completa, em 2025-26), com link para o LinkedIn
   do autor e os trabalhos publicados nos PIBICs; Pix com valores prontos (Um cafezinho R$ 5, Um lanche R$ 15, Uma tarde de código R$ 30) ou outro valor,
-  sempre com **QR Code** para pagar pelo celular; e "Outras formas de ajudar, sem dinheiro" (estrela no GitHub, citar o
-  SIAPP, compartilhar correções pela Comunidade, relatar um problema, indicar a um colega).
+  sempre com **QR Code** para pagar pelo celular; e, numa segunda aba, "Sem dinheiro" (estrela no GitHub, citar o
+  SIAPP, compartilhar correções pela Comunidade, relatar um problema, indicar a um colega). A tela inteira cabe numa
+  tela de notebook (1366 × 768) sem rolar.
 - Biblioteca nova: `segno` (BSD-3-Clause), que desenha o QR Code sem internet.
 
 ## [1.2.0] — 2026-11-19
