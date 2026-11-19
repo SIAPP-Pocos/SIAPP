@@ -31,8 +31,8 @@ some (classe `sem-lateral`).
 - **Exportações**, **Ajuda** e **Configurações**.
 - Cabe numa linha até 1.180 px de largura: primeiro somem os rótulos dos botões, depois a tecla da busca e o nome "SIAPP".
 
-Menu **Ajuda**: Guia do REATE (saiu do Início), Limites e confiabilidade (idem), Atalhos de teclado, Diagnóstico e Sobre (com a
-versão, que saiu da barra).
+Menu **Ajuda**: Como usar o SIAPP (1.2), Guia do REATE (saiu do Início), Limites e confiabilidade (idem), Atalhos de
+teclado, Diagnóstico, Novidades, Sobre (com a versão, que saiu da barra) e Apoie o projeto.
 
 ## Atalhos de teclado
 
@@ -142,3 +142,20 @@ o que é novo e só se tira o que saiu. Um só ouvinte no `L.featureGroup` abre 
 da pasta (tabela `reate`). A ponte conecta se a bacia não está conectada, lê `catalogo/<bacia>/<categoria>.json` se
 existir (senão devolve só este poço, `parcial`), e a janela desenha conexão e lista com as mesmas funções do clique
 manual (`desenharConexao`, `desenharListaPocos`, catalogo.js) e abre a gaveta (`explorarPoco`).
+
+## Mascote, "Como usar o SIAPP" e doação à vista (1.2)
+
+- **Mascote**: o guaxinim de capacete, no canto de baixo à direita do Início (`#mascote-ajuda`, fora do fluxo da página;
+  o Início ganha espaço embaixo para nada ficar atrás dele). Em janela estreita (até 1.000 px), fica menor e sem o
+  balão. Só aparece no Início.
+- **Como usar o SIAPP** (`ui/js/ajuda.js`): clicar no mascote ou em Ajuda › Como usar o SIAPP. Dez assuntos, um por
+  etapa do trabalho; cada um com uma pose do mascote, uma fala curta, os passos e, quando cabe, um botão que fecha a
+  ajuda e leva à aba (`trocarAba`). Os rótulos de botão aparecem entre `**` no texto e saem em negrito;
+  `tests/test_ajuda.py` confere que cada um existe na tela, então renomear um botão sem atualizar a ajuda quebra o teste.
+- **Poses** em `ui/img/mascote/` (acenando, apontando, pensando, joinha, lupa, ops): PNG com fundo transparente, 320 px
+  de altura e 256 cores (menos de 25 KB cada). Desenhadas no Masko a partir do mascote do autor, com o S do SIAPP em
+  pixel no capacete.
+- **Doe**: a xícara à direita dos projetos (`#ini-doe`) abre a mesma tela de Ajuda › Apoie o projeto
+  (`abrirDoacao`). Aparece e some junto com o item do menu: só quando `recursos/doacao.json` tem chave Pix ou link.
+- **Setas no visor**: com a página em tela cheia, ← → (os mesmos atalhos de "Página anterior/Próxima página") trocam a
+  página do visor (`paginaVisor`, visor.js), a não ser que a página ampliada passe da largura da tela: aí as setas rolam.

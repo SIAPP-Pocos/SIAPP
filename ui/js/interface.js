@@ -1,5 +1,5 @@
 // SIAPP — peças da interface que valem para todas as abas (0.57): menus do topo, janela de
-// diálogo, menu Ajuda, busca de poço (Ctrl+K), atalhos de teclado editáveis, avisos de
+// diálogo, menu Ajuda (o "Como usar o SIAPP" fica em ajuda.js), busca de poço (Ctrl+K), atalhos de teclado editáveis, avisos de
 // primeira vez, avisos no canto da tela e explicações longas atrás de um "?".
 //
 // Atalhos e avisos já vistos ficam nas preferências (preferencias.json, chaves "atalhos" e
@@ -77,6 +77,7 @@ function conteudoModelo(id) {
 }
 
 const AJUDA = {
+  comousar: () => abrirComoUsar(),
   guia: () => abrirDialogo("Guia do REATE", conteudoModelo("tpl-guia"), [], "largo"),
   limites: () => {
     const c = conteudoModelo("tpl-limites");
@@ -114,6 +115,7 @@ async function prepararDoacao() {
   const r = await chamar(null, "doacao");
   doacaoConfig = r.ok && r.ativo ? r : null;
   $("menu-doacao").hidden = !doacaoConfig;
+  $("ini-doe").hidden = !doacaoConfig;          // 1.2: também à vista no Início, ao lado dos projetos
 }
 
 async function copiarParaDoacao(texto, botao) {
@@ -269,7 +271,9 @@ function acaoPrincipal() {
   return false;
 }
 function paginaDocumento(id) {
-  if (vistaAtual() !== "docs" || !visivel($("painel-pagina")) || (typeof visorAberto === "function" && visorAberto())) return false;
+  // 1.2: com a página em tela cheia (visor), as setas trocam a página do visor
+  if (typeof visorAberto === "function" && visorAberto()) return paginaVisor(id === "pg-prox" ? 1 : -1);
+  if (vistaAtual() !== "docs" || !visivel($("painel-pagina"))) return false;
   clicar(id);
   return true;
 }
@@ -565,6 +569,9 @@ function ligarInterface() {
   document.addEventListener("toggle", acompanharAbertura, true);
   ligarMenus();
   for (const b of document.querySelectorAll("[data-ajuda]")) b.onclick = () => AJUDA[b.dataset.ajuda]();
+  // 1.2: o mascote no canto do Início abre a ajuda; a xícara ao lado dos projetos, a doação
+  $("mascote-ajuda").onclick = () => abrirComoUsar();
+  $("ini-doe").onclick = () => abrirDoacao();
   ligar("dlg-fechar", "onclick", fecharDialogo);
   $("dialogo").addEventListener("click", (e) => { if (e.target === $("dialogo")) fecharDialogo(); });
   ligar("btn-busca", "onclick", abrirBusca);

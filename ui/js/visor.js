@@ -32,6 +32,16 @@ async function abrirVisor(rel, pagina = 1) {
   $("v-area").focus();
 }
 
+// ← → no visor (1.2): trocam a página. Com a página ampliada além da largura, as setas continuam rolando
+// para os lados (devolve false e a tecla segue o caminho normal).
+function paginaVisor(passo) {
+  const area = $("v-area");
+  if (area.scrollWidth > area.clientWidth + 1) return false;
+  const nova = vs.pagina + passo;
+  if (nova >= 1 && nova <= vs.n_paginas) abrirVisor(vs.rel, nova);
+  return true;
+}
+
 function fecharVisor() {
   vs.pedido++;
   if (vs.obs) vs.obs.disconnect();

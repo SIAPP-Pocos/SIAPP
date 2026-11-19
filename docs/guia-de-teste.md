@@ -132,6 +132,21 @@ Precisa de internet. Comece por uma categoria pequena para ver o tempo.
 - [ ] Sem intervalo marcado, **Calcular** explica que precisa de um intervalo-alvo.
 - [ ] Repetir no `5PX__0011__RN_5PX__0011__RN.tif` (DLIS de 2020).
 
+## 1.2 — mascote, ajuda e doação à vista
+
+- [ ] Início: o mascote aparece no canto de baixo, à direita, com o balão "Dúvidas? Clique em mim." (numa janela
+      estreita, só o mascote, menor). Em Acervo ou nas outras abas, ele não aparece.
+- [ ] Clique no mascote: abre **Como usar o SIAPP**, em "Primeiros passos", com o mascote acenando.
+- [ ] Clique em cada assunto da lista à esquerda: muda a pose do mascote, a fala e os passos. O botão do fim (ex.: "Ir a
+      Documentos") fecha a ajuda e leva à aba.
+- [ ] Ajuda › **Como usar o SIAPP** abre a mesma ajuda.
+- [ ] Siga os passos de um assunto que você conhece bem: os nomes dos botões batem com a tela?
+- [ ] Início: a xícara **Doe** fica à direita dos projetos, na mesma linha. Clique: abre a tela de Pix de Ajuda ›
+      Apoie o projeto.
+- [ ] Tema escuro (Configurações › Cores): o mascote, o balão e a xícara continuam legíveis.
+- [ ] Documentos › abra um PDF de várias páginas › **Ampliar**: ← e → trocam de página. Aproxime com + até a página
+      passar da largura: aí as setas rolam para os lados.
+
 ## 1.1 — pastas com nome de usuário
 
 - [ ] Instale a 1.1 por cima. Na primeira abertura, a pasta dos projetos (`...\PIBIC\SIAPP`) passa a ter

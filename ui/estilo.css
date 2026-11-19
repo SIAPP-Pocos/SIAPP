@@ -1644,3 +1644,73 @@ p.criterio .ajuda { display: inline; }
 .bl-m2d-vista.arrastando { cursor: grabbing; }
 .bl-m2d-vista .bl-m2d-fig { position: absolute; left: 0; top: 0; margin: 0; overflow: visible; transform-origin: 0 0; }
 .bl-m2d-vista .bl-m2d-fig svg { max-width: none; display: block; }
+
+/* ================================================================ 1.2: doação à vista e mascote do Início */
+.ini-proj-linha { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 14px; align-items: start; }
+.ini-doe { display: grid; justify-items: center; gap: 2px; width: 118px; padding: 14px 10px 12px; border: 1px dashed var(--linha);
+  border-radius: 10px; background: var(--painel); color: var(--destaque); font: inherit; cursor: pointer; text-align: center; }
+.ini-doe[hidden] { display: none; }
+.ini-doe svg { width: 46px; height: 46px; margin-bottom: 4px; }
+.ini-doe .doe-xicara { fill: var(--destaque-claro); }
+.ini-doe strong { font: 700 17px var(--serif); color: var(--tinta); }
+.ini-doe span { font-size: 11.5px; color: var(--suave); line-height: 1.3; }
+.ini-doe:hover, .ini-doe:focus-visible { border-style: solid; border-color: var(--destaque); }
+@media (prefers-reduced-motion: no-preference) {
+  .ini-doe:hover .doe-vapor { animation: doe-vapor 1.4s ease-in-out infinite; }
+}
+@keyframes doe-vapor { 50% { transform: translateY(-2px); opacity: .55; } }
+@media (max-width: 640px) {
+  .ini-proj-linha { grid-template-columns: minmax(0, 1fr); }
+  .ini-doe { width: auto; grid-template-columns: auto auto 1fr; align-items: center; justify-items: start; gap: 10px; }
+  .ini-doe svg { width: 32px; height: 32px; margin: 0; }
+}
+
+#vista-projeto { position: relative; }
+#vista-projeto .ini { padding-bottom: 150px; }          /* rolar até o fim não deixa nada atrás do mascote */
+.mascote-canto { position: absolute; right: 18px; bottom: 10px; z-index: 5; display: flex; align-items: flex-end; gap: 4px;
+  padding: 0; border: 0; background: none; cursor: pointer; font: inherit; }
+.mascote-canto img { width: 99px; height: auto; display: block; filter: drop-shadow(0 6px 10px rgba(0, 0, 0, .22));
+  transition: transform .15s; }
+.mascote-canto:hover img, .mascote-canto:focus-visible img { transform: translateY(-3px) rotate(-2deg); }
+.mascote-canto:focus-visible { outline: 2px solid var(--destaque); outline-offset: 4px; border-radius: 10px; }
+.mascote-balao { position: relative; margin-bottom: 82px; padding: 7px 11px; border-radius: 12px; background: var(--painel);
+  border: 1px solid var(--linha); box-shadow: 0 6px 16px rgba(0, 0, 0, .14); color: var(--tinta); font-size: 12.5px;
+  font-weight: 600; white-space: nowrap; }
+.mascote-balao::after { content: ""; position: absolute; right: -7px; bottom: 10px; width: 12px; height: 12px; background: var(--painel);
+  border-right: 1px solid var(--linha); border-bottom: 1px solid var(--linha); transform: rotate(-45deg); }
+@media (prefers-reduced-motion: reduce) { .mascote-canto img { transition: none; } }
+
+/* Como usar o SIAPP (ajuda.js) */
+.modal.dialogo.como-usar { width: min(940px, 96vw); height: min(640px, 90vh); }
+.como-usar .dlg-corpo { display: flex; padding: 0; overflow: hidden; flex: 1; min-height: 0; }
+.cu { display: grid; grid-template-columns: 210px minmax(0, 1fr); flex: 1; min-height: 0; border-top: 1px solid var(--linha); }
+.cu-temas { display: grid; align-content: start; gap: 2px; padding: 12px 8px; border-right: 1px solid var(--linha);
+  background: var(--painel2); overflow-y: auto; }
+.cu-tema-btn { text-align: left; padding: 8px 10px; border: 0; border-radius: 6px; background: none; color: var(--tinta);
+  font: inherit; font-size: 13px; cursor: pointer; }
+.cu-tema-btn:hover { background: var(--destaque-claro); }
+.cu-tema-btn[aria-current="true"] { background: var(--destaque); color: var(--sobre-destaque); font-weight: 600; }
+.cu-tema { padding: 18px 26px 24px; overflow-y: auto; min-width: 0; }
+.cu-cab { display: flex; align-items: center; gap: 14px; margin-bottom: 6px; }
+.cu-masc { width: auto; height: 132px; flex: none; }
+.cu-fala { position: relative; margin: 0; padding: 12px 16px; border-radius: 14px; background: var(--destaque-claro);
+  color: var(--tinta); font: 600 15px/1.4 var(--sans); max-width: 420px; }
+.cu-fala::before { content: ""; position: absolute; left: -8px; top: 50%; margin-top: -8px; border: 8px solid transparent;
+  border-left: 0; border-right-color: var(--destaque-claro); }
+.cu-titulo { font: 700 18px var(--serif); margin: 10px 0 4px; }
+.cu-tema > p { margin: 4px 0 10px; }
+.cu-passos { margin: 0 0 12px; padding-left: 22px; display: grid; gap: 9px; }
+.cu-passos li::marker { font-weight: 700; color: var(--destaque); }
+.cu-dica { padding: 9px 12px; border-left: 3px solid var(--destaque); background: var(--painel2); border-radius: 0 6px 6px 0;
+  color: var(--suave); }
+.cu-ir { margin-top: 4px; }
+@media (max-width: 700px) {
+  .cu { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); }
+  .cu-temas { display: flex; overflow-x: auto; border-right: 0; border-bottom: 1px solid var(--linha); }
+  .cu-tema-btn { white-space: nowrap; }
+  .cu-masc { height: 96px; }
+}
+@media (max-width: 1000px) {
+  .mascote-balao { display: none; }
+  .mascote-canto img { width: 72px; }
+}

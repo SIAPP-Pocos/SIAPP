@@ -223,6 +223,12 @@ def test_tif_sem_processar_abre_amplia_e_arquivo_qualquer_abre_fora(janela, tmp_
     janela.esperar("document.querySelectorAll('#v-folha .v-faixa img').length >= 1")
     carregadas = p.locator("#v-folha .v-faixa img").count()
     assert carregadas < 14                         # só o que está perto da tela
+    # 1.2: as setas trocam a página também em tela cheia
+    p.keyboard.press("ArrowRight")
+    janela.esperar("document.getElementById('v-num').textContent === '2 / 2'")
+    p.keyboard.press("ArrowLeft")
+    janela.esperar("document.getElementById('v-num').textContent === '1 / 2'")
+    janela.esperar("document.querySelectorAll('#v-folha .v-faixa').length === 14")
     antes = p.text_content("#v-zoom")
     p.click("#v-mais")
     assert p.text_content("#v-zoom") != antes
@@ -2725,6 +2731,7 @@ def test_apoie_o_projeto_so_quando_configurado(janela, tmp_path, monkeypatch):
     monkeypatch.setattr(base, "PASTA_RECURSOS", str(rec))
     p.evaluate("prepararDoacao().then(() => 0)")
     janela.esperar("document.getElementById('menu-doacao').hidden")      # sem chave nem link: escondida
+    assert p.evaluate("document.getElementById('ini-doe').hidden")           # 1.2: nem a xícara do Início
     (rec / "doacao.json").write_text(json.dumps({"pix": {"chave": "a@b.com", "nome": "Fulano", "cidade": "Maceio"},
                                                  "links": [{"rotulo": "Apoia", "url": "https://exemplo.org/siapp"}]}),
                                      encoding="utf-8")
@@ -2740,4 +2747,58 @@ def test_apoie_o_projeto_so_quando_configurado(janela, tmp_path, monkeypatch):
     p.click("#btn-ajuda")
     p.click("[data-ajuda='sobre']")
     assert "Apoie o projeto" in p.text_content("#dlg-pe")
+    assert not janela.erros_js, janela.erros_js
+
+
+def test_doacao_a_vista_no_inicio(janela, tmp_path, monkeypatch):
+    """1.2: a xícara "Doe" fica ao lado dos projetos, no Início, e abre a mesma tela de doação."""
+    from ponte import base
+    p = janela.page
+    rec = tmp_path / "recursos"
+    rec.mkdir()
+    (rec / "doacao.json").write_text(json.dumps({"pix": {"chave": "a@b.com", "nome": "Fulano", "cidade": "Maceio"}}),
+                                     encoding="utf-8")
+    monkeypatch.setattr(base, "PASTA_RECURSOS", str(rec))
+    p.evaluate("prepararDoacao().then(() => 0)")
+    p.click("#aba-projeto")
+    janela.esperar("!document.getElementById('ini-doe').hidden")
+    assert p.is_visible("#ini-doe") and "Doe" in p.text_content("#ini-doe")
+    # na mesma linha dos projetos, à direita deles
+    caixa_doe = p.locator("#ini-doe").bounding_box()
+    caixa_proj = p.locator("#ini-projetos").bounding_box()
+    assert caixa_doe["x"] >= caixa_proj["x"] + caixa_proj["width"] - 1
+    assert abs(caixa_doe["y"] - caixa_proj["y"]) < 2
+    p.click("#ini-doe")
+    janela.esperar("document.getElementById('doacao-pix-chave') !== null")
+    assert p.input_value("#doacao-pix-chave") == "a@b.com"
+    assert not janela.erros_js, janela.erros_js
+
+
+def test_mascote_abre_como_usar(janela):
+    """1.2: o mascote no canto do Início abre "Como usar o SIAPP"; cada assunto tem pose, passos e atalho."""
+    p = janela.page
+    p.click("#aba-projeto")
+    assert p.is_visible("#mascote-ajuda")
+    assert p.evaluate("document.querySelector('#mascote-ajuda img').naturalWidth") > 0     # a imagem carregou
+    p.click("#mascote-ajuda")
+    janela.esperar("!document.getElementById('dialogo').hidden")
+    assert p.text_content("#dlg-titulo") == "Como usar o SIAPP"
+    temas = p.locator(".cu-tema-btn")
+    assert temas.count() == p.evaluate("COMO_USAR.length") >= 8
+    assert p.get_attribute(".cu-tema-btn[data-tema='inicio']", "aria-current") == "true"
+    for i in range(temas.count()):
+        temas.nth(i).click()
+        assert p.locator(".cu-passos li").count() >= 3
+        janela.esperar("document.querySelector('.cu-masc').complete && document.querySelector('.cu-masc').naturalWidth > 0")
+    # o atalho fecha a ajuda e leva à aba
+    p.click(".cu-tema-btn[data-tema='documentos']")
+    p.click(".cu-ir")
+    assert p.evaluate("document.getElementById('dialogo').hidden")
+    assert p.is_visible("#vista-docs")
+    # o mascote só fica no Início
+    assert not p.is_visible("#mascote-ajuda")
+    # e o menu Ajuda também abre a mesma ajuda
+    p.click("#btn-ajuda")
+    p.click("#menu-como-usar")
+    janela.esperar("document.querySelector('.cu-tema-btn') !== null")
     assert not janela.erros_js, janela.erros_js

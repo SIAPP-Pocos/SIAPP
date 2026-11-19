@@ -50,6 +50,7 @@
       <div class="menu">
         <button class="acao" id="btn-ajuda" type="button" aria-haspopup="menu" aria-expanded="false" title="Ajuda (F1)"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="8" cy="8" r="6.5"></circle><path d="M6.2 6.2a1.9 1.9 0 1 1 2.6 1.8c-.5.2-.8.6-.8 1.1v.4"></path><circle cx="8" cy="11.6" r=".5" fill="currentColor"></circle></svg><span class="rotulo-largo">Ajuda</span></button>
         <div class="menu-pop menu-ajuda" role="menu" hidden>
+          <button class="menu-item" type="button" role="menuitem" data-ajuda="comousar" id="menu-como-usar">Como usar o SIAPP</button>
           <button class="menu-item" type="button" role="menuitem" data-ajuda="guia">Guia do REATE</button>
           <button class="menu-item" type="button" role="menuitem" data-ajuda="limites">Limites e confiabilidade</button>
           <button class="menu-item" type="button" role="menuitem" data-ajuda="atalhos">Atalhos de teclado</button>
@@ -80,7 +81,19 @@
 
         <section class="ini-sec">
           <h2 class="ini-sec-titulo">Projetos</h2>
-          <div class="proj-grade" id="ini-projetos"></div>
+          <div class="ini-proj-linha">
+            <div class="proj-grade" id="ini-projetos"></div>
+            <button class="ini-doe" id="ini-doe" type="button" hidden title="Apoie o SIAPP com uma doação por Pix">
+              <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path class="doe-vapor" d="M11 4.5c-1.4 1.5 1.4 2.8 0 4.5M16 3.5c-1.4 1.5 1.4 2.8 0 4.5M21 4.5c-1.4 1.5 1.4 2.8 0 4.5"></path>
+                <path class="doe-xicara" d="M6 12.5h18v5.5a7 7 0 0 1-7 7h-4a7 7 0 0 1-7-7z"></path>
+                <path d="M24 14h1.8a3.2 3.2 0 0 1 0 6.4H23.4"></path>
+                <path d="M4 28.5h22"></path>
+              </svg>
+              <strong>Doe</strong>
+              <span>Apoie o SIAPP</span>
+            </button>
+          </div>
         </section>
 
         <section class="ini-sec" id="ini-sec-modulos" hidden>
@@ -98,6 +111,10 @@
         </section>
       </div>
     </section>
+    <button class="mascote-canto" id="mascote-ajuda" type="button" aria-label="Ajuda: como usar o SIAPP" title="Ajuda: como usar o SIAPP">
+      <span class="mascote-balao">Dúvidas? Clique em mim.</span>
+      <img src="img/mascote/acenando.png" alt="" width="99" height="120">
+    </button>
   </main>
 
   <main class="grade dados" id="vista-dados" hidden>
@@ -1905,6 +1922,7 @@
   <script src="js/comum.js"></script>
   <script src="js/fontes.js"></script>
   <script src="js/interface.js"></script>
+  <script src="js/ajuda.js"></script>
   <script src="js/inicio.js"></script>
   <script src="js/secao.js"></script>
   <script src="js/bloco.js"></script>

@@ -5,13 +5,25 @@ versões seguem [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 
 ## [Não lançado]
+
+## [1.2.0] — 2026-11-19
+O mascote do SIAPP, a ajuda de como usar e a doação à vista.
 ### Adicionado
+- **Mascote do SIAPP** no canto da tela inicial. Clicar nele abre a ajuda **Como usar o SIAPP**.
+- **Como usar o SIAPP** (também em Ajuda › Como usar o SIAPP): um assunto por etapa do trabalho (primeiros passos,
+  achar dados no acervo, documentos, perfis, poços, correlação, Modelo 3D, viabilidade, comunidade e o que fazer
+  quando algo dá errado), com o caminho de botões e um atalho para a aba.
+- **Doação à vista**: a xícara "Doe" fica ao lado dos projetos, no Início, e abre a mesma tela de Ajuda › Apoie o
+  projeto. Só aparece quando a doação está configurada.
 - **Assinatura digital** pelo SignPath (gratuita para código aberto), pronta no workflow do instalador: o `SIAPP.exe` e
   o instalador são enviados para assinatura e esperam a aprovação à mão; liga quando o repositório tiver o segredo
   `SIGNPATH_API_TOKEN`. Política em `CODE_SIGNING_POLICY.md`; configurações em `instalador/signpath/`.
 - O instalador passa a ter nome e versão do produto nas propriedades do arquivo.
 - Guia do instalador: o que fazer quando o Controle Inteligente de Aplicativos do Windows 11 bloqueia o SIAPP
   (código 4551).
+### Corrigido
+- Documentos: com a página em tela cheia (Ampliar), as setas ← → agora trocam de página. Com a página ampliada além
+  da largura da tela, as setas continuam rolando para os lados.
 
 ## [1.1.0] — 2026-11-16
 Pastas com nome de usuário e o GitHub arrumado.

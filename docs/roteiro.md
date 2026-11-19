@@ -87,9 +87,10 @@ existe e a validação científica ficam **para o final**.
 
 ## Anotado em 16/11/2026 (noite) — juntar na próxima versão, não lançar sozinho
 
-- [ ] Documentos: as setas do teclado (← →) não trocam de página quando o PDF está em tela cheia.
-- [ ] Início: doação à vista, num espaço pequeno reservado no canto direito, ao lado dos projetos (xícara de café
-      desenhada e a palavra "Doe"); hoje fica só em Ajuda › Apoie o projeto.
+- [x] Documentos: as setas do teclado (← →) não trocam de página quando o PDF está em tela cheia. (1.2)
+- [x] Início: doação à vista, num espaço pequeno reservado no canto direito, ao lado dos projetos (xícara de café
+      desenhada e a palavra "Doe"). (1.2, junto com o mascote e a ajuda "Como usar o SIAPP")
+- [ ] Mascote: dicas curtas e pré-determinadas dentro de cada aba (hoje ele fica só no Início e abre a ajuda geral).
 - [ ] Comunidade: o dado transcrito que chega por pacote ou pela base não aparece marcado na página quando o documento é
       baixado depois (a busca é pelo caminho local de quem transcreveu; ligar pelo SHA-256 ou pelo caminho no REATE). A
       prévia da importação deve listar os poços e quais arquivos faltam (nada pré-selecionado para baixar).

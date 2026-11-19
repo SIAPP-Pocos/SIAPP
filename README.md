@@ -9,7 +9,7 @@
 Transforma o acervo público de poços da ANP em dados organizados, pesquisáveis e prontos para análise.<br>
 Gratuito, de código aberto, para Windows.
 
-[![versão](https://img.shields.io/badge/vers%C3%A3o-1.1.0-success)](https://github.com/SIAPP-Perfis/SIAPP/releases/latest)
+[![versão](https://img.shields.io/badge/vers%C3%A3o-1.2.0-success)](https://github.com/SIAPP-Perfis/SIAPP/releases/latest)
 [![testes](https://github.com/SIAPP-Perfis/SIAPP/actions/workflows/testes.yml/badge.svg)](https://github.com/SIAPP-Perfis/SIAPP/actions/workflows/testes.yml)
 [![licença: AGPL-3.0](https://img.shields.io/badge/licen%C3%A7a-AGPL--3.0-blue)](LICENSE)
 ![Windows 10 e 11](https://img.shields.io/badge/Windows-10%20%7C%2011-0078D4)
@@ -66,7 +66,8 @@ apaga. Detalhes em [Instalador do Windows](docs/instalador.md).
 4. **4 Poços**: veja os poços no mapa e abra a ficha de cada um.
 5. **5 Correlação** e **6 Modelo 3D**: monte a seção e o bloco com os topos de formação.
 
-Nada vem marcado para download: você escolhe o que baixar. O menu **Ajuda** traz o guia do REATE e os limites do OCR.
+Nada vem marcado para download: você escolhe o que baixar. Na dúvida, clique no **mascote** no canto do Início: ele
+abre o passo a passo de cada etapa (também em **Ajuda › Como usar o SIAPP**).
 
 ## Dados e procedência
 
@@ -115,7 +116,7 @@ O SIAPP é e continuará gratuito. Se ele foi útil para você, há uma opção 
 
 Use o botão **Cite this repository**, no alto desta página (ele lê o [`CITATION.cff`](CITATION.cff)), ou:
 
-> Nobre, R. S. *SIAPP — Sistema Integrado de Aquisição e Processamento de Perfis* (versão 1.1.0). Universidade Federal
+> Nobre, R. S. *SIAPP — Sistema Integrado de Aquisição e Processamento de Perfis* (versão 1.2.0). Universidade Federal
 > de Alagoas, 2026. Disponível em: https://github.com/SIAPP-Perfis/SIAPP.
 
 ## Assinatura de código
