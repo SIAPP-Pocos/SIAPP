@@ -2813,6 +2813,7 @@ def test_tela_de_apoio_com_quem_faz_valores_e_qr(janela):
     janela.esperar("document.getElementById('doacao-qr') !== null && document.getElementById('doacao-qr').naturalWidth > 0")
     assert "opcional" in p.text_content(".apoio-fala")
     assert "Ruan da Silva Nobre" in p.text_content(".apoio-sobre")
+    assert p.locator(".apoio-pub a").count() >= 1 and p.locator(".apoio-linkedin a").count() == 1
     # começa sem valor escolhido; o código é o de sempre
     assert p.locator(".apoio-valor[aria-pressed='true']").count() == 0
     assert "5405" not in p.input_value("#doacao-pix-codigo")

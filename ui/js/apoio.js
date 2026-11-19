@@ -94,6 +94,17 @@ function blocoSobre(d) {
   const sec = el("section", "apoio-sobre");
   sec.appendChild(el("h3", "", "Quem faz o SIAPP"));
   for (const p of d.sobre) sec.appendChild(el("p", "", p));
+  if (d.publicacoes && d.publicacoes.length) {
+    sec.appendChild(el("h4", "apoio-pub-titulo", "Trabalhos publicados nos PIBICs"));
+    const ul = el("ul", "apoio-pub");
+    for (const t of d.publicacoes) {
+      const li = el("li");
+      li.appendChild(t.url ? linkExterno(t.titulo, t.url) : el("span", "", t.titulo));
+      if (t.evento) li.appendChild(el("span", "ajuda", t.evento));
+      ul.appendChild(li);
+    }
+    sec.appendChild(ul);
+  }
   if (d.linkedin) {
     const p = el("p", "apoio-linkedin");
     p.appendChild(linkExterno("Fale comigo no LinkedIn", d.linkedin));

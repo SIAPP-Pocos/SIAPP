@@ -167,7 +167,8 @@ ela mostra vem de `recursos/doacao.json` (lido por `motor/doacao.py`); sem chave
 
 - **Abertura**: o mascote acenando e a fala (`texto`), que deixa claro que doar é opcional.
 - **Quem faz o SIAPP** (`sobre`, uma lista de parágrafos) e o link **Fale comigo no LinkedIn** (`linkedin`; só aceita
-  `https://www.linkedin.com/in/...`, e sem ele o link não aparece). Sem foto: o mascote representa o autor.
+  `https://www.linkedin.com/in/...`, e sem ele o link não aparece). Sem foto: o mascote representa o autor. Logo abaixo,
+  **Trabalhos publicados nos PIBICs** (`publicacoes`: título, evento e link para os anais).
 - **Apoie com um Pix**: os botões de `valores` (padrão: Um cafezinho R$ 5, Um lanche R$ 15, Uma tarde de código R$ 30) e
   "Outro valor". Cada escolha pede ao motor (`doacao_pix`) o "copia e cola" com o valor (campo 54 do BR Code) e o **QR
   Code** em SVG, feito pelo `segno` (BSD-3-Clause, sem internet). A tela abre sem valor escolhido: o QR e o código são

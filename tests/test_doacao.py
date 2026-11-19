@@ -104,3 +104,12 @@ def test_api_doacao_pix(api):
     r = api.doacao_pix(30)
     assert r["ok"] and "540530.00" in r["copia_e_cola"] and r["qr_svg"].startswith("<svg")
     assert api.doacao_pix("xyz")["ok"] is False
+
+
+def test_publicacoes_dos_pibics(tmp_path):
+    r = mdo.ler()
+    assert r["publicacoes"] and all(p["url"].startswith("https://") for p in r["publicacoes"])
+    base = {"pix": {"chave": "a@b.com", "nome": "Fulano", "cidade": "Maceio"}}
+    r = mdo.ler(_grava(tmp_path, {**base, "publicacoes": [{"titulo": "A", "evento": "X 2024", "url": "ftp://x"},
+                                                          {"titulo": ""}, "lixo"]}))
+    assert r["publicacoes"] == [{"titulo": "A", "evento": "X 2024", "url": ""}] and r["avisos"]

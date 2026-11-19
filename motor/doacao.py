@@ -168,10 +168,20 @@ def ler(caminho: str = CAMINHO_PADRAO) -> dict:
     if linkedin and not _linkedin_valido(linkedin):
         avisos.append(f"LinkedIn ignorado (use https://www.linkedin.com/in/...): {linkedin}")
         linkedin = ""
+    publicacoes = []                 # trabalhos dos PIBICs do autor: {titulo, evento, url}
+    for item in dados.get("publicacoes") or []:
+        if not isinstance(item, dict) or not str(item.get("titulo") or "").strip():
+            continue
+        url = str(item.get("url") or "").strip()
+        if url and not _link_valido(url):
+            avisos.append(f"publicação sem link válido (precisa começar com https://): {item.get('titulo')}")
+            url = ""
+        publicacoes.append({"titulo": str(item["titulo"]).strip(), "evento": str(item.get("evento") or "").strip(),
+                            "url": url})
     valores = []
     for item in dados.get("valores") if isinstance(dados.get("valores"), list) else VALORES_PADRAO:
         if isinstance(item, dict) and valor_valido(item.get("valor")) and str(item.get("rotulo") or "").strip():
             valores.append({"rotulo": str(item["rotulo"]).strip(), "valor": valor_valido(item["valor"])})
     return {"ativo": ativo, "titulo": str(dados.get("titulo") or TITULO_PADRAO), "texto": str(dados.get("texto") or TEXTO_PADRAO),
-            "pix": pix if ativo else None, "links": links if ativo else [], "sobre": sobre, "linkedin": linkedin,
+            "pix": pix if ativo else None, "links": links if ativo else [], "sobre": sobre, "linkedin": linkedin, "publicacoes": publicacoes,
             "valores": valores if ativo and pix else [], "avisos": avisos}

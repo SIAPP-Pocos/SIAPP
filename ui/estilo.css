@@ -1757,3 +1757,7 @@ p.criterio .ajuda { display: inline; }
   .apoio-colunas { grid-template-columns: minmax(0, 1fr); }
   .apoio-masc { height: 84px; }
 }
+.apoio-pub-titulo { font: 700 13px var(--sans); margin: 14px 0 6px; }
+.apoio-pub { margin: 0 0 10px; padding-left: 18px; display: grid; gap: 6px; }
+.apoio-pub li { display: grid; gap: 1px; }
+.apoio-pub li .ajuda { font-size: 12px; }

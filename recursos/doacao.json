@@ -1,5 +1,5 @@
 {
-  "_leia": "Tela 'Apoie o projeto' (Ajuda). Fica escondida enquanto não houver chave Pix (com nome e cidade) ou link https. Para ligar: preencha e deixe ativo = true. 1.3: 'sobre' são os parágrafos de 'Quem faz o SIAPP'; 'linkedin' é o perfil do autor (https://www.linkedin.com/in/...); 'valores' são os botões de valor do Pix.",
+  "_leia": "Tela 'Apoie o projeto' (Ajuda). Fica escondida enquanto não houver chave Pix (com nome e cidade) ou link https. Para ligar: preencha e deixe ativo = true. 1.3: 'sobre' são os parágrafos de 'Quem faz o SIAPP'; 'linkedin' é o perfil do autor (https://www.linkedin.com/in/...); 'valores' são os botões de valor do Pix. 'publicacoes' são os trabalhos dos PIBICs do autor ({titulo, evento, url}).",
   "ativo": true,
   "titulo": "Apoie o SIAPP",
   "texto": "O SIAPP é gratuito e vai continuar assim. Se ele te poupou algumas horas de trabalho, dá para pagar um café para quem fez. É opcional.",
@@ -29,5 +29,12 @@
     "No último ciclo (2025-26), transformei essa ideia numa ferramenta completa para a comunidade acadêmica. O SIAPP existe para que o próximo estudante não precise passar por tudo isso."
   ],
   "linkedin": "https://www.linkedin.com/in/ruan-nobre-a308a4268",
+  "publicacoes": [
+    {
+      "titulo": "Geological storage of CO2 in depleted reservoirs with lithological modeling and analysis of technical viability",
+      "evento": "CILAMCE 2024 (XLV Ibero-Latin-American Congress on Computational Methods in Engineering), Maceió",
+      "url": "https://publicacoes.softaliza.com.br/cilamce/article/download/8233/7120/5838"
+    }
+  ],
   "links": []
 }
