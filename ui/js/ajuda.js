@@ -58,13 +58,22 @@ const COMO_USAR = [
     passos: [
       "Os PDFs e as imagens baixados aparecem em **Documentos baixados**. Os escaneados precisam de leitura por OCR: " +
         "clique em **Processar pendentes**.",
+      "A opção **Segunda leitura das páginas ruins (mais lento)** vem marcada: as páginas escaneadas que saíram ruins " +
+        "são lidas de novo, em resolução maior. A leitura fica melhor, mas essas páginas levam cerca de duas vezes mais " +
+        "tempo. Com muitos documentos e pouca pressa de qualidade, desmarque para terminar antes.",
       "Escreva na busca (por exemplo, cimentação ou perda de circulação) e clique em **Buscar**. A busca ignora " +
         "acentos e tolera erros do OCR.",
       "Clique num resultado para abrir a página. **Ampliar** mostra a página em tela cheia, com zoom.",
+      "Viu uma palavra lida errado? Clique nela, escreva a forma certa e clique em **Corrigir em todos os documentos**. " +
+        "Isso troca aquela leitura errada em todos os documentos do projeto (a palavra fica azul).",
+      "**Adicionar ao dicionário** é outra coisa: serve quando a palavra está certa, mas o SIAPP não a conhecia (um " +
+        "nome de formação, uma sigla). Ela entra no **Dicionário do projeto**, vira atalho de busca e ajuda o SIAPP a " +
+        "corrigir sozinho leituras parecidas (essas ficam verdes).",
       "Para guardar um número, abra **Transcrever um dado desta página**, desenhe uma caixa em volta do valor, " +
         "confira cada dígito na imagem e clique em **Salvar dado**. O dado fica com a página e a caixa como fonte.",
     ],
-    dica: "Viu uma palavra lida errado? Clique nela para corrigir em todos os documentos.",
+    dica: "Resumindo: corrigir troca o que o OCR leu errado; o dicionário ensina ao SIAPP uma palavra certa que ele " +
+      "ainda não conhecia. Se uma correção automática (verde) estiver errada, clique nela e use **O OCR estava certo**.",
     ir: ["Ir a Documentos", "docs"],
   },
   {

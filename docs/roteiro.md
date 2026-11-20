@@ -95,6 +95,10 @@ existe e a validação científica ficam **para o final**.
 - [x] Início: doação à vista, num espaço pequeno reservado no canto direito, ao lado dos projetos (xícara de café
       desenhada e a palavra "Doe"). (1.2, junto com o mascote e a ajuda "Como usar o SIAPP")
 - [ ] Mascote: dicas curtas e pré-determinadas dentro de cada aba (hoje ele fica só no Início e abre a ajuda geral).
+- [ ] Documentos: repensar o desenho do editor de palavra e do Dicionário do projeto (20/11). Quem usa não sabe se está
+      corrigindo a leitura do OCR ("Corrigir em todos os documentos") ou ensinando uma palavra certa ao SIAPP ("Adicionar
+      ao dicionário"), porque os dois botões ficam juntos no mesmo editor. Por enquanto, só a ajuda "Como usar o
+      SIAPP" explica a diferença.
 - [ ] Comunidade: o dado transcrito que chega por pacote ou pela base não aparece marcado na página quando o documento é
       baixado depois (a busca é pelo caminho local de quem transcreveu; ligar pelo SHA-256 ou pelo caminho no REATE). A
       prévia da importação deve listar os poços e quais arquivos faltam (nada pré-selecionado para baixar).

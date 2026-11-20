@@ -18,7 +18,9 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
   lugar: documentos em PDF ou imagem em 2. Documentos, perfis DLIS, LIS e LAS em 3. Perfis; o mapa para ver os poços em
   relação a outros pontos de interesse). "Achar dados no acervo" agora vai por objetivo: achar um poço, ver os
   arquivos de um poço, mapear uma bacia, achar poços com um tipo de dado, achar uma informação nos documentos. As abas
-  aparecem com ponto depois do número ("4. Poços"), para não parecer quantidade.
+  aparecem com ponto depois do número ("4. Poços"), para não parecer quantidade. "Ler documentos" explica que a
+  segunda leitura das páginas ruins deixa a leitura cerca de duas vezes mais lenta nessas páginas, e a diferença entre
+  corrigir uma palavra (o OCR errou) e adicionar ao dicionário (uma palavra certa que o SIAPP não conhecia).
 
 ## [1.2.0] — 2026-11-19
 O mascote do SIAPP, a ajuda de como usar e a doação à vista.
