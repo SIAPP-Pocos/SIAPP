@@ -9,7 +9,9 @@ let fichaAberta = null;
 
 const CORES = { cad: "#9aa3a8", reate: "#0e5a62", baixado: "#c26a1b" };
 // legenda clicável (Bloco 6 do teste da 0.29): categorias escondidas em cada modo de cor
-const legenda = { ocultas: { pasta: new Set(), acervo: new Set() }, soFatos: false };
+const legenda = { ocultas: { pasta: new Set(), acervo: new Set() }, soFatos: false, soCom: false };
+// botões da legenda que filtram ("só os com…") em vez de esconder uma cor; 1.3: "da comunidade"
+const FILTROS_LEGENDA = { fatos: "soFatos", comunidade: "soCom" };
 const destaques = new Map();         // id → {cor, lat, lon, campo}
 let camadaDestaques = null;
 
@@ -139,29 +141,32 @@ function categoriaPoco(p) {
 
 function pocoVisivel(p) {
   const ocultas = legenda.ocultas[corPorAcervo() ? "acervo" : "pasta"];
-  return !ocultas.has(categoriaPoco(p)) && (!legenda.soFatos || p.fatos);
+  return !ocultas.has(categoriaPoco(p)) && (!legenda.soFatos || p.fatos) && (!legenda.soCom || p.comunidade);
 }
 
 function desenharLegendaMapa() {
   const modo = corPorAcervo() ? "acervo" : "pasta";
   const cont = {};
   for (const p of pocosMapa) { const c = categoriaPoco(p); cont[c] = (cont[c] || 0) + 1; }
-  const nFatos = pocosMapa.filter((p) => p.fatos).length;
+  const nFiltro = { fatos: pocosMapa.filter((p) => p.fatos).length,
+                    comunidade: pocosMapa.filter((p) => p.comunidade).length };
   for (const b of document.querySelectorAll(`#legenda-${modo} [data-cat]`)) {
     const cat = b.dataset.cat;
-    const n = cat === "fatos" ? nFatos : cont[cat] || 0;
+    const filtro = FILTROS_LEGENDA[cat];
+    const n = filtro ? nFiltro[cat] : cont[cat] || 0;
     b.querySelector(".n").textContent = pocosMapa.length ? `(${numero(n, 0)})` : "";
-    const desligado = cat === "fatos" ? false : legenda.ocultas[modo].has(cat);
+    if (cat === "comunidade") b.hidden = !nFiltro.comunidade && !legenda.soCom;   // só aparece quando há
+    const desligado = filtro ? false : legenda.ocultas[modo].has(cat);
     b.classList.toggle("desligado", desligado);
-    b.classList.toggle("ligado", cat === "fatos" && legenda.soFatos);
-    b.setAttribute("aria-pressed", String(cat === "fatos" ? legenda.soFatos : !desligado));
+    b.classList.toggle("ligado", Boolean(filtro && legenda[filtro]));
+    b.setAttribute("aria-pressed", String(filtro ? legenda[filtro] : !desligado));
   }
 }
 
 function alternarCategoria(modo, cat, so) {
-  if (cat === "fatos") { legenda.soFatos = !legenda.soFatos; }
+  if (FILTROS_LEGENDA[cat]) { legenda[FILTROS_LEGENDA[cat]] = !legenda[FILTROS_LEGENDA[cat]]; }
   else if (so) {
-    const todas = [...document.querySelectorAll(`#legenda-${modo} [data-cat]`)].map((b) => b.dataset.cat).filter((c) => c !== "fatos");
+    const todas = [...document.querySelectorAll(`#legenda-${modo} [data-cat]`)].map((b) => b.dataset.cat).filter((c) => !FILTROS_LEGENDA[c]);
     const ja = legenda.ocultas[modo].size === todas.length - 1 && !legenda.ocultas[modo].has(cat);
     legenda.ocultas[modo] = ja ? new Set() : new Set(todas.filter((c) => c !== cat));   // de novo: mostra todas
   } else if (legenda.ocultas[modo].has(cat)) legenda.ocultas[modo].delete(cat);
@@ -178,14 +183,16 @@ function ligarLegendaMapa() {
         clearTimeout(espera);
         espera = setTimeout(() => alternarCategoria(modo, b.dataset.cat, false), 220);
       };
-      b.ondblclick = () => { clearTimeout(espera); alternarCategoria(modo, b.dataset.cat, b.dataset.cat !== "fatos"); };
+      b.ondblclick = () => { clearTimeout(espera); alternarCategoria(modo, b.dataset.cat, !FILTROS_LEGENDA[b.dataset.cat]); };
     }
   }
 }
 
 function estiloPoco(p) {
   const destaque = destaquePoco(p);
-  return { radius: destaque ? 5 : 3, weight: p.fatos ? 2.5 : 0.6, color: p.fatos ? "#5b2f8f" : "#ffffff",
+  // anel: azul se há dado da comunidade (1.3), roxo se há dado transcrito seu
+  const anel = p.comunidade ? "#1565c0" : p.fatos ? "#5b2f8f" : "";
+  return { radius: destaque ? 5 : 3, weight: anel ? 2.5 : 0.6, color: anel || "#ffffff",
            fillColor: corPoco(p), fillOpacity: destaque ? 0.95 : 0.6 };
 }
 
@@ -413,6 +420,11 @@ function desenharListaMapa() {
     b.append(el("i", "bola", ""), el("span", "mono", p.id),
              el("span", "ajuda", [p.campo, corPorAcervo() ? NOMES_SITUACAO[p.acervo] : p.situacao]
                                    .filter(Boolean).join(" · ")));
+    if (p.comunidade) {
+      const m = el("span", "marca-com", "comunidade");
+      m.title = `${p.comunidade} dado(s) da comunidade`;
+      b.appendChild(m);
+    }
     b.firstChild.style.background = corPoco(p);
     b.onclick = () => { abrirFicha(p.id); mapa.setView([p.lat, p.lon], Math.max(mapa.getZoom(), 12)); };
     const li = el("li");
@@ -513,7 +525,8 @@ async function abrirFicha(id) {
     corpo.appendChild(t);
   }
 
-  corpo.appendChild(el("h3", "", `Dados transcritos (${r.fatos.length})`));
+  const nCom = r.fatos.filter((f) => f.origem !== "local").length;
+  corpo.appendChild(el("h3", "", `Dados transcritos (${r.fatos.length}${nCom ? `, ${nCom} da comunidade` : ""})`));
   if (!r.fatos.length) corpo.appendChild(el("p", "ajuda", "Nenhum ainda. Transcreva na aba Documentos, a partir da página do documento."));
   else corpo.appendChild(tabelaFatos(r.fatos));
 
@@ -660,7 +673,7 @@ async function mostrarPocoNoCatalogo(x) {
   desenharListaPocos(r.lista, x.categoria, x.bacia);
   $("filtro").value = r.poco.nome;
   desenharPocos();
-  const botaoPoco = [...document.querySelectorAll("#grade-pocos button")].find((b) => b.textContent === r.poco.nome);
+  const botaoPoco = [...document.querySelectorAll("#grade-pocos button")].find((b) => b.firstChild.textContent === r.poco.nome);
   if (botaoPoco) {
     botaoPoco.scrollIntoView({ block: "nearest" });
     explorarPoco(r.poco, botaoPoco);

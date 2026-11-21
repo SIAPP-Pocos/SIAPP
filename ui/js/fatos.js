@@ -34,8 +34,22 @@ function tabelaFatos(fatos, aoRemover) {
     const tr = el("tr");
     const valor = [f.nome, f.valor && `${f.valor}${f.unidade ? " " + f.unidade : ""}`].filter(Boolean).join(" · ");
     const fonte = f.pagina ? `pág. ${f.pagina}` : (f.fonte_rel || f.fonte_caminho ? "documento" : "—");
-    const tdFonte = el("td", "", fonte);
-    tdFonte.title = [f.fonte_rel || f.fonte_caminho, f.autor && `por ${f.autor}`, ORIGEM_FATO[f.origem]].filter(Boolean).join("\n");
+    const tdFonte = el("td");
+    const quem = [f.autor && `por ${f.autor}`, ORIGEM_FATO[f.origem]].filter(Boolean);
+    // 1.3: com o documento neste projeto (o seu, ou o mesmo que outra pessoa transcreveu: pelo SHA-256 ou
+    // pelo caminho no REATE), a fonte vira link para a página
+    if (f.doc_local) {
+      const b = el("button", "link-botao", fonte);
+      b.type = "button";
+      b.title = [`Abrir ${f.doc_local.split("/").pop()}${f.pagina ? ", página " + f.pagina : ""}`, ...quem].join("\n");
+      b.onclick = () => irPara("docs", "abrirPagina", f.doc_local, f.pagina || 1, "");
+      tdFonte.appendChild(b);
+    } else {
+      tdFonte.textContent = fonte;
+      const falta = f.origem !== "local" && f.fonte_caminho && f.doc_local === null
+        ? `Documento ainda não baixado: ${f.fonte_caminho} (Acervo › Catálogo do REATE)` : f.fonte_rel || f.fonte_caminho;
+      tdFonte.title = [falta, ...quem].filter(Boolean).join("\n");
+    }
     const tdAcao = el("td");
     if (aoRemover && f.origem === "local") {
       const x = el("button", "x", "×");

@@ -15,13 +15,14 @@ def abrir_projeto(janela):
 
 def ir(p, aba, sub=None):
     """Vai até uma aba (e uma sub-aba do Acervo). Correlação e Modelo 3D são abas próprias no topo
-    (ir(p, "interp", "bloco") clica em "6 Modelo 3D"); Viabilidade e Comunidade ficam no menu "Mais"."""
+    (ir(p, "interp", "bloco") clica em "6 Modelo 3D"); a Viabilidade fica no menu "Mais" e, desde a 1.3, a Comunidade
+    é aba própria no topo."""
     if aba == "interp":
         p.click("#aba-modelo" if sub == "bloco" else "#aba-interp")
         if sub == "bloco":       # 0.59: os passos vêm recolhidos (receita); os testes mexem em tudo
             p.evaluate("document.querySelectorAll('#vista-bloco details.passo').forEach(d => d.open = true)")
         return
-    if aba in ("viab", "comunidade"):
+    if aba == "viab":
         p.click("#aba-mais")
     p.click(f"#aba-{aba}")
     if sub and aba == "dados":
@@ -2234,7 +2235,8 @@ def test_bloco_mapa_2d_com_curvas_de_nivel(janela, tmp_path):
 def test_abas_pelo_fluxo_menus_e_ajuda(janela):
     p = janela.page
     rotulos = [t.strip() for t in p.locator("#abas > .aba").all_text_contents()]
-    assert rotulos == ["Início", "1Acervo", "2Documentos", "3Perfis", "4Poços", "5Correlação", "6Modelo 3D"]
+    assert rotulos == ["Início", "1Acervo", "2Documentos", "3Perfis", "4Poços", "5Correlação", "6Modelo 3D",
+                       "Comunidade"]                     # 1.3: a Comunidade saiu do Mais
     assert p.is_hidden("#aba-viab") and p.is_hidden("#btn-dividir") and p.is_hidden("#versao")
     abrir_projeto(janela)
     janela.esperar("document.getElementById('projeto-nome').textContent === 'Projeto principal'")
@@ -2841,4 +2843,57 @@ def test_tela_de_apoio_com_quem_faz_valores_e_qr(janela):
     p.click(".apoio-aba[data-aba='outras']")
     p.click(".apoio-outras .link-botao")
     assert p.evaluate("document.getElementById('dialogo').hidden")
+    assert not janela.erros_js, janela.erros_js
+
+
+def test_comunidade_no_topo_avisa_base_nova_e_liga_o_dado_a_pagina(janela, monkeypatch, tmp_path):
+    """1.3: a Comunidade é aba do topo; base nova no GitHub aparece com o que entrou; o dado da comunidade abre a
+    página do mesmo documento baixado aqui (pelo SHA-256), e o poço ganha a marca da comunidade no mapa."""
+    from base_util import montar_base
+    from motor import banco as mb
+    from motor import comunidade as mc
+    p = janela.page
+    assert p.is_visible("#aba-comunidade") and p.is_hidden("#aba-comunidade-aviso")
+    p.click("#aba-mais")
+    assert not p.locator(".menu-pop #aba-comunidade").count()             # saiu do menu Mais
+    p.keyboard.press("Escape")
+    # alguém transcreveu um dado no documento x.pdf; a base com o pacote foi publicada
+    outro = mb.Banco(str(tmp_path / "outro.sqlite"))
+    outro.registrar_arquivo("bruto/P/x.pdf", bacia="Potiguar", poco_id="7-GMR-13-RN", sha256="cd" * 32,
+                            caminho_remoto="/POCO/C7/7-GMR-13-RN/x.pdf", tipo="documento")
+    outro.salvar_fato({"poco_id": "7-GMR-13-RN", "tipo": "topo_formacao", "nome": "Açu", "prof_topo": 512.5,
+                       "fonte_rel": "bruto/P/x.pdf", "pagina": 3})
+    pacote = mc.montar_pacote(outro, {"nome": "Maria Souza", "instituicao": "UFRN"}, "1.3.0")
+    resumo = {"formato": "siapp-dados-resumo", "versao_base": "v2026.11.0", "contagens": {"contribuicoes": 1},
+              "pacotes": [{"id": pacote["id"], "autor": "Maria Souza", "instituicao": "UFRN", "correcoes": 0,
+                           "palavras": 0, "fatos": 1, "interpretacoes": 0, "pocos": ["7-GMR-13-RN"]}]}
+    monkeypatch.setattr(mc, "consultar_base", lambda *a, **k: {"versao": "v2026.11.0", "resumo": resumo,
+                                                               "publicada_em": "2026-11-21T10:00:00Z"})
+    abrir_projeto(janela)
+    janela.esperar("!document.getElementById('aba-comunidade-aviso').hidden")
+    assert "base nova da comunidade (v2026.11.0)" in janela.status()
+    ir(p, "comunidade")
+    janela.esperar("!document.getElementById('com-novidade').hidden")
+    texto = p.text_content("#com-novidade")
+    assert "v2026.11.0" in texto and "Maria Souza (UFRN)" in texto and "1 dado(s) transcrito(s)" in texto
+    assert "7-GMR-13-RN" in texto and p.is_checked("#com-auto")
+    # "Atualizar pela internet" aplica a base (o download é trocado por uma cópia local)
+    montar_base(str(tmp_path / "pub.sqlite"), [pacote], "v2026.11.0")
+
+    def baixar(destino, *a, **k):
+        import shutil
+        shutil.copy(tmp_path / "pub.sqlite", destino)
+        return {"versao": "v2026.11.0", "publicada_em": "2026-11-21T10:00:00Z"}
+    monkeypatch.setattr(mc, "baixar_base", baixar)
+    p.click("#btn-base")
+    janela.esperar("document.getElementById('com-novidade').hidden")
+    assert p.is_hidden("#aba-comunidade-aviso") and "Base v2026.11.0 aplicada" in janela.status()
+    # o mesmo documento, baixado aqui noutra pasta: o dado da comunidade aponta para a página
+    janela.api._banco.registrar_arquivo("bruto/Potiguar/outra/x.pdf", bacia="Potiguar", poco_id="7-GMR-13-RN",
+                                        sha256="cd" * 32, tipo="documento")
+    ir(p, "mapa")
+    p.evaluate("abrirFicha('7-GMR-13-RN')")
+    janela.esperar("document.querySelector('#fi-corpo table.fatos button.link-botao') !== null")
+    assert "1 da comunidade" in p.text_content("#fi-corpo")
+    assert "Abrir x.pdf, página 3" in p.get_attribute("#fi-corpo table.fatos button.link-botao", "title")
     assert not janela.erros_js, janela.erros_js

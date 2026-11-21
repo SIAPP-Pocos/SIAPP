@@ -3,10 +3,12 @@ preenchimento e biblioteca de interpretações de perfil."""
 
 from __future__ import annotations
 
+import json
 import os
 import re
 import subprocess
 import sys
+from datetime import date
 
 import webview
 
@@ -58,6 +60,7 @@ class ComunidadeAPI:
             "exportados": b.pacotes("exportado")[:10],
             "importados": b.pacotes("importado"),
             "base": bases[0] if bases else None,
+            "verificar_sozinho": self._projeto.config.get("comunidade_auto", True),
             "pasta_contribuicoes": os.path.join(mp.NOME_PASTA_PADRAO, PASTA_CONTRIBUICOES),
         }
 
@@ -129,6 +132,29 @@ class ComunidadeAPI:
         self._status("Baixando a base comunitária…")
         info = mc.baixar_base(destino)
         return self._aplicar_base(destino, info)
+
+    @resposta_segura
+    def verificar_base(self, forcar: bool = False):
+        """Há base nova no repositório Comunidade? Consulta o GitHub no máximo uma vez por dia (a não ser que
+        `forcar`) e diz o que entrou desde a base deste projeto, sem baixar nada (1.3)."""
+        self._exigir_projeto()
+        if not forcar and not self._projeto.config.get("comunidade_auto", True):
+            return {"desligado": True}
+        hoje = date.today().isoformat()
+        try:
+            cache = json.loads(self._banco.meta("comunidade_consulta") or "{}")
+        except ValueError:
+            cache = {}
+        if forcar or cache.get("dia") != hoje:
+            cache = {"dia": hoje, "info": mc.consultar_base()}
+            self._banco.definir_meta("comunidade_consulta", json.dumps(cache, ensure_ascii=False))
+        return {**mc.novidades(self._banco, cache["info"]), "consultado_em": cache["dia"]}
+
+    @resposta_segura
+    def comunidade_verificar_sozinho(self, ligado: bool):
+        self._exigir_projeto()
+        self._projeto.definir_config(comunidade_auto=bool(ligado))
+        return {"verificar_sozinho": bool(ligado)}
 
     @resposta_segura
     def importar_base_arquivo(self):

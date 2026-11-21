@@ -48,7 +48,71 @@ async function carregarContribuir() {
       `${r.base.resumo.contribuicoes} contribuição(ões), ${r.base.resumo.vocabulario} item(ns) de vocabulário, ` +
       `${r.base.resumo.fatos} dado(s).`
     : "Nenhuma base aplicada ainda.";
+  $("com-auto").checked = r.verificar_sozinho !== false;
+  desenharNovidadeBase();
   desenharPacotes(r.importados);
+}
+
+// ------------------------------------------------- 1.3: base nova no repositório Comunidade
+let novidadeBase = null;      // a última resposta de verificar_base
+
+// Ao abrir o projeto (sem barulho: sem internet, nada aparece) ou pelo botão "Procurar versão nova" (forcar).
+async function verificarBaseComunidade(forcar = false, botao = null) {
+  let r;
+  if (forcar) r = await chamar(botao, "verificar_base", true);
+  else {
+    try { r = await api.verificar_base(false); } catch (e) { return; }
+  }
+  if (!r || !r.ok || r.desligado) return;
+  novidadeBase = r;
+  $("aba-comunidade-aviso").hidden = !r.ha_novidade;
+  desenharNovidadeBase();
+  if (r.ha_novidade) {
+    status(`Há uma base nova da comunidade (${r.versao}). Veja na aba Comunidade.`, "ok");
+  } else if (forcar) {
+    status(r.publicada ? `Você já tem a base mais nova (${r.versao}).`
+                       : "A base da comunidade ainda não foi publicada: nenhum pacote foi aceito até agora.", "ok");
+  }
+}
+
+function descreverPacoteNovo(x) {
+  const partes = [];
+  if (x.correcoes) partes.push(`${x.correcoes} correção(ões)`);
+  if (x.palavras) partes.push(`${x.palavras} palavra(s)`);
+  if (x.fatos) partes.push(`${x.fatos} dado(s) transcrito(s)`);
+  if (x.interpretacoes) partes.push(`${x.interpretacoes} interpretação(ões) de perfil`);
+  return partes.join(", ") || "vocabulário";
+}
+
+function desenharNovidadeBase() {
+  const box = $("com-novidade");
+  if (!box) return;
+  const n = novidadeBase;
+  box.hidden = !(n && n.ha_novidade);
+  if (box.hidden) return;
+  limpar(box);
+  const quando = n.publicada_em ? ` em ${dataCurta(n.publicada_em)}` : "";
+  const cab = el("p");
+  cab.append(el("strong", "", `Base nova: ${n.versao}`),
+             document.createTextNode(` (publicada${quando}; a sua é ${n.local || "nenhuma"}).`));
+  box.appendChild(cab);
+  if (n.pacotes_novos && n.pacotes_novos.length) {
+    box.appendChild(el("p", "ajuda", n.local ? "Entrou desde a sua:" : "O que tem nela:"));
+    const ul = el("ul", "com-novos");
+    for (const x of n.pacotes_novos.slice(0, 12)) {
+      const li = el("li");
+      li.append(el("strong", "", x.autor + (x.instituicao ? ` (${x.instituicao})` : "")),
+                document.createTextNode(` · ${descreverPacoteNovo(x)}`));
+      if (x.pocos && x.pocos.length) {
+        li.appendChild(el("span", "ajuda mono", ` · ${x.pocos.slice(0, 6).join(", ")}${x.pocos.length > 6 ? ` e mais ${x.pocos.length - 6}` : ""}`));
+      }
+      ul.appendChild(li);
+    }
+    if (n.pacotes_novos.length > 12) ul.appendChild(el("li", "ajuda", `… e mais ${n.pacotes_novos.length - 12} pacote(s).`));
+    box.appendChild(ul);
+  } else if (!n.contagens) {
+    box.appendChild(el("p", "ajuda", "Atualize para ver o que mudou."));
+  }
 }
 
 function desenharPacotes(lista) {
@@ -99,6 +163,26 @@ async function escolherPacote() {
     (pv.fatos_repetidos ? ` · ${pv.fatos_repetidos} dado(s) que você já tem` : "") +
     (pv.interpretacoes_repetidas ? ` · ${pv.interpretacoes_repetidas} interpretação(ões) que você já tem` : "")));
   if (pv.ja_importado) box.appendChild(el("p", "aviso", "Este pacote já foi importado antes; importar de novo não duplica nada."));
+  if (pv.pocos && pv.pocos.length) {
+    box.appendChild(el("p", "ajuda", `Poço(s): ${pv.pocos.slice(0, 20).join(", ")}${pv.pocos.length > 20 ? ` e mais ${pv.pocos.length - 20}` : ""}.`));
+  }
+  if (pv.documentos_faltando && pv.documentos_faltando.length) {
+    // 1.3: só a lista; nada vem marcado para baixar
+    const det = el("details", "previa-faltam");
+    det.appendChild(el("summary", "", `${pv.documentos_faltando.length} documento(s) citado(s) que você ainda não tem`));
+    det.appendChild(el("p", "ajuda", "Os dados entram mesmo assim. Para ver a página de onde cada um saiu, baixe o documento " +
+                                     "no Acervo (Catálogo do REATE): o SIAPP liga o dado à página sozinho."));
+    const ul = el("ul");
+    for (const d of pv.documentos_faltando.slice(0, 40)) {
+      const li = el("li");
+      li.append(el("span", "mono", d.poco), document.createTextNode(` · ${d.nome}`));
+      li.title = `${d.bacia ? d.bacia + ": " : ""}${d.caminho_remoto}`;
+      ul.appendChild(li);
+    }
+    if (pv.documentos_faltando.length > 40) ul.appendChild(el("li", "ajuda", `… e mais ${pv.documentos_faltando.length - 40}.`));
+    det.appendChild(ul);
+    box.appendChild(det);
+  }
   if (pv.conflitos.length) {
     box.appendChild(el("p", "aviso", `${pv.conflitos.length} correção(ões) discordam das que você já usa. A sua continua valendo; a do pacote fica guardada.`));
     const t = el("table", "tabela");
@@ -130,6 +214,10 @@ async function escolherPacote() {
 async function atualizarBase(botao, funcao) {
   const r = await chamar(botao, funcao);
   if (!r.ok || r.cancelado) return;
+  if (novidadeBase && (funcao === "atualizar_base" || r.resumo.versao === novidadeBase.versao)) {
+    novidadeBase.ha_novidade = false;
+    $("aba-comunidade-aviso").hidden = true;
+  }
   status(`Base ${r.resumo.versao} aplicada: ${r.resumo.contribuicoes} contribuição(ões), ` +
          `${r.resumo.fatos} dado(s)` + (r.resumo.interpretacoes ? `, ${r.resumo.interpretacoes} interpretação(ões)` : "") +
          `. ${r.paginas_atualizadas} página(s) atualizadas.`, "ok");
@@ -721,4 +809,11 @@ function ligarComunidade() {
   $("btn-importar").onclick = escolherPacote;
   $("btn-base").onclick = () => atualizarBase($("btn-base"), "atualizar_base");
   $("btn-base-arquivo").onclick = () => atualizarBase($("btn-base-arquivo"), "importar_base_arquivo");
+  $("btn-base-procurar").onclick = () => verificarBaseComunidade(true, $("btn-base-procurar"));
+  $("com-auto").onchange = async () => {
+    const ligado = $("com-auto").checked;
+    const r = await chamar(null, "comunidade_verificar_sozinho", ligado);
+    if (r.ok) status(ligado ? "O SIAPP vai procurar base nova ao abrir o projeto, no máximo uma vez por dia."
+                            : "O SIAPP não procura mais sozinho. Use “Procurar versão nova” quando quiser.", "ok");
+  };
 }

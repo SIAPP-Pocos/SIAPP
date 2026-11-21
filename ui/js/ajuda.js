@@ -155,12 +155,15 @@ const COMO_USAR = [
   {
     id: "comunidade", titulo: "Compartilhar", pose: "joinha",
     fala: "Sua correção poupa o trabalho do próximo colega.",
-    intro: "Em **Mais** › **Comunidade**, suas correções, transcrições e interpretações viram um pacote para compartilhar.",
+    intro: "Na aba **Comunidade**, no topo, suas correções, transcrições e interpretações viram um pacote para compartilhar.",
     passos: [
       "Em **Contribuir**, **Exportar pacote** junta o que você fez num arquivo.",
       "Envie o arquivo para quem quiser. Quem recebe usa **Escolher pacote…** e vê o que entra antes de confirmar. " +
         "Se uma correção do pacote discordar de uma sua, a sua continua valendo.",
-      "**Atualizar pela internet** traz a base comunitária.",
+      "Quando sai uma base comunitária nova, a aba **Comunidade** ganha um ponto azul e mostra quem mandou o quê. " +
+        "**Atualizar pela internet** traz tudo; **Procurar versão nova** confere na hora.",
+      "No mapa de **4. Poços**, o anel azul marca os poços com dados da comunidade. Na ficha, clique na página " +
+        "do dado para abrir o documento, se você já o tiver baixado.",
       "**Painel de preenchimento** mostra quanto do acervo já foi preenchido e quem contribuiu. " +
         "**Biblioteca de interpretações** guarda avaliações de perfil para comparar.",
     ],

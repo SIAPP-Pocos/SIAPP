@@ -101,6 +101,7 @@ function desenharListaPocos(r, categoria, bacia) {
   fecharGaveta();
   listaParcial = !!r.parcial;
   pocosAtuais = r.pocos;
+  comunidadeLista = r.comunidade || {};
   baciaDaLista = r.bacia || bacia;
   $("vazio").hidden = true;
   $("painel-pocos").hidden = false;
@@ -116,6 +117,7 @@ function desenharListaPocos(r, categoria, bacia) {
 }
 
 let resumoBase = "";
+let comunidadeLista = {};     // 1.3: {nome da pasta: dados da comunidade}, só dos poços que têm
 let listaParcial = false;     // 0.65: categoria mostrada só com o poço aberto pela ficha
 
 function desenharPocos() {
@@ -130,6 +132,13 @@ function desenharPocos() {
     const b = document.createElement("button");
     b.textContent = p.nome;
     b.title = (p.parte ? `${p.nome}\nem ${p.parte}` : p.nome) + "\nClique para ver os arquivos";
+    const com = comunidadeLista[p.nome];
+    if (com) {
+      const n = com.fatos + com.interpretacoes;
+      b.appendChild(el("span", "marca-com", "C"));
+      b.title += `\n${n} dado(s) da comunidade` + (com.autores.length ? ` (${com.autores.join(", ")})` : "");
+      b.setAttribute("aria-label", `${p.nome}, com dados da comunidade`);
+    }
     if (pocoAberto === p.nome) b.classList.add("ativo");
     b.onclick = () => explorarPoco(p, b);
     li.appendChild(b);

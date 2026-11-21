@@ -27,11 +27,11 @@
       <button class="aba" id="aba-mapa" data-vista="mapa" role="tab" aria-selected="false"><span class="aba-num">4</span>Poços</button>
       <button class="aba" id="aba-interp" data-vista="interp" data-sub-interp="secao" role="tab" aria-selected="false"><span class="aba-num">5</span>Correlação</button>
       <button class="aba" id="aba-modelo" data-vista="interp" data-sub-interp="bloco" role="tab" aria-selected="false"><span class="aba-num">6</span>Modelo 3D</button>
+      <button class="aba aba-com" id="aba-comunidade" data-vista="comunidade" data-titulo="Comunidade: contribuir, painel e biblioteca" role="tab" aria-selected="false"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="5.5" cy="5.5" r="2.2"></circle><circle cx="11" cy="6.3" r="1.8"></circle><path d="M1.5 13.5c.4-2.4 2-3.7 4-3.7s3.6 1.3 4 3.7M10 9.9c2 0 3.6.9 4.2 3.1"></path></svg><span class="aba-com-nome">Comunidade</span><span class="aba-aviso" id="aba-comunidade-aviso" hidden aria-label="(base nova)"></span></button>
       <div class="menu abas-mais">
         <button class="aba" id="aba-mais" type="button" aria-haspopup="menu" aria-expanded="false"><span id="aba-mais-nome">Mais</span> ▾</button>
         <div class="menu-pop" role="menu" hidden>
           <button class="aba menu-item" id="aba-viab" data-vista="viab" role="menuitem">Viabilidade</button>
-          <button class="aba menu-item" id="aba-comunidade" data-vista="comunidade" role="menuitem">Comunidade</button>
         </div>
       </div>
     </nav>
@@ -424,6 +424,7 @@
         <button type="button" data-cat="reate"><i class="bola reate"></i>pasta no REATE <span class="n"></span></button>
         <button type="button" data-cat="baixado"><i class="bola baixado"></i>arquivos baixados <span class="n"></span></button>
         <button type="button" data-cat="fatos" title="Clique: só os poços com dados transcritos"><i class="bola fatos"></i>com dados transcritos <span class="n"></span></button>
+        <button type="button" data-cat="comunidade" hidden title="Clique: só os poços com dados que vieram da comunidade (base ou pacote)"><i class="bola comunidade"></i>da comunidade <span class="n"></span></button>
       </div>
       <div class="mapa-legenda" id="legenda-acervo" hidden title="Clique para esconder ou mostrar; dois cliques: só esta">
         <button type="button" data-cat="digital"><i class="bola ac-digital"></i>perfil digital <span class="n"></span></button>
@@ -1615,8 +1616,9 @@
         <ol class="ajuda passos">
           <li>Você corrige o OCR e transcreve dados neste computador.</li>
           <li><strong>Exporta</strong> um pacote (arquivo JSON, sem nenhum arquivo do REATE).</li>
-          <li>Envia o pacote ao repositório <strong>Comunidade</strong>, onde ele é conferido e revisado.</li>
-          <li>Cada versão da base reúne todos os pacotes aceitos. <strong>Atualizar a base</strong> traz tudo para o seu SIAPP.</li>
+          <li>Envia o pacote ao repositório <strong>Comunidade</strong>, no GitHub, onde ele é conferido e aceito.</li>
+          <li>Logo depois de cada aceite sai uma versão nova da base, com todos os pacotes aceitos. O SIAPP avisa
+            (procura no máximo uma vez por dia) e <strong>Atualizar pela internet</strong> traz tudo para cá.</li>
         </ol>
       </section>
       </div>
@@ -1679,10 +1681,13 @@
         <section class="cartao">
           <h2>Base comunitária</h2>
           <p class="ajuda" id="com-base">Nenhuma base aplicada ainda.</p>
+          <div class="com-novidade" id="com-novidade" hidden></div>
           <div class="linha">
             <button class="btn" id="btn-base">Atualizar pela internet</button>
+            <button class="btn secundario" id="btn-base-procurar">Procurar versão nova</button>
             <button class="btn secundario" id="btn-base-arquivo">Importar de arquivo…</button>
           </div>
+          <label class="opcao"><input type="checkbox" id="com-auto"> Procurar sozinho ao abrir o projeto (uma vez por dia)</label>
         </section>
 
         <section class="cartao largo">

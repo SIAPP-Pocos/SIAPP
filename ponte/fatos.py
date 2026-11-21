@@ -91,7 +91,7 @@ class FatosAPI:
                     and all(isinstance(x, (int, float)) and -0.01 <= x <= 1.01 for x in caixa)):
                 raise ErroUsuario("Caixa inválida na imagem.")
         fato = self._salvar_fato({**dados, "pagina": int(pagina), "caixa": caixa}, fonte_rel=rel)
-        return {"fato": fato, "fatos": self._banco.fatos(fonte_rel=rel, pagina=int(pagina))}
+        return {"fato": fato, "fatos": self._banco.fatos(documento=rel, pagina=int(pagina))}
 
     @resposta_segura
     def remover_fato(self, id_fato: str):
@@ -104,4 +104,4 @@ class FatosAPI:
     @resposta_segura
     def fatos_poco(self, poco: str):
         self._exigir_projeto()
-        return {"fatos": self._banco.fatos(self._id_poco(poco))}
+        return {"fatos": self._banco.anotar_documentos(self._banco.fatos(self._id_poco(poco)))}

@@ -7,10 +7,10 @@ pacotes aceitos são compilados numa **base** que todo mundo baixa.
 ```
   SIAPP (você)                    Comunidade (GitHub)                 SIAPP (outra pessoa)
   ─────────────                   ────────────────────                 ────────────────────
-  corrige o OCR,                  pull request com o pacote            Comunidade →
-  transcreve dados   ──exporta──▶ validação automática  ──etiqueta──▶  Atualizar a base
+  corrige o OCR,                  pull request com o pacote            aviso de base nova →
+  transcreve dados   ──exporta──▶ validação automática  ──aceite───▶  Atualizar pela internet
   (origem local)                  revisão humana          vAAAA.MM.N    (origem base)
-                                  compilação → Release
+                                  compilação → Release (sozinha, logo depois do aceite)
 ```
 
 A aba Comunidade tem três partes: **Contribuir** (autoria, exportar, importar, base),
@@ -61,10 +61,34 @@ contra correções da comunidade, só no seu computador.
 
 ## Base comunitária
 
-**Atualizar pela internet** baixa a Release mais recente do repositório Comunidade
-(`siapp-dados.sqlite`) e substitui tudo o que tinha origem `base`. Enquanto o repositório
-for privado, use **Importar de arquivo…** com o `.sqlite` gerado por
-`python ferramentas/compilar.py` no repositório Comunidade.
+No repositório Comunidade, cada pacote aceito (pull request juntado à `main`) dispara o workflow `publicar base`: ele
+valida, compila e publica uma Release nova, `vAAAA.MM.N` (N começa em 0 a cada mês), com três arquivos:
+`siapp-dados.sqlite` (a base), `vocabulario.json` e `resumo.json` (contagens e a lista de pacotes, com autor e poços de
+cada um). Enquanto nenhum pacote foi aceito, nada é publicado (`contribuicoes/exemplo.json` só mostra o formato).
+
+**Atualizar pela internet** baixa a Release mais recente (`siapp-dados.sqlite`) e substitui tudo o que tinha origem
+`base`. **Importar de arquivo…** aplica um `.sqlite` gerado por `python ferramentas/compilar.py`.
+
+### Aviso de base nova (1.3)
+
+Ao abrir o projeto, o SIAPP pergunta ao GitHub qual é a última Release (`motor.comunidade.consultar_base`): no máximo
+uma vez por dia (a resposta fica no banco do projeto, `meta.comunidade_consulta`) e sem baixar a base, só o
+`resumo.json`. Sem internet, nada aparece. Se a versão publicada é outra que a aplicada, a aba **Comunidade** ganha um
+ponto azul e o cartão "Base comunitária" mostra quem mandou o quê desde a sua (`novidades`: os pacotes do `resumo.json`
+que não estavam na base aplicada, guardados em `meta.base_contribuicoes`). **Procurar versão nova** consulta na hora; a
+caixa "Procurar sozinho ao abrir o projeto" desliga a consulta automática (`config.comunidade_auto`).
+
+### O dado da comunidade na página do documento (1.3)
+
+Quem recebe um fato pela base ou por pacote não tem o caminho local de quem transcreveu: o fato traz o SHA-256 e o
+caminho do documento no REATE. `Banco.fatos(documento=rel)` casa por qualquer um dos três (caminho local, SHA-256,
+caminho no REATE), então a página aberta em Documentos mostra também o que a comunidade transcreveu nela, assim que o
+mesmo documento for baixado. Na ficha do poço, a fonte ("pág. 3") vira link para a página quando o documento está no
+projeto (`Banco.anotar_documentos`); sem ele, a dica diz o caminho no REATE.
+
+O mapa (anel azul e o filtro "da comunidade" na legenda), a lista ao lado do mapa e a lista de poços do catálogo
+(selo "C") marcam os poços com dados da comunidade (`Banco.comunidade_por_poco`). A prévia da importação de um pacote
+lista os poços e os documentos citados que o projeto ainda não tem, sem marcar nada para baixar.
 
 O formato da base (`versao_formato_base` 1) está descrito em `ferramentas/compilar.py`
 do repositório Comunidade; o SIAPP recusa base de versão mais nova que a que conhece. A tabela

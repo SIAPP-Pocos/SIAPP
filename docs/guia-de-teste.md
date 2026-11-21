@@ -146,6 +146,32 @@ Precisa de internet. Comece por uma categoria pequena para ver o tempo.
       cada tipo de arquivo. "Achar dados no acervo" vem por objetivo ("Para achar um poço pelo nome"…), sem números.
 - [ ] Tema escuro: textos, botões e o QR continuam legíveis.
 
+## 1.3 — Comunidade no topo, aviso de base nova e tela de apoio
+
+- [ ] A aba **Comunidade** fica no topo, depois de 6. Modelo 3D, com o desenho de duas pessoas. **Mais ▾** só tem a
+      Viabilidade.
+- [ ] Abra o projeto com internet. Enquanto o repositório Comunidade não tiver nenhum pacote aceito, nada aparece.
+      Comunidade › **Procurar versão nova**: "A base da comunidade ainda não foi publicada…".
+- [ ] Exporte um pacote seu (Comunidade › Exportar pacote) e mande para o repositório Comunidade pelo site (Add file ›
+      Upload files em `contribuicoes/`, como pull request). Aceite o pull request: em Actions, "publicar base" roda e
+      cria a Release `v2026.11.0` com `siapp-dados.sqlite`, `vocabulario.json` e `resumo.json`.
+- [ ] No SIAPP, **Procurar versão nova**: a aba Comunidade ganha um ponto azul e o cartão "Base comunitária" mostra
+      "Base nova: v2026.11.0" com o seu nome, quantos dados e de quais poços. **Atualizar pela internet**: o ponto some.
+- [ ] Feche e abra o SIAPP no mesmo dia: não consulta de novo (o aviso volta só se houver base nova). Desmarque
+      "Procurar sozinho ao abrir o projeto" e reabra: nada é consultado.
+- [ ] Num projeto que recebeu um dado da comunidade (pela base ou por um pacote de outra pessoa): 4. Poços mostra o
+      poço com anel azul; na legenda, "da comunidade" filtra só esses. A lista ao lado do mapa mostra "comunidade".
+- [ ] Acervo › Catálogo, na categoria desse poço: o botão do poço tem o selo azul "C"; a dica diz quantos dados e de
+      quem.
+- [ ] Baixe o documento citado pelo dado (mesmo que fique noutra pasta): em Documentos, a página do dado mostra o dado
+      transcrito pela outra pessoa. Na ficha do poço, "pág. N" vira link e abre a página.
+- [ ] Comunidade › Escolher pacote…: a prévia lista os poços e, em "documento(s) citado(s) que você ainda não tem", os
+      arquivos que faltam (nada marcado para baixar).
+- [ ] Ajuda › Apoie o projeto: o mascote, "Doar é opcional…", "Quem faz o SIAPP" com o LinkedIn e o trabalho do
+      CILAMCE; os valores (Um cafezinho, Um lanche, Uma tarde de código, Outro valor) mudam o QR Code e o copia e cola.
+      A aba "Sem dinheiro" mostra as cinco formas de ajudar. Tudo cabe sem rolar numa tela de notebook.
+- [ ] Ajuda › Como usar o SIAPP › Compartilhar: fala da aba Comunidade no topo e do ponto azul.
+
 ## 1.2 — mascote, ajuda e doação à vista
 
 - [ ] Início: o mascote aparece no canto de baixo, à direita, com o balão "Dúvidas? Clique em mim." (numa janela

@@ -14,7 +14,8 @@ layout) e `ui/estilo.css` (seção "interface (0.57)").
 | 4 Poços | mapa, filtros, ficha do poço | Mapa |
 | 5 Correlação | seção estratigráfica | Interpretação › Seção |
 | 6 Modelo 3D | bloco 3D | Interpretação › Bloco 3D |
-| Mais ▾ | Viabilidade, Comunidade | abas soltas |
+| Comunidade | contribuir, painel, biblioteca (aba própria desde a 1.3, com um ponto azul quando há base nova) | Comunidade |
+| Mais ▾ | Viabilidade | aba solta |
 
 Por dentro, Correlação e Modelo 3D continuam sendo a mesma aba (`interp`, com `ui.subInterp`): a divisão da janela, as janelas
 destacadas e as preferências não mudaram. Cada botão do topo tem `data-sub-interp` e só fica marcado com a sua sub-aba.

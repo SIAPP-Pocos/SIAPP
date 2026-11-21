@@ -163,10 +163,10 @@ function aplicarLayout(recarregar = new Set()) {
     b.classList.toggle("fora", ui.fora.has(a));
     b.setAttribute("aria-selected", a === visiveis[0] && esta);
     b.title = ui.fora.has(a) ? "Está numa janela própria: clique para trazê-la para a frente"
-      : visiveis[1] === a && esta ? "Aberta na área da direita" : "";
+      : visiveis[1] === a && esta ? "Aberta na área da direita" : b.dataset.titulo || "";
   }
   // "Mais" mostra o nome da aba de dentro dele que estiver aberta
-  const extra = ["viab", "comunidade"].find((a) => visiveis.includes(a));
+  const extra = ["viab"].find((a) => visiveis.includes(a));       // 1.3: a Comunidade saiu do Mais
   if ($("aba-mais")) {
     $("aba-mais").classList.toggle("ativa", extra === visiveis[0]);
     $("aba-mais").classList.toggle("direita", Boolean(extra) && extra === visiveis[1]);

@@ -516,18 +516,64 @@ class Banco:
 
     def fatos(self, poco_id: str | None = None, *, tipo: str | None = None,
               fonte_rel: str | None = None, pagina: int | None = None,
-              origem: str | None = None) -> list[dict]:
+              origem: str | None = None, documento: str | None = None) -> list[dict]:
+        """`documento`: o arquivo deste projeto (rel). Casa o fato transcrito nele aqui e também o que veio da
+        comunidade, que não sabe o caminho local de quem transcreveu: pelo SHA-256 ou pelo caminho no REATE (1.3)."""
         cond, args = [], []
         for campo, valor in (("poco_id", poco_id), ("tipo", tipo), ("fonte_rel", fonte_rel),
                              ("pagina", pagina), ("origem", origem)):
             if valor is not None:
                 cond.append(f"{campo} = ?")
                 args.append(valor)
+        if documento is not None:
+            a = self.arquivo(documento) or {}
+            cond.append("(fonte_rel = ? OR (? IS NOT NULL AND fonte_sha256 = ?) OR (? IS NOT NULL AND fonte_caminho = ?))")
+            args += [documento, a.get("sha256"), a.get("sha256"), a.get("caminho_remoto"), a.get("caminho_remoto")]
         where = ("WHERE " + " AND ".join(cond)) if cond else ""
         with self.conexao() as c:
             q = c.execute(f"SELECT * FROM fatos {where} "
                           f"ORDER BY poco_id, COALESCE(prof_topo, 1e12), tipo, criado_em", args)
             return [self._fato(r) for r in q]
+
+    def documentos_por_fonte(self) -> tuple[dict, dict]:
+        """Os arquivos deste projeto pelo SHA-256 e pelo caminho no REATE: {sha: rel}, {caminho: rel}."""
+        sha, cam = {}, {}
+        with self.conexao() as c:
+            for rel, h, caminho in c.execute("SELECT rel, sha256, caminho_remoto FROM arquivos ORDER BY rel"):
+                if h:
+                    sha.setdefault(h, rel)
+                if caminho:
+                    cam.setdefault(caminho, rel)
+        return sha, cam
+
+    def documento_do_fato(self, f: dict, indice: tuple[dict, dict] | None = None) -> str | None:
+        """O arquivo deste projeto de onde o fato saiu (o seu, ou o mesmo documento que outra pessoa transcreveu)."""
+        if f.get("fonte_rel") and self.arquivo(f["fonte_rel"]):
+            return f["fonte_rel"]
+        sha, cam = indice or self.documentos_por_fonte()
+        return sha.get(f.get("fonte_sha256") or "") or cam.get(f.get("fonte_caminho") or "")
+
+    def anotar_documentos(self, fatos: list[dict]) -> list[dict]:
+        """Cada fato ganha `doc_local`: o arquivo deste projeto onde abrir a página de origem (ou None)."""
+        indice = self.documentos_por_fonte()
+        for f in fatos:
+            f["doc_local"] = self.documento_do_fato(f, indice)
+        return fatos
+
+    def comunidade_por_poco(self) -> dict[str, dict]:
+        """Poços com dados que vieram da comunidade (base ou pacote): {poço: {fatos, interpretacoes, autores}}."""
+        r: dict[str, dict] = {}
+        with self.conexao() as c:
+            for tabela in ("fatos", "interpretacoes"):
+                for poco, n, autores in c.execute(
+                        f"SELECT poco_id, count(*), group_concat(DISTINCT autor) FROM {tabela} "
+                        "WHERE origem IN ('base', 'pacote') GROUP BY poco_id"):
+                    d = r.setdefault(poco, {"fatos": 0, "interpretacoes": 0, "autores": []})
+                    d[tabela] = n
+                    for a in (autores or "").split(","):
+                        if a and a not in d["autores"]:
+                            d["autores"].append(a)
+        return r
 
     def fato(self, id_: str) -> dict | None:
         with self.conexao() as c:

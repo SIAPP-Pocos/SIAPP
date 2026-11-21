@@ -167,7 +167,7 @@ class DocumentosAPI:
         base = {"rel": rel, "nome": os.path.basename(caminho), "pagina": pagina,
                 "n_paginas": total, "bacia": bacia, "poco": poco, "processado": texto is not None,
                 "poco_id": self._id_poco(poco) if poco else "",
-                "fatos": self._banco.fatos(fonte_rel=rel, pagina=pagina),
+                "fatos": self._banco.fatos(documento=rel, pagina=pagina),
                 "sumario": md.sumario(caminho) if caminho.lower().endswith(".pdf") else []}
         if texto is None:
             return {**base, "metodo": "imagem", "titulo": "", "segmentos": [], "palavras": [],

@@ -52,6 +52,7 @@ VERSOES_ACEITAS = (1, 2, 3)
 LICENCA = "CC-BY-4.0"
 URL_ULTIMA_BASE = "https://api.github.com/repos/SIAPP-Pocos/Comunidade/releases/latest"
 NOME_ARQUIVO_BASE = "siapp-dados.sqlite"
+NOME_RESUMO_BASE = "resumo.json"          # o que tem na base, publicado junto (repositório Comunidade, 21/11)
 
 # Tipos de fato aceitos. A interface oferece estes; o validador do repositório Comunidade
 # usa a mesma lista.
@@ -260,7 +261,30 @@ def previa(banco: Banco, p: dict) -> dict:
             "versao_formato": p.get("versao_formato"), "itens": novos,
             "correcoes_repetidas": repetidas, "fatos_repetidos": fatos_repetidos,
             "interpretacoes_repetidas": interp_repetidas,
-            "conflitos": conflitos, "ja_importado": ja}
+            "conflitos": conflitos, "ja_importado": ja, **documentos_do_pacote(banco, p)}
+
+
+def documentos_do_pacote(banco: Banco, p: dict) -> dict:
+    """Os poços do pacote e os documentos citados que este projeto ainda não tem (1.3). Só lista: nada é
+    marcado para baixar; quem quiser baixa pelo Acervo."""
+    sha, cam = banco.documentos_por_fonte()
+    pocos, faltam, vistos = set(), [], set()
+    itens = [(f["poco"], f.get("fonte") or {}) for f in p.get("fatos", [])]
+    itens += [(i["poco"], {"sha256": (i.get("arquivo") or {}).get("sha256"),
+                           "caminho_remoto": (i.get("arquivo") or {}).get("caminho_remoto"),
+                           "bacia": (i.get("arquivo") or {}).get("bacia")}) for i in p.get("interpretacoes", [])]
+    for poco, fo in itens:
+        pocos.add(poco)
+        chave = fo.get("sha256") or fo.get("caminho_remoto")
+        if not chave or chave in vistos:
+            continue
+        vistos.add(chave)
+        if not (sha.get(fo.get("sha256") or "") or cam.get(fo.get("caminho_remoto") or "")):
+            faltam.append({"poco": poco, "caminho_remoto": fo.get("caminho_remoto") or "",
+                           "bacia": fo.get("bacia") or "",
+                           "nome": (fo.get("caminho_remoto") or "").rstrip("/").split("/")[-1]})
+    faltam.sort(key=lambda d: (d["poco"], d["nome"]))
+    return {"pocos": sorted(pocos), "documentos_faltando": faltam}
 
 
 def importar(banco: Banco, p: dict, arquivo: str = "") -> dict:
@@ -321,7 +345,8 @@ def aplicar_base(banco: Banco, caminho_sqlite: str) -> dict:
         vocab = [dict(r) for r in b.execute("SELECT * FROM vocab")]
         fatos = [dict(r) for r in b.execute("SELECT * FROM fatos")]
         apelidos = [dict(r) for r in b.execute("SELECT * FROM apelidos")]
-        n_contrib = b.execute("SELECT count(*) FROM contribuicoes").fetchone()[0]
+        ids_contrib = [r[0] for r in b.execute("SELECT id FROM contribuicoes")]
+        n_contrib = len(ids_contrib)
         tabelas = {r[0] for r in b.execute("SELECT name FROM sqlite_master WHERE type = 'table'")}
         interp = ([dict(r) for r in b.execute("SELECT * FROM interpretacoes")]
                   if "interpretacoes" in tabelas else [])     # bases compiladas antes da v3 não têm
@@ -366,7 +391,57 @@ def aplicar_base(banco: Banco, caminho_sqlite: str) -> dict:
                   "fatos": len(fatos), "apelidos": len(apelidos), "interpretacoes": n_interp}
         banco.registrar_pacote(pid, "base", arquivo=os.path.basename(caminho_sqlite),
                                criado_em=meta.get("gerado_em", ""), resumo=resumo, c=c)
+        banco.definir_meta("base_contribuicoes", json.dumps(ids_contrib), c)   # para saber o que é novo (1.3)
     return resumo
+
+
+def consultar_base(url: str = URL_ULTIMA_BASE, timeout: float = 10) -> dict | None:
+    """A última versão publicada da base, sem baixá-la: etiqueta, data e o resumo.json (pequeno), se houver.
+    None quando ainda não há nenhuma publicada."""
+    try:
+        r = requests.get(url, timeout=timeout, headers={"Accept": "application/vnd.github+json"})
+    except requests.exceptions.RequestException as e:
+        raise ErroComunidade(f"Sem conexão com o GitHub ({type(e).__name__}).") from e
+    if r.status_code == 404:
+        return None
+    if r.status_code != 200:
+        raise ErroComunidade(f"O GitHub respondeu HTTP {r.status_code}.")
+    rel = r.json()
+    info = {"versao": rel.get("tag_name") or "", "publicada_em": rel.get("published_at") or "", "resumo": None}
+    asset = next((a for a in rel.get("assets", []) if a.get("name") == NOME_RESUMO_BASE), None)
+    if asset:
+        try:
+            d = requests.get(asset["browser_download_url"], timeout=timeout)
+            if d.status_code == 200 and len(d.content) < 5_000_000:
+                resumo = d.json()
+                if isinstance(resumo, dict) and resumo.get("formato") == "siapp-dados-resumo":
+                    info["resumo"] = resumo
+        except (requests.exceptions.RequestException, ValueError):
+            pass                       # sem o resumo, avisa só que há versão nova
+    return info
+
+
+def novidades(banco: Banco, info: dict | None) -> dict:
+    """Compara a última base publicada com a que este projeto aplicou: há versão nova? o que entrou?"""
+    bases = banco.pacotes("base")
+    local = bases[0]["id"].split(":", 1)[1] if bases else None
+    if not info:
+        return {"publicada": False, "local": local, "ha_novidade": False}
+    nova = bool(info["versao"]) and info["versao"] != local
+    r = {"publicada": True, "local": local, "versao": info["versao"], "publicada_em": info["publicada_em"],
+         "ha_novidade": nova, "pacotes_novos": [], "contagens": None}
+    resumo = info.get("resumo")
+    if resumo:
+        r["contagens"] = resumo.get("contagens")
+        try:
+            ja = set(json.loads(banco.meta("base_contribuicoes") or "[]")) if local else set()
+        except ValueError:
+            ja = set()
+        if nova:
+            r["pacotes_novos"] = [{k: x.get(k) for k in ("autor", "instituicao", "criado_em", "correcoes",
+                                                        "palavras", "fatos", "interpretacoes", "pocos")}
+                                  for x in resumo.get("pacotes", []) if x.get("id") not in ja]
+    return r
 
 
 def baixar_base(destino: str, url: str = URL_ULTIMA_BASE, timeout: float = 30) -> dict:

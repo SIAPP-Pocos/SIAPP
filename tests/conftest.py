@@ -46,6 +46,13 @@ class ArvoreFalsa:
                 for i in self.arvore[caminho]]
 
 
+def _sem_github(monkeypatch):
+    """1.3: ao abrir o projeto, o SIAPP procura base nova no GitHub. Nos testes, nunca vai à internet: a base
+    "ainda não foi publicada" (quem testa a novidade troca esta função)."""
+    from motor import comunidade as mc
+    monkeypatch.setattr(mc, "consultar_base", lambda *a, **k: None)
+
+
 @pytest.fixture
 def api(tmp_path, monkeypatch):
     """API da janela com a pasta de projeto apontando para um diretório temporário."""
@@ -54,6 +61,7 @@ def api(tmp_path, monkeypatch):
 
     pasta = tmp_path / "ambiente_teste"
     monkeypatch.setattr(base, "PASTA_PROJETO", str(pasta))
+    _sem_github(monkeypatch)
 
     class Janela:
         escolha = None          # resposta do diálogo de pasta (None = a pasta do projeto)
@@ -105,6 +113,7 @@ def janela(tmp_path, monkeypatch, navegador, request):
 
     pasta = tmp_path / "ambiente_teste"
     monkeypatch.setattr(base, "PASTA_PROJETO", str(pasta))
+    _sem_github(monkeypatch)
     # os avisos de primeira vez (OCR, avaliação, modelo 3D) já vistos: os testes clicam direto nos botões;
     # test_avisos_de_primeira_vez apaga a marca para conferir o aviso
     pasta.mkdir(parents=True, exist_ok=True)

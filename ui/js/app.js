@@ -39,6 +39,7 @@ function aoAbrirProjeto(r) {
   $("cfg-pasta").textContent = r.pasta || "";
   mostrarProjetoNoTopo(r.pasta);
   carregarInicio();
+  if (!MODO_JANELA) setTimeout(() => verificarBaseComunidade(false), 1500);   // 1.3: base nova? (uma vez por dia)
 }
 
 function ligar(id, evento, fn) { $(id)[evento] = fn; }

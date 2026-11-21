@@ -99,9 +99,9 @@ existe e a validação científica ficam **para o final**.
       corrigindo a leitura do OCR ("Corrigir em todos os documentos") ou ensinando uma palavra certa ao SIAPP ("Adicionar
       ao dicionário"), porque os dois botões ficam juntos no mesmo editor. Por enquanto, só a ajuda "Como usar o
       SIAPP" explica a diferença.
-- [ ] Comunidade fora do menu **Mais** (20/11): é a parte que o SIAPP mais divulga (a comunidade entre universidades),
+- [x] Comunidade fora do menu **Mais** (20/11; feito na 1.3, aba própria no topo): é a parte que o SIAPP mais divulga (a comunidade entre universidades),
       então merece um lugar à vista no topo, como as abas numeradas, em vez de ficar escondida em Mais.
-- [ ] Comunidade: o dado transcrito que chega por pacote ou pela base não aparece marcado na página quando o documento é
+- [x] Comunidade (feito na 1.3, pelo SHA-256 ou pelo caminho no REATE): o dado transcrito que chega por pacote ou pela base não aparece marcado na página quando o documento é
       baixado depois (a busca é pelo caminho local de quem transcreveu; ligar pelo SHA-256 ou pelo caminho no REATE). A
       prévia da importação deve listar os poços e quais arquivos faltam (nada pré-selecionado para baixar).
 - [ ] **Assinatura digital (urgente, 18/11):** um usuário com o Controle Inteligente de Aplicativos do Windows 11 não
@@ -109,9 +109,13 @@ existe e a validação científica ficam **para o final**.
       Falta: o Ruan pedir à SignPath Foundation e, aprovado, configurar o segredo e as variáveis no repositório.
 - [ ] Perfis: nomes de topos próximos se sobrepõem na coluna de profundidade (ex.: "Penedo" e "PDO-1" no 3-PIR-13-AL).
 - [ ] Modelo 3D, PNG exportado: os rótulos dos eixos ("norte (km)", números) caem por cima da legenda embaixo.
-- [ ] Comunidade pelo GitHub, direto do app (em análise): entrar com a conta do GitHub (código de dispositivo), enviar o
-      pacote como pedido de inclusão no repositório Comunidade e puxar a base de lá; a exportação em arquivo continua. O repositório
-      Comunidade já é público (21/11).
+- [ ] Comunidade pelo GitHub, direto do app. Decidido em 21/11: conta do GitHub obrigatória para enviar pelo app (a
+      exportação em arquivo continua para quem não tem); no começo só o Ruan aprova; a base sai logo depois de cada aceite.
+      - [x] Fase 1 (1.3): puxar e mostrar. O repositório Comunidade publica a base sozinho a cada aceite (com
+        `resumo.json`); o SIAPP avisa da base nova (uma vez por dia), mostra quem mandou o quê e marca os poços com dados
+        da comunidade no mapa, no catálogo e na ficha.
+      - [ ] Fase 2: enviar pelo app. Entrar com a conta do GitHub (código de dispositivo: o Ruan cria um OAuth App com
+        Device Flow) e mandar o pacote como pull request no repositório Comunidade.
 
 ## No final — melhorias do que já existe
 

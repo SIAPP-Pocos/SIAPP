@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 import threading
 
+from motor import pocos as mpo
 from motor import projeto as mp
 from motor import reate
 
@@ -77,6 +78,7 @@ class CatalogoAPI:
         if not str(poco.get("caminho") or "").startswith(conexao.get("base") or self._base_remota):
             raise ErroUsuario(f"O caminho guardado de {nome_pasta} não é da bacia {bacia}. Liste a categoria de novo.")
         self._projeto.registrar("abriu_poco_no_catalogo", bacia=bacia, categoria=categoria, poco=nome_pasta)
+        r["comunidade"] = self._comunidade_dos_nomes(q.get("nome", "") for q in r["pocos"])
         return {"conexao": conexao, "lista": r, "poco": poco}
 
     def _exigir_conexao(self):
@@ -105,7 +107,20 @@ class CatalogoAPI:
         self._projeto.registrar("listou_categoria", bacia=bacia, categoria=categoria,
                                 pocos=len(r["pocos"]), partes=len(r["partes"]))
         return {"categoria": categoria, "bacia": bacia, **r,
-                "salvo_em": self._projeto.rel(arquivo)}
+                "salvo_em": self._projeto.rel(arquivo),
+                "comunidade": self._comunidade_dos_nomes(p["nome"] for p in r["pocos"])}
+
+    def _comunidade_dos_nomes(self, nomes) -> dict:
+        """1.3: {nome da pasta no portal: dados da comunidade do poço}, só dos poços que têm algum."""
+        com = self._banco.comunidade_por_poco()
+        if not com:
+            return {}
+        saida = {}
+        for n in nomes:
+            d = com.get(mpo.resolver(self._banco, n))
+            if d:
+                saida[n] = d
+        return saida
 
     def _ao_listar_pocos(self, bacia, categoria, pocos):
         """Gancho: outras partes da ponte registram os poços vistos no portal."""

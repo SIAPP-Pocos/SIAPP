@@ -400,12 +400,15 @@ def pocos_mapa(banco: Banco, *, bacia: str = "", texto: str = "", terra_mar: str
                      EXISTS (SELECT 1 FROM reate r WHERE r.poco_id = p.id) AS reate,
                      (SELECT count(*) FROM arquivos a WHERE a.poco_id = p.id) AS baixados,
                      (SELECT count(*) FROM fatos f WHERE f.poco_id = p.id) AS fatos,
-                     ac.situacao AS acervo
+                     ac.situacao AS acervo,
+                     (SELECT count(*) FROM fatos f WHERE f.poco_id = p.id AND f.origem IN ('base', 'pacote'))
+                     + (SELECT count(*) FROM interpretacoes i WHERE i.poco_id = p.id
+                        AND i.origem IN ('base', 'pacote')) AS comunidade
               FROM pocos p LEFT JOIN ac ON ac.poco_id = p.id
               WHERE {' AND '.join(cond)} LIMIT ?"""
     with banco.leitura() as c:
         linhas = c.execute(sql, [*args, limite + 1]).fetchall()
-    colunas = (*_CAMPOS_MAPA, "reate", "baixados", "fatos", "acervo")       # lat/lon com 5 casas (~1 m)
+    colunas = (*_CAMPOS_MAPA, "reate", "baixados", "fatos", "acervo", "comunidade")       # lat/lon com 5 casas (~1 m)
     linhas = [list(r) for r in linhas[:limite + 1]]
     truncado = len(linhas) > limite
     del linhas[limite:]
@@ -450,4 +453,5 @@ def ficha(banco: Banco, poco_id: str) -> dict | None:
     d = dict(p) if p else {"id": poco_id}
     d["dados_anp"] = json.loads(d.get("dados_anp") or "{}")
     return {"poco": d, "no_cadastro": p is not None, "reate": reate, "arquivos": arquivos,
-            "apelidos": apelidos, "apelidos_origem": ap, "fatos": banco.fatos(poco_id), "curvas": curvas}
+            "apelidos": apelidos, "apelidos_origem": ap,
+            "fatos": banco.anotar_documentos(banco.fatos(poco_id)), "curvas": curvas}

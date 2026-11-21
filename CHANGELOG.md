@@ -5,7 +5,23 @@ versões seguem [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 
 ## [Não lançado]
+
+## [1.3.0] — 2026-11-21
+A Comunidade ligada ao GitHub (fase 1: puxar e mostrar) e a tela de apoio refeita.
 ### Adicionado
+- **Aviso de base nova da comunidade**: ao abrir o projeto, o SIAPP confere no repositório Comunidade, no GitHub, se
+  saiu uma base nova (no máximo uma vez por dia, sem baixar a base). Se saiu, a aba Comunidade ganha um ponto azul e
+  mostra quem mandou o quê desde a sua (autor, instituição, quantos dados e de quais poços). **Procurar versão nova**
+  confere na hora; dá para desligar a consulta automática.
+- **Poços com dados da comunidade marcados**: no mapa (anel azul e o filtro "da comunidade" na legenda), na lista ao
+  lado do mapa, na lista de poços do catálogo (selo "C", com os autores na dica) e na ficha ("Dados transcritos (3, 2
+  da comunidade)").
+- **O dado da comunidade aparece na página do documento**: o dado transcrito por outra pessoa passa a aparecer na
+  página certa assim que você baixa o mesmo documento, que é reconhecido pelo conteúdo (SHA-256) ou pelo caminho no
+  REATE, onde quer que ele fique guardado no seu computador. Na ficha do poço, a página do dado vira link para abrir o
+  documento.
+- Prévia da importação de um pacote: lista os poços e os documentos citados que você ainda não tem (só a lista; nada
+  vem marcado para baixar).
 - **Tela "Apoie o SIAPP" refeita**: o mascote abre a tela dizendo que doar é opcional; "Quem faz o SIAPP" conta a
   história do projeto (do primeiro PIBIC, em 2023-24, até a ferramenta completa, em 2025-26), com link para o LinkedIn
   do autor e os trabalhos publicados nos PIBICs; Pix com valores prontos (Um cafezinho R$ 5, Um lanche R$ 15, Uma tarde de código R$ 30) ou outro valor,
@@ -14,6 +30,9 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
   tela de notebook (1366 × 768) sem rolar.
 - Biblioteca nova: `segno` (BSD-3-Clause), que desenha o QR Code sem internet.
 ### Alterado
+- **Comunidade fora do menu Mais**: virou aba própria no topo, depois de 6. Modelo 3D. Em Mais fica a Viabilidade.
+- Repositório Comunidade: a base passa a ser publicada sozinha logo depois de cada pacote aceito, com um `resumo.json`
+  do que tem nela.
 - Endereços no GitHub: a organização continua `SIAPP-Pocos` (agora com o nome de exibição "Sistema Integrado de
   Aquisição e Processamento de Perfis") e o repositório de dados passou a se chamar **Comunidade**, público. Os links do
   programa, do README e da política de assinatura apontavam para `SIAPP-Perfis`, que não chegou a existir: agora
