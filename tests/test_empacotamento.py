@@ -70,3 +70,9 @@ def test_assinatura_signpath_preparada():
     assert "secrets.SIGNPATH_API_TOKEN != ''" in fluxo and "startsWith(github.ref, 'refs/tags/v')" in fluxo
     assert "VersionInfoProductName=SIAPP" in ler("instalador", "siapp.iss")
     assert "StringStruct('ProductName', 'SIAPP')" in ler("instalador", "versao.modelo.txt")
+
+
+def test_notas_da_versao_citam_a_politica_de_assinatura():
+    """A SignPath Foundation pede "Code signing policy" na página de download (as notas de cada versão)."""
+    wf = open(os.path.join(RAIZ, ".github", "workflows", "instalador.yml"), encoding="utf-8").read()
+    assert "**Code signing policy:**" in wf and "SIAPP-Pocos/SIAPP/blob/main/" in wf and "CODE_SIGNING_POLICY.md)" in wf
