@@ -47,4 +47,5 @@ Os projetos, arquivos baixados e dados transcritos ficam só no computador de qu
 comunitária sai apenas quando a pessoa exporta um pacote e escolhe compartilhá-lo, com o nome que ela mesma informa.
 
 This program will not transfer any information to other networked systems unless specifically requested by the user
-or the person installing or operating it.
+or the person installing or operating it. The only exception is the once-a-day check for a newer version of SIAPP and
+of the community database (a plain request to `api.github.com`, carrying no user data), which can be turned off.
