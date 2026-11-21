@@ -236,7 +236,7 @@ class Projeto:
         return p
 
     # ------------------------------------------------------------ marca de mudança
-    IGNORAR_NA_MARCA = ("preferencias.json", "siapp.log", "atualizacao.json")
+    IGNORAR_NA_MARCA = ("preferencias.json", "siapp.log", "atualizacao.json", "versao-nova.json")
 
     def marca(self) -> str:
         """Uma "impressão" barata do estado da pasta do projeto (0.61): data e tamanho de cada arquivo e pasta dos dois

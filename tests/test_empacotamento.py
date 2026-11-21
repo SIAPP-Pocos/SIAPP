@@ -76,3 +76,18 @@ def test_notas_da_versao_citam_a_politica_de_assinatura():
     """A SignPath Foundation pede "Code signing policy" na página de download (as notas de cada versão)."""
     wf = open(os.path.join(RAIZ, ".github", "workflows", "instalador.yml"), encoding="utf-8").read()
     assert "**Code signing policy:**" in wf and "SIAPP-Pocos/SIAPP/blob/main/" in wf and "CODE_SIGNING_POLICY.md)" in wf
+
+
+def test_instalador_reabre_o_siapp_depois_da_atualizacao_de_dentro():
+    """1.3: o SIAPP abre o instalador com /SILENT /REABRIR e fecha; o instalador abre o SIAPP no fim."""
+    from motor import atualizacao as mat
+    with open(os.path.join(RAIZ, "instalador", "siapp.iss"), encoding="utf-8") as f:
+        iss = f.read()
+    assert re.search(r'Filename: "\{app\}\\SIAPP\.exe"; Flags: nowait skipifnotsilent; Check: Reabrir', iss)
+    assert "function Reabrir(): Boolean;" in iss and "'/REABRIR'" in iss
+    assert "/REABRIR" in mat.PARAMETROS_INSTALADOR and "/SILENT" in mat.PARAMETROS_INSTALADOR
+    # o nome que o SIAPP procura entre os arquivos da versão é o que o workflow anexa
+    with open(os.path.join(RAIZ, ".github", "workflows", "instalador.yml"), encoding="utf-8") as f:
+        wf = f.read()
+    assert "OutputBaseFilename=SIAPP-{#Versao}-instalador" in iss and "SIAPP-$v-instalador.exe" in wf
+    assert mat.RE_INSTALADOR.match("SIAPP-1.3.0-instalador.exe")

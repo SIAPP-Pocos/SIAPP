@@ -146,16 +146,27 @@ Precisa de internet. Comece por uma categoria pequena para ver o tempo.
       cada tipo de arquivo. "Achar dados no acervo" vem por objetivo ("Para achar um poço pelo nome"…), sem números.
 - [ ] Tema escuro: textos, botões e o QR continuam legíveis.
 
-## 1.3 — Comunidade no topo, aviso de base nova e tela de apoio
+## 1.3 — Comunidade no topo, aviso de base nova, atualização com um clique e tela de apoio
+
+- [ ] Instale a 1.3 por cima da 1.2, à mão (a 1.2 ainda não sabe se atualizar). Abra: Ajuda › **Procurar versão
+      nova** diz "Você já tem a versão mais nova do SIAPP (1.3.0)". Configurações: "Avisar quando sair versão nova do
+      SIAPP" vem marcada; a opção do `git pull` não aparece no SIAPP instalado.
+- [ ] Quando sair a próxima versão (1.3.1 ou 1.4.0): ao abrir o SIAPP 1.3, aparece no canto "Saiu o SIAPP …" e um
+      ponto verde no botão Ajuda. **Ver e atualizar** mostra o que mudou. **Atualizar agora**: a barra de baixo mostra
+      o download em %; o SIAPP fecha, aparece só a barra de progresso do instalador, e o SIAPP abre de novo sozinho com
+      "SIAPP atualizado: 1.3.0 → …". Os projetos estão iguais.
+- [ ] Com um download do REATE em andamento, **Atualizar agora** avisa antes ("Atualizar mesmo assim").
+- [ ] **Pular esta versão**: o ponto some e o aviso não volta ao reabrir; Ajuda › "Atualizar o SIAPP para a …"
+      continua lá.
 
 - [ ] A aba **Comunidade** fica no topo, depois de 6. Modelo 3D, com o desenho de duas pessoas. **Mais ▾** só tem a
       Viabilidade.
 - [ ] Abra o projeto com internet. Enquanto o repositório Comunidade não tiver nenhum pacote aceito, nada aparece.
-      Comunidade › **Procurar versão nova**: "A base da comunidade ainda não foi publicada…".
+      Comunidade › **Procurar base nova**: "A base da comunidade ainda não foi publicada…".
 - [ ] Exporte um pacote seu (Comunidade › Exportar pacote) e mande para o repositório Comunidade pelo site (Add file ›
       Upload files em `contribuicoes/`, como pull request). Aceite o pull request: em Actions, "publicar base" roda e
       cria a Release `v2026.11.0` com `siapp-dados.sqlite`, `vocabulario.json` e `resumo.json`.
-- [ ] No SIAPP, **Procurar versão nova**: a aba Comunidade ganha um ponto azul e o cartão "Base comunitária" mostra
+- [ ] No SIAPP, **Procurar base nova**: a aba Comunidade ganha um ponto azul e o cartão "Base comunitária" mostra
       "Base nova: v2026.11.0" com o seu nome, quantos dados e de quais poços. **Atualizar pela internet**: o ponto some.
 - [ ] Feche e abra o SIAPP no mesmo dia: não consulta de novo (o aviso volta só se houver base nova). Desmarque
       "Procurar sozinho ao abrir o projeto" e reabra: nada é consultado.

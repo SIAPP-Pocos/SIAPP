@@ -7,11 +7,16 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 ## [Não lançado]
 
 ## [1.3.0] — 2026-11-21
-A Comunidade ligada ao GitHub (fase 1: puxar e mostrar) e a tela de apoio refeita.
+A Comunidade ligada ao GitHub (fase 1: puxar e mostrar), a atualização com um clique e a tela de apoio refeita.
 ### Adicionado
+- **Atualização com um clique**: ao abrir, o SIAPP procura versão nova no GitHub (no máximo uma vez por dia). Se
+  houver, um aviso no canto diz "Saiu o SIAPP X.Y.Z" e **Ver e atualizar** mostra o que mudou. **Atualizar agora**
+  baixa o instalador, confere o arquivo pelo SHA-256 publicado no GitHub, fecha o SIAPP, instala sem perguntas e abre
+  de novo sozinho, com os projetos onde estavam. Também em **Ajuda › Procurar versão nova**; dá para pular uma versão
+  ou desligar o aviso em Configurações. Vale daqui para a frente: quem está na 1.2 instala a 1.3 à mão uma vez.
 - **Aviso de base nova da comunidade**: ao abrir o projeto, o SIAPP confere no repositório Comunidade, no GitHub, se
   saiu uma base nova (no máximo uma vez por dia, sem baixar a base). Se saiu, a aba Comunidade ganha um ponto azul e
-  mostra quem mandou o quê desde a sua (autor, instituição, quantos dados e de quais poços). **Procurar versão nova**
+  mostra quem mandou o quê desde a sua (autor, instituição, quantos dados e de quais poços). **Procurar base nova**
   confere na hora; dá para desligar a consulta automática.
 - **Poços com dados da comunidade marcados**: no mapa (anel azul e o filtro "da comunidade" na legenda), na lista ao
   lado do mapa, na lista de poços do catálogo (selo "C", com os autores na dica) e na ficha ("Dados transcritos (3, 2

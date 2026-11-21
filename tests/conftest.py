@@ -49,8 +49,10 @@ class ArvoreFalsa:
 def _sem_github(monkeypatch):
     """1.3: ao abrir o projeto, o SIAPP procura base nova no GitHub. Nos testes, nunca vai à internet: a base
     "ainda não foi publicada" (quem testa a novidade troca esta função)."""
+    from motor import atualizacao as mat
     from motor import comunidade as mc
     monkeypatch.setattr(mc, "consultar_base", lambda *a, **k: None)
+    monkeypatch.setattr(mat, "consultar", lambda *a, **k: None)          # e versão nova do SIAPP, também não
 
 
 @pytest.fixture

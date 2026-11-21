@@ -161,7 +161,7 @@ const COMO_USAR = [
       "Envie o arquivo para quem quiser. Quem recebe usa **Escolher pacote…** e vê o que entra antes de confirmar. " +
         "Se uma correção do pacote discordar de uma sua, a sua continua valendo.",
       "Quando sai uma base comunitária nova, a aba **Comunidade** ganha um ponto azul e mostra quem mandou o quê. " +
-        "**Atualizar pela internet** traz tudo; **Procurar versão nova** confere na hora.",
+        "**Atualizar pela internet** traz tudo; **Procurar base nova** confere na hora.",
       "No mapa de **4. Poços**, o anel azul marca os poços com dados da comunidade. Na ficha, clique na página " +
         "do dado para abrir o documento, se você já o tiver baixado.",
       "**Painel de preenchimento** mostra quanto do acervo já foi preenchido e quem contribuiu. " +
@@ -181,6 +181,8 @@ const COMO_USAR = [
         "junto com a dúvida.",
       "**Ajuda** › **Limites e confiabilidade** explica o que o OCR consegue e o que não consegue.",
       "**Ajuda** › **Atalhos de teclado** lista e deixa mudar os atalhos.",
+      "Muitos problemas já foram corrigidos numa versão nova: **Ajuda** › **Procurar versão nova** confere e, se houver, " +
+        "atualiza com um clique, sem perder nada dos projetos.",
     ],
     dica: "Ainda com dúvida? Escreva em github.com/SIAPP-Pocos/SIAPP (Discussions ou Issues).",
     ir: null,

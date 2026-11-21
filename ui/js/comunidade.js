@@ -56,7 +56,7 @@ async function carregarContribuir() {
 // ------------------------------------------------- 1.3: base nova no repositório Comunidade
 let novidadeBase = null;      // a última resposta de verificar_base
 
-// Ao abrir o projeto (sem barulho: sem internet, nada aparece) ou pelo botão "Procurar versão nova" (forcar).
+// Ao abrir o projeto (sem barulho: sem internet, nada aparece) ou pelo botão "Procurar base nova" (forcar).
 async function verificarBaseComunidade(forcar = false, botao = null) {
   let r;
   if (forcar) r = await chamar(botao, "verificar_base", true);
@@ -814,6 +814,6 @@ function ligarComunidade() {
     const ligado = $("com-auto").checked;
     const r = await chamar(null, "comunidade_verificar_sozinho", ligado);
     if (r.ok) status(ligado ? "O SIAPP vai procurar base nova ao abrir o projeto, no máximo uma vez por dia."
-                            : "O SIAPP não procura mais sozinho. Use “Procurar versão nova” quando quiser.", "ok");
+                            : "O SIAPP não procura mais sozinho. Use “Procurar base nova” quando quiser.", "ok");
   };
 }

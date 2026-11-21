@@ -51,6 +51,8 @@ async function iniciar() {
   $("versao").textContent = "v" + r.versao;
   const ajuda = $("ini-pasta-ajuda");
   limpar(ajuda);
+  // o "git pull" do atalho só vale para a pasta clonada; instalado, a versão nova vem pelo aviso (1.3)
+  $("cfg-atualizar-linha").hidden = Boolean(r.instalado);
   if (r.instalado) {
     ajuda.append("Os seus projetos ficam em ", el("strong", "", r.pasta_projetos),
                  ". O diálogo já abre no projeto principal: é só confirmar.");
@@ -159,10 +161,12 @@ async function iniciar() {
   if (!projetoAberto && est.ok && est.existe_projeto && prefs && prefs.abrir_ao_iniciar) {
     if (await abrirProjetoSozinho()) chamar(null, "restaurar_janelas");
     avisarAtualizacao();
+    setTimeout(() => procurarVersaoNova(false), 2500);      // 1.3: versão nova do SIAPP? (uma vez por dia)
     return;
   }
   if (projetoAberto) chamar(null, "restaurar_janelas");
   avisarAtualizacao();
+  setTimeout(() => procurarVersaoNova(false), 2500);
   status("Pronto. Comece abrindo o projeto (Início).");
 }
 

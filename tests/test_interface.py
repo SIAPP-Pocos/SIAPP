@@ -2897,3 +2897,37 @@ def test_comunidade_no_topo_avisa_base_nova_e_liga_o_dado_a_pagina(janela, monke
     assert "1 da comunidade" in p.text_content("#fi-corpo")
     assert "Abrir x.pdf, página 3" in p.get_attribute("#fi-corpo table.fatos button.link-botao", "title")
     assert not janela.erros_js, janela.erros_js
+
+
+def test_aviso_de_versao_nova_do_siapp(janela, monkeypatch):
+    """1.3: ao abrir, versão nova no GitHub vira um aviso no canto, um ponto no botão Ajuda e o item "Atualizar o
+    SIAPP"; a janela mostra o que mudou. Rodando do código (como nos testes), não instala: mostra a página."""
+    from motor import atualizacao as mat
+    from motor import projeto as mp
+    info = {"versao": "9.1.0", "atual": mp.VERSAO_SIAPP, "nova": True, "publicada_em": "2026-12-01T10:00:00Z",
+            "notas": "### Adicionado\n- **Mapa** mais rápido.\n  Muito mais.\n### Corrigido\n- Um erro.",
+            "pagina": "https://github.com/SIAPP-Pocos/SIAPP/releases/tag/v9.1.0",
+            "instalador": {"nome": "SIAPP-9.1.0-instalador.exe", "url": "u", "bytes": 80_000_000, "sha256": ""}}
+    monkeypatch.setattr(mat, "consultar", lambda *a, **k: info)
+    p = janela.page
+    janela.esperar("document.getElementById('status').textContent.startsWith('Pronto')")
+    janela.api._guardar_estado_versao(consulta={})              # a consulta da abertura (sem versão) fica para trás
+    p.evaluate("procurarVersaoNova(false)")                       # o que roda 2,5 s depois de abrir
+    janela.esperar("document.querySelector('#avisos .aviso-versao') !== null")
+    assert "Saiu o SIAPP 9.1.0" in p.text_content("#avisos .aviso-versao")
+    assert "com-aviso" in p.get_attribute("#btn-ajuda", "class")
+    p.click("#avisos .aviso-versao .btn:not(.secundario)")
+    janela.esperar("!document.getElementById('dialogo').hidden")
+    corpo = p.text_content("#dlg-corpo")
+    assert "Saiu o SIAPP 9.1.0!" in corpo and "Mapa mais rápido. Muito mais." in corpo and "Um erro." in corpo
+    assert "git pull" in corpo and p.locator("#versao-atualizar").count() == 0        # do código: não instala
+    assert p.get_attribute("#dlg-pe a.btn", "href") == info["pagina"]
+    p.click("#dlg-pe >> text=Pular esta versão")
+    janela.esperar("document.getElementById('dialogo').hidden")
+    assert "com-aviso" not in p.get_attribute("#btn-ajuda", "class")
+    p.click("#btn-ajuda")
+    assert p.is_visible("#menu-versao-nova") and "9.1.0" in p.text_content("#menu-versao-nova")
+    p.keyboard.press("Escape")
+    # Configurações: a caixa de avisar fica ligada; o "git pull do atalho" aparece só rodando do código
+    assert janela.api._preferencias().ler()["avisar_versao_nova"] is True
+    assert not janela.erros_js, janela.erros_js

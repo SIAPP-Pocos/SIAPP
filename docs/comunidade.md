@@ -75,7 +75,7 @@ Ao abrir o projeto, o SIAPP pergunta ao GitHub qual é a última Release (`motor
 uma vez por dia (a resposta fica no banco do projeto, `meta.comunidade_consulta`) e sem baixar a base, só o
 `resumo.json`. Sem internet, nada aparece. Se a versão publicada é outra que a aplicada, a aba **Comunidade** ganha um
 ponto azul e o cartão "Base comunitária" mostra quem mandou o quê desde a sua (`novidades`: os pacotes do `resumo.json`
-que não estavam na base aplicada, guardados em `meta.base_contribuicoes`). **Procurar versão nova** consulta na hora; a
+que não estavam na base aplicada, guardados em `meta.base_contribuicoes`). **Procurar base nova** consulta na hora; a
 caixa "Procurar sozinho ao abrir o projeto" desliga a consulta automática (`config.comunidade_auto`).
 
 ### O dado da comunidade na página do documento (1.3)

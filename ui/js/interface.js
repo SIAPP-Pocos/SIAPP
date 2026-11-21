@@ -87,6 +87,8 @@ const AJUDA = {
   },
   atalhos: () => abrirAtalhos(),
   novidades: () => abrirNovidades(),
+  versao: () => abrirVersaoNova(),
+  procurarversao: () => procurarVersaoNova(true, $("menu-procurar-versao")),
   diag: () => abrirConfig("diag"),
   doacao: () => abrirDoacao(),
   sobre: () => {

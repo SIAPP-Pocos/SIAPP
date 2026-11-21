@@ -338,12 +338,13 @@ class JanelasAPI:
     def aviso_atualizacao(self):
         """O lançador atualizou o SIAPP ao abrir? Mostra uma vez ("SIAPP atualizado: 0.57.0 → 0.58.0")."""
         caminho = os.path.join(base.PASTA_PROJETO, "atualizacao.json")      # gravado pelo lançador
+        depois_do_instalador = self._aviso_pos_atualizacao()               # 1.3: a atualização de dentro do SIAPP
         try:
             with open(caminho, encoding="utf-8") as f:
                 aviso = json.load(f)
             os.remove(caminho)
         except (OSError, ValueError):
-            return {"aviso": None}
+            return {"aviso": depois_do_instalador}
         return {"aviso": aviso}
 
     @resposta_segura

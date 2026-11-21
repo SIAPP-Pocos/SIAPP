@@ -1835,3 +1835,26 @@ p.criterio .ajuda { display: inline; }
 .previa-faltam { margin: 6px 0; }
 .previa-faltam ul { margin: 4px 0 0; padding-left: 18px; max-height: 160px; overflow: auto; }
 html[data-tema="escuro"] .com-novidade { background: #15263a; border-color: #2b4a70; }
+
+/* ---------- 1.3: versão nova do SIAPP ---------- */
+#btn-ajuda { position: relative; }
+#btn-ajuda.com-aviso::after { content: ""; position: absolute; top: 3px; right: 3px; width: 8px; height: 8px;
+  border-radius: 50%; background: var(--ok); box-shadow: 0 0 0 2px var(--painel); }
+.menu-item.menu-versao { color: var(--ok); font-weight: 700; }
+.aviso-versao { cursor: default; display: grid; gap: 8px; }
+.aviso-versao-botoes { display: flex; gap: 8px; }
+.versao-cab { display: flex; gap: 14px; align-items: center; margin-bottom: 4px; }
+.versao-masc { height: 96px; width: auto; flex: none; }
+.versao-fala { font: 700 18px var(--serif); margin: 0 0 4px; color: var(--tinta); }
+.versao-notas { max-height: 300px; overflow: auto; border: 1px solid var(--linha); border-radius: 8px; padding: 8px 14px;
+  background: var(--painel2); }
+.versao-notas h4 { margin: 10px 0 4px; font-size: 13px; }
+.versao-notas h4:first-child { margin-top: 2px; }
+.versao-notas ul { margin: 0 0 6px; padding-left: 18px; display: grid; gap: 4px; }
+.versao-notas p { margin: 4px 0; }
+.versao-como { margin: 10px 0 0; }
+.versao-msg { margin: 8px 0 0; font-weight: 600; }
+.versao-msg:empty { display: none; }
+.versao-msg.erro { color: var(--erro); }
+.versao-dlg .dlg-pe a.btn { text-decoration: none; display: inline-flex; align-items: center; }
+.aviso-versao-texto { margin: 0; }

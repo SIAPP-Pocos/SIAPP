@@ -62,6 +62,8 @@ Name: "{code:PastaDados}"; Flags: uninsneveruninstall
 
 [Run]
 Filename: "{app}\SIAPP.exe"; Description: "Abrir o SIAPP agora"; Flags: nowait postinstall skipifsilent
+; 1.3: atualização de dentro do SIAPP (motor/atualizacao.py): o instalador roda com /SILENT /REABRIR e abre o SIAPP no fim
+Filename: "{app}\SIAPP.exe"; Flags: nowait skipifnotsilent; Check: Reabrir
 
 [Messages]
 pt.FinishedLabel=O SIAPP foi instalado. Os seus projetos ficam na pasta escolhida e continuam lá mesmo se você desinstalar.
@@ -82,6 +84,17 @@ begin
     if CompareText(Copy(P, 1, 12), '/PASTADADOS=') = 0 then
       Result := RemoveQuotes(Copy(P, 13, Length(P)));
   end;
+end;
+
+// 1.3: /REABRIR (atualização feita pelo próprio SIAPP) abre o programa de novo quando termina
+function Reabrir(): Boolean;
+var
+  I: Integer;
+begin
+  Result := False;
+  for I := 1 to ParamCount do
+    if CompareText(ParamStr(I), '/REABRIR') = 0 then
+      Result := True;
 end;
 
 procedure InitializeWizard();

@@ -110,14 +110,33 @@ junto o `SIAPP-X.Y.Z-codigo-fonte.zip`: a licença (AGPL-3.0) dá a quem recebe 
 | | Pelo clone + atalho (quem desenvolve; hoje, o Ruan) | Pelo instalador (quem só usa) |
 |---|---|---|
 | De onde vem | GitHub, branch `main` | GitHub, página da versão (Releases) |
-| Quando atualiza | **a cada abertura pelo atalho**: o lançador faz `git fetch` e avança a pasta para a versão nova (só se nada foi mudado à mão; senão avisa e abre a versão que está); depois instala as bibliotecas novas, se houver | quando a pessoa baixa o instalador novo e instala por cima |
-| Aviso | "SIAPP atualizado: 0.67.2 → 0.68.0" na primeira abertura depois da atualização | — |
-| Desligar | Configurações › "Atualizar o SIAPP ao abrir" | — |
+| Quando atualiza | **a cada abertura pelo atalho**: o lançador faz `git fetch` e avança a pasta para a versão nova (só se nada foi mudado à mão; senão avisa e abre a versão que está); depois instala as bibliotecas novas, se houver | desde a 1.3, **com um clique dentro do SIAPP**: o aviso "Saiu o SIAPP X.Y.Z" › Atualizar agora (veja abaixo). Antes da 1.3, baixando o instalador novo e instalando por cima |
+| Aviso | "SIAPP atualizado: 0.67.2 → 0.68.0" na primeira abertura depois da atualização | o mesmo, depois que o instalador abre o SIAPP de novo |
+| Desligar | Configurações › "Atualizar o SIAPP ao abrir" | Configurações › "Avisar quando sair versão nova do SIAPP" (Ajuda › Procurar versão nova continua funcionando) |
 | Os dados | ficam em `ambiente_teste\` e `projetos\`, que o git não toca | ficam em `<pasta dos projetos>\Projetos\`, que o instalador não toca |
 | O que precisa ter | git e internet (sem eles, abre a versão que está) | nada |
 
-Falta, para quem usa o instalador, um aviso de "versão nova disponível" dentro do SIAPP: depende de o repositório ser
-público (a consulta às versões do GitHub sem login só funciona em repositório público).
+### Atualizar de dentro do SIAPP (1.3)
+
+`motor/atualizacao.py` e `ponte/atualizacao.py`:
+
+1. **Procurar.** Ao abrir, o SIAPP pergunta ao GitHub qual é a última versão (`releases/latest` de `SIAPP-Pocos/SIAPP`),
+   no máximo uma vez por dia (a resposta fica em `versao-nova.json`, na pasta do projeto principal). Sem internet,
+   nada aparece. Se a versão publicada é mais nova, aparece o aviso no canto ("Saiu o SIAPP X.Y.Z", com "Ver e
+   atualizar" e "Depois"), um ponto verde no botão Ajuda e o item **Ajuda › Atualizar o SIAPP para a X.Y.Z**.
+   **Ajuda › Procurar versão nova** consulta na hora. "Pular esta versão" para de avisar dela (avisa da próxima).
+2. **Mostrar o que mudou.** A janela mostra o texto da versão no GitHub (o trecho do CHANGELOG que o workflow põe lá).
+3. **Baixar e conferir.** "Atualizar agora" baixa `SIAPP-X.Y.Z-instalador.exe` para a pasta temporária do Windows
+   (`%TEMP%\SIAPP-atualizacao`), com o andamento na barra de baixo, e confere o tamanho e o **SHA-256 que o GitHub
+   publica** para o arquivo (`digest`). Não conferiu, apaga e não instala. Se houver download do REATE ou leitura de
+   documentos rodando, avisa antes.
+4. **Instalar e reabrir.** Abre o instalador com `/SILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS /REABRIR` e
+   fecha o SIAPP. O instalador não faz perguntas (reaproveita a pasta dos projetos da instalação anterior), mostra só
+   a barra de progresso e, por causa do `/REABRIR` (`[Run]` com `skipifnotsilent` em `siapp.iss`), abre o SIAPP no
+   fim, que mostra "SIAPP atualizado: 1.3.0 → X.Y.Z".
+
+Rodando do código (pasta clonada), o aviso aparece igual, mas a janela só mostra a página da versão e lembra do
+`git pull`. Quem está na 1.2 ou antes precisa instalar a 1.3 à mão uma vez: o aviso só existe da 1.3 em diante.
 
 ## Modo instalado, no código
 
@@ -129,7 +148,7 @@ público (a consulta às versões do GitHub sem login só funciona em repositór
 | `PASTA_DADOS` | pasta do clone | a de `SIAPP_DADOS`; senão a de `pasta_dados.txt`; senão `Documentos\SIAPP` |
 | Reabrir o SIAPP (trocar de projeto) | `pythonw siapp.py` pelo lançador | o próprio `SIAPP.exe` |
 | Atalho `SIAPP.lnk` na pasta | criado na primeira abertura | não (o instalador cria os do menu) |
-| Atualizar | `git pull` no lançador | instalar a versão nova por cima |
+| Atualizar | `git pull` no lançador | Ajuda › Atualizar o SIAPP (baixa, confere, instala por cima e reabre; 1.3) |
 
 O processo do OCR (multiprocessing, modo *spawn*) reabre o próprio `SIAPP.exe`; por isso `siapp.py` chama
 `multiprocessing.freeze_support()` antes de tudo.

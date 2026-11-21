@@ -22,6 +22,7 @@ from motor.downloads import FilaDownloads
 from . import base
 from .base import BaseAPI, ErroUsuario, mesma_pasta, resposta_segura
 from .arquivos import ArquivosAPI
+from .atualizacao import AtualizacaoAPI
 from .bloco import BlocoAPI
 from .catalogo import CatalogoAPI
 from .comunidade import ComunidadeAPI
@@ -45,7 +46,7 @@ TIPO_CONFERIDO = "1"
 
 class API(BaseAPI, JanelasAPI, PocosAPI, CatalogoAPI, DocumentosAPI, VocabularioAPI, ComunidadeAPI,
           FatosAPI, PerfisAPI, LevantamentoAPI, SecaoAPI, FerramentasAPI,
-          BlocoAPI, ExternosAPI, TiposAPI, ArquivosAPI, ProjetosAPI):
+          BlocoAPI, ExternosAPI, TiposAPI, ArquivosAPI, ProjetosAPI, AtualizacaoAPI):
     def __init__(self):
         self._janela = None
         self._janelas = {}            # abas destacadas em janela própria: {aba: janela}
