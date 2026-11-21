@@ -30,8 +30,9 @@ Todos os membros usam autenticação em dois fatores no GitHub e no SignPath.
 
 ## Privacidade (Privacy policy)
 
-O SIAPP não coleta dados de uso, não tem telemetria e não envia informação sobre quem o usa. Ele só se conecta à
-internet quando a pessoa pede uma ação que precisa disso, e só aos serviços públicos dessa ação:
+O SIAPP não coleta dados de uso, não tem telemetria e não envia informação sobre quem o usa. Ele se conecta à
+internet quando a pessoa pede uma ação que precisa disso, só aos serviços públicos dessa ação, e numa única consulta
+automática (veja a última linha da tabela):
 
 | Serviço | Quando |
 |---|---|
@@ -40,6 +41,7 @@ internet quando a pessoa pede uma ação que precisa disso, e só aos serviços 
 | Banco Central (`api.bcb.gov.br`) | Índices de preço e câmbio (Viabilidade) |
 | OpenStreetMap e Esri | Fundo dos mapas |
 | GitHub (`github.com`, `api.github.com`) | Modelos de OCR do Tesseract; base comunitária (botão Atualizar) |
+| GitHub (`api.github.com`), sozinho ao abrir | Desde a 1.3, no máximo uma vez por dia: pergunta qual é a última versão do SIAPP e da base comunitária (nada é enviado além do pedido). Desliga em Configurações e em Comunidade › "Procurar sozinho" |
 
 Os projetos, arquivos baixados e dados transcritos ficam só no computador de quem usa. O que vai para a base
 comunitária sai apenas quando a pessoa exporta um pacote e escolhe compartilhá-lo, com o nome que ela mesma informa.
