@@ -106,7 +106,13 @@ existe e a validação científica ficam **para o final**.
       prévia da importação deve listar os poços e quais arquivos faltam (nada pré-selecionado para baixar).
 - [ ] **Assinatura digital (urgente, 18/11):** um usuário com o Controle Inteligente de Aplicativos do Windows 11 não
       consegue abrir o SIAPP (código 4551). Pronto no workflow (SignPath, com aprovação manual; `docs/instalador.md`).
-      Falta: o Ruan pedir à SignPath Foundation e, aprovado, configurar o segredo e as variáveis no repositório.
+      **A SignPath Foundation recusou em 21/11** (o projeto ainda não tem visibilidade pública suficiente: estrelas,
+      forks, colaboradores, citações externas, apoio institucional); dá para pedir de novo depois. **Adiado (decisão de
+      21/11).** Caminhos quando for retomar: (1) pedir de novo à Foundation com mais sinais (DOI no Zenodo, página na
+      UFAL/NIT, trabalhos publicados, posts e citações); (2) certificado "Open Source Code Signing" da Certum em nuvem
+      (SimplySign, pessoa física, cerca de € 49), que exige assinar no computador do Ruan com o código do celular, ou
+      seja, um passo manual na montagem; (3) assinatura paga da SignPath. O Artifact Signing da Microsoft não aceita
+      pessoa física fora dos EUA e do Canadá. Enquanto isso, o guia do instalador explica como liberar o SIAPP no 4551.
 - [ ] Perfis: nomes de topos próximos se sobrepõem na coluna de profundidade (ex.: "Penedo" e "PDO-1" no 3-PIR-13-AL).
 - [ ] Modelo 3D, PNG exportado: os rótulos dos eixos ("norte (km)", números) caem por cima da legenda embaixo.
 - [ ] Comunidade pelo GitHub, direto do app. Decidido em 21/11: conta do GitHub obrigatória para enviar pelo app (a
