@@ -1,7 +1,7 @@
 SIAPP — Sistema Integrado de Aquisição e Processamento de Perfis
 Copyright (C) 2026 Ruan da Silva Nobre
 Licença: GNU Affero General Public License, versão 3 (AGPL-3.0) — texto completo no arquivo LICENSE.
-Código-fonte: https://github.com/SIAPP-Perfis/SIAPP
+Código-fonte: https://github.com/SIAPP-Pocos/SIAPP
 
 O instalador do SIAPP inclui os componentes abaixo, de terceiros, cada um com a sua licença. Eles são usados sem
 modificação. As versões exatas de cada instalador estão na pasta _internal (arquivos *.dist-info de cada pacote, com o

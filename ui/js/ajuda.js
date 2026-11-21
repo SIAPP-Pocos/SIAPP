@@ -179,7 +179,7 @@ const COMO_USAR = [
       "**Ajuda** › **Limites e confiabilidade** explica o que o OCR consegue e o que não consegue.",
       "**Ajuda** › **Atalhos de teclado** lista e deixa mudar os atalhos.",
     ],
-    dica: "Ainda com dúvida? Escreva em github.com/SIAPP-Perfis/SIAPP (Discussions ou Issues).",
+    dica: "Ainda com dúvida? Escreva em github.com/SIAPP-Pocos/SIAPP (Discussions ou Issues).",
     ir: null,
   },
 ];

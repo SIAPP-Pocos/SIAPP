@@ -1,11 +1,11 @@
 # Base comunitária
 
-O SIAPP é a ferramenta; o repositório [SIAPP-dados](https://github.com/SIAPP-Perfis/SIAPP-dados)
+O SIAPP é a ferramenta; o repositório [Comunidade](https://github.com/SIAPP-Pocos/Comunidade)
 é a base. O que uma pessoa corrige ou transcreve vira um **pacote de contribuição**; os
 pacotes aceitos são compilados numa **base** que todo mundo baixa.
 
 ```
-  SIAPP (você)                    SIAPP-dados (GitHub)                 SIAPP (outra pessoa)
+  SIAPP (você)                    Comunidade (GitHub)                 SIAPP (outra pessoa)
   ─────────────                   ────────────────────                 ────────────────────
   corrige o OCR,                  pull request com o pacote            Comunidade →
   transcreve dados   ──exporta──▶ validação automática  ──etiqueta──▶  Atualizar a base
@@ -38,9 +38,9 @@ o documento: `sha256` e `caminho_remoto` do arquivo no REATE, `pagina` e `caixa`
 **Nada do REATE vai no pacote.** O acervo continua sendo baixado do portal público.
 
 O SIAPP 0.35 exporta o formato **3** e importa o 1, o 2 e o 3. Pacote de formato 1 ou 2 com
-interpretações é recusado. O esquema está em `esquema/contribuicao-v3.schema.json` no SIAPP-dados.
+interpretações é recusado. O esquema está em `esquema/contribuicao-v3.schema.json` no repositório Comunidade.
 
-## Regras que o SIAPP e o validador do SIAPP-dados aplicam
+## Regras que o SIAPP e o validador do repositório Comunidade aplicam
 
 - Correção global de **número ou palavra de 1–2 letras é recusada**: trocar "87" por "83"
   em todos os documentos estragaria valores certos. Números entram como fatos, página a página.
@@ -61,13 +61,13 @@ contra correções da comunidade, só no seu computador.
 
 ## Base comunitária
 
-**Atualizar pela internet** baixa a Release mais recente do SIAPP-dados
+**Atualizar pela internet** baixa a Release mais recente do repositório Comunidade
 (`siapp-dados.sqlite`) e substitui tudo o que tinha origem `base`. Enquanto o repositório
 for privado, use **Importar de arquivo…** com o `.sqlite` gerado por
-`python ferramentas/compilar.py` no SIAPP-dados.
+`python ferramentas/compilar.py` no repositório Comunidade.
 
 O formato da base (`versao_formato_base` 1) está descrito em `ferramentas/compilar.py`
-do SIAPP-dados; o SIAPP recusa base de versão mais nova que a que conhece. A tabela
+do repositório Comunidade; o SIAPP recusa base de versão mais nova que a que conhece. A tabela
 `interpretacoes` é opcional: base compilada antes dela continua sendo aplicada (sem interpretações),
 e o SIAPP anterior à 0.35 a ignora.
 
@@ -126,6 +126,6 @@ Na tela:
   de **Calcular**, "Comparar com a da biblioteca" põe as duas lado a lado. Sem o arquivo, o SIAPP
   diz qual baixar e leva ao Catálogo.
 - **Tirar da biblioteca**: só as suas. Se ela já foi num pacote, o SIAPP avisa (a remoção no
-  SIAPP-dados é pedida lá). As da comunidade saem desfazendo o pacote.
+  Comunidade é pedida lá). As da comunidade saem desfazendo o pacote.
 
 Na aba Perfis, uma nota avisa quando a biblioteca tem interpretações do poço aberto.

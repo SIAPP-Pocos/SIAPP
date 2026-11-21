@@ -110,8 +110,8 @@ existe e a validação científica ficam **para o final**.
 - [ ] Perfis: nomes de topos próximos se sobrepõem na coluna de profundidade (ex.: "Penedo" e "PDO-1" no 3-PIR-13-AL).
 - [ ] Modelo 3D, PNG exportado: os rótulos dos eixos ("norte (km)", números) caem por cima da legenda embaixo.
 - [ ] Comunidade pelo GitHub, direto do app (em análise): entrar com a conta do GitHub (código de dispositivo), enviar o
-      pacote como pedido de inclusão no SIAPP-dados e puxar a base de lá; a exportação em arquivo continua. Pré-requisito:
-      SIAPP-dados público.
+      pacote como pedido de inclusão no repositório Comunidade e puxar a base de lá; a exportação em arquivo continua. O repositório
+      Comunidade já é público (21/11).
 
 ## No final — melhorias do que já existe
 

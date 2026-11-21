@@ -104,7 +104,7 @@ Uma regra resume a separação: **o programa pode ser apagado e baixado de novo;
 | `secao.py`, `secao_classica.py` | seção estratigráfica (estilo moderno e clássico) |
 | `bloco*.py`, `interpolacao.py`, `guia_interpolacao.py`, `utm.py` | Modelo 3D: superfícies, bloco fechado, mapas, volumetria, validação, exportação (ECLIPSE, glb) |
 | `producao.py`, `camadas.py`, `viabilidade.py`, `economia.py`, `indices.py` | produção da ANP, camadas do mapa, viabilidade técnica e econômica, correção pela inflação |
-| `comunidade.py`, `painel.py` | contribuições e base comunitária (SIAPP-dados) |
+| `comunidade.py`, `painel.py` | contribuições e base comunitária (repositório Comunidade) |
 | `consolidado.py`, `arquivos_baixados.py` | tudo o que foi lido e tudo o que foi baixado, com a procedência |
 | `preferencias.py`, `registro.py`, `doacao.py` | preferências, registro de erros (`siapp.log`), tela de doação |
 
@@ -213,7 +213,7 @@ processamento.
 | **apoio** (ferramenta) | peça do esquema que não mede nada (cabeça do cabo, centralizador, telemetria) |
 | **árvore** | a lista em níveis bacia › poço › pasta › arquivo (Catálogo e Documentos) |
 | **bacia**, **categoria**, **parte** | os níveis do portal: a categoria é a do poço; categorias grandes são divididas em partes |
-| **base comunitária** | o repositório SIAPP-dados: valores transcritos por quem usa, cada um com a fonte |
+| **base comunitária** | o repositório Comunidade: valores transcritos por quem usa, cada um com a fonte |
 | **bloco** (Modelo 3D) | as superfícies de topo interpoladas entre os poços; **bloco fechado** = o volume fatiado nas unidades |
 | **bruto** | o arquivo como veio do portal, sem mudar nada |
 | **calha** | amostras de rocha que a lama traz durante a perfuração; a litologia de calha é a descrição delas |

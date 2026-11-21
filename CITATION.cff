@@ -9,7 +9,7 @@ authors:
 version: "1.2.0"
 date-released: "2026-11-19"
 license: AGPL-3.0-only
-repository-code: "https://github.com/SIAPP-Perfis/SIAPP"
+repository-code: "https://github.com/SIAPP-Pocos/SIAPP"
 keywords:
   - perfilagem de poços
   - ANP

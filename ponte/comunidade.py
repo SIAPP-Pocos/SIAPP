@@ -123,7 +123,7 @@ class ComunidadeAPI:
     # ----------------------------------------------------------------- base
     @resposta_segura
     def atualizar_base(self):
-        """Baixa a base mais recente do SIAPP-dados (GitHub Releases) e aplica."""
+        """Baixa a base mais recente do repositório Comunidade (GitHub Releases) e aplica."""
         self._exigir_projeto()
         destino = os.path.join(self._projeto.pasta_de(PASTA_COMUNIDADE), mc.NOME_ARQUIVO_BASE)
         self._status("Baixando a base comunitária…")
@@ -133,7 +133,7 @@ class ComunidadeAPI:
     @resposta_segura
     def importar_base_arquivo(self):
         self._exigir_projeto()
-        caminho = self._escolher_arquivo(("Base SIAPP-dados (*.sqlite)", "Todos os arquivos (*.*)"))
+        caminho = self._escolher_arquivo(("Base da Comunidade (*.sqlite)", "Todos os arquivos (*.*)"))
         if not caminho:
             return {"cancelado": True}
         return self._aplicar_base(caminho, {})

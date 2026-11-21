@@ -9,7 +9,7 @@ Assinatura de código gratuita oferecida pela SignPath.io, com certificado da Si
 
 - `SIAPP.exe`, o programa;
 - `SIAPP-<versão>-instalador.exe`, o instalador publicado em
-  [Releases](https://github.com/SIAPP-Perfis/SIAPP/releases).
+  [Releases](https://github.com/SIAPP-Pocos/SIAPP/releases).
 
 As bibliotecas de terceiros que vão no pacote (Python, NumPy, pywebview e as outras listadas em
 `AVISOS-DE-TERCEIROS.txt`) **não** são assinadas pelo SIAPP: seguem com a assinatura de quem as publica, quando há.

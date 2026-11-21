@@ -14,6 +14,10 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
   tela de notebook (1366 × 768) sem rolar.
 - Biblioteca nova: `segno` (BSD-3-Clause), que desenha o QR Code sem internet.
 ### Alterado
+- Endereços no GitHub: a organização continua `SIAPP-Pocos` (agora com o nome de exibição "Sistema Integrado de
+  Aquisição e Processamento de Perfis") e o repositório de dados passou a se chamar **Comunidade**, público. Os links do
+  programa, do README e da política de assinatura apontavam para `SIAPP-Perfis`, que não chegou a existir: agora
+  apontam para `SIAPP-Pocos/SIAPP` e `SIAPP-Pocos/Comunidade`.
 - **Como usar o SIAPP**: "Primeiros passos" reescrito (a categoria do poço explicada; cada tipo de arquivo no seu
   lugar: documentos em PDF ou imagem em 2. Documentos, perfis DLIS, LIS e LAS em 3. Perfis; o mapa para ver os poços em
   relação a outros pontos de interesse). "Achar dados no acervo" agora vai por objetivo: achar um poço, ver os

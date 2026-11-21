@@ -81,7 +81,7 @@ async function exportarPacote() {
   const r = await chamar($("btn-exportar"), "exportar_contribuicao", $("com-novos").checked);
   if (!r.ok) return;
   $("com-exportado").textContent = `Pacote gravado em ${r.arquivo} (${descreverItens(r.itens)}).`;
-  status("Contribuição exportada. Envie o arquivo ao repositório SIAPP-dados.", "ok");
+  status("Contribuição exportada. Envie o arquivo ao repositório Comunidade.", "ok");
   carregarContribuir();
 }
 
@@ -567,7 +567,7 @@ async function abrirInterpretacaoBib(id) {
     rm.onclick = async () => {
       const x = await chamar(rm, "remover_interpretacao", id);
       if (!x.ok) return;
-      status(x.ja_exportada ? "Tirada da sua biblioteca. Ela já foi num pacote exportado: peça a remoção no SIAPP-dados se precisar."
+      status(x.ja_exportada ? "Tirada da sua biblioteca. Ela já foi num pacote exportado: peça a remoção no repositório Comunidade se precisar."
                             : "Tirada da biblioteca.", "ok");
       bib.selecionadas.delete(id);
       bib.detalhe = null;

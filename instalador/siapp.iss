@@ -14,7 +14,7 @@ AppName=SIAPP
 AppVersion={#Versao}
 AppVerName=SIAPP {#Versao}
 AppPublisher=Ruan da Silva Nobre
-AppPublisherURL=https://github.com/SIAPP-Perfis
+AppPublisherURL=https://github.com/SIAPP-Pocos
 AppComments=Sistema Integrado de Aquisição e Processamento de Perfis — software livre (AGPL-3.0)
 ; Nome e versão gravados no instalador (Propriedades › Detalhes); a assinatura do SignPath confere o nome do produto
 VersionInfoVersion={#Versao}

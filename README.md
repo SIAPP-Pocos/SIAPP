@@ -9,15 +9,15 @@
 Transforma o acervo público de poços da ANP em dados organizados, pesquisáveis e prontos para análise.<br>
 Gratuito, de código aberto, para Windows.
 
-[![versão](https://img.shields.io/badge/vers%C3%A3o-1.2.0-success)](https://github.com/SIAPP-Perfis/SIAPP/releases/latest)
-[![testes](https://github.com/SIAPP-Perfis/SIAPP/actions/workflows/testes.yml/badge.svg)](https://github.com/SIAPP-Perfis/SIAPP/actions/workflows/testes.yml)
+[![versão](https://img.shields.io/badge/vers%C3%A3o-1.2.0-success)](https://github.com/SIAPP-Pocos/SIAPP/releases/latest)
+[![testes](https://github.com/SIAPP-Pocos/SIAPP/actions/workflows/testes.yml/badge.svg)](https://github.com/SIAPP-Pocos/SIAPP/actions/workflows/testes.yml)
 [![licença: AGPL-3.0](https://img.shields.io/badge/licen%C3%A7a-AGPL--3.0-blue)](LICENSE)
 ![Windows 10 e 11](https://img.shields.io/badge/Windows-10%20%7C%2011-0078D4)
 
-**[Baixar o instalador](https://github.com/SIAPP-Perfis/SIAPP/releases/latest)** ·
+**[Baixar o instalador](https://github.com/SIAPP-Pocos/SIAPP/releases/latest)** ·
 [Documentação](docs/README.md) ·
 [Novidades](CHANGELOG.md) ·
-[Dúvidas](https://github.com/SIAPP-Perfis/SIAPP/discussions) ·
+[Dúvidas](https://github.com/SIAPP-Pocos/SIAPP/discussions) ·
 [Como citar](#como-citar)
 
 </div>
@@ -44,13 +44,13 @@ e pesquisadores começam pela análise, e não pela garimpagem.
 | **Correlação** | Seção estratigráfica pelos topos de formação, em cota ou nivelada, com a legenda de litologias dos perfis compostos da Petrobras |
 | **Modelo 3D** | Superfícies de topo, bloco fechado, mapas, volumetria e exportação para simuladores (ECLIPSE) |
 | **Viabilidade** | Campo × infraestrutura (gasodutos, UPGN, H₂, fontes de CO₂), produção da ANP e custo do duto |
-| **Comunidade** | Compartilhar correções e transcrições com a [base comunitária](https://github.com/SIAPP-Perfis/SIAPP-dados) |
+| **Comunidade** | Compartilhar correções e transcrições com a [base comunitária](https://github.com/SIAPP-Pocos/Comunidade) |
 
 A lista completa, aba por aba, está em [O que o SIAPP faz](docs/funcionalidades.md).
 
 ## Instalar
 
-1. Baixe **`SIAPP-<versão>-instalador.exe`** na [última versão](https://github.com/SIAPP-Perfis/SIAPP/releases/latest).
+1. Baixe **`SIAPP-<versão>-instalador.exe`** na [última versão](https://github.com/SIAPP-Pocos/SIAPP/releases/latest).
 2. Dê dois cliques. Não precisa de administrador nem de Python.
 3. Escolha onde guardar os projetos (o padrão é **Documentos\SIAPP**) e conclua.
 
@@ -79,10 +79,10 @@ abre o passo a passo de cada etapa (também em **Ajuda › Como usar o SIAPP**).
 
 ## Contribuir
 
-- **Achou um erro ou tem uma ideia?** Abra uma [issue](https://github.com/SIAPP-Perfis/SIAPP/issues/new/choose).
-- **Dúvida de uso?** Pergunte em [Discussions](https://github.com/SIAPP-Perfis/SIAPP/discussions).
+- **Achou um erro ou tem uma ideia?** Abra uma [issue](https://github.com/SIAPP-Pocos/SIAPP/issues/new/choose).
+- **Dúvida de uso?** Pergunte em [Discussions](https://github.com/SIAPP-Pocos/SIAPP/discussions).
 - **Corrigiu um dado ou transcreveu um documento?** Compartilhe pela aba Comunidade: vai para o
-  [SIAPP-dados](https://github.com/SIAPP-Perfis/SIAPP-dados).
+  [Comunidade](https://github.com/SIAPP-Pocos/Comunidade).
 - **Quer mexer no código?** Veja [Como contribuir](CONTRIBUTING.md).
 
 <details>
@@ -117,9 +117,9 @@ O SIAPP é e continuará gratuito. Se ele foi útil para você, há uma opção 
 Use o botão **Cite this repository**, no alto desta página (ele lê o [`CITATION.cff`](CITATION.cff)), ou:
 
 > Nobre, R. S. *SIAPP — Sistema Integrado de Aquisição e Processamento de Perfis* (versão 1.2.0). Universidade Federal
-> de Alagoas, 2026. Disponível em: https://github.com/SIAPP-Perfis/SIAPP.
+> de Alagoas, 2026. Disponível em: https://github.com/SIAPP-Pocos/SIAPP.
 
-## Assinatura de código
+## Assinatura de código (Code signing policy)
 
 Free code signing provided by [SignPath.io](https://about.signpath.io/), certificate by
 [SignPath Foundation](https://signpath.org/). Quem assina, o que é assinado e a privacidade do programa:

@@ -1,13 +1,13 @@
 """
-Contribuições e base comunitária (repositório SIAPP-dados).
+Contribuições e base comunitária (repositório Comunidade).
 
 Três operações:
 
   exportar   o que o usuário fez neste computador (origem "local") vira um
-             pacote JSON, com autoria, para enviar ao SIAPP-dados;
+             pacote JSON, com autoria, para enviar ao repositório Comunidade;
   importar   o pacote de outra pessoa entra no banco com origem "pacote" e o
              id do pacote — pode ser desfeito inteiro depois;
-  base       a base compilada (SQLite publicado nas Releases do SIAPP-dados)
+  base       a base compilada (SQLite publicado nas Releases do repositório Comunidade)
              substitui tudo o que tem origem "base".
 
 Formato do pacote (versão 3; a 1 e a 2 são aceitas na importação):
@@ -50,10 +50,10 @@ FORMATO = "siapp-contribuicao"
 VERSAO_FORMATO = 3
 VERSOES_ACEITAS = (1, 2, 3)
 LICENCA = "CC-BY-4.0"
-URL_ULTIMA_BASE = "https://api.github.com/repos/SIAPP-Perfis/SIAPP-dados/releases/latest"
+URL_ULTIMA_BASE = "https://api.github.com/repos/SIAPP-Pocos/Comunidade/releases/latest"
 NOME_ARQUIVO_BASE = "siapp-dados.sqlite"
 
-# Tipos de fato aceitos. A interface oferece estes; o validador do SIAPP-dados
+# Tipos de fato aceitos. A interface oferece estes; o validador do repositório Comunidade
 # usa a mesma lista.
 TIPOS_FATO = {
     "topo_formacao": "Topo de formação",
@@ -84,7 +84,7 @@ def _sobrenome(nome: str) -> str:
 
 
 def nome_arquivo_pacote(autor: dict, quando: str | None = None) -> str:
-    """Padrão do SIAPP-dados: AAAA-MM-DD_sobrenome_assunto.json."""
+    """Padrão do repositório Comunidade: AAAA-MM-DD_sobrenome_assunto.json."""
     data = (quando or agora())[:10]
     return f"{data}_{_sobrenome(autor.get('nome', ''))}_siapp.json"
 
@@ -108,7 +108,7 @@ def _fato_para_pacote(f: dict, arquivos: dict) -> dict:
 
 def montar_pacote(banco: Banco, autor: dict, siapp_versao: str, apenas_novos: bool = True) -> dict:
     """Pacote com o que tem origem "local". `apenas_novos`: só o que mudou desde
-    a última exportação (o SIAPP-dados junta os pacotes de um mesmo autor)."""
+    a última exportação (o repositório Comunidade junta os pacotes de um mesmo autor)."""
     if not (autor or {}).get("nome", "").strip():
         raise ErroComunidade("Preencha seu nome na aba Comunidade antes de exportar: "
                              "toda contribuição tem autor.")
@@ -315,7 +315,7 @@ def aplicar_base(banco: Banco, caminho_sqlite: str) -> dict:
         b.row_factory = sqlite3.Row
         meta = {r["chave"]: r["valor"] for r in b.execute("SELECT chave, valor FROM meta")}
         if meta.get("formato") != "siapp-dados-base":
-            raise ErroComunidade("O arquivo não é uma base compilada do SIAPP-dados.")
+            raise ErroComunidade("O arquivo não é uma base compilada do repositório Comunidade.")
         if int(meta.get("versao_formato_base", "0")) > 1:
             raise ErroComunidade("Esta base é de uma versão mais nova. Atualize o SIAPP.")
         vocab = [dict(r) for r in b.execute("SELECT * FROM vocab")]
@@ -370,14 +370,14 @@ def aplicar_base(banco: Banco, caminho_sqlite: str) -> dict:
 
 
 def baixar_base(destino: str, url: str = URL_ULTIMA_BASE, timeout: float = 30) -> dict:
-    """Baixa a base mais recente das Releases do SIAPP-dados."""
+    """Baixa a base mais recente das Releases do repositório Comunidade."""
     try:
         r = requests.get(url, timeout=timeout, headers={"Accept": "application/vnd.github+json"})
     except requests.exceptions.RequestException as e:
         raise ErroComunidade(f"Sem conexão com o GitHub ({type(e).__name__}).") from e
     if r.status_code == 404:
-        raise ErroComunidade("A base comunitária ainda não foi publicada (ou o repositório "
-                             "SIAPP-dados ainda é privado). Use \"Importar base de arquivo\".")
+        raise ErroComunidade("A base comunitária ainda não foi publicada no repositório Comunidade. "
+                             "Use \"Importar base de arquivo\".")
     if r.status_code != 200:
         raise ErroComunidade(f"O GitHub respondeu HTTP {r.status_code}.")
     rel = r.json()

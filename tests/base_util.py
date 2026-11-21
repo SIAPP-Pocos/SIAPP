@@ -1,4 +1,4 @@
-"""Monta uma base compilada como a do SIAPP-dados (ferramentas/compilar.py),
+"""Monta uma base compilada como a do repositório Comunidade (ferramentas/compilar.py),
 para testar a aplicação da base sem depender do outro repositório."""
 import json
 import sqlite3

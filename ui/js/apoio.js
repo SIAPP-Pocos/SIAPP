@@ -3,7 +3,7 @@
 // (motor/doacao.py); nada aqui é inventado. Doar é opcional e a tela diz isso.
 "use strict";
 
-const REPO_SIAPP = "https://github.com/SIAPP-Perfis/SIAPP";
+const REPO_SIAPP = "https://github.com/SIAPP-Pocos/SIAPP";
 
 function linkExterno(rotulo, url) {
   const a = el("a", "", rotulo);

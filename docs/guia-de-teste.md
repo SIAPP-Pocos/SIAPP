@@ -28,7 +28,7 @@ você já tinha baixado (com SHA-256) e refaz o índice de busca uma vez.
 - [ ] Exportar de novo com "só o que é novo" marcado: avisa que não há nada novo.
 - [ ] **Escolher pacote…** com o arquivo exportado: a prévia mostra autor, itens e o que você já tem.
 - [ ] Depois de importar, o pacote aparece em "Pacotes importados"; **Desfazer** remove.
-- [ ] **Atualizar pela internet**: enquanto o SIAPP-dados for privado, deve dizer que a base
+- [ ] **Atualizar pela internet**: enquanto o repositório Comunidade não publicar a base, deve dizer que a base
       ainda não foi publicada (é o comportamento certo).
 - [ ] `siapp.log` existe em `ambiente_teste`.
 

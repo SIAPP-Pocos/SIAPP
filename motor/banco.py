@@ -1,7 +1,7 @@
 """
 Banco do projeto: <projeto>/projeto.sqlite.
 
-É o mesmo modelo de dados da base comunitária (repositório SIAPP-dados):
+É o mesmo modelo de dados da base comunitária (repositório Comunidade):
 o banco local = base comunitária baixada + pacotes importados + o que o
 próprio usuário fez. Cada linha diz de onde veio (`origem`):
 

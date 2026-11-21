@@ -1,11 +1,11 @@
 blank_issues_enabled: false
 contact_links:
   - name: Dúvida de uso
-    url: https://github.com/SIAPP-Perfis/SIAPP/discussions
+    url: https://github.com/SIAPP-Pocos/SIAPP/discussions
     about: Perguntas sobre como usar o SIAPP vão em Discussions.
   - name: Documentação
-    url: https://github.com/SIAPP-Perfis/SIAPP/blob/main/docs/README.md
+    url: https://github.com/SIAPP-Pocos/SIAPP/blob/main/docs/README.md
     about: Instalação, módulos, pastas e glossário.
   - name: Correção de dados (OCR, dicionário, transcrições)
-    url: https://github.com/SIAPP-Perfis/SIAPP-dados/issues/new/choose
-    about: Dados vão para o repositório SIAPP-dados, não para este.
+    url: https://github.com/SIAPP-Pocos/Comunidade/issues/new/choose
+    about: Dados vão para o repositório Comunidade, não para este.
