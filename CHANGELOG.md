@@ -7,63 +7,54 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 ## [Não lançado]
 
 ## [1.4.0] — 2026-11-22
-A Comunidade ligada ao GitHub, fase 2: enviar direto do SIAPP.
+Agora dá para mandar o seu trabalho para a base comunitária sem sair do SIAPP.
 ### Adicionado
-- **Enviar para a comunidade**: em Comunidade › Contribuir, o seu trabalho (correções, dados transcritos,
-  interpretações; nenhum arquivo do REATE) vai para a base comunitária sem sair do SIAPP. Na primeira vez, entra com a
-  conta do GitHub por um código (abre o GitHub, cola, autoriza); depois é um clique. Antes de enviar, a janela mostra
-  o que vai, com o seu nome e os poços.
-- **Seus envios**: cada envio aparece com a situação ("Recebido, sendo conferido", "Em revisão", "O revisor pediu uma
-  mudança", "Aceito", "Não passou na conferência", com o motivo) e o link no GitHub. O SIAPP avisa quando muda.
-- Repositório Comunidade: um robô recebe o envio, confere, valida e abre o pull request no nome de quem enviou.
+- **Enviar para a comunidade** (aba Comunidade › Contribuir): manda as suas correções de leitura, os dados que você
+  transcreveu e as suas interpretações de perfil para a base que todos usam. Os arquivos do REATE não vão: eles já são
+  públicos na ANP. Na primeira vez, você entra com uma conta do GitHub (gratuita): o SIAPP mostra um código, você abre
+  o GitHub, cola o código e autoriza. Depois, é um clique. Antes de enviar, o SIAPP mostra o que vai, com o seu nome e
+  os poços.
+- **Seus envios**: mostra onde está cada envio ("Recebido, sendo conferido", "Em revisão", "O revisor pediu uma
+  mudança", "Aceito" ou "Não passou na conferência", com o motivo) e o link para ver no GitHub. O SIAPP avisa quando
+  a situação muda.
 ### Alterado
-- O acesso ao GitHub fica cifrado no computador (proteção de dados do Windows) e sai com "Sair". A política de
-  privacidade cita o envio.
-- Sem conta no GitHub, **Exportar pacote** continua gravando o arquivo para mandar a um mantenedor.
+- O acesso à sua conta do GitHub fica guardado protegido no seu computador e sai quando você clica em **Sair**. O
+  SIAPP só consegue abrir pedidos de envio na base comunitária: não mexe em mais nada da sua conta.
+- Sem conta no GitHub, **Exportar pacote** continua gravando um arquivo com o seu trabalho para mandar a um mantenedor.
 
 ## [1.3.0] — 2026-11-21
-A Comunidade ligada ao GitHub (fase 1: puxar e mostrar), a atualização com um clique e a tela de apoio refeita.
+O SIAPP passa a se atualizar com um clique e a mostrar o que a comunidade já fez em cada poço.
 ### Adicionado
-- **Atualização com um clique**: ao abrir, o SIAPP procura versão nova no GitHub (no máximo uma vez por dia). Se
-  houver, um aviso no canto diz "Saiu o SIAPP X.Y.Z" e **Ver e atualizar** mostra o que mudou. **Atualizar agora**
-  baixa o instalador, confere o arquivo pelo SHA-256 publicado no GitHub, fecha o SIAPP, instala sem perguntas e abre
-  de novo sozinho, com os projetos onde estavam. Também em **Ajuda › Procurar versão nova**; dá para pular uma versão
-  ou desligar o aviso em Configurações. Vale daqui para a frente: quem está na 1.2 instala a 1.3 à mão uma vez.
-- **Aviso de base nova da comunidade**: ao abrir o projeto, o SIAPP confere no repositório Comunidade, no GitHub, se
-  saiu uma base nova (no máximo uma vez por dia, sem baixar a base). Se saiu, a aba Comunidade ganha um ponto azul e
-  mostra quem mandou o quê desde a sua (autor, instituição, quantos dados e de quais poços). **Procurar base nova**
-  confere na hora; dá para desligar a consulta automática.
+- **Atualização com um clique**: ao abrir, o SIAPP confere se saiu versão nova (no máximo uma vez por dia). Se saiu,
+  um aviso no canto diz "Saiu o SIAPP X.Y.Z" e **Ver e atualizar** mostra o que mudou. **Atualizar agora** baixa a
+  versão nova, confere se o arquivo chegou inteiro e é o original, fecha o SIAPP, instala e abre de novo sozinho, com
+  os seus projetos onde estavam. Também em **Ajuda › Procurar versão nova**. Dá para pular uma versão ou desligar o
+  aviso em Configurações. Isso vale a partir desta versão: quem está na 1.2 instala a 1.3 pelo instalador uma última
+  vez.
+- **Aviso de base comunitária nova**: quando a base da comunidade ganha contribuições novas, a aba Comunidade ganha um
+  ponto azul e mostra quem mandou o quê (nome, instituição, quantos dados e de quais poços). **Atualizar pela
+  internet** traz tudo; **Procurar base nova** confere na hora; dá para desligar a consulta automática.
 - **Poços com dados da comunidade marcados**: no mapa (anel azul e o filtro "da comunidade" na legenda), na lista ao
-  lado do mapa, na lista de poços do catálogo (selo "C", com os autores na dica) e na ficha ("Dados transcritos (3, 2
-  da comunidade)").
-- **O dado da comunidade aparece na página do documento**: o dado transcrito por outra pessoa passa a aparecer na
-  página certa assim que você baixa o mesmo documento, que é reconhecido pelo conteúdo (SHA-256) ou pelo caminho no
-  REATE, onde quer que ele fique guardado no seu computador. Na ficha do poço, a página do dado vira link para abrir o
-  documento.
-- Prévia da importação de um pacote: lista os poços e os documentos citados que você ainda não tem (só a lista; nada
-  vem marcado para baixar).
-- **Tela "Apoie o SIAPP" refeita**: o mascote abre a tela dizendo que doar é opcional; "Quem faz o SIAPP" conta a
-  história do projeto (do primeiro PIBIC, em 2023-24, até a ferramenta completa, em 2025-26), com link para o LinkedIn
-  do autor e os trabalhos publicados nos PIBICs; Pix com valores prontos (Um cafezinho R$ 5, Um lanche R$ 15, Uma tarde de código R$ 30) ou outro valor,
-  sempre com **QR Code** para pagar pelo celular; e, numa segunda aba, "Sem dinheiro" (estrela no GitHub, citar o
-  SIAPP, compartilhar correções pela Comunidade, relatar um problema, indicar a um colega). A tela inteira cabe numa
-  tela de notebook (1366 × 768) sem rolar.
-- Biblioteca nova: `segno` (BSD-3-Clause), que desenha o QR Code sem internet.
+  lado do mapa, na lista de poços do catálogo (selo azul "C", com os autores na dica) e na ficha do poço.
+- **O dado da comunidade aparece na página do documento**: o dado que outra pessoa transcreveu aparece na página certa
+  assim que você baixa o mesmo documento, onde quer que ele fique guardado no seu computador. Na ficha do poço, a
+  página do dado vira link para abrir o documento.
+- Ao importar o pacote de outra pessoa, a prévia lista os poços e os documentos citados que você ainda não tem (só a
+  lista: nada vem marcado para baixar).
+- **Tela "Apoie o SIAPP" nova**: o mascote lembra que doar é opcional; "Quem faz o SIAPP" conta a história do projeto,
+  com o LinkedIn do autor e os trabalhos publicados; o Pix tem valores prontos (Um cafezinho R$ 5, Um lanche R$ 15,
+  Uma tarde de código R$ 30) ou outro valor, sempre com **QR Code** para pagar pelo celular; e a aba "Sem dinheiro"
+  mostra outras formas de ajudar (estrela no GitHub, citar o SIAPP, compartilhar correções, relatar um problema,
+  indicar a um colega).
 ### Alterado
-- **Comunidade fora do menu Mais**: virou aba própria no topo, depois de 6. Modelo 3D. Em Mais fica a Viabilidade.
-- Repositório Comunidade: a base passa a ser publicada sozinha logo depois de cada pacote aceito, com um `resumo.json`
-  do que tem nela.
-- Endereços no GitHub: a organização continua `SIAPP-Pocos` (agora com o nome de exibição "Sistema Integrado de
-  Aquisição e Processamento de Perfis") e o repositório de dados passou a se chamar **Comunidade**, público. Os links do
-  programa, do README e da política de assinatura apontavam para `SIAPP-Perfis`, que não chegou a existir: agora
-  apontam para `SIAPP-Pocos/SIAPP` e `SIAPP-Pocos/Comunidade`.
-- **Como usar o SIAPP**: "Primeiros passos" reescrito (a categoria do poço explicada; cada tipo de arquivo no seu
-  lugar: documentos em PDF ou imagem em 2. Documentos, perfis DLIS, LIS e LAS em 3. Perfis; o mapa para ver os poços em
-  relação a outros pontos de interesse). "Achar dados no acervo" agora vai por objetivo: achar um poço, ver os
-  arquivos de um poço, mapear uma bacia, achar poços com um tipo de dado, achar uma informação nos documentos. As abas
-  aparecem com ponto depois do número ("4. Poços"), para não parecer quantidade. "Ler documentos" explica que a
-  segunda leitura das páginas ruins deixa a leitura cerca de duas vezes mais lenta nessas páginas, e a diferença entre
-  corrigir uma palavra (o OCR errou) e adicionar ao dicionário (uma palavra certa que o SIAPP não conhecia).
+- **Comunidade** virou aba própria no topo, depois de 6. Modelo 3D (antes ficava no menu Mais).
+- A base comunitária passa a ser atualizada logo depois de cada contribuição aceita.
+- Links do programa para o GitHub corrigidos.
+- **Como usar o SIAPP** mais claro: "Primeiros passos" reescrito (o que é a categoria do poço e onde abrir cada tipo
+  de arquivo); "Achar dados no acervo" organizado pelo que você quer fazer (achar um poço, ver os arquivos de um poço,
+  mapear uma bacia, achar poços com um tipo de dado, achar uma informação nos documentos); "Ler documentos" explica
+  que a segunda leitura das páginas ruins é mais lenta e a diferença entre corrigir uma palavra e adicionar ao
+  dicionário.
 
 ## [1.2.0] — 2026-11-19
 O mascote do SIAPP, a ajuda de como usar e a doação à vista.

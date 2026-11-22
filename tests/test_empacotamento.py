@@ -53,12 +53,13 @@ def test_assinatura_signpath_preparada():
     raiz = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     ler = lambda *p: open(os.path.join(raiz, *p), encoding="utf-8").read()
     politica = ler("CODE_SIGNING_POLICY.md")
-    # exigências da SignPath Foundation: o termo, o crédito, papéis e privacidade
-    assert "Code signing policy" in politica
-    assert "Free code signing provided by [SignPath.io]" in politica and "SignPath Foundation" in politica
+    # a política continua pronta (papéis e privacidade), mas diz a verdade: ainda não há assinatura (SignPath
+    # Foundation recusou em 21/11/2026); o fluxo de assinatura fica no workflow, desligado sem o segredo
+    assert "Code signing policy" in politica and "ainda não tem assinatura digital" in politica
+    assert "Free code signing provided by" not in politica
     assert "Aprovadores" in politica and "Privacy policy" in politica
     readme = ler("README.md")
-    assert "CODE_SIGNING_POLICY.md" in readme and "Free code signing provided by" in readme
+    assert "CODE_SIGNING_POLICY.md#privacidade" in readme and "ainda não tem assinatura digital" in readme
     fluxo = ler(".github", "workflows", "instalador.yml")
     for slug in ("programa", "instalador"):
         assert f"artifact-configuration-slug: {slug}" in fluxo
@@ -72,10 +73,10 @@ def test_assinatura_signpath_preparada():
     assert "StringStruct('ProductName', 'SIAPP')" in ler("instalador", "versao.modelo.txt")
 
 
-def test_notas_da_versao_citam_a_politica_de_assinatura():
-    """A SignPath Foundation pede "Code signing policy" na página de download (as notas de cada versão)."""
+def test_notas_da_versao_falam_com_quem_usa():
+    """As notas de cada versão são para quem usa o SIAPP: como atualizar, sem detalhe de desenvolvimento."""
     wf = open(os.path.join(RAIZ, ".github", "workflows", "instalador.yml"), encoding="utf-8").read()
-    assert "**Code signing policy:**" in wf and "SIAPP-Pocos/SIAPP/blob/main/" in wf and "CODE_SIGNING_POLICY.md)" in wf
+    assert "Ele avisa e atualiza sozinho" in wf and "Free code signing" not in wf
 
 
 def test_instalador_reabre_o_siapp_depois_da_atualizacao_de_dentro():

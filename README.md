@@ -119,11 +119,14 @@ Use o botão **Cite this repository**, no alto desta página (ele lê o [`CITATI
 > Nobre, R. S. *SIAPP — Sistema Integrado de Aquisição e Processamento de Perfis* (versão 1.4.0). Universidade Federal
 > de Alagoas, 2026. Disponível em: https://github.com/SIAPP-Pocos/SIAPP.
 
-## Assinatura de código (Code signing policy)
+## Assinatura digital e privacidade
 
-Free code signing provided by [SignPath.io](https://about.signpath.io/), certificate by
-[SignPath Foundation](https://signpath.org/). Quem assina, o que é assinado e a privacidade do programa:
-[Política de assinatura de código (Code signing policy)](CODE_SIGNING_POLICY.md).
+O instalador do SIAPP **ainda não tem assinatura digital**. Por isso o Windows pode avisar na primeira vez que você
+abre ("O Windows protegeu o computador": clique em **Mais informações › Executar assim mesmo**). Se aparecer "Uma
+política de Controle de Aplicativo bloqueou este arquivo", veja
+[o que fazer](docs/instalador.md#uma-política-de-controle-de-aplicativo-bloqueou-este-arquivo-código-4551).
+
+O que o SIAPP acessa na internet, e quando: [privacidade](CODE_SIGNING_POLICY.md#privacidade-privacy-policy).
 
 ## Licença
 

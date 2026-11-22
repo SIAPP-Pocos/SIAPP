@@ -1,9 +1,8 @@
 # Política de assinatura de código (Code signing policy)
 
-Free code signing provided by [SignPath.io](https://about.signpath.io/), certificate by
-[SignPath Foundation](https://signpath.org/).
-
-Assinatura de código gratuita oferecida pela SignPath.io, com certificado da SignPath Foundation.
+**Situação:** o SIAPP **ainda não tem assinatura digital**. Esta política diz como vai ser quando tiver, e a seção de
+privacidade já vale hoje. Enquanto isso, se o Windows bloquear o programa, veja
+[como liberar](docs/instalador.md#uma-política-de-controle-de-aplicativo-bloqueou-este-arquivo-código-4551).
 
 ## O que é assinado
 
