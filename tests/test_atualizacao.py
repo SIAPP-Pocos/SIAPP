@@ -146,3 +146,37 @@ def test_aviso_depois_que_o_instalador_trocou_a_versao(api):
     assert api.aviso_atualizacao()["aviso"] == {"de": "1.2.0", "para": mp.VERSAO_SIAPP}
     assert api.aviso_atualizacao()["aviso"] is None                          # uma vez só
     assert "instalando" not in api._estado_versao()
+
+
+def test_canal_de_teste_ve_a_pre_release_mais_nova(monkeypatch):
+    """1.4.1: com "Receber versões de teste", vale a de número maior entre as normais e as de teste."""
+    lista = [{"tag_name": "v1.4.0", "prerelease": False, "assets": [], "body": "normal"},
+             {"tag_name": "v1.4.2", "prerelease": True, "assets": [], "body": "teste"},
+             {"tag_name": "v9.9.9", "draft": True, "assets": []}]
+
+    class R:
+        status_code = 200
+
+        def __init__(self, dados):
+            self.dados = dados
+
+        def json(self):
+            return self.dados
+    pedidos = []
+    monkeypatch.setattr(mat.requests, "get", lambda url, **k: pedidos.append(url) or R(lista))
+    info = mat.consultar("1.4.0", teste=True)
+    assert info["versao"] == "1.4.2" and info["de_teste"] is True and info["nova"] is True
+    assert pedidos == [mat.URL_VERSOES]
+    monkeypatch.setattr(mat.requests, "get", lambda url, **k: pedidos.append(url) or R(lista[0]))
+    info = mat.consultar("1.4.0")
+    assert info["nova"] is False and info["de_teste"] is False and pedidos[-1] == mat.URL_ULTIMA
+
+
+def test_ponte_respeita_o_canal_de_teste(api, monkeypatch):
+    canais = []
+    monkeypatch.setattr(mat, "consultar", lambda atual, *a, teste=False, **k: canais.append(teste) or _info())
+    api.verificar_versao()
+    assert canais == [False]
+    assert api.salvar_preferencias({"versoes_de_teste": True})["ok"]
+    api.verificar_versao()                                     # mudou o canal: consulta de novo no mesmo dia
+    assert canais == [False, True]

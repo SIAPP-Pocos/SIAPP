@@ -56,6 +56,7 @@ class AtualizacaoAPI:
                 "atual": mp.VERSAO_SIAPP, "publicada_em": info.get("publicada_em", ""), "notas": info.get("notas", ""),
                 "pagina": info.get("pagina") or mat.PAGINA_VERSOES, "bytes": inst.get("bytes", 0),
                 "pode_instalar": self._pode_instalar(info), "instalado": base.INSTALADO,
+                "de_teste": bool(info.get("de_teste")),
                 "consultado_em": consultado_em}
 
     # ------------------------------------------------------------------ API
@@ -63,17 +64,20 @@ class AtualizacaoAPI:
     def verificar_versao(self, forcar: bool = False):
         """Há versão nova do SIAPP? Ao abrir, no máximo uma consulta por dia (e nenhuma se a pessoa desligou em
         Configurações); `forcar` (Ajuda › Procurar versão nova) consulta na hora."""
-        if not forcar and self._preferencias().ler().get("avisar_versao_nova") is False:
+        prefs = self._preferencias().ler()
+        if not forcar and prefs.get("avisar_versao_nova") is False:
             return {"desligado": True}
+        teste = bool(prefs.get("versoes_de_teste"))
         hoje = date.today().isoformat()
         estado = self._estado_versao()
         cache = estado.get("consulta") or {}
-        if forcar or cache.get("dia") != hoje or cache.get("atual") != mp.VERSAO_SIAPP:
+        if (forcar or cache.get("dia") != hoje or cache.get("atual") != mp.VERSAO_SIAPP
+                or bool(cache.get("teste")) != teste):
             try:
-                info = mat.consultar(mp.VERSAO_SIAPP)
+                info = mat.consultar(mp.VERSAO_SIAPP, teste=teste)
             except mat.ErroAtualizacao as e:
                 raise ErroUsuario(str(e)) from e
-            cache = {"dia": hoje, "atual": mp.VERSAO_SIAPP, "info": info}
+            cache = {"dia": hoje, "atual": mp.VERSAO_SIAPP, "teste": teste, "info": info}
             self._guardar_estado_versao(consulta=cache)
         self._info_versao = cache.get("info")
         return self._resposta_versao(self._info_versao, cache["dia"])

@@ -46,6 +46,7 @@ PADRAO = {
     "projetos": [],            # pastas de projeto conhecidas, além da principal e das de projetos/
     "atualizar_ao_abrir": True,  # o atalho traz a versão nova do GitHub antes de abrir (lançador, pasta clonada)
     "avisar_versao_nova": True,  # 1.3: procura versão nova do SIAPP ao abrir (uma vez por dia) e avisa
+    "versoes_de_teste": False,   # 1.4.1: também as versões de teste (pre-release no GitHub), para quem testa antes
     "larguras": {},            # {vista: px} largura da barra lateral escolhida arrastando a borda
     "ficha_cheia": False,      # a ficha do poço na largura toda, no lugar do mapa (0.60)
 }
@@ -143,7 +144,8 @@ def normalizar(d) -> dict:
     for chave, opcoes in (("paleta", PALETAS), ("tema", TEMAS), ("fonte", FONTES)):
         if d.get(chave) in opcoes:
             p[chave] = d[chave]
-    for chave in ("abrir_ao_iniciar", "lembrar_arranjo", "atualizar_ao_abrir", "avisar_versao_nova", "ficha_cheia"):
+    for chave in ("abrir_ao_iniciar", "lembrar_arranjo", "atualizar_ao_abrir", "avisar_versao_nova", "versoes_de_teste",
+                  "ficha_cheia"):
         if isinstance(d.get(chave), bool):
             p[chave] = d[chave]
     if isinstance(d.get("recolhidas"), dict):

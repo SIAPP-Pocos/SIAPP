@@ -6,6 +6,14 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 
 ## [Não lançado]
 
+## [1.4.1] — 2026-11-22
+### Adicionado
+- Em Configurações, **Receber também as versões de teste**: para quem quer ajudar a testar as novidades antes de todo
+  mundo. As versões de teste podem ter erros; quem não marca essa opção só recebe versões já testadas.
+### Corrigido
+- **Enviar para a comunidade**: quando o GitHub ainda não deixa o envio entrar, a mensagem agora explica o que houve,
+  diz que nada foi perdido e sugere **Exportar pacote** enquanto isso.
+
 ## [1.4.0] — 2026-11-22
 Agora dá para mandar o seu trabalho para a base comunitária sem sair do SIAPP.
 ### Adicionado

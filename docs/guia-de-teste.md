@@ -146,6 +146,22 @@ Precisa de internet. Comece por uma categoria pequena para ver o tempo.
       cada tipo de arquivo. "Achar dados no acervo" vem por objetivo ("Para achar um poço pelo nome"…), sem números.
 - [ ] Tema escuro: textos, botões e o QR continuam legíveis.
 
+## 1.4.1 — versões de teste
+
+Esta é a primeira versão publicada como teste ("Set as a pre-release"). Como a 1.4.0 ainda não conhece o canal de
+teste, instale a 1.4.1 uma vez pelo instalador (página da versão › `SIAPP-1.4.1-instalador.exe`).
+
+- [ ] Configurações: marque **Receber também as versões de teste**. Ajuda › Procurar versão nova: "Você já tem a
+      versão mais nova do SIAPP (1.4.1)".
+- [ ] Desmarque a opção: continua igual (a 1.4.1 já é a mais nova). A partir da próxima versão de teste, só quem
+      marcou recebe o aviso "Saiu o SIAPP … (versão de teste)".
+- [ ] Antes de enviar para a comunidade de novo: no GitHub, organização SIAPP-Pocos › Settings › GitHub Apps ›
+      **SIAPP Comunidade** › Configure. Em "Permissions" deve aparecer **Read and write access to issues**; em
+      "Repository access", **Comunidade**. Se a página pedir para aceitar permissões novas ("Review request"),
+      aceite.
+- [ ] Comunidade › Contribuir › **Enviar para a comunidade**: "Enviado para a comunidade (pedido nº …)". Se ainda
+      der erro, a mensagem nova explica e nada é perdido.
+
 ## 1.4 — enviar para a comunidade pelo GitHub
 
 Antes: no repositório Comunidade, Settings › Actions › General › Workflow permissions, marque **Allow GitHub Actions

@@ -9,7 +9,7 @@
 Transforma o acervo público de poços da ANP em dados organizados, pesquisáveis e prontos para análise.<br>
 Gratuito, de código aberto, para Windows.
 
-[![versão](https://img.shields.io/badge/vers%C3%A3o-1.4.0-success)](https://github.com/SIAPP-Pocos/SIAPP/releases/latest)
+[![versão](https://img.shields.io/badge/vers%C3%A3o-1.4.1-success)](https://github.com/SIAPP-Pocos/SIAPP/releases/latest)
 [![testes](https://github.com/SIAPP-Pocos/SIAPP/actions/workflows/testes.yml/badge.svg)](https://github.com/SIAPP-Pocos/SIAPP/actions/workflows/testes.yml)
 [![licença: AGPL-3.0](https://img.shields.io/badge/licen%C3%A7a-AGPL--3.0-blue)](LICENSE)
 ![Windows 10 e 11](https://img.shields.io/badge/Windows-10%20%7C%2011-0078D4)
@@ -116,7 +116,7 @@ O SIAPP é e continuará gratuito. Se ele foi útil para você, há uma opção 
 
 Use o botão **Cite this repository**, no alto desta página (ele lê o [`CITATION.cff`](CITATION.cff)), ou:
 
-> Nobre, R. S. *SIAPP — Sistema Integrado de Aquisição e Processamento de Perfis* (versão 1.4.0). Universidade Federal
+> Nobre, R. S. *SIAPP — Sistema Integrado de Aquisição e Processamento de Perfis* (versão 1.4.1). Universidade Federal
 > de Alagoas, 2026. Disponível em: https://github.com/SIAPP-Pocos/SIAPP.
 
 ## Assinatura digital e privacidade

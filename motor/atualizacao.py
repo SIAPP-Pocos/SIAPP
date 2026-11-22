@@ -23,6 +23,8 @@ import requests
 
 REPOSITORIO = "SIAPP-Pocos/SIAPP"
 URL_ULTIMA = f"https://api.github.com/repos/{REPOSITORIO}/releases/latest"
+# versões de teste (marcadas como "pre-release" no GitHub): só quem liga "Receber versões de teste" vê
+URL_VERSOES = f"https://api.github.com/repos/{REPOSITORIO}/releases?per_page=20"
 PAGINA_VERSOES = f"https://github.com/{REPOSITORIO}/releases/latest"
 RE_INSTALADOR = re.compile(r"^SIAPP-(\d+\.\d+\.\d+)-instalador\.exe$")
 # /SILENT: sem perguntas, só a barra de progresso; /REABRIR: o instalador abre o SIAPP no fim (siapp.iss)
@@ -51,8 +53,10 @@ def notas_limpas(corpo: str, limite: int = 6000) -> str:
     return texto[:limite]
 
 
-def consultar(versao_atual: str, url: str = URL_ULTIMA, timeout: float = 10) -> dict | None:
-    """A última versão publicada. None quando ainda não há nenhuma."""
+def consultar(versao_atual: str, url: str | None = None, timeout: float = 10, teste: bool = False) -> dict | None:
+    """A última versão publicada. Com `teste`, a mais nova entre as normais e as de teste ("pre-release").
+    None quando ainda não há nenhuma."""
+    url = url or (URL_VERSOES if teste else URL_ULTIMA)
     try:
         r = requests.get(url, timeout=timeout, headers={"Accept": "application/vnd.github+json"})
     except requests.exceptions.RequestException as e:
@@ -62,6 +66,15 @@ def consultar(versao_atual: str, url: str = URL_ULTIMA, timeout: float = 10) -> 
     if r.status_code != 200:
         raise ErroAtualizacao(f"O GitHub respondeu HTTP {r.status_code}.")
     rel = r.json()
+    if isinstance(rel, list):                    # a lista de versões (canal de teste): a de número maior
+        publicadas = [x for x in rel if not x.get("draft") and x.get("tag_name")]
+        if not publicadas:
+            return None
+        rel = max(publicadas, key=lambda x: versao_tupla(x["tag_name"]))
+    return _ler_versao(rel, versao_atual)
+
+
+def _ler_versao(rel: dict, versao_atual: str) -> dict:
     versao = str(rel.get("tag_name") or "").lstrip("vV")
     instalador = None
     for a in rel.get("assets", []):
@@ -74,7 +87,8 @@ def consultar(versao_atual: str, url: str = URL_ULTIMA, timeout: float = 10) -> 
             break
     return {"versao": versao, "atual": versao_atual, "nova": bool(versao) and mais_nova(versao, versao_atual),
             "publicada_em": rel.get("published_at") or "", "notas": notas_limpas(rel.get("body") or ""),
-            "pagina": rel.get("html_url") or PAGINA_VERSOES, "instalador": instalador}
+            "pagina": rel.get("html_url") or PAGINA_VERSOES, "instalador": instalador,
+            "de_teste": bool(rel.get("prerelease"))}
 
 
 def _sha256(caminho: str) -> str:

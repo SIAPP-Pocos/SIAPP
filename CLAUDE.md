@@ -34,8 +34,11 @@ a 0.47, o lançador silencioso (`lancador/`). Versão atual: veja `motor/__init_
    navegador sem tela). Não entregar com teste falhando.
 4. Commits com o autor "Ruan da Silva Nobre <nobrenadja9@gmail.com>".
 5. Entrega = push para `main`. A sessão na nuvem não cria etiquetas nem versões: no fim de cada versão, o Ruan cria a
-   versão pelo site (Releases › Draft a new release › etiqueta `vX.Y.Z` › alvo `main` › Publish); o workflow
-   `instalador` monta o instalador e o anexa. Depois, conferir com `gh api repos/SIAPP-Pocos/SIAPP/releases/tags/vX.Y.Z`.
+   versão pelo site **como versão de teste** (Releases › Draft a new release › etiqueta `vX.Y.Z` › alvo `main` ›
+   "Set as a pre-release" › Publish); o workflow `instalador` monta o instalador e o anexa. Ele testa pelo guia e só
+   então libera para todos (Edit › desmarcar pre-release › "Set as the latest release"). Correção achada no teste vira
+   `X.Y.Z+1`, de novo como teste; o `CHANGELOG.md` junta tudo na seção da versão liberada. Fluxo completo em
+   `docs/versoes-de-teste.md`. Conferir com `gh api repos/SIAPP-Pocos/SIAPP/releases/tags/vX.Y.Z`.
 6. Os repositórios SIAPP (desde 30/10/2026) e Comunidade (desde 21/11/2026) são públicos. Não publicar nada fora deles.
 7. Interface, textos e documentação em português do Brasil, linguagem simples. Nada vem pré-selecionado para download.
 8. Nenhuma referência bibliográfica inventada; nenhum número sem procedência; convergência entre métodos que partem

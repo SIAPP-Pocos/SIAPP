@@ -474,6 +474,7 @@ function preencherConfig() {
   $("cfg-arranjo").checked = prefs.lembrar_arranjo;
   $("cfg-atualizar").checked = prefs.atualizar_ao_abrir !== false;
   $("cfg-versao-nova").checked = prefs.avisar_versao_nova !== false;
+  $("cfg-versao-teste").checked = Boolean(prefs.versoes_de_teste);
 }
 
 async function mudarAparencia(m) {
@@ -631,6 +632,7 @@ function ligarJanelas() {
   ligar("cfg-arranjo", "onchange", () => guardarPreferencias({ lembrar_arranjo: $("cfg-arranjo").checked }));
   ligar("cfg-atualizar", "onchange", () => guardarPreferencias({ atualizar_ao_abrir: $("cfg-atualizar").checked }));
   ligar("cfg-versao-nova", "onchange", () => guardarPreferencias({ avisar_versao_nova: $("cfg-versao-nova").checked }));
+  ligar("cfg-versao-teste", "onchange", () => guardarPreferencias({ versoes_de_teste: $("cfg-versao-teste").checked }));
   ligar("dg-copiar", "onclick", copiarDiagnostico);
   ligar("dg-log", "onclick", () => chamar($("dg-log"), "abrir_log"));
   ligar("dg-atualizar", "onclick", carregarDiagnostico);

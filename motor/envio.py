@@ -62,6 +62,10 @@ def _api(metodo: str, caminho: str, token: str | None = None, json_: dict | None
         raise ErroEnvio("A conta do GitHub precisa entrar de novo.", ) from None
     if r.status_code == 403 and "rate limit" in r.text.lower():
         raise ErroEnvio("O GitHub pediu uma pausa (limite de consultas). Tente daqui a pouco.")
+    if r.status_code == 403 and "not accessible by integration" in r.text.lower():
+        raise ErroEnvio("O GitHub ainda não deixa o SIAPP abrir pedidos na base comunitária (falta uma permissão do "
+                        "lado do mantenedor). Nada foi enviado; o seu trabalho continua aqui. Tente de novo mais tarde "
+                        "ou use Exportar pacote.")
     if r.status_code >= 400:
         try:
             msg = r.json().get("message", "")

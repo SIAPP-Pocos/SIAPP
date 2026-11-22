@@ -32,7 +32,8 @@ function avisoVersaoNova(r) {
   const a = el("div", "aviso ok aviso-versao");
   a.setAttribute("role", "status");
   const t = el("p", "aviso-versao-texto");
-  t.append(el("strong", "", `Saiu o SIAPP ${r.versao}`), document.createTextNode(` (você tem a ${r.atual}).`));
+  t.append(el("strong", "", `Saiu o SIAPP ${r.versao}${r.de_teste ? " (versão de teste)" : ""}`),
+           document.createTextNode(` (você tem a ${r.atual}).`));
   a.appendChild(t);
   const linha = el("div", "aviso-versao-botoes");
   const ver = el("button", "btn pequeno", r.pode_instalar ? "Ver e atualizar" : "Ver o que mudou");
@@ -84,7 +85,7 @@ function abrirVersaoNova() {
   masc.src = "img/mascote/joinha.png";
   masc.alt = "";
   const fala = el("div");
-  fala.append(el("p", "versao-fala", `Saiu o SIAPP ${r.versao}!`),
+  fala.append(el("p", "versao-fala", r.de_teste ? `Versão de teste: SIAPP ${r.versao}` : `Saiu o SIAPP ${r.versao}!`),
               el("p", "ajuda", `Você está com a ${r.atual}` +
                  (r.publicada_em ? `. Publicada em ${dataCurta(r.publicada_em)}.` : ".")));
   cab.append(masc, fala);
