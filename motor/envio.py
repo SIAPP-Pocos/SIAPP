@@ -149,9 +149,13 @@ def comentario_parte(i: int, n: int, parte: str) -> str:
 def texto_issue(pacote: dict, itens: dict, pocos: list[str], sha: str, n_partes: int) -> tuple[str, str]:
     a = pacote.get("autor") or {}
     quem = a.get("nome", "") + (f" ({a['instituicao']})" if a.get("instituicao") else "")
-    titulo = f"[pacote] {a.get('nome', 'SIAPP')}: {itens.get('correcoes', 0)} correções, {itens.get('fatos', 0)} fatos"
-    if itens.get("interpretacoes"):
-        titulo += f", {itens['interpretacoes']} interpretações"
+    def n(q, um, varios):
+        return f"{q} {um if q == 1 else varios}"
+    partes = [n(itens.get("correcoes", 0), "correção", "correções") if itens.get("correcoes") else "",
+              n(itens.get("palavras", 0), "palavra", "palavras") if itens.get("palavras") else "",
+              n(itens.get("fatos", 0), "dado transcrito", "dados transcritos") if itens.get("fatos") else "",
+              n(itens.get("interpretacoes", 0), "interpretação", "interpretações") if itens.get("interpretacoes") else ""]
+    titulo = f"[pacote] {a.get('nome', 'SIAPP')}: {', '.join(p for p in partes if p) or 'vocabulário'}"
     linhas = [f"Pacote de contribuição enviado pelo SIAPP {pacote.get('siapp_versao', '')} por **{quem}**.", "",
               "| Vai na base | Quantidade |", "|---|---|",
               f"| Correções de OCR | {itens.get('correcoes', 0)} |", f"| Palavras do vocabulário | {itens.get('palavras', 0)} |",

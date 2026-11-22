@@ -5,6 +5,8 @@ versões seguem [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 
 ## [Não lançado]
+### Corrigido
+- O título do envio para a comunidade usa singular e plural certos ("1 correção, 1 palavra").
 
 ## [1.4.1] — 2026-11-22
 ### Adicionado

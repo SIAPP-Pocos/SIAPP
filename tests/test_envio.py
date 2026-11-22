@@ -135,7 +135,7 @@ def test_codificar_no_formato_do_robo(monkeypatch):
     sha, partes = me.codificar(pacote)
     assert len(partes) > 3
     titulo, corpo = me.texto_issue(pacote, {"correcoes": 2, "fatos": 20}, ["7-GMR-13-RN"], sha, len(partes))
-    assert titulo == "[pacote] Maria Souza: 2 correções, 20 fatos" and "Maria Souza (UFRN)" in corpo
+    assert titulo == "[pacote] Maria Souza: 2 correções, 20 dados transcritos" and "Maria Souza (UFRN)" in corpo
     cab = re.search(r"<!--\s*siapp-pacote\s+id=([0-9A-Za-z-]{8,64})\s+partes=(\d{1,3})\s+sha256=([0-9a-f]{64})\s*-->",
                     corpo)
     assert cab and cab.group(1) == "abc-123-def" and int(cab.group(2)) == len(partes)
