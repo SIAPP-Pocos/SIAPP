@@ -157,7 +157,9 @@ const COMO_USAR = [
     fala: "Sua correção poupa o trabalho do próximo colega.",
     intro: "Na aba **Comunidade**, no topo, suas correções, transcrições e interpretações viram um pacote para compartilhar.",
     passos: [
-      "Em **Contribuir**, **Exportar pacote** junta o que você fez num arquivo.",
+      "Em **Contribuir**, **Enviar para a comunidade** manda o que você fez para a base, pelo GitHub. Na primeira " +
+        "vez, o SIAPP mostra um código: abra o GitHub, cole e autorize. Em **Seus envios** você acompanha a revisão.",
+      "Sem conta no GitHub, **Exportar pacote** junta o que você fez num arquivo, para mandar a um mantenedor.",
       "Envie o arquivo para quem quiser. Quem recebe usa **Escolher pacote…** e vê o que entra antes de confirmar. " +
         "Se uma correção do pacote discordar de uma sua, a sua continua valendo.",
       "Quando sai uma base comunitária nova, a aba **Comunidade** ganha um ponto azul e mostra quem mandou o quê. " +

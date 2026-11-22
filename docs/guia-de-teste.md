@@ -146,6 +146,25 @@ Precisa de internet. Comece por uma categoria pequena para ver o tempo.
       cada tipo de arquivo. "Achar dados no acervo" vem por objetivo ("Para achar um poço pelo nome"…), sem números.
 - [ ] Tema escuro: textos, botões e o QR continuam legíveis.
 
+## 1.4 — enviar para a comunidade pelo GitHub
+
+Antes: no repositório Comunidade, Settings › Actions › General › Workflow permissions, marque **Allow GitHub Actions
+to create and approve pull requests** (o robô precisa abrir o pull request).
+
+- [ ] Comunidade › Contribuir, com o seu nome preenchido e algo novo (uma correção ou um dado transcrito): **Enviar
+      para a comunidade**. Aparece "Entrar com o GitHub" com um código grande. **Copiar o código e abrir o GitHub**
+      abre o navegador; cole, Continue, Authorize. Volte ao SIAPP: a janela fecha sozinha e a barra de baixo diz
+      "Conta do GitHub conectada: @…".
+- [ ] A confirmação mostra o seu nome, o que vai e os poços. **Enviar**: "Enviado para a comunidade (pedido nº …)".
+      No cartão, "Seus envios" mostra "Recebido, sendo conferido".
+- [ ] No GitHub, repositório Comunidade › Issues: o pedido com o resumo e os comentários com as partes. Em Actions,
+      "receber pacote" roda; em minutos, um comentário do robô diz que virou pull request.
+- [ ] De volta ao SIAPP, reabra a aba Comunidade (ou espere 2 minutos): "Em revisão". Aceite o pull request no GitHub
+      (Merge): o SIAPP mostra "Aceito" e avisa; logo depois sai a base nova (o ponto azul da 1.3).
+- [ ] Enviar de novo sem nada novo: "Nada novo para enviar desde a última vez."
+- [ ] Conta do GitHub: … · **Sair**: o próximo envio pede o código de novo.
+- [ ] Sem internet, **Enviar** dá um erro claro e nada muda no projeto.
+
 ## 1.3 — Comunidade no topo, aviso de base nova, atualização com um clique e tela de apoio
 
 - [ ] Instale a 1.3 por cima da 1.2, à mão (a 1.2 ainda não sabe se atualizar). Abra: Ajuda › **Procurar versão

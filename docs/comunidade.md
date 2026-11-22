@@ -69,6 +69,31 @@ cada um). Enquanto nenhum pacote foi aceito, nada é publicado (`contribuicoes/e
 **Atualizar pela internet** baixa a Release mais recente (`siapp-dados.sqlite`) e substitui tudo o que tinha origem
 `base`. **Importar de arquivo…** aplica um `.sqlite` gerado por `python ferramentas/compilar.py`.
 
+### Enviar pelo SIAPP (1.4)
+
+**Comunidade › Contribuir › Enviar para a comunidade** manda o pacote sem sair do SIAPP (`motor/envio.py`,
+`ponte/envio.py`, `ui/js/envio.js`):
+
+1. **Conta do GitHub, uma vez.** O aplicativo do GitHub "SIAPP Comunidade" (Client ID `Iv23li7rXpFQ6QDmTudr`, da
+   organização SIAPP-Pocos, instalado só no repositório Comunidade, com permissão de abrir issues e ler pull requests)
+   entra pelo "device flow": o SIAPP mostra um código, a pessoa abre `github.com/login/device`, cola e autoriza. O
+   acesso vale 8 horas e se renova sozinho por 6 meses; fica cifrado com a proteção de dados do Windows (DPAPI) em
+   `%LOCALAPPDATA%\SIAPP\github.dat` (`motor/cofre.py`) e sai com "Sair". Não há segredo do aplicativo no código.
+2. **Confirmação.** A janela mostra o autor, o que vai (correções, dados, interpretações) e os poços, e avisa que fica
+   público (CC-BY 4.0) com a conta da pessoa.
+3. **Envio.** O SIAPP abre uma issue no repositório Comunidade com um resumo legível e a marca
+   `<!-- siapp-pacote id=… partes=n sha256=… -->`, e põe o pacote (JSON → gzip → base64, em partes de até 60 mil
+   caracteres) em comentários `<!-- siapp-parte i/n -->`. Se o envio para no meio, a issue é fechada e nada vai para a
+   base. Uma cópia fica em `contribuicoes/` do projeto e o que foi enviado não vai de novo no próximo pacote.
+4. **Robô do repositório.** O workflow `receber pacote` (`ferramentas/receber_pacote.py`) junta as partes (só as do
+   autor da issue), confere o SHA-256, valida e abre o pull request no nome de quem enviou, que o mantenedor revisa.
+   Se não serve, comenta o motivo e fecha a issue. Aceito o pull request, a base nova sai sozinha.
+5. **Seus envios.** O cartão mostra cada envio e onde ele está: "Recebido, sendo conferido", "Em revisão", "O revisor
+   pediu uma mudança", "Aceito" ou "Não passou na conferência" (com o motivo). O SIAPP pergunta ao GitHub ao abrir a
+   aba e ao abrir o projeto (no máximo a cada 2 minutos por envio) e avisa quando muda.
+
+Sem conta no GitHub, **Exportar pacote** continua gravando o arquivo para mandar a um mantenedor.
+
 ### Aviso de base nova (1.3)
 
 Ao abrir o projeto, o SIAPP pergunta ao GitHub qual é a última Release (`motor.comunidade.consultar_base`): no máximo

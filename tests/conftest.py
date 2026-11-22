@@ -53,6 +53,9 @@ def _sem_github(monkeypatch):
     from motor import comunidade as mc
     monkeypatch.setattr(mc, "consultar_base", lambda *a, **k: None)
     monkeypatch.setattr(mat, "consultar", lambda *a, **k: None)          # e versão nova do SIAPP, também não
+    import tempfile
+    from ponte import envio as penvio
+    monkeypatch.setattr(penvio, "PASTA_COFRE", tempfile.mkdtemp(prefix="cofre-"))   # a conta do GitHub dos testes
 
 
 @pytest.fixture

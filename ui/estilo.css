@@ -1858,3 +1858,23 @@ html[data-tema="escuro"] .com-novidade { background: #15263a; border-color: #2b4
 .versao-msg.erro { color: var(--erro); }
 .versao-dlg .dlg-pe a.btn { text-decoration: none; display: inline-flex; align-items: center; }
 .aviso-versao-texto { margin: 0; }
+
+/* ---------- 1.4: enviar para a comunidade pelo GitHub ---------- */
+.gh-codigo { font: 700 30px/1.2 var(--mono); letter-spacing: .12em; text-align: center; padding: 12px; margin: 6px 0 12px;
+  border: 1px dashed var(--linha); border-radius: 8px; background: var(--painel2); color: var(--tinta); user-select: all; }
+.dlg-github a.btn { text-decoration: none; display: inline-flex; margin-bottom: 8px; }
+.gh-espera { font-weight: 600; color: var(--suave); }
+.envio-autor { font-weight: 700; font-size: 15px; margin: 2px 0 8px; }
+.envio-msg:empty { display: none; }
+.com-envios h3 { margin: 14px 0 6px; font-size: 14px; }
+.envios { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.envio-linha { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: baseline; }
+.envios > li { padding-bottom: 6px; border-bottom: 1px solid var(--linha); }
+.envios > li:last-child { border-bottom: 0; }
+.envio-estado { border-radius: 10px; padding: 1px 8px; font-size: 12px; font-weight: 600; background: var(--painel2);
+  border: 1px solid var(--linha); }
+.envio-estado.est-aceito { background: #e3f4e8; border-color: #9fd3ae; color: #1e6b36; }
+.envio-estado.est-revisao, .envio-estado.est-conferindo { background: #eef4fb; border-color: #b9d0ec; color: #1c4f8a; }
+.envio-estado.est-mudanca { background: #fff4e0; border-color: #f0c987; color: #8a5a00; }
+.envio-estado.est-recusado, .envio-estado.est-nao_aceito { background: #fdecea; border-color: #f2b8b2; color: #9b2c22; }
+.envio-detalhe { white-space: pre-wrap; font-size: 12px; margin: 4px 0 0; max-height: 120px; overflow: auto; }

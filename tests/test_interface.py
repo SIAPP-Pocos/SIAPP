@@ -2931,3 +2931,50 @@ def test_aviso_de_versao_nova_do_siapp(janela, monkeypatch):
     # Configurações: a caixa de avisar fica ligada; o "git pull do atalho" aparece só rodando do código
     assert janela.api._preferencias().ler()["avisar_versao_nova"] is True
     assert not janela.erros_js, janela.erros_js
+
+
+def test_enviar_para_a_comunidade_pelo_github(janela, monkeypatch):
+    """1.4: Enviar para a comunidade: entra no GitHub por código (uma vez), confirma o que vai e acompanha."""
+    import time as _time
+
+    from motor import envio as me
+    from test_comunidade import fazer_trabalho
+    monkeypatch.setattr(me, "iniciar_login", lambda: {"device_code": "dc", "codigo": "WDJB-MJHT",
+                                                      "url": "https://github.com/login/device",
+                                                      "expira_em_s": 900, "intervalo": 5})
+    monkeypatch.setattr(me, "aguardar_login", lambda *a, **k: _time.sleep(0.8) or {
+        "access_token": "t", "refresh_token": "r", "expira_em": _time.time() + 3600, "renovar_ate": 9e12})
+    monkeypatch.setattr(me, "usuario", lambda t: {"login": "maria", "nome": "Maria Souza", "id": 9})
+    enviados = []
+    monkeypatch.setattr(me, "enviar", lambda token, pacote, itens, pocos, progresso=None: enviados.append(pacote) or {
+        "numero": 12, "url": "https://github.com/SIAPP-Pocos/Comunidade/issues/12", "partes": 1, "sha256": "x"})
+    situacoes = iter([{"estado": "aceito", "rotulo": "Aceito: entra na próxima base", "url": "https://x/pull/13"}])
+    monkeypatch.setattr(me, "situacao", lambda n, token=None: next(situacoes))
+    p = janela.page
+    abrir_projeto(janela)
+    janela.api.definir_autor("Maria Souza", "UFRN")
+    fazer_trabalho(janela.api._banco)
+    ir(p, "comunidade")
+    janela.esperar("document.getElementById('com-github').textContent.includes('entre com uma conta')")
+    p.evaluate("""window.__codigo = ''; new MutationObserver(() => { const c = document.getElementById('gh-codigo');
+                   if (c) window.__codigo = c.textContent; }).observe(document.body, {subtree: true, childList: true})""")
+    p.click("#btn-enviar-com")
+    janela.esperar("document.getElementById('envio-confirmar') !== null")          # entrou: vem a confirmação
+    assert p.evaluate("window.__codigo") == "WDJB-MJHT"                            # o código apareceu antes
+    corpo = p.text_content("#dlg-corpo")
+    assert "Maria Souza (UFRN)" in corpo and "1 dado(s) transcrito(s)" in corpo and "@maria" in corpo
+    assert "7-GMR-13-RN" in corpo
+    p.click("#envio-confirmar")
+    janela.esperar("document.getElementById('dialogo').hidden")
+    assert "pedido nº 12" in janela.status() and len(enviados) == 1
+    assert enviados[0]["autor"]["nome"] == "Maria Souza"
+    janela.esperar("!document.getElementById('com-envios').hidden")
+    assert "Recebido, sendo conferido" in p.text_content("#com-envios")
+    assert "@maria" in p.text_content("#com-github")
+    envios = janela.api._envios()
+    envios[0]["verificado_em"] = 0
+    janela.api._guardar_envios(envios)
+    p.evaluate("carregarEnvios(true)")
+    janela.esperar("document.getElementById('com-envios').textContent.includes('Aceito')")
+    assert "foi aceito" in janela.status()
+    assert not janela.erros_js, janela.erros_js

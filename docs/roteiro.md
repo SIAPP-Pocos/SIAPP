@@ -120,8 +120,8 @@ existe e a validação científica ficam **para o final**.
       - [x] Fase 1 (1.3): puxar e mostrar. O repositório Comunidade publica a base sozinho a cada aceite (com
         `resumo.json`); o SIAPP avisa da base nova (uma vez por dia), mostra quem mandou o quê e marca os poços com dados
         da comunidade no mapa, no catálogo e na ficha.
-      - [ ] Fase 2: enviar pelo app. Entrar com a conta do GitHub (código de dispositivo: o Ruan cria um OAuth App com
-        Device Flow) e mandar o pacote como pull request no repositório Comunidade.
+      - [x] Fase 2 (1.4): enviar pelo app. Aplicativo do GitHub "SIAPP Comunidade" (criado em 22/11, instalado só no
+        Comunidade; entrada por código), envio como issue e robô que abre o pull request; "Seus envios" acompanha.
 
 ## No final — melhorias do que já existe
 

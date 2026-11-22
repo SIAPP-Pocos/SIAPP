@@ -6,6 +6,21 @@ Enquanto a versão for 0.x, a interface e os formatos de arquivo podem mudar.
 
 ## [Não lançado]
 
+## [1.4.0] — 2026-11-22
+A Comunidade ligada ao GitHub, fase 2: enviar direto do SIAPP.
+### Adicionado
+- **Enviar para a comunidade**: em Comunidade › Contribuir, o seu trabalho (correções, dados transcritos,
+  interpretações; nenhum arquivo do REATE) vai para a base comunitária sem sair do SIAPP. Na primeira vez, entra com a
+  conta do GitHub por um código (abre o GitHub, cola, autoriza); depois é um clique. Antes de enviar, a janela mostra
+  o que vai, com o seu nome e os poços.
+- **Seus envios**: cada envio aparece com a situação ("Recebido, sendo conferido", "Em revisão", "O revisor pediu uma
+  mudança", "Aceito", "Não passou na conferência", com o motivo) e o link no GitHub. O SIAPP avisa quando muda.
+- Repositório Comunidade: um robô recebe o envio, confere, valida e abre o pull request no nome de quem enviou.
+### Alterado
+- O acesso ao GitHub fica cifrado no computador (proteção de dados do Windows) e sai com "Sair". A política de
+  privacidade cita o envio.
+- Sem conta no GitHub, **Exportar pacote** continua gravando o arquivo para mandar a um mantenedor.
+
 ## [1.3.0] — 2026-11-21
 A Comunidade ligada ao GitHub (fase 1: puxar e mostrar), a atualização com um clique e a tela de apoio refeita.
 ### Adicionado

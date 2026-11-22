@@ -49,6 +49,8 @@ async function carregarContribuir() {
       `${r.base.resumo.fatos} dado(s).`
     : "Nenhuma base aplicada ainda.";
   $("com-auto").checked = r.verificar_sozinho !== false;
+  desenharContaGithub();                                         // 1.4: conta e envios
+  carregarEnvios(true, true);
   desenharNovidadeBase();
   desenharPacotes(r.importados);
 }
@@ -63,6 +65,7 @@ async function verificarBaseComunidade(forcar = false, botao = null) {
   else {
     try { r = await api.verificar_base(false); } catch (e) { return; }
   }
+  if (!forcar) carregarEnvios(true, true);                      // 1.4: algum envio seu mudou de situação?
   if (!r || !r.ok || r.desligado) return;
   novidadeBase = r;
   $("aba-comunidade-aviso").hidden = !r.ha_novidade;
@@ -145,7 +148,7 @@ async function exportarPacote() {
   const r = await chamar($("btn-exportar"), "exportar_contribuicao", $("com-novos").checked);
   if (!r.ok) return;
   $("com-exportado").textContent = `Pacote gravado em ${r.arquivo} (${descreverItens(r.itens)}).`;
-  status("Contribuição exportada. Envie o arquivo ao repositório Comunidade.", "ok");
+  status("Pacote exportado. Para mandar daqui, use “Enviar para a comunidade”; o arquivo também vai pelo site do GitHub.", "ok");
   carregarContribuir();
 }
 
@@ -805,6 +808,7 @@ function ligarComunidade() {
   };
   $("form-autor").onsubmit = salvarAutor;
   $("btn-exportar").onclick = exportarPacote;
+  $("btn-enviar-com").onclick = enviarParaComunidade;           // 1.4
   $("btn-pasta-contrib").onclick = () => chamar($("btn-pasta-contrib"), "abrir_pasta_contribuicoes");
   $("btn-importar").onclick = escolherPacote;
   $("btn-base").onclick = () => atualizarBase($("btn-base"), "atualizar_base");

@@ -40,7 +40,7 @@ automática (veja a última linha da tabela):
 | EPE, IBGE e INDE | Camadas de mapa e de infraestrutura (Viabilidade) |
 | Banco Central (`api.bcb.gov.br`) | Índices de preço e câmbio (Viabilidade) |
 | OpenStreetMap e Esri | Fundo dos mapas |
-| GitHub (`github.com`, `api.github.com`) | Modelos de OCR do Tesseract; base comunitária (botão Atualizar) |
+| GitHub (`github.com`, `api.github.com`) | Modelos de OCR do Tesseract; base comunitária (botão Atualizar); desde a 1.4, **Enviar para a comunidade**: entrada com a conta do GitHub (por código) e envio do pacote que a pessoa confirmou, como issue no repositório Comunidade. O acesso fica cifrado no computador (proteção de dados do Windows) e sai com "Sair" |
 | GitHub (`api.github.com`), sozinho ao abrir | Desde a 1.3, no máximo uma vez por dia: pergunta qual é a última versão do SIAPP e da base comunitária (nada é enviado além do pedido). Desliga em Configurações e em Comunidade › "Procurar sozinho" |
 
 Os projetos, arquivos baixados e dados transcritos ficam só no computador de quem usa. O que vai para a base

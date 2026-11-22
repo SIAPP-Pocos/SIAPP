@@ -6,8 +6,8 @@ authors:
   - family-names: "Nobre"
     given-names: "Ruan da Silva"
     affiliation: "Universidade Federal de Alagoas (UFAL)"
-version: "1.3.0"
-date-released: "2026-11-21"
+version: "1.4.0"
+date-released: "2026-11-22"
 license: AGPL-3.0-only
 repository-code: "https://github.com/SIAPP-Pocos/SIAPP"
 keywords:
